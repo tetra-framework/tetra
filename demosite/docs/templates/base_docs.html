@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+
+
+{% block extra_head %}
+
+  <style>
+    .navbar {
+      background-color: rgba(245, 247, 249, 0.9);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      min-height: 64px;
+    }
+
+    .navbar-brand {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .container-main {
+      margin-top: 64px;
+    }
+    @media (min-width: 768px) {
+      .docs-nav {
+        flex-shrink: 0;
+        width: 210px;
+        position: sticky;
+        top: 64px;
+        max-height: calc(100vh - 60px);
+        overflow: auto;
+      }
+    }
+    .docs-nav a {
+      text-decoration: none;
+      color: var(--bs-gray-900);
+    }
+    .docs-nav a:hover {
+      color: var(--bs-primary);
+    }
+    .docs-nav .active {
+      font-weight: 600;
+      text-decoration: none;
+      color: var(--bs-primary);
+    }
+
+    .docs-nav-item .small {
+      font-weight: 500;
+    }
+    .docs-nav-item {
+      font-weight: 400;
+    }
+
+    .headerlink {
+      visibility: hidden;
+      display: inline-block;
+      margin-left: 0.2em;
+      text-decoration: none;
+      color: var(--bs-gray-400);
+    }
+    h1:hover .headerlink, h1:active .headerlink,
+    h2:hover .headerlink, h2:active .headerlink,
+    h3:hover .headerlink, h3:active .headerlink,
+    h4:hover .headerlink, h4:active .headerlink,
+    h5:hover .headerlink, h5:active .headerlink,
+    h6:hover .headerlink, h6:active .headerlink {
+      visibility: visible;
+    }
+
+    .toc-outer {
+      color: var(--bs-gray-800);
+      font-size: .875rem;
+    }
+    .toc-outer h2 {
+      font-size: .875rem;
+    }
+    .toc ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    .toc > ul ul ul {
+      padding-left: 1.5em;
+    }
+    .toc a {
+      text-decoration: none;
+      color: var(--bs-gray-600);
+    }
+    .toc a:hover {
+      color: var(--bs-primary);
+    }
+
+    .main-content {
+      max-width: 800px;
+      flex-grow: 1;
+    }
+
+    pre > code {
+      border-radius: .25rem;
+      display: block;
+      overflow-x: auto;
+      padding: 1em;
+      background-color: rgb(252, 252, 252);
+    }
+    pre {
+      border-radius: .25rem;
+      box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+    }
+
+    h1, .h1 {
+      font-size: 2rem;
+      margin: 0 0 1.6rem;
+    }
+    h2, .h2 {
+      font-size: 1.6rem;
+      margin: 2rem 0 1.6rem;
+    }
+    h3, .h3 {
+      font-size: 1.4rem;
+      margin: 2rem 0 1.6rem;
+    }
+    h4, .h4 {
+      font-size: 1.2rem;
+      margin: 2rem 0 1.6rem;
+    }
+
+    blockquote {
+      background: var(--bs-light);
+      border-left: .25rem solid var(--bs-info);
+      padding: 1rem 1rem 0.001rem; 1rem;
+    }
+
+    .docs-content a[href*="://"]::after {
+      -moz-osx-font-smoothing: grayscale;
+      -webkit-font-smoothing: antialiased;
+      display: inline-block;
+      text-decoration: none;
+      font-style: normal;
+      font-variant: normal;
+      line-height: 1;
+      text-rendering: auto;
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+      content: "\00a0\f08e";
+      color: var(--bs-gray-500);
+      font-size: 0.8em;
+    }
+  </style>
+{% endblock %}
+
+{% block body %}
+<main>
+  <nav class="navbar fixed-top navbar-expand-md">
+    <div class="container-xxl">
+      <span  class="position-relative me-0 me-sm-5">
+        <a class="navbar-brand mb-0 h1 me-0" href="/">Tetra</a>
+        <span
+          class="badge bg-warning text-dark small d-inline-block position-absolute"
+          style="top: -0.3rem; right: -1.5rem; transform: rotate(5deg); font-size: 7px;"
+        >
+          Alpha v0.0.1
+        </span>
+      </span>
+      <button class="navbar-toggler border-0 order-first" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasDocsNav" aria-controls="offcanvasDocsNav" aria-expanded="false" aria-label="Toggle Docs Navigation">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle Navigation">
+        <i class="fa-solid fa-ellipsis"></i>
+      </button>
+      <div class="collapse navbar-collapse small fw-semibold" id="navbarSupportedContent">
+        <ul class="navbar-nav flex-grow-1">
+          <li class="nav-item">
+            <a class="nav-link active" href="{% url 'docs-home' %}">Docs</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/#examples">Examples</a>
+          </li>
+        </ul>
+        <ul class="navbar-nav flex-end">
+          <li class="nav-item">
+            <a class="nav-link" href="https://github.com/samwillis/tetra">
+              <i class="fa-brands fa-github"></i>
+              <span class="d-inline d-md-none">GitHub</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="https://mobile.twitter.com/samwillis">
+              <i class="fa-brands fa-twitter"></i>
+              <span class="d-inline d-md-none">Twitter</span>
+            </a>
+          </li>
+        </ul>
+    </div>
+  </nav>
+  <div class="container-xxl container-main">
+    <div class="d-md-flex justify-content-between docs-content">
+      <div class="docs-nav offcanvas-start offcanvas-md pt-md-4" id="offcanvasDocsNav" aria-labelledby="offcanvasDocsNavLabel">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title" id="offcanvasDocsNavLabel">Browse Docs</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#offcanvasDocsNav" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+          <ul class="list-unstyled">
+            {% for section in structure %}
+              <li class="docs-nav-item my-1 {% if section.slug is None %}mt-2{% endif %}">
+                {% if section.slug is None %}
+                  <span class="text-muted small {% if active_slug == section.slug %}active{% endif %}">{{ section.title|safe }}</span>
+                {% elif section.slug == '' %}
+                  <a href="{% url 'docs-home' %}" class="{% if active_slug == section.slug %}active{% endif %}">{{ section.title|safe }}</a>
+                {% else %}
+                  <a href="{% url 'doc' slug=section.slug %}" class="{% if active_slug == section.slug %}active{% endif %}">{{ section.title|safe }}</a>
+                {% endif %}
+                {% if section.items %}
+                  <ul class="list-unstyled ms-3 mt-1 mb-2">
+                    {% for item in section.items %}
+                      <li><a href="{% url 'doc' slug=item.slug %}" class="{% if active_slug == item.slug %}active{% endif %}">{{ item.title|safe }}</a></li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </li>
+            {% endfor %}
+            <li class="docs-nav-item my-1">
+              <a href="https://alpinejs.dev">Alpine.js Docs</a>
+            </li>
+            <li class="docs-nav-item my-1">
+              <a href="https://docs.djangoproject.com/">Django Docs</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="docs-nav order-last toc-outer d-none d-lg-block pt-md-4">
+        <h2 class="h6">On this page</h2>
+        {{ toc|safe }}
+      </div>
+      <div class="main-content mx-md-4 pt-4">
+        {{ content|safe }}
+      </div>
+    </div>
+
+    <footer class="py-3 mt-5 text-center text-muted border-top small">
+      © 2022 <a href="https://mobile.twitter.com/samwillis">Sam Willis</a>
+    </footer>
+  </div>
+</main>
+{% endblock %}

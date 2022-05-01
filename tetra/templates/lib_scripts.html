@@ -1,0 +1,15 @@
+{% load static %}
+{% if csrf_token %}
+<script>
+  window.__tetra_csrfToken = '{{ csrf_token }}';
+  window.__tetra_staticRoot = '{% get_static_prefix %}';
+</script>
+{% endif %}
+{% for lib in libs %}
+<script defer src="{{ lib.js_url }}"></script>
+{% endfor %}
+<script defer src="{% static 'tetra/js/tetra.js' %}"></script>
+{% if include_alpine %}
+<script defer src="{% static 'tetra/js/alpinejs.morph.cdn.min.js' %}"></script>
+<script defer src="{% static 'tetra/js/alpinejs.cdn.min.js' %}"></script>
+{% endif %}

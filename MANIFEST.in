@@ -1,0 +1,4 @@
+recursive-include tetra/static *
+recursive-include tetra/js *
+recursive-include tetra/templates *
+prune demosites

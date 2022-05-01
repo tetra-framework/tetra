@@ -1,0 +1,2 @@
+../demosite/node_modules/.bin/esbuild ./js/tetra.js --bundle --sourcemap --target=chrome80,firefox73,safari13,edge80 --outfile=./static/tetra/js/tetra.js
+../demosite/node_modules/.bin/esbuild ./js/tetra.js --bundle --minify --sourcemap --target=chrome80,firefox73,safari13,edge80 --outfile=./static/tetra/js/tetra.min.js
