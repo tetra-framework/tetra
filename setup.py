@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="tetraframework",
-    version="0.0.0",
+    version="0.0.1",
     url='https://www.tetraframework.com',
     author="Sam Willis",
     description="Full stack component framework for Django using Alpine.js",
