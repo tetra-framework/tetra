@@ -1,3 +1,5 @@
+Title: Components
+
 # Components
 
 A component is created as a subclass of `BasicComponent` or `Component` and registered to a library with the `@libraryname.register` decorator, see [component libraries](component-libraries).

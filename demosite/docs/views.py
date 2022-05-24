@@ -53,10 +53,14 @@ def doc(request, slug="introduction"):
 
     with open(settings.BASE_DIR.parent / "docs" / f"{slug}.md") as f:
         md = markdown.Markdown(
-            extensions=["extra", TocExtension(permalink="#", toc_depth=3)]
+            extensions=[
+                "extra", 
+                "meta",
+                TocExtension(permalink="#", toc_depth=3),
+            ]
         )
         content = md.convert(f.read())
-
+    print(md.Meta)
     return render(
         request,
         "base_docs.html",
@@ -65,5 +69,6 @@ def doc(request, slug="introduction"):
             "content": content,
             "toc": md.toc,
             "active_slug": slug,
+            "title": ' '.join(md.Meta["title"]),
         },
     )

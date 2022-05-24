@@ -1,3 +1,5 @@
+Title: Saved Server State and Security
+
 # Saved Server State and Security
 
 When a component is rendered, as well as making its public state available as JSON to the client, it saves its server state so that it can be resumed later. This is done using the builtin Python Pickle toolkit. The "Pickled" state is then encrypted using 128-bit AES and authenticated with HMAC via [Fernet](https://cryptography.io/en/latest/fernet/) using a key derived from your Django settings `SECRET_KEY` and the user's session id using [HKDF](https://cryptography.io/en/latest/hazmat/primitives/key-derivation-functions/#hkdf).
