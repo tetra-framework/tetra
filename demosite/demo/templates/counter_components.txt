@@ -4,14 +4,13 @@ class Counter(Component):
     current_sum = 0
 
     def load(self, current_sum=None):
-        print('current_sum', current_sum)
         if current_sum is not None:
             self.current_sum = current_sum
 
     @public
     def increment(self):
         self.count += 1
-    
+
     def sum(self):
         return self.count + self.current_sum
 
@@ -20,7 +19,7 @@ class Counter(Component):
         <p>
             Count: <b>{{ count }}</b>,
             Sum: <b>{{ sum }}</b>
-            <button @click="increment()" class="btn btn-sm btn-primary">Increment</button>
+            <button class="btn btn-sm btn-primary" @click="increment()">Increment</button>
         </p>
         <div>
             {% block default %}{% endblock %}
