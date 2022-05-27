@@ -7,7 +7,7 @@ As a component framework for Django, Tetra requires that you have a Django proje
 Once ready install Tetra from PyPi:
 
 ```
-$ pip install tetra-framework
+$ pip install tetraframework
 ```
 
 > **Note:** As Tetra is still being developed it has only been tested with Python 3.9 and 3.10, we intend to support at least 3.8 before a V1 release.
