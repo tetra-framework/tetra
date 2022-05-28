@@ -1,11 +1,12 @@
 import setuptools
+from tetra import __version__
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="tetraframework",
-    version="0.0.1",
+    version=__version__,
     url='https://www.tetraframework.com',
     author="Sam Willis",
     description="Full stack component framework for Django using Alpine.js",
