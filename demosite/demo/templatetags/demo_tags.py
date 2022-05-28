@@ -3,9 +3,15 @@ from django.template.loader import get_template
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.template.loaders.app_directories import Loader
+import tetra
 
 
 register = template.Library()
+
+
+@register.simple_tag
+def tetra_version():
+    return tetra.__version__
 
 
 @register.simple_tag
