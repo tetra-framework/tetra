@@ -73,7 +73,10 @@ Next up, we have a "public method"; these are available in the browser to your J
 ``` python
     @public
     def add_todo(self, title):
-        todo = ToDo(title=title)
+        todo = ToDo(
+            title=title,
+            session_key=self.request.session.session_key,
+        )
         todo.save()
         self.title = ""
 ```
@@ -125,7 +128,7 @@ The public `save` method is set to `watch` the `title` and `done` public attribu
 
 ``` python
     @public.watch('title', 'done').debounce(200)
-    def save(self, value, old_value):
+    def save(self, value, old_value, attr):
         self.todo.title = self.title
         self.todo.done = self.done
         self.todo.save()
