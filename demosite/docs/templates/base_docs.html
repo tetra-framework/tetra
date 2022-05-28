@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load demo_tags %}
+{% load demo_tags static %}
 
 {% block title %}{{ block.super }} - {{ title }}{% endblock %}
 
@@ -144,6 +144,11 @@
       color: var(--bs-gray-500);
       font-size: 0.8em;
     }
+
+    .main-logo {
+      height: 40px;
+      width: 133px;
+    }
   </style>
 {% endblock %}
 
@@ -152,7 +157,9 @@
   <nav class="navbar fixed-top navbar-expand-md">
     <div class="container-xxl">
       <span  class="position-relative me-0 me-sm-5">
-        <a class="navbar-brand mb-0 h1 me-0" href="/">Tetra</a>
+        <a class="navbar-brand mb-0 h1 me-0" href="/">
+          <img src="{% static "logo.svg" %}" alt="Tetra" class="main-logo">
+        </a>
         <span
           class="badge bg-warning text-dark small d-inline-block position-absolute"
           style="top: -0.3rem; right: -1.5rem; transform: rotate(5deg); font-size: 7px;"

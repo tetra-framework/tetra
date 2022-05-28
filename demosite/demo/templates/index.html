@@ -1,4 +1,4 @@
-{% load demo_tags tetra %}
+{% load demo_tags tetra static %}
 <!doctype html>
 <html lang="en">
   <head>
@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>Tetra - Full stack reactive component framework for Django using Alpine.js</title>
+
+    <link rel="shortcut icon" href="{% static "favicon.png" %}"/>
 
     <link rel="preconnect" href="https://fonts.googleapis.com"> 
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> 
@@ -62,6 +64,10 @@
         margin-left: auto;
         margin-right: auto;
       }
+
+      .main-logo {
+        height: 100px;
+      }
     </style>
 
 
@@ -76,9 +82,7 @@
         <div class="py-3 my-5 text-center">
           <div>
             <div class="d-inline-block position-relative">
-              <h1 class="display-3 fw-bold d-inline-block">
-                Tetra
-              </h1>
+              <img src="{% static "logo.svg" %}" alt="Tetra" class="main-logo mb-3">
               <span
                 class="badge bg-warning text-dark small d-inline-block position-absolute"
                 style="top: -0.5rem; right: -2.5rem; transform: rotate(5deg);"
