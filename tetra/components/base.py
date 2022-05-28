@@ -459,8 +459,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     def _render_data(self):
         data = self._data()
-        if self._public_methods:
-            data["__state"] = self._encoded_state()
+        data["__state"] = self._encoded_state()
         return data
 
     def _add_to_context(self, context):
