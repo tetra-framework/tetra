@@ -95,7 +95,7 @@ class MyComponent(Component):
         do_something()
 ```
 
-Python public methods can also call JavaScript methods in the browser as callbacks. These are exposed on the `self.client` "callback queue" object. They are executed by the client when it receives the response from the method call.
+Python public methods can also call JavaScript methods in the browser as callbacks. These are exposed on the `self.client` "callback queue" object, see [`client` API](#client-api). They are executed by the client when it receives the response from the method call.
 
 ``` python
 @default.register
@@ -115,20 +115,39 @@ Public methods can "watch" public attributes and be called automatically when th
 class MyComponent(Component):
     ...
     @public.watch("message")
-    def handle_click(self, value, new_value):
+    def message_change(self, value, new_value, attr):
         self.a_value = f"Your message is: {message}"
 ```
 
-### .debounce  & .throttle
+### .debounce
 
- You can add `.debounce(ms)` or `.throttle(ms)` to debounce or throttle the calling of the method.
+ You can add `.debounce(ms)` to debounce the calling of the method.
+
+ By default `debounce` is "trailing edge", it will be triggered at the end of the timeout.
+
+ It takes an optional `immediate` boolean argument (i.e. `.debounce(200, immediate=True)`), this changes the implementation to "leading edge" triggering the method immediately.
 
 ``` python
 @default.register
 class MyComponent(Component):
     ...
     @public.watch("message").debounce(200)
-    def handle_click(self, value, new_value):
+    def message_change(self, value, new_value, attr):
+        self.a_value = f"Your message is: {message}"
+```
+
+###.throttle
+
+ You can add `.throttle(ms)` to throttle the calling of the method.
+
+ By default `throttle` is "leading edge" triggering immediately. You can instruct it to also trigger on the "trailing edge" by setting argument `trailing=True`. The leading edge trigger can be disabled with `leading=False`.
+
+``` python
+@default.register
+class MyComponent(Component):
+    ...
+    @public.watch("message").throttle(200, trailing=True)
+    def message_change(self, value, new_value, attr):
         self.a_value = f"Your message is: {message}"
 ```
 
@@ -204,3 +223,205 @@ class MyComponent(Component):
 ```
 
 > The plan is to add support for PostCSS and tools such as SASS and LESS in future, along with component scoped CSS in future.
+
+
+## `client` API
+
+From public methods its possible to call client side javascript via the `.client` API. Any of your JavaScript methods can be called via this api:
+
+``` python
+@default.register
+class MyComponent(Component):
+    ...
+    @public(update=False)
+    def method_calls_client_method(self):
+        self.client.clientMethod('A value')
+    
+    script: javascript = """
+    export default {
+        clientMethod(msg) {
+          alert(msg)
+        }
+    }
+```
+
+If is implemented as a queue that is sent to the client after thee public method returns. The client they calls all scheduled callbacks with the provided arguments.
+
+Arguments must be of the same types as our extended JSON, see [public attributes](public-attributes) for details.
+
+## Built in client methods
+
+There are a number of Tetra built in methods, these are all prefixed with a single underscore so as not to conflict with your own attributes and methods. These can be called both from JavaScript on the client and via the `client` API from the server.
+
+### `_parent` attribute
+
+The `_parent` attribute allows you to access the component parent component if there is one. Via this you can call methods, both JavaScript and public Python, on an ancestor component:
+
+``` python
+@default.register
+class MyComponent(Component):
+    ...
+    @public(update=False)
+    def method_calls_client_method(self):
+        # Call a parent method
+        self.client._parent.clientMethod('A value')
+```
+
+You can chain `_parent` to traverse back up the component tree:
+
+``` python
+@default.register
+class MyComponent(Component):
+    ...
+    @public(update=False)
+    def method_calls_client_method(self):
+        # Call a grandparent method
+        self.client._parent._parent.clientMethod('A value')
+```
+
+### `_redirect`
+
+The `_redirect` method allows you to instruct the client to redirect to another url after calling a public method:
+
+``` python
+@default.register
+class MyComponent(Component):
+    ...
+    @public(update=False)
+    def my_method(self):
+        self.client._redirect('/another-url')
+```
+
+This can be combined with [Django's `reverse()`](https://docs.djangoproject.com/en/4.0/ref/urlresolvers/#reverse) function:
+
+``` python
+@default.register
+class MyComponent(Component):
+    ...
+    @public(update=False)
+    def my_method(self):
+        self.client._redirect(reverse(views.archive))
+```
+
+### `_dispatch`
+
+The `_dispatch` method is a wrapper around the Alpine.js [`dispatch` magic](https://alpinejs.dev/magics/dispatch) allowing you to dispatch events from public server methods. These bubble up the DOM and be captured by listeners on (grand)parent components. It takes an event name as it's first argument, and an extended JSON serialisable object as its second argument. see Alpine.js [`$dispatch`](https://alpinejs.dev/magics/dispatch) for details.
+
+``` python
+@default.register
+class MyComponent(Component):
+    ...
+    @public
+    def my_method(self):
+        self.client._dispatch('my-event', {"some_data": 123})
+```
+
+In a (grand)parent component you can subscribe to these events with the Alpine.js [`x-on` or  `@`](https://alpinejs.dev/directives/on) directive, calling both JavaScript or public Python methods:
+
+
+``` python
+@default.register
+class MyComponent(Component):
+    ...
+    @public
+    def handle_my_event(self, event):
+        ...
+
+    template: django_html = """
+    <div {% ... attrs %}
+        @my-event="handle_my_event($event)"
+        @my-event="handleMyEvent($event)"
+    >
+        ...
+    </div>
+    """
+    
+    script: javascript = """
+    export default {
+        handleMyEvent(event) {
+            ...
+        }
+    }
+    """
+```
+
+### `_removeComponent`
+
+the `_removeComponent` method removed the component from the DOM and destroys it. This is useful when deleting an item on the server and wanting to remove the corresponding component in the browser:
+
+``` python
+@default.register
+class MyComponent(Component):
+    ...
+    @public(update=False)
+    def delete_item(self):
+        self.todo.delete()
+        self.client._removeComponent()
+```
+
+### `_updateData`
+
+The `_updateData` method allows you to update specific public state data on the client. It takes a `dict` of values to update on the client:
+
+``` python
+@default.register
+class MyComponent(Component):
+    ...
+    @public(update=False)
+    def update_something(self):
+        self.client._updateData({
+            "something": 123,
+            "somethingElse": 'A string',
+        })
+```
+
+This can be used to update data on a parent component:
+
+``` python
+@default.register
+class MyComponent(Component):
+    ...
+    @public(update=False)
+    def update_parent(self):
+        self.client._parent._updateData({
+            "something": 123,
+            "somethingElse": 'A string',
+        })
+```
+
+## Built in server methods
+
+There are a number of built in server methods:
+
+### `update`
+
+The `update` method instructs the component to rerender after the public method has completed, sending the updated html to the browser and "morphing" the DOM. Usually public methods do this by default, however if this has been turned off and you want to conditionally update the html you can use this:
+
+``` python
+@default.register
+class MyComponent(Component):
+    ...
+    @public(update=False)
+    def update_something(self):
+        ...
+        if some_value:
+            self.update()
+```
+
+### `update_data`
+
+The `update_data` method instructs the componet to send the complete set of public attributes to the client updateing their values, usefull to be used in combination with `@public(update=False)`:
+
+``` python
+@default.register
+class MyComponent(Component):
+    ...
+    @public(update=False)
+    def update_something(self):
+        ... # Do stuff, then
+        self.update_data()
+```
+
+### `replace_component`
+
+This removes and destroys the component in the browser and re-inserts a new copy into the DOM. Any client side state, such as cursor location in text inputs will be lost.

@@ -516,8 +516,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     def update(self):
         self.update_html(include_state=True)
 
-    def replace_component_and_state(self):
-        self.client._replaceComponentAndState(self.render())
+    def replace_component(self):
+        self.client._replaceComponent(self.render())
 
     def _call_public_method(self, request, method_name, children_state, *args):
         self._loaded_children_state = children_state
