@@ -6,7 +6,7 @@ Title: Change Log
 >
 > The intention is to stabilise the API prior to a V1 release this summer, as well as  implementing some additional functionality. After V1 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.0.3] - 2022-5-29
 
 ### Added
 
@@ -16,7 +16,7 @@ Title: Change Log
 
 - `_dispatch` client method added, this is a wrapper around the Alpine.js [`dispatch` magic](https://alpinejs.dev/magics/dispatch) allowing you to dispatch events from public server methods. These bubble up the DOM and be captured by listeners on (grand)parent components. Example: `self.client._dispatch("MyEvent", {'some_data': 123})`.
 
-- `_refresh` public method added, this simpley renders the component on the server updating the dom in the browser. This can be used in combination with `_parent` to instruct a parent component to re-render from a child components public method such as: `self.client._parent._refresh()`
+- `_refresh` public method added, this simply renders the component on the server updating the dom in the browser. This can be used in combination with `_parent` to instruct a parent component to re-render from a child components public method such as: `self.client._parent._refresh()`
 
 ### Changed
 
