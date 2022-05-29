@@ -22,6 +22,8 @@ from ..utils import camel_case_to_underscore, to_json, TetraJSONEncoder, isclass
 from ..state import encode_component, decode_component
 from ..templates import InlineOrigin, InlineTemplate
 
+from .callbacks import CallbackList
+
 
 thread_local = local()
 
@@ -504,20 +506,18 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     def update_html(self, include_state=False):
         if include_state:
-            self.client.updateHtml(self.render(data=RenderData.UPDATE))
+            self.client._updateHtml(self.render(data=RenderData.UPDATE))
         else:
-            self.client.updateHtml(self.render(data=RenderData.MAINTAIN))
-        # if include_state:
-        #     self.client.updateData({"__state": self._encoded_state()})
+            self.client._updateHtml(self.render(data=RenderData.MAINTAIN))
 
     def update_data(self):
-        self.client.updateData(self._render_data())
+        self.client._updateData(self._render_data())
 
     def update(self):
         self.update_html(include_state=True)
 
     def replace_component_and_state(self):
-        self.client.replaceComponentAndState(self.render())
+        self.client._replaceComponentAndState(self.render())
 
     def _call_public_method(self, request, method_name, children_state, *args):
         self._loaded_children_state = children_state
@@ -528,10 +528,6 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         libs = list(
             set(component._library for component in request.tetra_components_used)
         )
-
-        print([lib.js_url for lib in libs])
-        print([lib.styles_url for lib in libs])
-
         # TODO: error handling
         return JsonResponse(
             {
@@ -543,29 +539,12 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             },
             encoder=TetraJSONEncoder,
         )
+    
+    @public
+    def _refresh(self):
+        """
+        Re-render and return
+        This is just a noop as the @public decorator implements this functionality
+        """
+        pass
 
-
-class CallbackListItem:
-    def __init__(self, name, args):
-        self.name = name
-        self.args = args
-
-    def serialize(self):
-        return {
-            "callback": self.name,
-            "args": self.args,
-        }
-
-
-class CallbackList:
-    def __init__(self):
-        self.callbacks = []
-
-    def __getattr__(self, name):
-        def callback(*args):
-            self.callbacks.append(CallbackListItem(name, args))
-
-        return callback
-
-    def serialize(self):
-        return [item.serialize() for item in self.callbacks]

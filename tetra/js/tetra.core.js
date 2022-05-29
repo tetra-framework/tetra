@@ -11,6 +11,7 @@ const Tetra = {
 
   alpineComponentMixins() {
     return {
+      // Alpine.js lifecycle:
       init() {
         this.$dispatch('tetra:child-component-init', {component:  this});
         this.__initServerWatchers();
@@ -24,7 +25,9 @@ const Tetra = {
           this.__destroyInner();
         }
       },
-      updateHtml(html) {
+
+      // Tetra built ins:
+      _updateHtml(html) {
         Alpine.morph(this.$root, html, {
           updating(el, toEl, childrenOnly, skip) {
             if (toEl.hasAttribute && toEl.hasAttribute('x-data-maintain') && el.hasAttribute && el.hasAttribute('x-data')) {
@@ -48,18 +51,29 @@ const Tetra = {
           lookahead: true
         });
       },
-      updateData(data) {
+      _updateData(data) {
         for (const key in data) {
           this[key] = data[key];
         }
       },
-      removeComponent() {
-        this.$root.remove()
+      _removeComponent() {
+        this.$root.remove();
       },
-      replaceComponentAndState(html) {
+      _replaceComponent(html) {
         this.$root.insertAdjacentHTML('afterend', html);
         this.$root.remove();
       },
+      _redirect(url) {
+        document.location = url;
+      },
+      _dispatch(name, data) {
+        this.$dispatch(name, {
+          _component: this,
+          ...data
+        });
+      },
+
+      // Tetra private:
       __initServerWatchers() {
         this.__serverMethods.forEach(item => {
           if (item.watch) {
@@ -82,7 +96,7 @@ const Tetra = {
           if (comp.key) {
             this.__childComponents[comp.key] = comp;
           }
-          comp.__parentComponent = this;
+          comp._parent = this;
         },
         ['@tetra:child-component-destroy'](event) {
           event.stopPropagation();
@@ -91,7 +105,7 @@ const Tetra = {
             return
           }
           delete this.__childComponents[comp.key];
-          event.detail.component.__parentComponent = null;
+          event.detail.component._parent = null;
         }
       }
     }
@@ -208,7 +222,16 @@ const Tetra = {
         await Promise.all(loadingResources);
         if (respData.callbacks) {
           respData.callbacks.forEach((item) => {
-            component[item.callback](...item.args)
+            // iterate down path to callback
+            let obj = component;
+            item.callback.forEach((name, i) => {
+              if (i === item.callback.length-1) {
+                obj[name](...item.args);
+              } else {
+                obj = obj[name];
+                console.log(name, obj)
+              }
+            })
           })
         }
         return respData.result;

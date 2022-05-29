@@ -137,14 +137,14 @@ The public `save` method is set to `watch` the `title` and `done` public attribu
 Next, there is a public `delete_item` method, which is simply calling the delete method on the Django model instance attached to the component. However, there are a couple of other things happening too:
 
 - We have set `update=False` when creating the public method. By default, public methods will re-render the component and send the new html to the browser. However, in this instance we don't need to do this, and have therefore disabled it.
-- We call `self.client.removeComponent()`
-- `self.client` is a "callback queue" that allows you to schedule callbacks of client JavaScript methods for when the client receives a response from the method. You can call any of your custom JavaScript methods via this API. The `self.client.removeComponent()` is a method available on all components, instructing the client to remove the component from the DOM - this is ideal for when deleting items.
+- We call `self.client._removeComponent()`
+- `self.client` is a "callback queue" that allows you to schedule callbacks of client JavaScript methods for when the client receives a response from the method. You can call any of your custom JavaScript methods via this API. The `self.client._removeComponent()` is a method available on all components, instructing the client to remove the component from the DOM - this is ideal for when deleting items.
 
 ``` python
     @public(update=False)
     def delete_item(self):
         self.todo.delete()
-        self.client.removeComponent()
+        self.client._removeComponent()
 ```
 
 This component template uses some concepts we saw on the previous component, attaching public attributes to inputs with the Alpine.js `x-model` directive and event listeners with the `@event` directives. In this case we are binding `@keydown.backspace` and `@keyup.backspace` on the text input to custom JavaScript methods which we are going to define later on.

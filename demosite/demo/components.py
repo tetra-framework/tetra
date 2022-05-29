@@ -58,7 +58,7 @@ class ToDoItem(Component):
     @public(update=False)
     def delete_item(self):
         self.todo.delete()
-        self.client.removeComponent()
+        self.client._removeComponent()
 
     template: django_html = """
     <div class="list-group-item d-flex gap-1 p-1" {% ... attrs %}>
