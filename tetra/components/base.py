@@ -214,7 +214,6 @@ class Public(metaclass=PublicMeta):
         self.__call__(obj)
 
     def __call__(self, obj):
-        print(obj.__dict__ if obj else obj)
         if isinstance(obj, Public):
             # Public decorator applied multiple times - combine them
             self._update = obj._update if obj._update else self._update
