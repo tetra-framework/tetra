@@ -24,6 +24,6 @@ setuptools.setup(
         'cryptography>=37.0.1',
         'Django>=4.0.3',
         'python-dateutil>=2.8.2',
-        'sourcetypes>=0.0.2',
+        'sourcetypes>=0.0.3',
     ]
 )

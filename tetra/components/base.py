@@ -214,7 +214,19 @@ class Public(metaclass=PublicMeta):
         self.__call__(obj)
 
     def __call__(self, obj):
-        if self._update and isinstance(obj, FunctionType):
+        print(obj.__dict__ if obj else obj)
+        if isinstance(obj, Public):
+            # Public decorator applied multiple times - combine them
+            self._update = obj._update if obj._update else self._update
+            self._watch = obj._watch if obj._watch else self._watch
+            self._debounce = obj._debounce if obj._debounce else self._debounce
+            self._debounce_immediate = obj._debounce_immediate if obj._debounce_immediate else self._debounce_immediate
+            self._throttle = obj._throttle if obj._throttle else self._throttle
+            self._throttle_trailing = obj._throttle_trailing if obj._throttle_trailing else self._throttle_trailing
+            self._throttle_leading = obj._throttle_leading if obj._throttle_leading else self._throttle_leading
+            self.obj = obj.obj if obj.obj else self.obj
+        
+        elif self._update and isinstance(obj, FunctionType):
 
             @wraps(obj)
             def fn(self, *args, **kwards):
