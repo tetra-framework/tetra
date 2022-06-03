@@ -19,7 +19,7 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.9',
+    python_requires='>=3.8',
     install_requires=[
         'cryptography>=37.0.1',
         'Django>=4.0.3',
