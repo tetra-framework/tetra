@@ -126,6 +126,8 @@ class Library:
                     with open(component_path, "w") as f:
                         f.write(script)
                     rel_path = os.path.relpath(component_path, file_cache_path)
+                    if os.name == 'nt':
+                        rel_path = rel_path.replace(os.sep, '/')
                     main_imports.append(f'import {component_name} from "{rel_path}";')
                     main_scripts.append(component.make_script(component_name))
                 else:
@@ -179,6 +181,8 @@ class Library:
                     with open(component_path, "w") as f:
                         f.write(styles)
                     rel_path = os.path.relpath(component_path, file_cache_path)
+                    if os.name == 'nt':
+                        rel_path = rel_path.replace(os.sep, '/')
                     main_imports.append(f"@import '{rel_path}';")
 
             with open(main_path, "w") as f:
