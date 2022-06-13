@@ -1,11 +1,11 @@
 black
 cryptography>=37.0.1
-Django>=4.0.3
+Django>=3.2.0
 gunicorn==20.1.0
 Markdown==3.3.7
 python-dateutil>=2.8.2
 PyYAML==6.0
 setuptools
-sourcetypes>=0.0.3
+sourcetypes>=0.0.4
 twine
 wheel
