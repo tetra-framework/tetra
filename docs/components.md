@@ -136,6 +136,18 @@ class MyComponent(Component):
         self.a_value = f"Your message is: {message}"
 ```
 
+> **Node:** on Python versions prior to 3.9 the chained decorator syntax above is invalid (see [PEP 614](https://peps.python.org/pep-0614/)). On older versions you can apply the decorator multiple times with each method required:
+
+``` python
+@default.register
+class MyComponent(Component):
+    ...
+    @public.watch("message")
+    @public.debounce(200)
+    def message_change(self, value, new_value, attr):
+        self.a_value = f"Your message is: {message}"
+```
+
 ###.throttle
 
  You can add `.throttle(ms)` to throttle the calling of the method.
