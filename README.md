@@ -24,7 +24,7 @@ pip install tetraframework
 
   - Resumable server state
 
-    The components' full server state is saved between public method calls. This state is encrypted for security.
+    The component's full server state is saved between public method calls. This state is encrypted for security.
 
   - Public server methods
 
