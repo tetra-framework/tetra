@@ -2,7 +2,9 @@
 
 Full stack component framework for [Django](http://djangoproject.com) using [Alpine.js](https://alpinejs.dev)
 
-Tetra is a new full stack component framework for Django, bridging the gap between your server logic and front end presentation. It uses a public shared state and a resumable server state to enable inplace updates. It also encapsulates your Python, HTML, JavaScript and CSS into one file for close proximity of related concerns.
+**Tetra is a new Django full stack component framework that bridges the gap between your server logic and front end presentation.
+To enable in-place updates, it employs a public shared state and a resumable server state.
+It also combines your Python, HTML, JavaScript, and CSS into a single file for easy access to related concerns.**
 
 See  examples at [tetraframework.com](https://www.tetraframework.com)
 
@@ -16,23 +18,27 @@ pip install tetraframework
 
   - Django on the backend, Alpine.js in the browser
 
-    Tetra combines the power of Django with Alpine.js to make development easier and quicker.
+    Tetra combines Django's power with Alpine.js to make development easier and faster.
 
-  - Component encapsulation
 
-    Each component combines its Python, HTML, CSS and JavaScript in one place for close proximity of related code.
+  - Encapsulation of components
+
+    Each component combines its Python, HTML, CSS, and JavaScript code in one location for easy access to related code.
+
 
   - Resumable server state
 
-    The component's full server state is saved between public method calls. This state is encrypted for security.
+    Between public method calls, the component's full server state is saved. For security, this state is encrypted.
 
   - Public server methods
 
-    Methods can be made public, allowing you to easily call them from JS on the front end, resuming the component's state.
+    Methods can be made public, allowing you to easily call them from JS on the front end, resuming the state of the component's.
+
 
   - Shared public state
 
-    Attributes can be decorated to indicate they should be available in the browser as Alpine.js data objects.
+    Attributes can be decorated to indicate that they should be available as Alpine.js data objects in the browser.
+
 
   - Server "watcher" methods
 
@@ -44,7 +50,7 @@ pip install tetraframework
 
   - Component library packaging
 
-    Every component belongs to a "library"; their JS & CSS is packed together for quicker browser downloads.
+    Every component is part of a "library," and their JS and CSS are combined for faster browser downloads. 
 
   - Components with overridable blocks
 
