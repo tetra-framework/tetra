@@ -53,7 +53,7 @@ class MyComponent(Component):
 
 ## Public attributes
 
-Public attributes are created with `public()`. These are available to the JavaScript in the browser as part of the (Alpine.js data model)[https://alpinejs.dev/globals/alpine-data].
+Public attributes are created with `public()`. These are available to the JavaScript in the browser as part of the [Alpine.js data model](https://alpinejs.dev/globals/alpine-data).
 
 Values must be serializable via our extended JSON - this includes all standard JSON types as well as `datetime`, `date`, `time`, and `set`. In the browser these translate to `Date` and `Set`.
 
