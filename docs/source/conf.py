@@ -58,7 +58,9 @@ html_logo = "../../demosite/demo/static/logo.svg"
 html_title = " "
 
 html_theme_options = {
-    "source_repository": "https://github.com/samwillis/tetra/",
-    "source_branch": "main",
+    # TODO: change repo to https://github.com/samwillis/tetra
+    "source_repository": "https://github.com/nerdoc/tetra/",
+    # TODO: change branch to "main"
+    "source_branch": "sphinx",
     "source_directory": "docs/",
 }
