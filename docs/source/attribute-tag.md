@@ -72,7 +72,7 @@ Would result in:
 
 The [`if` and `else` template filters](if-else-filters) are provided to enable conditional attribute values:
 
-``` html
+``` django
 <div {% ... class="class1"|if:variable_name|else:"class2" %}>
 ```
 
