@@ -1,5 +1,3 @@
-Title: Component Libraries
-
 # Component Libraries
 
 Every Tetra component belongs to a component library. When resolving a component your apps `default` library is checked first, however, you can have infinite libraries. This is a good way to organise components into related sets. Each library's JS and CSS is packaged together.

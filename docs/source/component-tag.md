@@ -1,5 +1,3 @@
-Title: Component Tag
-
 # `@` Component Tag
 
 Tetra components are included in a template with the `{% @ [component name] %}` template tag.

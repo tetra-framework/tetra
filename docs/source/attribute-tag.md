@@ -1,5 +1,3 @@
-Title: Attribute Tag
-
 # `...` Attribute Tag
 
 HTML attributes regularly need to be set programmatically in a template. To aid in this, Tetra has the "attribute tag", available as `...` (three periods) as it "unpacks" the arguments provided to it as HTML attributes.

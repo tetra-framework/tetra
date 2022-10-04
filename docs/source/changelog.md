@@ -1,5 +1,3 @@
-Title: Change Log
-
 # Change Log
 
 > **Note:** Tetra is still early in its development, and we can make no promises about API stability at this stage.

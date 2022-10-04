@@ -1,5 +1,3 @@
-Title: Installation
-
 # Installation
 
 As a component framework for Django, Tetra requires that you have a Django project setup before installing. [Follow the Django introduction tutorial](https://docs.djangoproject.com/en/4.0/intro/tutorial01/).
