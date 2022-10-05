@@ -1,0 +1,6 @@
+-r ../dev-requirements.txt
+sphinx
+sphinx-autobuild
+#sphinxcontrib-django2
+furo
+myst-parser
