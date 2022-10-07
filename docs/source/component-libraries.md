@@ -1,5 +1,3 @@
-Title: Component Libraries
-
 # Component Libraries
 
 Every Tetra component belongs to a component library. When resolving a component your apps `default` library is checked first, however, you can have infinite libraries. This is a good way to organise components into related sets. Each library's JS and CSS is packaged together.
@@ -34,7 +32,7 @@ class AnotherComponent(Component):
 
 ## Splitting up component files
 
-You may find that when you have multiple components and component libraries you will want to split the files up to organise them better. As noted above, as long as your `Library` instances are in `yourapp.componets` or `yourapp.tetra_componets` you can place the components anywhere. However, this is the recommended way to organise them:
+You may find that when you have multiple components and component libraries you will want to split the files up to organise them better. As noted above, as long as your `Library` instances are in `yourapp.components` or `yourapp.tetra_components` you can place the components anywhere. However, this is the recommended way to organise them:
 
 With a `components` package, your `__init__.py` needs to have all your `Library` instances imported and available:
 
