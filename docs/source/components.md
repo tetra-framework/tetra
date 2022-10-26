@@ -146,7 +146,7 @@ class MyComponent(Component):
         self.a_value = f"Your message is: {message}"
 ```
 
-###.throttle
+### .throttle
 
  You can add `.throttle(ms)` to throttle the calling of the method.
 
