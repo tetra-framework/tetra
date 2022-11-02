@@ -1,5 +1,3 @@
-Title: Introduction
-
 # Introduction
 
 Tetra is a full stack component framework for [Django](https://docs.djangoproject.com) using [Alpine.js](https://alpinejs.dev), bridging the gap between your server logic and front end presentation. It is built on a couple of key principles:

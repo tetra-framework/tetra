@@ -1,5 +1,3 @@
-Title: if and else Template Filters
-
 # `if` and `else` Template Filters
 
 The `if` and `else` template filters are provided to enable conditional attribute values with the [`...` attribute template tag](attribute-tag):

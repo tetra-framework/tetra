@@ -1,10 +1,8 @@
-Title: Attribute Tag
-
 # `...` Attribute Tag
 
 HTML attributes regularly need to be set programmatically in a template. To aid in this, Tetra has the "attribute tag", available as `...` (three periods) as it "unpacks" the arguments provided to it as HTML attributes.
 
-The attributes tag is automaticity available in you component templates. In other templates be sure to `{% load tetra %}`.
+The attributes tag is automaticity available in your component templates. In other templates be sure to `{% load tetra %}`.
 
 ``` django
 {% load tetra %}
@@ -74,7 +72,7 @@ Would result in:
 
 The [`if` and `else` template filters](if-else-filters) are provided to enable conditional attribute values:
 
-``` html
+``` django
 <div {% ... class="class1"|if:variable_name|else:"class2" %}>
 ```
 

@@ -1,5 +1,3 @@
-Title: Components
-
 # Components
 
 A component is created as a subclass of `BasicComponent` or `Component` and registered to a library with the `@libraryname.register` decorator, see [component libraries](component-libraries).
@@ -53,9 +51,9 @@ class MyComponent(Component):
 
 ## Public attributes
 
-Public attributes are created with `public()`. These are available to the JavaScript in the browser as part of the (Alpine.js data model)[https://alpinejs.dev/globals/alpine-data].
+Public attributes are created with `public()`. These are available to the JavaScript in the browser as part of the [Alpine.js data model](https://alpinejs.dev/globals/alpine-data).
 
-Values must be serialisable via our extended JSON - this includes all standard JSON types as well as `datetime`, `date`, `time`, and `set`. In the browser these translate to `Date` and `Set`.
+Values must be serializable via our extended JSON - this includes all standard JSON types as well as `datetime`, `date`, `time`, and `set`. In the browser these translate to `Date` and `Set`.
 
 ``` python
 @default.register
@@ -148,7 +146,7 @@ class MyComponent(Component):
         self.a_value = f"Your message is: {message}"
 ```
 
-###.throttle
+### .throttle
 
  You can add `.throttle(ms)` to throttle the calling of the method.
 

@@ -1,5 +1,3 @@
-Title: Including Tetra CSS and JS
-
 # Including Tetra CSS and JS
 
 When processing a `request`, Tetra keeps track of which components have been used on a  page. It then needs to inject the component's CSS and JavaScript into the page. You mark where this is to happen with the `{% tetra_styles %}` and `{% tetra_scripts %}` tags. They should be included in your HTML `<head>`as below.

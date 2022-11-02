@@ -1,5 +1,3 @@
-Title: Basic Components
-
 # Basic Components
 
 `BasicComponent` supports CSS, but not JS, Alpine.js, or any public attributes or methods. Basic Components should be used for encapsulating reusable components that have no direct client side interaction and are useful for composing within other components.
