@@ -75,7 +75,7 @@ class Library:
         def dec(cls):
             if hasattr(cls, "_library") and cls._library:
                 raise ComponentLibraryException(
-                    f"Component {component.__name__} allready registered to a library."
+                    f"Component {component.__name__} already registered to a library."
                 )
             component._library = self
             component._name = name

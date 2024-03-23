@@ -135,10 +135,10 @@ class StatePickler(pickle.Pickler):
             return None
 
         # Template loaders are not pickleable, they are set as the 'loader' property
-        # on block.obigin which is an Origin obj. We set `obj.loader = None` to
+        # on block.origin which is an Origin obj. We set `obj.loader = None` to
         # stop it from erroring.
         # This will make error messages about templates a little less helpfull, however
-        # we have allready rendered the template once and so it's not likely we will get
+        # we have already rendered the template once and so it's not likely we will get
         # an exception.
         if isinstance(obj, Origin):
             obj.loader = None

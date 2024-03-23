@@ -4,7 +4,7 @@ Title: Attribute Tag
 
 HTML attributes regularly need to be set programmatically in a template. To aid in this, Tetra has the "attribute tag", available as `...` (three periods) as it "unpacks" the arguments provided to it as HTML attributes.
 
-The attributes tag is automaticity available in you component templates. In other templates be sure to `{% load tetra %}`.
+The attributes tag is automaticity available in your component templates. In other templates be sure to `{% load tetra %}`.
 
 ``` django
 {% load tetra %}
