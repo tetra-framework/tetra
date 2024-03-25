@@ -130,8 +130,8 @@ class Library:
                         rel_path = rel_path.replace(os.sep, '/')
                     main_imports.append(f'import {component_name} from "{rel_path}";')
                     main_scripts.append(component.make_script(component_name))
-                else:
-                    main_scripts.append(component.make_script())
+                # else:
+                #     main_scripts.append(component.make_script())
 
             with open(main_path, "w") as f:
                 f.write("\n".join(main_imports))
