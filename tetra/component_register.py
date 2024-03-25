@@ -41,7 +41,7 @@ def find_component_libraries():
 
 
 def resolve_component(context, name):
-    template = context.render_context.template
+    template = context.template
     current_app = None
     name_parts = name.split(".")
 
