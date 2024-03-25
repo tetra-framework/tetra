@@ -49,7 +49,8 @@ class ToDoItem(Component):
         self.title = todo.title
         self.done = todo.done
 
-    @public.watch("title", "done").debounce(200)
+    @public.watch("title", "done")
+    @public.debounce(200)
     def save(self, value, old_value, attr):
         self.todo.title = self.title
         self.todo.done = self.done
@@ -58,7 +59,7 @@ class ToDoItem(Component):
     @public(update=False)
     def delete_item(self):
         self.todo.delete()
-        self.client.removeComponent()
+        self.client._removeComponent()
 
     template: django_html = """
     <div class="list-group-item d-flex gap-1 p-1" {% ... attrs %}>
@@ -137,7 +138,8 @@ class reactive_search(Component):
     query = public("")
     results = []
 
-    @public.watch("query").throttle(200, leading=False, trailing=True)
+    @public.watch("query")
+    @public.throttle(200, leading=False, trailing=True)
     def watch_query(self, value, old_value, attr):
         if self.query:
             self.results = itertools.islice(

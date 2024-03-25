@@ -22,6 +22,8 @@ from ..utils import camel_case_to_underscore, to_json, TetraJSONEncoder, isclass
 from ..state import encode_component, decode_component
 from ..templates import InlineOrigin, InlineTemplate
 
+from .callbacks import CallbackList
+
 
 thread_local = local()
 
@@ -212,7 +214,18 @@ class Public(metaclass=PublicMeta):
         self.__call__(obj)
 
     def __call__(self, obj):
-        if self._update and isinstance(obj, FunctionType):
+        if isinstance(obj, Public):
+            # Public decorator applied multiple times - combine them
+            self._update = obj._update if obj._update else self._update
+            self._watch = obj._watch if obj._watch else self._watch
+            self._debounce = obj._debounce if obj._debounce else self._debounce
+            self._debounce_immediate = obj._debounce_immediate if obj._debounce_immediate else self._debounce_immediate
+            self._throttle = obj._throttle if obj._throttle else self._throttle
+            self._throttle_trailing = obj._throttle_trailing if obj._throttle_trailing else self._throttle_trailing
+            self._throttle_leading = obj._throttle_leading if obj._throttle_leading else self._throttle_leading
+            self.obj = obj.obj if obj.obj else self.obj
+        
+        elif self._update and isinstance(obj, FunctionType):
 
             @wraps(obj)
             def fn(self, *args, **kwards):
@@ -459,8 +472,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     def _render_data(self):
         data = self._data()
-        if self._public_methods:
-            data["__state"] = self._encoded_state()
+        data["__state"] = self._encoded_state()
         return data
 
     def _add_to_context(self, context):
@@ -505,20 +517,18 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     def update_html(self, include_state=False):
         if include_state:
-            self.client.updateHtml(self.render(data=RenderData.UPDATE))
+            self.client._updateHtml(self.render(data=RenderData.UPDATE))
         else:
-            self.client.updateHtml(self.render(data=RenderData.MAINTAIN))
-        # if include_state:
-        #     self.client.updateData({"__state": self._encoded_state()})
+            self.client._updateHtml(self.render(data=RenderData.MAINTAIN))
 
     def update_data(self):
-        self.client.updateData(self._render_data())
+        self.client._updateData(self._render_data())
 
     def update(self):
         self.update_html(include_state=True)
 
-    def replace_component_and_state(self):
-        self.client.replaceComponentAndState(self.render())
+    def replace_component(self):
+        self.client._replaceComponent(self.render())
 
     def _call_public_method(self, request, method_name, children_state, *args):
         self._loaded_children_state = children_state
@@ -529,10 +539,6 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         libs = list(
             set(component._library for component in request.tetra_components_used)
         )
-
-        print([lib.js_url for lib in libs])
-        print([lib.styles_url for lib in libs])
-
         # TODO: error handling
         return JsonResponse(
             {
@@ -544,29 +550,12 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             },
             encoder=TetraJSONEncoder,
         )
+    
+    @public
+    def _refresh(self):
+        """
+        Re-render and return
+        This is just a noop as the @public decorator implements this functionality
+        """
+        pass
 
-
-class CallbackListItem:
-    def __init__(self, name, args):
-        self.name = name
-        self.args = args
-
-    def serialize(self):
-        return {
-            "callback": self.name,
-            "args": self.args,
-        }
-
-
-class CallbackList:
-    def __init__(self):
-        self.callbacks = []
-
-    def __getattr__(self, name):
-        def callback(*args):
-            self.callbacks.append(CallbackListItem(name, args))
-
-        return callback
-
-    def serialize(self):
-        return [item.serialize() for item in self.callbacks]

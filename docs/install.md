@@ -7,7 +7,7 @@ As a component framework for Django, Tetra requires that you have a Django proje
 Once ready install Tetra from PyPi:
 
 ```
-$ pip install tetra-framework
+$ pip install tetraframework
 ```
 
 > **Note:** As Tetra is still being developed it has only been tested with Python 3.9 and 3.10, we intend to support at least 3.8 before a V1 release.
@@ -62,9 +62,9 @@ $ npm init  # If you don't already have a npm package.json and ./node_modules di
 $ npm install esbuild
 ```
 
-## Modify base template
-
 By default, Tetra will expect the esbuild binary to be available as `[projectroot]/node_modules/.bin/esbuild`. If you have it installed in a different location you can set `TETRA_ESBUILD_PATH` in your Django `settings.py` file to the correct path.
+
+## Modify base template
 
 Next, ensure that you have included the `tetra_styles` and `tetra_scripts` tags in your base HTML template. These instruct the `TetraMiddleware` where to insert the CSS and JavaScript for the components used on the page:
 

@@ -13,7 +13,10 @@ class ToDoList(Component):
 
     @public
     def add_todo(self, title):
-        todo = ToDo(title=title)
+        todo = ToDo(
+            title=title,
+            session_key=self.request.session.session_key,
+        )
         todo.save()
         self.title = ""
 
@@ -26,7 +29,7 @@ class ToDoList(Component):
         </div>
         <div class="list-group">
             {% for todo in todos %}
-                {% @ to_do_item todo=todo attrs: key=todo.id / %}
+                {% @ to_do_item todo=todo key=todo.id / %}
             {% endfor %}
         </div>
     </div>
@@ -42,8 +45,8 @@ class ToDoItem(Component):
         self.title = todo.title
         self.done = todo.done
 
-    @public.watch('title', 'done').debounce(200)
-    def save(self, value, old_value):
+    @public.watch("title", "done").debounce(200)
+    def save(self, value, old_value, attr):
         self.todo.title = self.title
         self.todo.done = self.done
         self.todo.save()
@@ -51,10 +54,10 @@ class ToDoItem(Component):
     @public(update=False)
     def delete_item(self):
         self.todo.delete()
-        self.client.removeComponent()
+        self.client._removeComponent()
 
     template: django_html = """
-    <div class="list-group-item d-flex gap-1 p-1">
+    <div class="list-group-item d-flex gap-1 p-1" {% ... attrs %}>
         <label class="align-middle px-2 d-flex">
             <input class="form-check-input m-0 align-self-center" type="checkbox"
                 x-model="done">
@@ -73,7 +76,7 @@ class ToDoItem(Component):
         </button>
     </div>
     """
-    
+
     script: javascript = """
     export default {
         lastTitleValue: "",

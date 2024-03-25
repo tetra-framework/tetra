@@ -53,7 +53,7 @@
             this.__destroyInner();
           }
         },
-        updateHtml(html) {
+        _updateHtml(html) {
           Alpine.morph(this.$root, html, {
             updating(el, toEl, childrenOnly, skip) {
               if (toEl.hasAttribute && toEl.hasAttribute("x-data-maintain") && el.hasAttribute && el.hasAttribute("x-data")) {
@@ -76,17 +76,25 @@
             lookahead: true
           });
         },
-        updateData(data) {
+        _updateData(data) {
           for (const key in data) {
             this[key] = data[key];
           }
         },
-        removeComponent() {
+        _removeComponent() {
           this.$root.remove();
         },
-        replaceComponentAndState(html) {
+        _replaceComponentAndState(html) {
           this.$root.insertAdjacentHTML("afterend", html);
           this.$root.remove();
+        },
+        _redirect(url) {
+          document.location = url;
+        },
+        _dispatch(name, data) {
+          this.$dispatch(name, __spreadValues({
+            _component: this
+          }, data));
         },
         __initServerWatchers() {
           this.__serverMethods.forEach((item) => {
@@ -110,7 +118,7 @@
             if (comp.key) {
               this.__childComponents[comp.key] = comp;
             }
-            comp.__parentComponent = this;
+            comp._parent = this;
           },
           ["@tetra:child-component-destroy"](event) {
             event.stopPropagation();
@@ -119,7 +127,7 @@
               return;
             }
             delete this.__childComponents[comp.key];
-            event.detail.component.__parentComponent = null;
+            event.detail.component._parent = null;
           }
         }
       };
@@ -221,7 +229,15 @@
           await Promise.all(loadingResources);
           if (respData.callbacks) {
             respData.callbacks.forEach((item) => {
-              component[item.callback](...item.args);
+              let obj = component;
+              item.callback.forEach((name, i) => {
+                if (i === item.callback.length - 1) {
+                  obj[name](...item.args);
+                } else {
+                  obj = obj[name];
+                  console.log(name, obj);
+                }
+              });
             });
           }
           return respData.result;
