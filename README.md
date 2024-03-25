@@ -1,5 +1,7 @@
 # Tetra
 
+> ⚠️ This is a fork of Sam Willis' tetraframework that fixes some small errors of the original, which seems to be unmaintained/abandoned (Author does not respond since 6/2022 (time of writing this)).
+
 Full stack component framework for [Django](http://djangoproject.com) using [Alpine.js](https://alpinejs.dev)
 
 Tetra is a new full stack component framework for Django, bridging the gap between your server logic and front end presentation. It uses a public shared state and a resumable server state to enable inplace updates. It also encapsulates your Python, HTML, JavaScript and CSS into one file for close proximity of related concerns.
