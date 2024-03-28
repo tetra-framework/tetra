@@ -188,6 +188,22 @@ class MyComponent(Component):
     """
 ```
 
+You can easily check if a block is "filled" with content by using `{% if blocks.<block name> %}`. With this, you can
+bypass wrapping elements when a block was not used:
+
+``` django
+{% if blocks.title %}
+<div class="card-header">
+  <h3 class="card-title">
+    {% block title %}{% endblock %}
+  </h3>
+  <div class="card-actions">
+    {% block actions %}{% endblock %}
+  </div>
+</div>
+{% endif %}
+```
+
 ## Client side JavaScript
 
 The `script` attribute holds the client side Alpine.js JavaScript for your component. It should use `export default` to export an object forming the [Alpine.js component "Data"](https://alpinejs.dev/globals/alpine-data). This will be extended with your public attributes and methods.
