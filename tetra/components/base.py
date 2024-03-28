@@ -159,7 +159,7 @@ class BasicComponent(object, metaclass=BasicComponentMetaClass):
     def _call_load(self, *args, **kwargs):
         self.load(*args, **kwargs)
 
-    def load(self) -> None:
+    def load(self, *args, **kwargs):
         pass
 
     def _add_to_context(self, context):
