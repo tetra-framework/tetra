@@ -131,6 +131,11 @@ class BasicComponent(object, metaclass=BasicComponentMetaClass):
         return False
 
     @classmethod
+    def make_script(cls, component_var=None) -> str:
+        """In BasicComponent, always returns an empty string."""
+        return ""
+
+    @classmethod
     def has_styles(cls):
         return bool(hasattr(cls, "style") and cls.style)
 
@@ -390,6 +395,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     @classmethod
     def make_script(cls, component_var=None):
+        """Returns a rendered js script for a component to be imported dynamically via
+        Alpine.init()"""
         component_server_methods = []
         for method in cls._public_methods:
             method_data = copy(method)
