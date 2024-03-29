@@ -32,7 +32,7 @@ def find_component_libraries():
                 if isinstance(member, Library):
                     if name in libraries[app.label]:
                         raise ComponentLibraryException(
-                            f'Library named "{name}" allready in app "{app.label}".'
+                            f'Library named "{name}" already in app "{app.label}".'
                         )
                     libraries[app.label][name] = member
                     member.name = name

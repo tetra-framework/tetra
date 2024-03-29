@@ -85,7 +85,7 @@ It is  also possible to explicitly pass all template context to a component with
 
 This should be used sparingly as the whole template context will be saved with the component's saved (encrypted) state, and sent to the client, see [state security](state-security).
 
-In general, if the value is something that is needed for the component to function (and be available to methods or be "public") it should be passed as an *argument* [(see above)](#passing-attributes). Passing context is ideal for composing your components with inner content passed down from an outer template, see [(see passing blocks)](#passing-blocks).
+In general, if the value is something that is needed for the component to function (and be available to methods or be "public") it should be passed as an *argument* [(see above)](#passing-attributes). Passing context is ideal for composing your components with inner content passed down from an outer template [(see passing blocks)](#passing-blocks).
 
 ## Passing Blocks
 
