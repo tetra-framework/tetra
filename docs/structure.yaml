@@ -13,4 +13,5 @@
 - Alpine.js Magics:
   - magic-static: "`$static`"
 - state-security: State Security
+- contribute: Contributing
 - changelog: Change Log
