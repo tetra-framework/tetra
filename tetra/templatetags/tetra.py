@@ -262,7 +262,6 @@ class ComponentNode(template.Node):
                 {k: v.resolve(context) for k, v in self.context_args.items()}
             )
 
-        
         # add "blocks" dict to context, to easily filter out if each block is available
         resolved_context["blocks"] = {}
         for block in self.blocks:

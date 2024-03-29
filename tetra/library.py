@@ -56,17 +56,13 @@ class Library:
     def js_url(self):
         with open(f"{self.js_path}.filename") as f:
             js_filename = f.read()
-        return static(
-            os.path.join(self.app.label, "tetra", self.name, js_filename)
-        )
+        return static(os.path.join(self.app.label, "tetra", self.name, js_filename))
 
     @cached_property
     def styles_url(self):
         with open(f"{self.styles_path}.filename") as f:
             styles_filename = f.read()
-        return static(
-            os.path.join(self.app.label, "tetra", self.name, styles_filename)
-        )
+        return static(os.path.join(self.app.label, "tetra", self.name, styles_filename))
 
     def register(self, component=None, name=None):
         if not name:
@@ -110,7 +106,7 @@ class Library:
         main_scripts = []
         files_to_remove = []
         main_path = os.path.join(file_cache_path, self.js_filename)
-        meta_filename = f'{self.js_filename}__meta.json'
+        meta_filename = f"{self.js_filename}__meta.json"
         meta_path = os.path.join(file_cache_path, meta_filename)
 
         try:
@@ -126,8 +122,8 @@ class Library:
                     with open(component_path, "w") as f:
                         f.write(script)
                     rel_path = os.path.relpath(component_path, file_cache_path)
-                    if os.name == 'nt':
-                        rel_path = rel_path.replace(os.sep, '/')
+                    if os.name == "nt":
+                        rel_path = rel_path.replace(os.sep, "/")
                     main_imports.append(f'import {component_name} from "{rel_path}";')
                     main_scripts.append(component.make_script(component_name))
                 else:
@@ -150,14 +146,14 @@ class Library:
         finally:
             for path in files_to_remove:
                 os.remove(path)
-        
+
         with open(meta_path) as f:
             meta = json.load(f)
-        for path, data in meta['outputs'].items():
-            if data.get('entryPoint', None):
+        for path, data in meta["outputs"].items():
+            if data.get("entryPoint", None):
                 out_path = path
                 break
-        
+
         with open(f"{self.js_path}.filename", "w") as f:
             f.write(os.path.basename(out_path))
 
@@ -165,7 +161,7 @@ class Library:
         main_imports = []
         files_to_remove = []
         main_path = os.path.join(file_cache_path, self.styles_filename)
-        meta_filename = f'{self.styles_filename}__meta.json'
+        meta_filename = f"{self.styles_filename}__meta.json"
         meta_path = os.path.join(file_cache_path, meta_filename)
 
         try:
@@ -181,8 +177,8 @@ class Library:
                     with open(component_path, "w") as f:
                         f.write(styles)
                     rel_path = os.path.relpath(component_path, file_cache_path)
-                    if os.name == 'nt':
-                        rel_path = rel_path.replace(os.sep, '/')
+                    if os.name == "nt":
+                        rel_path = rel_path.replace(os.sep, "/")
                     main_imports.append(f"@import '{rel_path}';")
 
             with open(main_path, "w") as f:
@@ -209,13 +205,13 @@ class Library:
         finally:
             for path in files_to_remove:
                 os.remove(path)
-        
+
         with open(meta_path) as f:
             meta = json.load(f)
-        for path, data in meta['outputs'].items():
-            if data.get('entryPoint', None):
+        for path, data in meta["outputs"].items():
+            if data.get("entryPoint", None):
                 out_path = path
                 break
-        
+
         with open(f"{self.styles_path}.filename", "w") as f:
             f.write(os.path.basename(out_path))

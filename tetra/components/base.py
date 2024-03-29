@@ -224,12 +224,24 @@ class Public(metaclass=PublicMeta):
             self._update = obj._update if obj._update else self._update
             self._watch = obj._watch if obj._watch else self._watch
             self._debounce = obj._debounce if obj._debounce else self._debounce
-            self._debounce_immediate = obj._debounce_immediate if obj._debounce_immediate else self._debounce_immediate
+            self._debounce_immediate = (
+                obj._debounce_immediate
+                if obj._debounce_immediate
+                else self._debounce_immediate
+            )
             self._throttle = obj._throttle if obj._throttle else self._throttle
-            self._throttle_trailing = obj._throttle_trailing if obj._throttle_trailing else self._throttle_trailing
-            self._throttle_leading = obj._throttle_leading if obj._throttle_leading else self._throttle_leading
+            self._throttle_trailing = (
+                obj._throttle_trailing
+                if obj._throttle_trailing
+                else self._throttle_trailing
+            )
+            self._throttle_leading = (
+                obj._throttle_leading
+                if obj._throttle_leading
+                else self._throttle_leading
+            )
             self.obj = obj.obj if obj.obj else self.obj
-        
+
         elif self._update and isinstance(obj, FunctionType):
 
             @wraps(obj)
@@ -510,11 +522,11 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         if data == RenderData.UPDATE and self._leaded_from_state:
             data_json = escape(to_json(self._render_data()))
             old_data_json = escape(to_json(self._leaded_from_state_data))
-            extra_tags.append(f"x-data=\"\"")
+            extra_tags.append(f'x-data=""')
             extra_tags.append(f'x-data-update="{data_json}"')
             extra_tags.append(f'x-data-update-old="{old_data_json}"')
         elif data == RenderData.MAINTAIN:
-            extra_tags.append(f"x-data=\"\"")
+            extra_tags.append(f'x-data=""')
             extra_tags.append(f"x-data-maintain")
         else:
             data_json = escapejs(to_json(self._render_data()))
@@ -557,7 +569,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             },
             encoder=TetraJSONEncoder,
         )
-    
+
     @public
     def _refresh(self):
         """
@@ -565,4 +577,3 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         This is just a noop as the @public decorator implements this functionality
         """
         pass
-

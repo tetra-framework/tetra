@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("demo", "0002_todo_sessionid_alter_todo_added"),
     ]

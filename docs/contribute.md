@@ -21,3 +21,9 @@ git clone git@github.com:tetra-framework/tetra.git
 cd tetra
 python -m pip install -e .
 ```
+
+
+### Code style
+
+Please only write [Black](https://github.com/psf/black) styled code. You can automate that by using your IDE's save
+trigger feature.

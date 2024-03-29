@@ -54,7 +54,7 @@ def doc(request, slug="introduction"):
     with open(settings.BASE_DIR.parent / "docs" / f"{slug}.md") as f:
         md = markdown.Markdown(
             extensions=[
-                "extra", 
+                "extra",
                 "meta",
                 TocExtension(permalink="#", toc_depth=3),
             ]
@@ -69,6 +69,6 @@ def doc(request, slug="introduction"):
             "content": content,
             "toc": md.toc,
             "active_slug": slug,
-            "title": ' '.join(md.Meta["title"]),
+            "title": " ".join(md.Meta["title"]),
         },
     )

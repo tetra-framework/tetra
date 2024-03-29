@@ -7,6 +7,7 @@ from pathlib import Path
 # Add parent dir to PYTHONPATH so that 'tetra' is available
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
+
 def main():
     """Run administrative tasks."""
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "demosite.settings")

@@ -1,5 +1,5 @@
 class CallbackPath:
-    def __init__(self, root, path=('',)):
+    def __init__(self, root, path=("",)):
         self.root = root
         self.path = path
 
@@ -10,10 +10,12 @@ class CallbackPath:
         return self.__getattr__(name)
 
     def __call__(self, *args):
-        self.root.callbacks.append({
-            "callback": self.path,
-            "args": args,
-        })
+        self.root.callbacks.append(
+            {
+                "callback": self.path,
+                "args": args,
+            }
+        )
 
 
 class CallbackList:

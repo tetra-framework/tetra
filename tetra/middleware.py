@@ -1,4 +1,4 @@
-from django.middleware.csrf import  get_token
+from django.middleware.csrf import get_token
 from .utils import render_scripts, render_styles
 
 

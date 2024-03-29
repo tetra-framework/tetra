@@ -18,7 +18,6 @@ def tetra_version():
 def include_source(file_name, start=None, end=None):
     error = None
     for origin in Loader(None).get_template_sources(file_name):
-
         try:
             with open(origin.name) as f:
                 text = f.read()
@@ -36,7 +35,6 @@ def include_source(file_name, start=None, end=None):
 def include_source_part(file_name, part=0):
     error = None
     for origin in Loader(None).get_template_sources(file_name):
-
         try:
             with open(origin.name) as f:
                 text = f.read().split("# SPLIT")
