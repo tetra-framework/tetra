@@ -1,4 +1,6 @@
-Title: Attribute Tag
+---
+title: "The `...` Attribute"
+---
 
 # `...` Attribute Tag
 
@@ -12,7 +14,7 @@ The attributes tag is automaticity available in your component templates. In oth
   checked=a_boolian_varible %}>
 ```
 
-All Tetra components have a `attrs` context available, which is a `dict` of attributes that have been passed to the component when it is included in a template with the [`@` tag](component-tag). It can be unpacked as HTML attributes on your root node:
+All Tetra components have an `attrs` context available, which is a `dict` of attributes that have been passed to the component when it is included in a template with the [`@` tag](component-tag.md). It can be unpacked as HTML attributes on your root node:
 
 ``` django
 <div {% ... attrs %}>
@@ -68,14 +70,15 @@ Would result in:
 <div style="font-size:2em; color:blue;">
 ```
 
-> **Note:** Tetra currently does not understand that a style property can be applied in multiple ways. Therefore, if you pass both `margin-top: 1em` and `margin: 2em 0 0 0`, both will appear in the final HTML style tag, with the final property taking precedence in the browser.
+!!! note
+    Tetra currently does not understand that a style property can be applied in multiple ways. Therefore, if you pass both `margin-top: 1em` and `margin: 2em 0 0 0`, both will appear in the final HTML style tag, with the final property taking precedence in the browser.
 
 ## Conditional values
 
-The [`if` and `else` template filters](if-else-filters) are provided to enable conditional attribute values:
+The [`if` and `else` template filters](if-else-filters.md) are provided to enable conditional attribute values:
 
 ``` html
 <div {% ... class="class1"|if:variable_name|else:"class2" %}>
 ```
 
-See the documentation for the [`if` and `else` template filters](if-else-filters).
+See the documentation for the [`if` and `else` template filters](if-else-filters.md).

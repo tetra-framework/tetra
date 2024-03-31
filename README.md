@@ -6,10 +6,10 @@ Tetra is a new full stack component framework for Django, bridging the gap betwe
 
 See  examples at [tetraframework.com](https://www.tetraframework.com)
 
-Read the [Documentation](https://www.tetraframework.com/docs)
+Read the [Documentation](https://tetra.readthedocs.org)
 
 ```
-pip install tetraframework
+pip install tetra
 ```
 
 ## What does Tetra do?
