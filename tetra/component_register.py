@@ -63,7 +63,7 @@ def resolve_component(context, name):
         and template.origin
         and hasattr(template.origin, "component")
     ):
-        #  Its a template on a component
+        #  It's a template on a component
         module = inspect.getmodule(template.origin.component)
         module_name = module.__name__
         for app_conf in apps.get_app_configs():
@@ -71,7 +71,7 @@ def resolve_component(context, name):
                 current_app = app_conf
 
     elif isinstance(template, Template) and template.origin and template.origin.name:
-        # Its a normal template from a file
+        # It's a normal template from a file
         file_name = template.origin.name
         for app_conf in apps.get_app_configs():
             if file_name.startswith(app_conf.path):
