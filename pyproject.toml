@@ -26,12 +26,10 @@ dependencies = [
 ]
 requires-python = ">=3.8"
 
-
 [project.urls]
 Homepage = "https://tetraframework.com"
 Documentation = "https://tetra.readthedocs.io"
 Repository = "https://github.com/tetra-framework/tetra"
-
 
 [project.optional-dependencies]
 dev = [
@@ -40,13 +38,15 @@ dev = [
     "pytest",
     "pre-commit",
     "black",
-    #"gunicorn==20.1.0",
     "markdown>=3.3.7",
     "python-dateutil>=2.8.2",
     "PyYAML>=6.0",
     "sourcetypes>=0.0.4",
 ]
-
+demo = [
+    "gunicorn",
+    "django-environ"
+]
 
 [tool.setuptools.dynamic]
 version = {attr = "tetra.__version__"}
