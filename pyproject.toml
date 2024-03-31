@@ -24,11 +24,12 @@ dependencies = [
     "Django>=3.2.0",
     "python-dateutil>=2.8.2",
 ]
+requires-python = ">=3.8"
 
 
 [project.urls]
 Homepage = "https://tetraframework.com"
-Documentation = "https://tetraframework.readthedocs.io"
+Documentation = "https://tetra.readthedocs.io"
 Repository = "https://github.com/tetra-framework/tetra"
 
 
