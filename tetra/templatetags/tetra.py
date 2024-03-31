@@ -263,9 +263,10 @@ class ComponentNode(template.Node):
             )
 
         # add "blocks" dict to context, to easily filter out if each block is available
-        resolved_context["blocks"] = {}
-        for block in self.blocks:
-            resolved_context["blocks"][block] = True
+        if self.blocks:
+            resolved_context["blocks"] = {}
+            for block in self.blocks:
+                resolved_context["blocks"][block] = True
 
         blocks = copy.copy(self.blocks)
         if blocks and BLOCK_CONTEXT_KEY in context.render_context:
