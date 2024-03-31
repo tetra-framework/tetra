@@ -44,6 +44,8 @@ dev = [
     "sourcetypes>=0.0.4",
 ]
 demo = [
+    "PyYAML>=6.0",
+    "markdown>=3.3.7",
     "gunicorn",
     "django-environ"
 ]
