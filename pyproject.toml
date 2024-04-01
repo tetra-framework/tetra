@@ -47,7 +47,8 @@ demo = [
     "PyYAML>=6.0",
     "markdown>=3.3.7",
     "gunicorn",
-    "django-environ"
+    "django-environ",
+    "whitenoise>=6.6.0",
 ]
 
 [tool.setuptools.dynamic]
