@@ -1,13 +1,15 @@
+import logging
+
 from django.apps import apps
 from importlib import import_module
 from django.template import Template
 import inspect
 from collections import defaultdict
 
-from .components import Component
 from .components.base import InlineTemplate, ComponentNotFound
 from .library import Library, ComponentLibraryException
 
+logger = logging.getLogger(__file__)
 
 libraries = defaultdict(dict)
 find_libraries_done = False
@@ -22,11 +24,15 @@ def find_component_libraries():
         return
     for component_module_name in component_module_names:
         for app in apps.get_app_configs():
+            module_name = f"{app.module.__name__}.{component_module_name}"
             try:
-                component_module = import_module(
-                    f"{app.module.__name__}.{component_module_name}"
-                )
-            except ModuleNotFoundError:
+                component_module = import_module(module_name)
+            except ModuleNotFoundError as e:
+                if e.msg != f"No module named '{module_name}'":
+                    logger.error(f"Error importing: {module_name}: {e}")
+                continue
+            except Exception as e:
+                logger.error(e)
                 continue
             for name, member in inspect.getmembers(component_module):
                 if isinstance(member, Library):
