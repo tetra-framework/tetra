@@ -29,6 +29,10 @@ def find_component_libraries():
             try:
                 component_module = import_module(module_name)
             except ModuleNotFoundError as e:
+                # this is  a bit risky to compare the error msg's output, but it's the
+                # only way to check if the import error is due to a direct import
+                # error of the module or if the import was ok, but the imported
+                # module itself raises an exception.
                 if e.msg != f"No module named '{module_name}'":
                     logger.error(f"Error importing: {module_name}: {e}")
                 continue
