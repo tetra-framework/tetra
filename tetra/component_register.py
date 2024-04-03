@@ -18,6 +18,7 @@ component_module_names = ["components", "tetra_components"]
 
 
 def find_component_libraries():
+    """Finds libraries in component modules of all installed django apps."""
     global libraries
     global find_libraries_done
     if find_libraries_done:
@@ -64,6 +65,8 @@ def resolve_component(context, name):
             '"[app_name.][library_name.]component_name".'
         )
 
+    # if component is called with 2 parts, we need a current_app context to find the
+    # component
     if (
         isinstance(template, InlineTemplate)
         and template.origin
