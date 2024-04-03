@@ -104,4 +104,16 @@ def resolve_component(context, name):
         except KeyError:
             pass
 
-    raise ComponentNotFound(f'Component "{name}" not found.')
+    # if no method lead to finding a component successfully, give the user a hint
+    # which components are available.
+    components = []
+    for app_name, lib in libraries.items():
+        if lib:
+            for lib_name, library in lib.items():
+                if library.components:
+                    for component_name in library.components:
+                        components.append(f"{app_name}.{lib_name}.{component_name}")
+
+    raise ComponentNotFound(
+        f'Component "{name}" not found. Available components are: {components}'
+    )
