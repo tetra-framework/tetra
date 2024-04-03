@@ -40,7 +40,6 @@ dev = [
     "pre-commit",
     "black",
     "python-dateutil>=2.8.2",
-    "sourcetypes>=0.0.4",
     "tetra[demo]", # include all the demo packages too
 ]
 demo = [
@@ -51,6 +50,7 @@ demo = [
     "whitenoise>=6.6.0",
     "PyYAML>=6.0",
     "markdown>=3.3.7",
+    "sourcetypes>=0.0.4",
 ]
 
 [tool.setuptools.dynamic]
