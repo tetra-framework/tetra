@@ -15,20 +15,23 @@ class ToDoList(Component):
         self.todos = ToDo.objects.filter(session_key=self.request.session.session_key)
 
     @public
-    def add_todo(self, title):
-        todo = ToDo(
-            title=title,
-            session_key=self.request.session.session_key,
-        )
-        todo.save()
-        self.title = ""
+    def add_todo(self, title: str):
+        if self.title:
+            todo = ToDo(
+                title=title,
+                session_key=self.request.session.session_key,
+            )
+            todo.save()
+            self.title = ""
 
     template: django_html = """
     <div>
         <div class="input-group mb-2">
             <input type="text" x-model="title" class="form-control" 
                 placeholder="New task..." @keyup.enter="add_todo(title)">
-            <button class="btn btn-primary" @click="add_todo(title)">Add</button>
+            <button class="btn btn-primary" :class="{'disabled': title == ''}" 
+            @click="add_todo(
+            title)">Add</button>
         </div>
         <div class="list-group">
             {% for todo in todos %}
