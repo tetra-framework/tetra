@@ -55,7 +55,7 @@ ALL_CONTEXT = object()
 
 
 def token_attr(bit, parser):
-    if not "=" in bit:
+    if "=" not in bit:
         return {}
     name, value = bit.split("=", 1)
     return {name: parser.compile_filter(value)}
