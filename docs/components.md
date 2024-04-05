@@ -175,7 +175,25 @@ class MyComponent(Component):
 
 ## Templates
 
-The `template` attribute is the Django template for the component in string form. Tetra template tags are automatically made available to your component templates, and all attributes and methods of the component are available in the context.
+### Template types
+
+Tetra components supports two different template types:
+
+#### Inline string templates
+
+If the component has a `template` attribute, it is used as Django template for the component in string form.
+Tetra template tags are automatically made available to your inline templates, and all attributes and methods of the
+component are available in the context.
+
+#### File templates
+
+You can also use the more traditional way and put your HTML code into a separate HTML file. You have to point to this
+file using the `template_name` attribute of the component class. Beware that you have to load the `tetra` templatetag
+yourself there. This has the advantage of having full syntax highlighting and IDE goodies support in your file which
+comes handy for especially bigger templates, but it splits a component a bit up into separate pieces.
+
+
+### Generic template hints
 
 Components must have a single top level HTML root node.
 
@@ -196,6 +214,9 @@ class MyComponent(Component):
       {% block default %}{% endblock %}
     </div>
     """
+
+    # or:
+    template_name = "my_app/components/my_component.html"
 ```
 
 You can easily check if a block is "filled" with content by using `{% if blocks.<block name> %}`. With this, you can
