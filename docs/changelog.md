@@ -12,6 +12,18 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.6] - unreleased
+### Changes
+- **New package name: tetra**
+- add conditional block check within components
+- Update Alpine.js to v3.13.8
+- switch to pyproject.toml based python package
+- improve demo project: TodoList component,- add django-environ for keeping secrets, use whitenoise for staticfiles
+- give users more hints when no components are found
+- MkDocs based documentation
+- format codebase with Black
+### Fixed
+- correctly find components
 
 ## [0.0.5] - unreleased
 ### Changed
