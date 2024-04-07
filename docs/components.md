@@ -139,7 +139,7 @@ When the `.watch` decorator is applied, the method receives 3 parameters:
 class MyComponent(Component):
     ...
     @public.watch("message").debounce(200)
-    def message_change(self, value, new_value, attr):
+    def message_change(self, value, old_value, attr):
         self.a_value = f"Your message is: {message}"
 ```
 
@@ -154,7 +154,7 @@ class MyComponent(Component):
     ...
     @public.watch("message")
     @public.debounce(200)
-    def message_change(self, value, new_value, attr):
+    def message_change(self, value, old_value, attr):
         self.a_value = f"Your message is: {message}"
 ```
 
@@ -169,7 +169,7 @@ class MyComponent(Component):
 class MyComponent(Component):
     ...
     @public.watch("message").throttle(200, trailing=True)
-    def message_change(self, value, new_value, attr):
+    def message_change(self, value, old_value, attr):
         self.a_value = f"Your message is: {message}"
 ```
 
