@@ -41,16 +41,11 @@ def make_template(cls) -> Template:
     """Create a template from a component class.
 
     Uses either the `cls.template` attribute as inline template string,
-    or `cls.template_name` as template file source.
+    or `cls.template_name` as template file source. If both are defined, 'template'
+    overrides 'template_name'.
     """
     from ..templatetags.tetra import get_nodes_by_type_deep
 
-    # if both "template" and "template_name" are defined, raise an error.
-    if hasattr(cls, "template") and hasattr(cls, "template_name"):
-        raise ComponentException(
-            f"Please define either `template` or `template_name` in Component"
-            f" {cls.__name__}, not both."
-        )
     # if only "template" is defined, use it as inline template string.
     if hasattr(cls, "template"):
         making_lazy_after_exception = False
