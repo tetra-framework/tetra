@@ -9,7 +9,8 @@ from weakref import WeakKeyDictionary
 from functools import wraps
 from threading import local
 
-from django.template.loader import render_to_string
+from django.template.base import Template
+from django.template.loader import render_to_string, get_template
 from django.template import RequestContext, TemplateSyntaxError
 from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockContext, BlockNode
 from django.utils.safestring import mark_safe
@@ -36,41 +37,59 @@ class ComponentNotFound(ComponentException):
     pass
 
 
-def make_template(cls):
+def make_template(cls) -> Template:
+    """Create a template from a component class.
+
+    Uses either the `cls.template` attribute as inline template string,
+    or `cls.template_name` as template file source. If both are defined, 'template'
+    overrides 'template_name'.
+    """
     from ..templatetags.tetra import get_nodes_by_type_deep
 
-    making_lazy_after_exception = False
-    filename, line = cls.get_template_source_location()
-    origin = InlineOrigin(
-        name=f"{filename}:{cls.__name__}.template",
-        template_name=filename,
-        start_line=line,
-        component=cls,
-    )
-    try:
-        template = InlineTemplate(
-            "{% load tetra %}" + cls.template,
-            origin=origin,
+    # if only "template" is defined, use it as inline template string.
+    if hasattr(cls, "template"):
+        making_lazy_after_exception = False
+        filename, line = cls.get_template_source_location()
+        origin = InlineOrigin(
+            name=f"{filename}:{cls.__name__}.template",
+            template_name=filename,
+            start_line=line,
+            component=cls,
         )
-    except TemplateSyntaxError as e:
-        # By default we want to compile templates during python compile time, however
-        # the template exceptions are much better when raised at runtime as it shows
-        # a nice stack trace in the browser. We therefore create a "Lazy" template
-        # after a compile error that will run in the browser when testing.
-        # TODO: turn this off when DEBUG=False
-        making_lazy_after_exception = True
-        template = SimpleLazyObject(
-            lambda: InlineTemplate(
+        try:
+            template = InlineTemplate(
                 "{% load tetra %}" + cls.template,
                 origin=origin,
             )
+        except TemplateSyntaxError as e:
+            # By default we want to compile templates during python compile time, however
+            # the template exceptions are much better when raised at runtime as it shows
+            # a nice stack trace in the browser. We therefore create a "Lazy" template
+            # after a compile error that will run in the browser when testing.
+            # TODO: turn this off when DEBUG=False
+            making_lazy_after_exception = True
+            template = SimpleLazyObject(
+                lambda: InlineTemplate(
+                    "{% load tetra %}" + cls.template,
+                    origin=origin,
+                )
+            )
+        if not making_lazy_after_exception:
+            for i, block_node in enumerate(
+                get_nodes_by_type_deep(template.nodelist, BlockNode)
+            ):
+                if not getattr(block_node, "origin", None):
+                    block_node.origin = origin
+
+    # if "template_name" is defined, use it as template file source.
+    elif hasattr(cls, "template_name"):
+        template = get_template(cls.template_name).template
+    else:
+        raise ComponentException(
+            f"You must provide either a `template_name` or a `template` in Component"
+            f" {cls.__name__}."
         )
-    if not making_lazy_after_exception:
-        for i, block_node in enumerate(
-            get_nodes_by_type_deep(template.nodelist, BlockNode)
-        ):
-            if not getattr(block_node, "origin", None):
-                block_node.origin = origin
+
     return template
 
 
@@ -78,7 +97,7 @@ class BasicComponentMetaClass(type):
     def __new__(mcls, name, bases, attrs):
         newcls = super().__new__(mcls, name, bases, attrs)
         newcls._name = camel_case_to_underscore(newcls.__name__)
-        if hasattr(newcls, "template"):
+        if hasattr(newcls, "template") or hasattr(newcls, "template_name"):
             newcls._template = make_template(newcls)
         return newcls
 
@@ -89,7 +108,7 @@ class RenderData(Enum):
     UPDATE = 2
 
 
-class BasicComponent(object, metaclass=BasicComponentMetaClass):
+class BasicComponent(metaclass=BasicComponentMetaClass):
     style: Optional[str] = None
     _name = None
     _library = None
