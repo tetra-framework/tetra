@@ -114,7 +114,7 @@ Then there is the template; this uses the standard Django template language. You
 ### `ToDoItem` Component
 
 
-Next, we create a `ToDoItem` component. As we have previously seen, there are public attributes to hold the the `title` and `done` status of the item. The load method takes a `ToDo` model instance (passed to it in the template above), then saves it as a private attribute on the component, and finally sets the `title` and `done` public attributes.
+Next, we create a `ToDoItem` component. As we have previously seen, there are public attributes to hold the `title` and `done` status of the item. The load method takes a `ToDo` model instance (passed to it in the template above), then saves it as a private attribute on the component, and finally sets the `title` and `done` public attributes.
 
 ``` python
 @default.register
