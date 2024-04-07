@@ -37,9 +37,11 @@ dev = [
     "build",
     "twine",
     "pytest",
+    "pytest-django",
     "pre-commit",
     "black",
     "python-dateutil>=2.8.2",
+    "beautifulsoup4",
     "tetra[demo]", # include all the demo packages too
 ]
 demo = [
@@ -58,3 +60,6 @@ version = {attr = "tetra.__version__"}
 
 [tool.setuptools.packages.find]
 exclude = ["docs", "tests", "demosite"]
+
+#[tool.pytest.ini_options]
+#DJANGO_SETTINGS_MODULE="tests.settings"

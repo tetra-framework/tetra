@@ -22,6 +22,10 @@ title: Changelog
 - give users more hints when no components are found
 - MkDocs based documentation
 - format codebase with Black
+
+### Added
+- basic testing using pytest
+
 ### Fixed
 - correctly find components
 

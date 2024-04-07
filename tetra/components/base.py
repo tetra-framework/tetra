@@ -67,13 +67,16 @@ def make_template(cls) -> Template:
             # a nice stack trace in the browser. We therefore create a "Lazy" template
             # after a compile error that will run in the browser when testing.
             # TODO: turn this off when DEBUG=False
-            making_lazy_after_exception = True
-            template = SimpleLazyObject(
-                lambda: InlineTemplate(
-                    "{% load tetra %}" + cls.template,
-                    origin=origin,
+            from django.conf import settings
+
+            if settings.DEBUG:
+                making_lazy_after_exception = True
+                template = SimpleLazyObject(
+                    lambda: InlineTemplate(
+                        "{% load tetra %}" + cls.template,
+                        origin=origin,
+                    )
                 )
-            )
         if not making_lazy_after_exception:
             for i, block_node in enumerate(
                 get_nodes_by_type_deep(template.nodelist, BlockNode)
