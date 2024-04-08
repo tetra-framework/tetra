@@ -38,7 +38,7 @@ class MyComponent(Component):
 
 ## Load method
 
-The `load` method is run both when the component initiates *and* after it is resumed from its saved state. Any attributes that are set by the load method are *not* saved with the state. This is to reduce the size of the state and ensure that the state is not stale when resumed.
+The `load` method is run both when the component initiates, *and* after it is resumed from its saved state, e.g. after a [@public method](#public-methods) has finished. Any attributes that are set by the load method are *not* saved with the state. This is to reduce the size of the state and ensure that the state is not stale when resumed.
 
 Arguments are passed to the `load` method from the Tetra [component "`@`" template tag](component-tag.md). Arguments are saved with the state so that when the component is resumed the `load` method will receive the same values.
 
@@ -452,11 +452,11 @@ class MyComponent(Component):
 
 ## Built in server methods
 
-There are a number of built in server methods:
+There are a number of built-in server methods:
 
 ### `update`
 
-The `update` method instructs the component to rerender after the public method has completed, sending the updated html to the browser and "morphing" the DOM. Usually public methods do this by default, however if this has been turned off and you want to conditionally update the html you can use this:
+The `update` method instructs the component to rerender after the public method has completed, sending the updated HTML to the browser and "morphing" the DOM. Usually public methods do this by default. However, if this has been turned off with `update=False`, and you want to conditionally update the html, you can use this:
 
 ``` python
 @default.register
@@ -471,7 +471,7 @@ class MyComponent(Component):
 
 ### `update_data`
 
-The `update_data` method instructs the componet to send the complete set of public attributes to the client updateing their values, usefull to be used in combination with `@public(update=False)`:
+The `update_data` method instructs the component to send the complete set of public attribute to the client, updating their values, useful in combination with `@public(update=False)`:
 
 ``` python
 @default.register
@@ -482,6 +482,7 @@ class MyComponent(Component):
         ... # Do stuff, then
         self.update_data()
 ```
+This way, no component re-rendering in the browser is triggered, just the values itself are updated.
 
 ### `replace_component`
 
