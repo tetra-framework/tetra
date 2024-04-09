@@ -1,3 +1,4 @@
+import logging
 from copy import copy
 from typing import Optional
 from types import FunctionType
@@ -27,6 +28,8 @@ from .callbacks import CallbackList
 
 
 thread_local = local()
+
+logger = logging.getLogger(__name__)
 
 
 class ComponentException(Exception):
@@ -599,3 +602,53 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         This is just a noop as the @public decorator implements this functionality
         """
         pass
+
+
+class FormComponent(Component):
+    """
+    Component that can render a form, and validate it.
+    """
+
+    form_class = None
+    form = None
+    form_errors: dict = {}
+
+    def load(self, *args, **kwargs) -> None:
+        self._load_form(self._data())
+        pass
+
+    def _load_form(self, data) -> None:
+        """Instantiates the component's form with the data available in
+        public attributes
+        """
+        try:
+            self.form = self.form_class(data=data)
+            self._connect_form_fields()
+        except Exception as e:
+            logger.exception(e)
+
+    def _connect_form_fields(self):
+        """Connects the form fields to the Tetra backend using x-model attributes."""
+        for field_name, field in self.form.fields.items():
+            if field_name in self._public_properties:
+                # self.form.fields[field_name].initial = getattr(self, field_name)
+                self.form.fields[field_name].widget.attrs.update(
+                    {"x-model": field_name}
+                )
+
+    # def is_valid(self, fields: list = None) -> bool:
+    #     return len(self.validate(fields).keys()) == 0
+
+    @public(update=False)
+    def validate(self):
+        """Validates the data using the form defined in `form_class`."""
+        self._load_form(data=self._data())
+        if self.form:
+            if self.form.is_valid():
+                pass
+            else:
+                self.form_errors = self.form.errors.get_json_data(escape_html=True)
+            # set the possibly cleaned values back to the component's attributes
+        for attr, value in self.form.cleaned_data.items():
+            setattr(self, attr, value)
+        self.update()
