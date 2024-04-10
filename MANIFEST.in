@@ -1,4 +1,7 @@
 recursive-include tetra/static *
 recursive-include tetra/js *
 recursive-include tetra/templates *
-prune demosites
+prune demosite
+prune .github
+exclude  mkdocs.yml
+exclude .readthedocs.yaml
