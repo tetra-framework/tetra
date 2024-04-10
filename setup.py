@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="tetraframework",
-    version="0.0.5",
+    version="0.0.6",
     url="https://www.tetraframework.com",
     author="Sam Willis",
     description="Transition package to 'tetra'",
