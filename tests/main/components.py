@@ -46,3 +46,10 @@ class SimpleComponentWith2Blocks(BasicComponent):
     template: django_html = """
 <div id="component">{% block default %}default{% endblock %}{% block foo %}foo{% endblock %}</div>
 """
+
+
+@default.register
+class SimpleComponentWithAttrs(BasicComponent):
+    template: django_html = """
+<div id="component" {% ... attrs class="class1" %}></div>
+"""
