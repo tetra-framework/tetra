@@ -1,0 +1,40 @@
+site_name: Tetra framework
+site_url: https://tetraframework.readthedocs.org
+theme:
+  name: material
+  logo: img/favicon-white.png
+  favicon: img/favicon.png
+  palette:
+    primary: grey
+    accent: blue
+  features:
+  - navigation.footer
+  - navigation.top
+  - navigation.instant
+  - navigation.expand
+#  - navigation.tabs
+#  - navigation.tabs.sticky
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+
+nav:
+  - index.md
+  - install.md
+  - Components:
+    - component-libraries.md
+    - components.md
+    - basic-components.md
+    - component-inheritance.md
+  - Template:
+    - component-tag.md
+    - attribute-tag.md
+    - include-js-css.md
+    - if-else-filters.md
+    - state-security.md
+    - magic-static.md
+  - Development:
+    - contribute.md
+    - changelog.md

@@ -1,4 +1,6 @@
-Title: Component Tag
+---
+title: The `@` Component Tag
+---
 
 # `@` Component Tag
 
@@ -67,7 +69,7 @@ It is common to want to set HTML attributes on the root element of your componen
 {% @ my_component attrs: class="my-class" style="font-wight:bold;" / %}
 ```
 
-These are made available as `attrs` in the component's template, the [attribute  `...` tag](attribute-tag) should be used to unpack them into the root tag, its [docs](attribute-tag) details how this works.
+These are made available as `attrs` in the component's template, the [attribute  `...` tag](attribute-tag.md) should be used to unpack them into the root tag, its [docs](attribute-tag.md) details how this works.
 
 ## Passing Context
 
@@ -83,9 +85,9 @@ It is  also possible to explicitly pass all template context to a component with
 {% @ my_component context: **context / %}
 ```
 
-This should be used sparingly as the whole template context will be saved with the component's saved (encrypted) state, and sent to the client, see [state security](state-security).
+This should be used sparingly as the whole template context will be saved with the component's saved (encrypted) state, and sent to the client, see [state security](state-security.md).
 
-In general, if the value is something that is needed for the component to function (and be available to methods or be "public") it should be passed as an *argument* [(see above)](#passing-attributes). Passing context is ideal for composing your components with inner content passed down from an outer template [(see passing blocks)](#passing-blocks).
+In general, if the value is something that is needed for the component to function (and be available to methods or be "public") it should be passed as an *argument* [(see above)](#passing-attributes.md). Passing context is ideal for composing your components with inner content passed down from an outer template [(see passing blocks)](#passing-blocks).
 
 ## Passing Blocks
 
@@ -154,4 +156,4 @@ You can also specify under what name a block should be exposed with `expose as [
 {% /@ my_component %}
 ```
 
-See [component templates](components#templates) for details of how the component handles blocks in its templates.
+See [component templates](components.md#templates) for details of how the component handles blocks in its templates.

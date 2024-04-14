@@ -30,17 +30,19 @@ class TetraMiddleware:
         if hasattr(request, "tetra_components_used") and request.tetra_components_used:
             if not hasattr(request, "tetra_scripts_placeholder_string"):
                 raise TetraMiddlewareException(
-                    "{% tetra_scripts %} tag required to be used when using Tetra components."
+                    "The {% tetra_scripts %} tag is required to be placed in the "
+                    "page's <head> tag when using Tetra components."
                 )
             if not hasattr(request, "tetra_styles_placeholder_string"):
                 raise TetraMiddlewareException(
-                    "{% tetra_styles %} tag required to be place in the page <head> when using Tetra components."
+                    "The {% tetra_styles %} tag is required to be placed in the page's "
+                    "<head> tag when using Tetra components."
                 )
-            if not request.tetra_scripts_placeholder_string in response.content:
+            if request.tetra_scripts_placeholder_string not in response.content:
                 raise TetraMiddlewareException(
                     "Placeholder from {% tetra_scripts %} not found."
                 )
-            if not request.tetra_styles_placeholder_string in response.content:
+            if request.tetra_styles_placeholder_string not in response.content:
                 raise TetraMiddlewareException(
                     "Placeholder from {% tetra_styles %} not found."
                 )

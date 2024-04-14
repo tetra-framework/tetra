@@ -1,8 +1,10 @@
-Title: if and else Template Filters
+---
+title: if & else filters
+---
 
 # `if` and `else` Template Filters
 
-The `if` and `else` template filters are provided to enable conditional attribute values with the [`...` attribute template tag](attribute-tag):
+The `if` and `else` template filters are provided to enable conditional attribute values with the [`...` attribute template tag](attribute-tag.md):
 
 ``` django
 <div {% ... class="class1"|if:variable_name|else:"class2" %}>

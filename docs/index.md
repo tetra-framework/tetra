@@ -1,6 +1,10 @@
-Title: Introduction
+---
+title: Introduction
+---
 
 # Introduction
+
+![Logo](img/logo.svg)
 
 Tetra is a full stack component framework for [Django](https://docs.djangoproject.com) using [Alpine.js](https://alpinejs.dev), bridging the gap between your server logic and front end presentation. It is built on a couple of key principles:
 
@@ -23,9 +27,9 @@ Furthermore, components can expose attributes and methods as *public*, making th
 
 ## Walkthrough of a simple "To Do App"
 
-To introduce the main aspects of Tetra we will walkthrough the code implementing the [To Do App demo](/#examples) on the homepage.
+To introduce the main aspects of Tetra we will walkthrough the code implementing the [To Do App demo](#examples) on the homepage.
 
-*If you haven't used Django before you should follow their [tutorial](https://docs.djangoproject.com/en/4.0/intro/tutorial01/) before coming back here.*
+*If you haven't used Django before you should follow their [tutorial](https://docs.djangoproject.com/en/4.2/intro/tutorial01/) before coming back here.*
 
 First, we need a Django "model" for saving our 'to do' items:
 
@@ -40,7 +44,7 @@ class ToDo(models.Model):
     done = models.BooleanField(default=False)
 ```
 
-Assuming we have [installed and setup](install) Tetra, next we create a `components.py` file to contain our components. Every component belongs to a "Library", and for this simple app we just need one named `default`.
+Assuming we have [installed and setup](install.md) Tetra, next we create a `components.py` file to contain our components. Every component belongs to a "Library", and for this simple app we just need one named `default`.
 
 ``` python
 # components.py
@@ -110,7 +114,7 @@ Then there is the template; this uses the standard Django template language. You
 ### `ToDoItem` Component
 
 
-Next, we create a `ToDoItem` component. As we have previously seen, there are public attributes to hold the the `title` and `done` status of the item. The load method takes a `ToDo` model instance (passed to it in the template above), then saves it as a private attribute on the component, and finally sets the `title` and `done` public attributes.
+Next, we create a `ToDoItem` component. As we have previously seen, there are public attributes to hold the `title` and `done` status of the item. The load method takes a `ToDo` model instance (passed to it in the template above), then saves it as a private attribute on the component, and finally sets the `title` and `done` public attributes.
 
 ``` python
 @default.register
@@ -214,7 +218,8 @@ Next, we define some CSS styles for the component as the multiline Python string
 
 ### Including the "to do" list in a page
 
-Finally, we include our `to_do_list` component into a pages template using the `@` component tag. As we are doing this outside of a Tetra component we need to explicitly load the Tetra template tags with `{% load tetra %}`.
+Finally, we include our `to_do_list` component into a pages template using the `@` component tag.
+As we are doing this outside of a Tetra component we need to explicitly load the Tetra template tags with `{% load tetra %}`.
 
 ``` django
 {# index.html #}
@@ -223,8 +228,9 @@ Finally, we include our `to_do_list` component into a pages template using the `
 {% @ to_do_list / %}
 ```
 
- To get started, follow the [install instructions](install).
+ To get started, follow the [install instructions](install.md).
 
-> **Note:** Tetra is still early in its development, and we can make no promises about API stability at this stage.
->
-> The intention is to stabilise the API prior to a V1 release this summer, as well as  implementing some additional functionality.
+!!! note
+    Tetra is still early in its development, and we can make no promises about API stability at this stage.
+
+    The intention is to stabilise the API prior to a v1.0 release, as well as  implementing some additional functionality.

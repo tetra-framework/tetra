@@ -1,4 +1,6 @@
-Title: Component Libraries
+---
+title: Libraries
+---
 
 # Component Libraries
 

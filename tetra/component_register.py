@@ -1,13 +1,15 @@
+import logging
+
 from django.apps import apps
 from importlib import import_module
 from django.template import Template
 import inspect
 from collections import defaultdict
 
-from .components import Component
 from .components.base import InlineTemplate, ComponentNotFound
 from .library import Library, ComponentLibraryException
 
+logger = logging.getLogger(__file__)
 
 libraries = defaultdict(dict)
 find_libraries_done = False
@@ -16,17 +18,26 @@ component_module_names = ["components", "tetra_components"]
 
 
 def find_component_libraries():
+    """Finds libraries in component modules of all installed django apps."""
     global libraries
     global find_libraries_done
     if find_libraries_done:
         return
     for component_module_name in component_module_names:
         for app in apps.get_app_configs():
+            module_name = f"{app.module.__name__}.{component_module_name}"
             try:
-                component_module = import_module(
-                    f"{app.module.__name__}.{component_module_name}"
-                )
-            except ModuleNotFoundError:
+                component_module = import_module(module_name)
+            except ModuleNotFoundError as e:
+                # this is  a bit risky to compare the error msg's output, but it's the
+                # only way to check if the import error is due to a direct import
+                # error of the module or if the import was ok, but the imported
+                # module itself raises an exception.
+                if e.msg != f"No module named '{module_name}'":
+                    logger.error(f"Error importing: {module_name}: {e}")
+                continue
+            except Exception as e:
+                logger.error(e)
                 continue
             for name, member in inspect.getmembers(component_module):
                 if isinstance(member, Library):
@@ -58,6 +69,8 @@ def resolve_component(context, name):
             '"[app_name.][library_name.]component_name".'
         )
 
+    # if component is called with 2 parts, we need a current_app context to find the
+    # component
     if (
         isinstance(template, InlineTemplate)
         and template.origin

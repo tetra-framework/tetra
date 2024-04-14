@@ -1,0 +1,11 @@
+{% load tetra %}
+<!doctype html>
+<html lang="en">
+<head>
+{#  Even in a test environment, we need the full tetra stuff for components to work properly.#}
+  {% tetra_styles %}
+  {% tetra_scripts include_alpine=True %}
+  <title>Tetra test project</title>
+</head>
+<body>{% block content %}{% endblock %}</body>
+</html>

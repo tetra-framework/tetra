@@ -1,4 +1,6 @@
-Title: Basic Components
+---
+title: Basic Components
+---
 
 # Basic Components
 

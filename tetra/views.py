@@ -14,7 +14,7 @@ def component_method(request, app_name, library_name, component_name, method_nam
     except KeyError:
         return HttpResponseNotFound()
 
-    if not method_name in (m["name"] for m in Component._public_methods):
+    if method_name not in (m["name"] for m in Component._public_methods):
         return HttpResponseNotFound()
 
     try:

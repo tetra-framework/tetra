@@ -1,4 +1,6 @@
-Title: Including Tetra CSS and JS
+---
+title: Including Tetra CSS and JS
+---
 
 # Including Tetra CSS and JS
 

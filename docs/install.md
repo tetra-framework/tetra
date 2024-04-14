@@ -1,16 +1,19 @@
-Title: Installation
+---
+title: Installation
+---
 
 # Installation
 
-As a component framework for Django, Tetra requires that you have a Django project setup before installing. [Follow the Django introduction tutorial](https://docs.djangoproject.com/en/4.0/intro/tutorial01/).
+As a component framework for Django, Tetra requires that you have a Django project setup before installing. [Follow the Django introduction tutorial](https://docs.djangoproject.com/en/4.2/intro/tutorial01/).
 
-Once ready install Tetra from PyPi:
+Once ready, install Tetra from PyPi:
 
 ```
-$ pip install tetraframework
+$ pip install tetra
 ```
 
-> **Note:** As Tetra is still being developed it has only been tested with Python 3.9 and 3.10, we intend to support at least 3.8 before a V1 release.
+!!! note
+    As Tetra is still being developed it has only been tested with Python 3.9 and 3.10, we intend to support at least 3.8 before a V1 release.
 
 ## Initial configuration
 
