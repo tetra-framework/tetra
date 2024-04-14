@@ -7,7 +7,7 @@ name = "tetra"
 dynamic = ["version"]
 description = "Full stack component framework for Django using Alpine.js"
 authors = [
-    { name = "Sam Willis", email="samw@hey.com"},
+    { name = "Sam Willis", email="sam.willis@gmail.com"},
     { name = "Christian González", email = "christian.gonzalez@nerdocs.at" }
 ]
 license = {file = "LICENSE"}
