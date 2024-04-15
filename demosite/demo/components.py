@@ -30,8 +30,7 @@ class ToDoList(Component):
             <input type="text" x-model="title" class="form-control" 
                 placeholder="New task..." @keyup.enter="add_todo(title)">
             <button class="btn btn-primary" :class="{'disabled': title == ''}" 
-            @click="add_todo(
-            title)">Add</button>
+                @click="add_todo(title)">Add</button>
         </div>
         <div class="list-group">
             {% for todo in todos %}
