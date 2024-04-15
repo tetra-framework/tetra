@@ -28,26 +28,24 @@ def find_component_libraries():
             module_name = f"{app.module.__name__}.{component_module_name}"
             try:
                 component_module = import_module(module_name)
+                for name, member in inspect.getmembers(component_module):
+                    if isinstance(member, Library):
+                        if name in libraries[app.label]:
+                            raise ComponentLibraryException(
+                                f'Library named "{name}" already in app "{app.label}".'
+                            )
+                        libraries[app.label][name] = member
+                        member.name = name
+                        member.app = app
             except ModuleNotFoundError as e:
-                # this is  a bit risky to compare the error msg's output, but it's the
-                # only way to check if the import error is due to a direct import
-                # error of the module or if the import was ok, but the imported
-                # module itself raises an exception.
-                if e.msg != f"No module named '{module_name}'":
-                    logger.error(f"Error importing: {module_name}: {e}")
-                continue
-            except Exception as e:
-                logger.error(e)
-                continue
-            for name, member in inspect.getmembers(component_module):
-                if isinstance(member, Library):
-                    if name in libraries[app.label]:
-                        raise ComponentLibraryException(
-                            f'Library named "{name}" already in app "{app.label}".'
-                        )
-                    libraries[app.label][name] = member
-                    member.name = name
-                    member.app = app
+                # only raise the exception if the import raises secondary import errors.
+                # E.g. if the component imports a module that is non-existent.
+                if e.name != module_name:
+                    raise e
+
+                # if the module just is not present, just ignore it - this just means
+                # that this app does not have a "components" package, which is ok.
+
     find_libraries_done = True
 
 

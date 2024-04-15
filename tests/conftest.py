@@ -59,12 +59,12 @@ def pytest_configure():
     )
 
 
-def extract_component(html: str | bytes, innerhtml: bool = True):
-    """Helper to extract the `div#component` html or innerhtml content from the given
-    HTML.
+def extract_component(html: str | bytes):
+    """Helper to extract the `div#component` content from the given HTML.
     Also cuts out ALL newlines from the output.
     """
-    if innerhtml:
-        return BeautifulSoup(html).html.body.find(id="component").text.replace("\n", "")
-    else:
-        return BeautifulSoup(html).html.body.find(id="component").replace("\n", "")
+    return (
+        BeautifulSoup(html, features="html.parser")
+        .html.body.find(id="component")
+        .text.replace("\n", "")
+    )

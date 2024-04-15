@@ -1,7 +1,7 @@
-from tetra import BasicComponent, Component, Library
+from tetra import BasicComponent
 from sourcetypes import django_html, css
 
-default = Library()
+from .base import default
 
 
 @default.register
