@@ -224,7 +224,7 @@ As we are doing this outside of a Tetra component we need to explicitly load the
 ``` django
 {# index.html #}
 {% load tetra %}
-<h4>Your to do list:</h4>
+<h4>Your todo list:</h4>
 {% @ to_do_list / %}
 ```
 
