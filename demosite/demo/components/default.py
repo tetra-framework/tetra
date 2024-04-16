@@ -1,8 +1,10 @@
 from sourcetypes import javascript, css, django_html
 from tetra import Component, public, Library
 import itertools
-from .models import ToDo
-from .movies import movies
+from ..models import ToDo
+from ..movies import movies
+
+__all__ = "default"
 
 default = Library()
 

@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     "tetra",
     "django.contrib.staticfiles",
     "demo",
-    "docs",
 ]
 
 MIDDLEWARE = [
@@ -154,5 +153,6 @@ LOGGING = {
     "loggers": {
         "django": {"handlers": ["console"], "level": "INFO", "propagate": True},
         "tetra": {"handlers": ["console"], "level": "DEBUG" if DEBUG else "INFO"},
+        "demo": {"handlers": ["console"], "level": "DEBUG" if DEBUG else "INFO"},
     },
 }
