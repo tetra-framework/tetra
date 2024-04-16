@@ -63,4 +63,8 @@ def extract_component(html: str | bytes):
     """Helper to extract the `div#component` content from the given HTML.
     Also cuts out ALL newlines from the output.
     """
-    return BeautifulSoup(html).html.body.find(id="component").text.replace("\n", "")
+    return (
+        BeautifulSoup(html, features="html.parser")
+        .html.body.find(id="component")
+        .text.replace("\n", "")
+    )
