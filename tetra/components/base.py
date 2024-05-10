@@ -396,7 +396,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         component = decode_component(data["state"], request)
 
         if not isinstance(component, cls):
-            raise TypeError("Component of ivalid type.")
+            raise TypeError("Component of invalid type.")
 
         component.request = request
         if key:
