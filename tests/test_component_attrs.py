@@ -12,4 +12,8 @@ def test_basic_component(request):
     content = render_component(
         request, "{% @ main.default.simple_component_with_attrs / %}"
     )
-    assert extract_component(content) == "foo"
+    assert extract_component(content) == "content"
+    assert (
+        extract_component(content, innerHTML=False)
+        == '<div class="class1" id="component">content</div>'
+    )

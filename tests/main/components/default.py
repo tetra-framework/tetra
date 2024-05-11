@@ -51,5 +51,5 @@ class SimpleComponentWith2Blocks(BasicComponent):
 @default.register
 class SimpleComponentWithAttrs(BasicComponent):
     template: django_html = """
-<div id="component" {% ... attrs class="class1" %}></div>
+<div id="component" {% ... attrs class="class1" %}>content</div>
 """
