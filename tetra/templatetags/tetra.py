@@ -426,6 +426,39 @@ def do_block(parser, token):
     return node
 
 
+@register.tag(name="@v")
+def live_variable(parser, token) -> template.Node:
+    try:
+        # split_contents() knows not to split quoted strings.
+        tag_name, format_string = token.split_contents()
+    except ValueError:
+        raise template.TemplateSyntaxError(
+            "%r tag requires a single argument" % token.contents.split()[0]
+        )
+
+    split_contents = token.split_contents()
+    if len(split_contents) != 2:
+        raise template.TemplateSyntaxError(
+            "@v tag requires exactly one argument: the variable name"
+        )
+    # remove surrounding quotes, if any
+    if format_string[0] == format_string[-1] and format_string[0] in ('"', "'"):
+        format_string = format_string[1:-1]
+
+    return LiveVariableNode(format_string)
+
+
+class LiveVariableNode(template.Node):
+    def __init__(self, var_name: str):
+        self.var_name = var_name
+
+    def __repr__(self):
+        return f"<LiveVariableNode: {self.var_name}>"
+
+    def render(self, context):
+        return mark_safe(f"<span x-text='{self.var_name}'></span>")
+
+
 @register.filter(name="if")
 def if_filter(value, arg):
     if arg:

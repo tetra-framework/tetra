@@ -12,7 +12,11 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - unreleased
+## [0.1.2] - unreleased
+### Added
+- @v templatetag for "live" rendering of frontend variables
+
+## [0.1.1] - 2024-04-10
 ### Changes
 - **New package name: tetra**
 - add conditional block check within components
