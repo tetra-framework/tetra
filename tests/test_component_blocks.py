@@ -68,10 +68,12 @@ def test_component_with_named_block_empty(request):
 #     """Tests a simple component with content outside of blocks. Must not be rendered."""
 #     content = render_component(
 #         request,
-#         "{% @ main.default.simple_component_with_named_block %}"
-#         "{% block foo %}inside{% endblock %}"
-#         "this text must not be rendered, as there is no default block in the component."
-#         "{% /@ %}",
+#         """
+# {% @ main.default.simple_component_with_named_block %}
+# abracadabra
+# {% block foo %}inside{% endblock %}
+# {% /@ %}
+# """,
 #     )
 #     assert extract_component(content) == "inside"
 
@@ -143,3 +145,28 @@ def test_component_with_conditional_block_filled(request):
         "{% /@ %}",
     )
     assert extract_component(content) == "BEFOREfooAFTERalways"
+
+
+def test_component_with_conditional_addcontent_block_filled(request):
+    """Tests a simple component with conditional block, filled, with mixed text from
+    component and block overrides."""
+    content = render_component(
+        request,
+        "{% @ main.default.simple_component_with_conditional_block_and_additional_content %}"
+        "{% block foo %}foo{% endblock %}"
+        "{% /@ %}",
+    )
+    assert extract_component(content) == "BEFOREfooAFTER"
+
+
+def test_component_with_conditional_addcontent_block_filled_and_html_tags(request):
+    """Tests a simple component with conditional block, filled, with html tags"""
+    content = render_component(
+        request,
+        """
+{% @ main.default.simple_component_with_conditional_block_and_additional_html_content %}
+{% block foo %}foo{% endblock %}
+{% /@ %}
+""",
+    )
+    assert extract_component(content) == "<div><span>foo</span></div>"

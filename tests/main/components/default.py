@@ -42,6 +42,36 @@ class SimpleComponentWithConditionalBlock(BasicComponent):
 
 
 @default.register
+class SimpleComponentWithConditionalBlockAndAdditionalContent(BasicComponent):
+    template: django_html = """
+<div id="component">
+BE
+{% if blocks.foo %}
+FORE
+{% block foo %}{% endblock %}
+AF
+{% endif %}
+TER
+</div>
+"""
+
+
+@default.register
+class SimpleComponentWithConditionalBlockAndAdditionalHtmlContent(BasicComponent):
+    template: django_html = """
+<div id="component">
+<div>
+{% if blocks.foo %}
+<span>
+{% block foo %}{% endblock %}
+</span>
+{% endif %}
+</div>
+</div>
+"""
+
+
+@default.register
 class SimpleComponentWith2Blocks(BasicComponent):
     template: django_html = """
 <div id="component">{% block default %}default{% endblock %}{% block foo %}foo{% endblock %}</div>

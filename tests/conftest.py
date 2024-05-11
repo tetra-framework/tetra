@@ -67,6 +67,6 @@ def extract_component(html: str | bytes, innerHTML=True) -> str:
     """
     el = BeautifulSoup(html, features="html.parser").html.body.find(id="component")
     if innerHTML:
-        return el.text.replace("\n", "")
+        return el.decode_contents().replace("\n", "")
     else:
         return str(el).replace("\n", "")
