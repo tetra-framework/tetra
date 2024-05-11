@@ -1,9 +1,10 @@
 import json
 import datetime
 from dateutil import parser as datetime_parser
+from django.apps import apps
+from django.db import models
 from django.utils.text import re_camel_case
 from django.template.loader import render_to_string
-from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.timezone import is_aware
 
 
@@ -58,8 +59,25 @@ class TetraJSONEncoder(json.JSONEncoder):
             return {"__type": "datetime", "value": r}
         elif isinstance(obj, set):
             return {"__type": "set", "value": list(obj)}
+        # TODO: merge from DjangoJSONEncoder:
+        # elif isinstance(obj, datetime.timedelta):
+        #     return duration_iso_string(obj)
+        # elif isinstance(obj, (decimal.Decimal, uuid.UUID, Promise)):
+        #     return str(obj)
+        elif isinstance(obj, models.Model):
+            return {
+                "__type": f"model.{obj._meta.app_label}.{obj.__class__.__name__}",
+                "value": obj.pk,
+            }
         else:
-            return super().default(obj)
+            # in one last desparate attempt, try to cast the object into a str.
+            # FIXME: this could lead to serious problems, if the object can't be
+            #  decoded again. Maybe raise an error. But it works for most objects,
+            #  like PhoneNumbers etc, that all basically are saved in a CharField
+            try:
+                return str(obj)
+            except (TypeError, ValueError):
+                return super().default(obj)
 
 
 class TetraJSONDecoder(json.JSONDecoder):
@@ -69,11 +87,15 @@ class TetraJSONDecoder(json.JSONDecoder):
     def object_hook(self, obj):
         if "__type" not in obj:
             return obj
-        type = obj["__type"]
+        type: str = obj["__type"]
         if type == "datetime":
             return datetime_parser.parse(obj["value"])
         if type == "set":
             return set(obj["value"])
+        if type.startswith("model."):
+            _, app_name, model_name = type.split(".")
+            model = apps.get_model(app_name, model_name)
+            return model.objects.get(pk=obj["value"])
         return obj
 
 

@@ -15,6 +15,7 @@ title: Changelog
 ## [0.1.2] - unreleased
 ### Added
 - @v templatetag for "live" rendering of frontend variables
+- support Django models in TetraJSONEn/Decoder
 
 ## [0.1.1] - 2024-04-10
 ### Changes
@@ -33,7 +34,7 @@ title: Changelog
 ### Fixed
 - correctly find components
 
-## [0.0.5] - unreleased
+## [0.0.5] - 2022-06-13
 ### Changed
 - **This is the last package with the name "tetraframework", transition to "tetra"**
 - Provisional Python 3.8 support
@@ -42,7 +43,7 @@ title: Changelog
 - Windows support
 
 
-## [0.0.4] - 2022-06-22
+## [0.0.4] - 2022-06-02
 - Cleanup
 
 
