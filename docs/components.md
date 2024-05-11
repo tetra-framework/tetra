@@ -223,7 +223,7 @@ You can easily check if a block is "filled" with content by using `{% if blocks.
 bypass wrapping elements when a block was not used:
 
 ``` django
-{% if blocks.title %}
+{% if blocks.title or blocks.actions %}
 <div class="card-header">
   <h3 class="card-title">
     {% block title %}{% endblock %}
@@ -253,7 +253,7 @@ class MyComponent(Component):
     export default {
         init() {
           // Do stuff...
-        }
+        },
         handleClick() {
             this.message = `Hello ${this.name}`;
         },

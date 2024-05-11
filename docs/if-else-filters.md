@@ -1,5 +1,5 @@
 ---
-title: if & else filters
+title: helper filters & tags
 ---
 
 # `if` and `else` Template Filters
@@ -76,7 +76,7 @@ if it's `False` then you will receive this:
 <div class="class2">
 ```
 
-It is possible to further chain the the filters such as:
+It is possible to further chain the filters such as:
 
 ``` django
 <div {% ... class="class1"|if:variable1|else:"class2"|if:variable2|else:"class3" %}>

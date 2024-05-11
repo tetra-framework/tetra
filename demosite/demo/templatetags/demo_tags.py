@@ -1,7 +1,7 @@
 from django import template
 from django.template.loader import get_template
 from django.utils.html import escape
-from django.utils.safestring import mark_safe
+from django.utils.safestring import mark_safe, SafeString
 from django.template.loaders.app_directories import Loader
 import tetra
 
@@ -10,12 +10,12 @@ register = template.Library()
 
 
 @register.simple_tag
-def tetra_version():
+def tetra_version() -> str:
     return tetra.__version__
 
 
 @register.simple_tag
-def include_source(file_name, start=None, end=None):
+def include_source(file_name, start=None, end=None) -> SafeString:
     error = None
     for origin in Loader(None).get_template_sources(file_name):
         try:

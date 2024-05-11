@@ -1,4 +1,6 @@
 from copy import copy
+from typing import Any
+
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
@@ -37,7 +39,7 @@ def register_pickler(obj_type, prefix):
 
 @register_pickler(QuerySet, b"QuerySet")
 class PickleQuerySet:
-    def pickle(qs):
+    def pickle(qs) -> bytes:
         return pickle.dumps(
             {
                 "model": qs.model,
@@ -45,7 +47,7 @@ class PickleQuerySet:
             }
         )
 
-    def unpickle(bs):
+    def unpickle(bs) -> Any:
         data = pickle.loads(bs)
         qs = data["model"].objects.all()
         qs.query = data["query"]
@@ -54,7 +56,7 @@ class PickleQuerySet:
 
 @register_pickler(Model, b"Model")
 class PickleModel:
-    def pickle(obj):
+    def pickle(obj) -> bytes:
         return pickle.dumps(
             {
                 "class": type(obj),
@@ -62,7 +64,7 @@ class PickleModel:
             }
         )
 
-    def unpickle(bs):
+    def unpickle(bs) -> Model | None:
         data = pickle.loads(bs)
         model = data["class"]
         try:
@@ -108,25 +110,23 @@ class PickleBlockNode:
             raise TypeError("Unpicked data for template block incorrect.")
 
 
-skip_check = set(
-    [
-        str,
-        bytes,
-        int,
-        float,
-        bool,
-        dict,
-        list,
-        set,
-        frozenset,
-        tuple,
-        range,
-        bytes,
-        bytearray,
-        complex,
-        type(None),
-    ]
-)
+skip_check = {
+    str,
+    bytes,
+    int,
+    float,
+    bool,
+    dict,
+    list,
+    set,
+    frozenset,
+    tuple,
+    range,
+    bytes,
+    bytearray,
+    complex,
+    type(None),
+}
 
 
 class StatePickler(pickle.Pickler):
@@ -137,7 +137,7 @@ class StatePickler(pickle.Pickler):
         # Template loaders are not pickleable, they are set as the 'loader' property
         # on block.origin which is an Origin obj. We set `obj.loader = None` to
         # stop it from erroring.
-        # This will make error messages about templates a little less helpfull, however
+        # This will make error messages about templates a little less helpful, however
         # we have already rendered the template once and so it's not likely we will get
         # an exception.
         if isinstance(obj, Origin):
@@ -215,7 +215,7 @@ keys_to_remove_from_context = [
 ]
 
 
-def encode_component(component):
+def encode_component(component) -> str:
     fernet = _get_fernet_for_request(component.request)
 
     # TODO: this should be in component.__getstate__
@@ -247,7 +247,7 @@ def encode_component(component):
     return state_token
 
 
-def decode_component(state_token, request):
+def decode_component(state_token, request) -> Any:
     fernet = _get_fernet_for_request(request)
     s = gzip.decompress(fernet.decrypt(state_token.encode()))
     state = unpickle_state(gzip.decompress(fernet.decrypt(state_token.encode())))

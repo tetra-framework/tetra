@@ -11,7 +11,7 @@ to_do_defaults = [
 ]
 
 
-def prepopulate_session_to_do(request):
+def prepopulate_session_to_do(request) -> None:
     if not request.session.session_key:
         request.session.create()
     session_key = request.session.session_key

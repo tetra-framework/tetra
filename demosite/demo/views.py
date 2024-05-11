@@ -27,7 +27,7 @@ def titlify(slug: str) -> str:
     return slug.replace("_", " ").title()
 
 
-def markdown_title(title):
+def markdown_title(title) -> str:
     return markdown.markdown(title).replace("<p>", "").replace("</p>", "")
 
 

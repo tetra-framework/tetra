@@ -45,10 +45,11 @@ class ToDoList(Component):
 
 @default.register
 class ToDoItem(Component):
+    todo: ToDo = None
     title = public("")
     done = public(False)
 
-    def load(self, todo):
+    def load(self, todo, *args, **kwargs):
         self.todo = todo
         self.title = todo.title
         self.done = todo.done

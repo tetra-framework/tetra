@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 
-def main():
+def main() -> None:
     """Run administrative tasks."""
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "demosite.settings")
     try:

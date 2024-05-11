@@ -1,11 +1,13 @@
 import json
-from django.http import HttpResponseNotFound, HttpResponseBadRequest
+from django.http import HttpResponseNotFound, HttpResponseBadRequest, HttpResponse
 from .component_register import libraries
 from .state import decode_component
 from .utils import from_json
 
 
-def component_method(request, app_name, library_name, component_name, method_name):
+def component_method(
+    request, app_name, library_name, component_name, method_name
+) -> HttpResponse:
     if not request.method == "POST":
         return HttpResponseBadRequest()
 

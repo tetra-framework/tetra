@@ -1,6 +1,6 @@
 import logging
 from copy import copy
-from typing import Optional
+from typing import Optional, Self, Any
 from types import FunctionType
 from enum import Enum
 import inspect
@@ -14,10 +14,10 @@ from django.template.base import Template
 from django.template.loader import render_to_string, get_template
 from django.template import RequestContext, TemplateSyntaxError
 from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockContext, BlockNode
-from django.utils.safestring import mark_safe
+from django.utils.safestring import mark_safe, SafeString
 from django.utils.html import escapejs, escape
 from django.utils.functional import SimpleLazyObject
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpRequest
 from django.urls import reverse
 
 from ..utils import camel_case_to_underscore, to_json, TetraJSONEncoder, isclassmethod
@@ -131,17 +131,17 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         self._call_load(*args, **kwargs)
 
     @classmethod
-    def full_component_name(cls):
+    def full_component_name(cls) -> str:
         return f"{cls._library.app.label}__{cls._library.name}__{cls._name}"
 
     @classmethod
-    def get_source_location(cls):
+    def get_source_location(cls) -> tuple[str, int, int]:
         filename = inspect.getsourcefile(cls)
         lines, start = inspect.getsourcelines(cls)
         return filename, start, len(lines)
 
     @classmethod
-    def get_template_source_location(cls):
+    def get_template_source_location(cls) -> tuple[str, int | None]:
         filename, comp_start, com_end = cls.get_source_location()
         if not hasattr(cls, "template") or not cls.template:
             return filename, None
@@ -152,7 +152,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         return filename, line
 
     @classmethod
-    def has_script(cls):
+    def has_script(cls) -> bool:
         return False
 
     @classmethod
@@ -161,15 +161,15 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         return ""
 
     @classmethod
-    def has_styles(cls):
+    def has_styles(cls) -> bool:
         return bool(hasattr(cls, "style") and cls.style)
 
     @classmethod
-    def make_styles(cls):
+    def make_styles(cls) -> str:
         return cls.style
 
     @classmethod
-    def make_styles_file(cls):
+    def make_styles_file(cls) -> str:
         filename, comp_start_line, source_len = cls.get_source_location()
         with open(filename, "r") as f:
             py_source = f.read()
@@ -180,19 +180,19 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         return f"{before}{cls.style}"
 
     @classmethod
-    def as_tag(cls, _request, *args, **kwargs):
+    def as_tag(cls, _request, *args, **kwargs) -> SafeString:
         if not hasattr(_request, "tetra_components_used"):
             _request.tetra_components_used = set()
         _request.tetra_components_used.add(cls)
         return cls(_request, *args, **kwargs).render()
 
-    def _call_load(self, *args, **kwargs):
+    def _call_load(self, *args, **kwargs) -> None:
         self.load(*args, **kwargs)
 
-    def load(self, *args, **kwargs):
+    def load(self, *args, **kwargs) -> None:
         pass
 
-    def _add_to_context(self, context):
+    def _add_self_attrs_to_context(self, context) -> None:
         for key in dir(self):
             if not (key.startswith("_") or isclassmethod(getattr(self, key))):
                 context[key] = getattr(self, key)
@@ -233,7 +233,7 @@ class PublicMeta(type):
 
 
 class Public(metaclass=PublicMeta):
-    def __init__(self, obj=None, update=True):
+    def __init__(self, obj=None, update=True) -> None:
         self._update = update
         self._watch = []
         self._debounce = None
@@ -243,7 +243,7 @@ class Public(metaclass=PublicMeta):
         self._throttle_leading = None
         self.__call__(obj)
 
-    def __call__(self, obj):
+    def __call__(self, obj) -> Self:
         if isinstance(obj, Public):
             # Public decorator applied multiple times - combine them
             self._update = obj._update if obj._update else self._update
@@ -280,13 +280,13 @@ class Public(metaclass=PublicMeta):
             self.obj = obj
         return self
 
-    def __getattr__(self, name):
+    def __getattr__(self, name) -> Any:
         if hasattr(self, f"do_{name}"):
             return getattr(self, f"do_{name}")
         else:
             raise AttributeError(f"Public decorator has no method {name}.")
 
-    def do_watch(self, *args):
+    def do_watch(self, *args) -> Self:
         for arg in args:
             if isinstance(arg, str):
                 self._watch.append(arg)
@@ -294,12 +294,12 @@ class Public(metaclass=PublicMeta):
                 self._watch.extend(arg)
         return self
 
-    def do_debounce(self, timeout, immediate=False):
+    def do_debounce(self, timeout, immediate=False) -> Self:
         self._debounce = timeout
         self._debounce_immediate = immediate
         return self
 
-    def do_throttle(self, timeout, trailing=False, leading=True):
+    def do_throttle(self, timeout, trailing=False, leading=True) -> Self:
         self._throttle = timeout
         self._throttle_trailing = trailing
         self._throttle_leading = leading
@@ -368,22 +368,23 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     _load_kwargs = {}
     key = public(None)
 
-    def __init__(self, _request, key=None, *args, **kwargs):
+    def __init__(self, _request, key=None, *args, **kwargs) -> None:
         super().__init__(_request, *args, **kwargs)
         self.key = key
 
     @classmethod
     def from_state(
         cls,
-        data,
-        request,
-        key=None,
+        data: dict,
+        request: HttpRequest,
+        key: str = None,
         _attrs=None,
         _context=None,
         _blocks=None,
         *args,
         **kwargs,
-    ):
+    ) -> Any:
+        """Create and initialize a component instance from its serialized state."""
         if not (
             isinstance(data, dict)
             and "state" in data
@@ -420,20 +421,20 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         return component
 
     @classmethod
-    def has_script(cls):
+    def has_script(cls) -> bool:
+        """Returns True if the component has a javascript script, else False."""
         return bool(cls.script)
 
     @classmethod
-    def _component_url(cls, method_name):
+    def _component_url(cls, method_name) -> str:
         return reverse(
             "tetra_public_component_method",
             args=[cls._library.app.label, cls._library.name, cls._name, method_name],
         )
 
     @classmethod
-    def make_script(cls, component_var=None):
-        """Returns a rendered js script for a component to be imported dynamically via
-        Alpine.init()"""
+    def make_script(cls, component_var=None) -> str:
+        """This method generates a JavaScript script for the component. It includes the component's methods, attributes, and server-side methods. This script can be imported dynamically via Alpine.init() and used to update the component's state"""
         component_server_methods = []
         for method in cls._public_methods:
             method_data = copy(method)
@@ -452,7 +453,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         )
 
     @classmethod
-    def make_script_file(cls):
+    def make_script_file(cls) -> str:
         filename, comp_start_line, source_len = cls.get_source_location()
         with open(filename, "r") as f:
             py_source = f.read()
@@ -462,7 +463,9 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         before = re.sub(f"\S", " ", before)
         return f"{before}{cls.script}"
 
-    def _call_load(self, *args, **kwargs):
+    def _call_load(self, *args, **kwargs) -> None:
+        """Load the component's state and attributes. It sets the _load_args and
+        _load_kwargs attributes and then calls the load method of the component."""
         self._load_args = args
         self._load_kwargs = kwargs
         tracing_component_load[self] = set()
@@ -473,16 +476,21 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             del tracing_component_load[self]
         self._excluded_load_props_from_saved_state = list(props)
 
-    def _recall_load(self):
+    def _recall_load(self) -> None:
+        """Re-execute the load method of the component with the same arguments that
+        were used when the component was initially loaded."""
         self._call_load(*self._load_args, **self._load_kwargs)
 
-    def __setattr__(self, item, value):
+    def __setattr__(self, item, value) -> None:
+        """Special method that allows attributes to be set on the component. It also
+        tracks which attributes are being set so that they can be included in the component's state.
+        """
         if self in tracing_component_load:
             tracing_component_load[self].add(item)
         return super().__setattr__(item, value)
 
     @property
-    def client(self):
+    def client(self) -> CallbackList:
         return self._callback_queue
 
     def set_load_args(self, *args, **kwargs) -> None:
@@ -498,13 +506,13 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             )
         self._load_args = load_args
 
-    def _data(self):
+    def _data(self) -> dict[str, Any]:
         return {key: getattr(self, key) for key in self._public_properties}
 
-    def _encoded_state(self):
+    def _encoded_state(self) -> str:
         return encode_component(self)
 
-    def __getstate__(self):
+    def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
         for key in (
             self._excluded_props_from_saved_state
@@ -514,20 +522,25 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
                 del state[key]
         return state
 
-    def _render_data(self):
+    def _render_data(self) -> dict[str, Any]:
+        """Generates a dictionary that includes the component's attributes and a
+        special attribute __state that contains the component's state as a JSON string.
+        This dictionary is used to render the component's HTML.
+        """
         data = self._data()
         data["__state"] = self._encoded_state()
         return data
 
-    def _add_to_context(self, context):
-        super()._add_to_context(context)
+    def _add_self_attrs_to_context(self, context) -> None:
+        super()._add_self_attrs_to_context(context)
         if hasattr(self, "_loaded_children_state") and self._loaded_children_state:
             children_state = {c["data"]["key"]: c for c in self._loaded_children_state}
             context["_loaded_children_state"] = children_state
         else:
             context["_loaded_children_state"] = None
 
-    def render(self, data=RenderData.INIT):
+    def render(self, data=RenderData.INIT) -> SafeString:
+        """Renders the component's HTML."""
         if hasattr(thread_local, "_tetra_render_data"):
             data = thread_local._tetra_render_data
             set_thread_local = False
@@ -559,22 +572,34 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         html = f'{html[:tag_name_end]} {" ".join(extra_tags)} {html[tag_name_end:]}'
         return mark_safe(html)
 
-    def update_html(self, include_state=False):
+    def update_html(self, include_state=False) -> None:
+        """Updates the component's HTML.
+
+        If `include_state` is True, it includes the component's state in the HTML.
+        Otherwise, it only includes the component's attributes.
+        """
         if include_state:
             self.client._updateHtml(self.render(data=RenderData.UPDATE))
         else:
             self.client._updateHtml(self.render(data=RenderData.MAINTAIN))
 
-    def update_data(self):
+    def update_data(self) -> None:
+        """Updates the component's state with the latest data from the server."""
         self.client._updateData(self._render_data())
 
-    def update(self):
+    def update(self) -> None:
+        """Updates the component's HTML and state."""
         self.update_html(include_state=True)
 
-    def replace_component(self):
+    def replace_component(self) -> None:
+        """Replaces the current component with a new one. It first updates the HTML
+        and state of the current component, and then it creates a new component with the same name and attributes as the current component.
+        """
         self.client._replaceComponent(self.render())
 
-    def _call_public_method(self, request, method_name, children_state, *args):
+    def _call_public_method(
+        self, request, method_name, children_state, *args
+    ) -> JsonResponse:
         self._loaded_children_state = children_state
         self._callback_queue = CallbackList()
         result = getattr(self, method_name)(*args)
@@ -596,7 +621,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         )
 
     @public
-    def _refresh(self):
+    def _refresh(self) -> None:
         """
         Re-render and return
         This is just a noop as the @public decorator implements this functionality
