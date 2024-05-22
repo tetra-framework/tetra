@@ -23,7 +23,7 @@ dependencies = [
     "cryptography>=37.0.1",
     "Django>=3.2.0",
     "python-dateutil>=2.8.2",
-    "django-environ",
+    "sourcetypes>=0.0.4",
 ]
 requires-python = ">=3.8"
 
@@ -52,7 +52,6 @@ demo = [
     "whitenoise>=6.6.0",
     "PyYAML>=6.0",
     "markdown>=3.3.7",
-    "sourcetypes>=0.0.4",
 ]
 
 [tool.setuptools.dynamic]
