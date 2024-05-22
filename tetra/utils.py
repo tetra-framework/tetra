@@ -70,7 +70,7 @@ class TetraJSONEncoder(json.JSONEncoder):
                 "value": obj.pk,
             }
         else:
-            # in one last desparate attempt, try to cast the object into a str.
+            # in one last desperate attempt, try to cast the object into a str.
             # FIXME: this could lead to serious problems, if the object can't be
             #  decoded again. Maybe raise an error. But it works for most objects,
             #  like PhoneNumbers etc, that all basically are saved in a CharField
