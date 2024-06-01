@@ -220,8 +220,8 @@ def encode_component(component) -> str:
 
     # TODO: this should be in component.__getstate__
     # We don't need a full context stack and don't want a RequestContext
-    # TODO: in future would be  better to patch RequestContext to keep track of what
-    # it adds that then they can be easily removed.
+    # TODO: in future would be better to patch RequestContext to keep track of what
+    #  it adds that then they can be easily removed.
     original_context = component._context
     context = copy(original_context)
     if isinstance(context, RequestContext):
