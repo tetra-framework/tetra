@@ -270,8 +270,8 @@ class Public(metaclass=PublicMeta):
         elif self._update and isinstance(obj, FunctionType):
 
             @wraps(obj)
-            def fn(self, *args, **kwards):
-                ret = obj(self, *args, **kwards)
+            def fn(self, *args, **kwargs):
+                ret = obj(self, *args, **kwargs)
                 self.update()
                 return ret
 
@@ -384,7 +384,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         *args,
         **kwargs,
     ) -> Any:
-        """Create and initialize a component instance from its serialized state."""
+        """Creates and initializes a component instance from its serialized state."""
         if not (
             isinstance(data, dict)
             and "state" in data
@@ -434,7 +434,11 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     @classmethod
     def make_script(cls, component_var=None) -> str:
-        """This method generates a JavaScript script for the component. It includes the component's methods, attributes, and server-side methods. This script can be imported dynamically via Alpine.init() and used to update the component's state"""
+        """This method generates a JavaScript script for the component.
+        It includes the component's methods, attributes, and server-side methods.
+        This script can be imported dynamically via Alpine.init() and used to update
+        the component's state
+        """
         component_server_methods = []
         for method in cls._public_methods:
             method_data = copy(method)
@@ -483,7 +487,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     def __setattr__(self, item, value) -> None:
         """Special method that allows attributes to be set on the component. It also
-        tracks which attributes are being set so that they can be included in the component's state.
+        tracks which attributes are being set so that they can be included in the
+        component's state.
         """
         if self in tracing_component_load:
             tracing_component_load[self].add(item)
@@ -523,8 +528,9 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         return state
 
     def _render_data(self) -> dict[str, Any]:
-        """Generates a dictionary that includes the component's attributes and a
-        special attribute __state that contains the component's state as a JSON string.
+        """Returns a dictionary that includes the component's attributes and a
+        special attribute __state that contains the component's encoded state as a JSON
+        string.
         This dictionary is used to render the component's HTML.
         """
         data = self._data()
@@ -593,7 +599,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     def replace_component(self) -> None:
         """Replaces the current component with a new one. It first updates the HTML
-        and state of the current component, and then it creates a new component with the same name and attributes as the current component.
+        and state of the current component, and then it creates a new component with
+        the same name and attributes as the current component.
         """
         self.client._replaceComponent(self.render())
 
@@ -622,8 +629,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     @public
     def _refresh(self) -> None:
-        """
-        Re-render and return
+        """Re-render and return
         This is just a noop as the @public decorator implements this functionality
         """
         pass
