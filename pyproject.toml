@@ -60,5 +60,5 @@ version = {attr = "tetra.__version__"}
 [tool.setuptools.packages.find]
 exclude = ["docs", "tests", "demosite"]
 
-#[tool.pytest.ini_options]
-#DJANGO_SETTINGS_MODULE="tests.settings"
+[tool.pytest.ini_options]
+addopts = "--nomigrations"

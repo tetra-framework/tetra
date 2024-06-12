@@ -1,5 +1,7 @@
 import json
 import datetime
+from typing import Any
+
 from dateutil import parser as datetime_parser
 from django.apps import apps
 from django.db import models
@@ -40,6 +42,7 @@ class TetraJSONEncoder(json.JSONEncoder):
 
     def default(self, obj):
         # See "Date Time String Format" in the ECMA-262 specification.
+        # https://262.ecma-international.org/#sec-date-time-string-format
         if isinstance(obj, datetime.datetime):
             r = obj.isoformat()
             if obj.microsecond:
@@ -70,33 +73,28 @@ class TetraJSONEncoder(json.JSONEncoder):
                 "value": obj.pk,
             }
         else:
-            # in one last desperate attempt, try to cast the object into a str.
-            # FIXME: this could lead to serious problems, if the object can't be
-            #  decoded again. Maybe raise an error. But it works for most objects,
-            #  like PhoneNumbers etc, that all basically are saved in a CharField
-            try:
-                return str(obj)
-            except (TypeError, ValueError):
-                return super().default(obj)
+            return super().default(obj)
 
 
 class TetraJSONDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
-        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+        super().__init__(object_hook=self.object_hook, *args, **kwargs)
 
     def object_hook(self, obj):
         if "__type" not in obj:
             return obj
-        type: str = obj["__type"]
-        if type == "datetime":
+        _type: str = obj["__type"]
+        if _type == "datetime":
             return datetime_parser.parse(obj["value"])
-        if type == "set":
+        if _type == "set":
             return set(obj["value"])
-        if type.startswith("model."):
-            _, app_name, model_name = type.split(".")
+        if _type.startswith("model."):
+            _, app_name, model_name = _type.split(".")
             model = apps.get_model(app_name, model_name)
-            return model.objects.get(pk=obj["value"])
-        return obj
+            # FIXME: error handling if model.DoesNotExist
+            m = model._default_manager.get(pk=obj["value"])
+            return m
+        raise json.JSONDecodeError(f"Cannot decode '{_type}' object from JSON.", obj, 0)
 
 
 def to_json(obj):
