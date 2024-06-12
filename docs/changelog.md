@@ -16,6 +16,7 @@ title: Changelog
 ### Added
 - @v templatetag for "live" rendering of frontend variables
 - support Django models in TetraJSONEn/Decoder
+- experimental FormComponent and GenericObjectFormComponent with form validation
 
 ## [0.1.1] - 2024-04-10
 ### Changes
