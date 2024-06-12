@@ -113,7 +113,7 @@ class Counter(Component):
     count = 0
     current_sum = 0
 
-    def load(self, current_sum=None):
+    def load(self, current_sum=None, *args, **kwargs):
         if current_sum is not None:
             self.current_sum = current_sum
 

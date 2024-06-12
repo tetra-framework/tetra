@@ -39,7 +39,7 @@ def register_pickler(obj_type, prefix):
 
 @register_pickler(QuerySet, b"QuerySet")
 class PickleQuerySet:
-    def pickle(qs) -> bytes:
+    def pickle(qs: QuerySet) -> bytes:
         return pickle.dumps(
             {
                 "model": qs.model,
@@ -56,7 +56,7 @@ class PickleQuerySet:
 
 @register_pickler(Model, b"Model")
 class PickleModel:
-    def pickle(obj) -> bytes:
+    def pickle(obj: Model) -> bytes:
         return pickle.dumps(
             {
                 "class": type(obj),

@@ -6,7 +6,7 @@ from django.template import Template
 import inspect
 from collections import defaultdict
 
-from .components.base import InlineTemplate, ComponentNotFound
+from .components.base import InlineTemplate, ComponentNotFound, Component
 from .library import Library, ComponentLibraryException
 
 logger = logging.getLogger(__file__)
@@ -49,7 +49,7 @@ def find_component_libraries():
     find_libraries_done = True
 
 
-def resolve_component(context, name):
+def resolve_component(context, name) -> Component:
     template = context.template
     current_app = None
     name_parts = name.split(".")

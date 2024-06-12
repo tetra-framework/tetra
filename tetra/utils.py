@@ -40,7 +40,7 @@ class TetraJSONEncoder(json.JSONEncoder):
     Based on DjangoJSONEncoder
     """
 
-    def default(self, obj):
+    def default(self, obj: Any) -> str | dict:
         # See "Date Time String Format" in the ECMA-262 specification.
         # https://262.ecma-international.org/#sec-date-time-string-format
         if isinstance(obj, datetime.datetime):
@@ -80,7 +80,7 @@ class TetraJSONDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
         super().__init__(object_hook=self.object_hook, *args, **kwargs)
 
-    def object_hook(self, obj):
+    def object_hook(self, obj) -> Any:
         if "__type" not in obj:
             return obj
         _type: str = obj["__type"]
