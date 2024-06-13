@@ -491,9 +491,10 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         return f"{before}{cls.script}"
 
     def _pre_load(self, *args, **kwargs):
-        """This method is called before the component's load method is called.
-        You can set up attributes here for your sub-component, that should NOT be
-        saved with the server state.
+        """This method is called just before the component's `load()` method is called.
+        You can e.g. set up some attributes here that are permanently needed in your
+        component subclass - They will NOT be saved with the server state (same as
+        in `load()`).
         """
 
     def _call_load(self, *args, **kwargs) -> None:
