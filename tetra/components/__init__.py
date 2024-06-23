@@ -3,5 +3,6 @@ from .base import (
     ComponentNotFound,
     BasicComponent,
     Component,
+    FormComponent,
     public,
 )
