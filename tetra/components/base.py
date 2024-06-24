@@ -759,6 +759,12 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         else:
             self.form_invalid(self.form)
 
+    # @classmethod
+    # def as_tag(cls, _request, *args, **kwargs) -> SafeString:
+    #     s = super().as_tag(_request, *args, **kwargs)
+    #     self.form.errors.clear()
+    #     return cls(_request, *args, **kwargs).render()
+
 
 class GenericObjectFormComponent(FormComponent):
     """
