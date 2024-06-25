@@ -698,21 +698,22 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     form: Form = None
 
     def _pre_load(self, *args, **kwargs) -> None:
+        # FIXME: files must be supported too in uploads.
+        #  Tetra should handle them differently than _data(), like Django does.
         self.form = self.get_form(self._data())
 
     def get_form_class(self):
         """Returns the form class to use in this component."""
         return self.form_class
 
-    def get_form(self, data=None, **kwargs):
+    def get_form(self, data=None, files=None, **kwargs):
         """Returns a new form instance, initialized with data from the component
         attributes."""
         if data is None:
             data = self._data()
 
         cls = self.get_form_class()
-        # FIXME: FILES is None
-        form = cls(data=data, files=None, **kwargs)
+        form = cls(data=data, files=files, **kwargs)
         self._connect_form_fields(form)
         return form
 
