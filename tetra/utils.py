@@ -72,6 +72,9 @@ class TetraJSONEncoder(json.JSONEncoder):
                 "__type": f"model.{obj._meta.app_label}.{obj.__class__.__name__}",
                 "value": obj.pk,
             }
+        # FIXME: to_json does not work properly
+        elif hasattr(obj, "to_json"):
+            return {"__type": "generic", "value": obj.to_json()}
         else:
             return super().default(obj)
 
