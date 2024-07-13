@@ -696,11 +696,16 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     form_class: type(forms.BaseForm) = None
     form_errors: dict = {}
     form: Form = None
+    form_submitted: bool = False
 
     def _pre_load(self, *args, **kwargs) -> None:
         # FIXME: files must be supported too in uploads.
         #  Tetra should handle them differently than _data(), like Django does.
+        self.form_errors = {}
         self.form = self.get_form(self._data())
+        if not self.form_submitted:
+            for field in self.form.fields.values():
+                field.required = False
 
     def get_form_class(self):
         """Returns the form class to use in this component."""
@@ -755,9 +760,16 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         The component will validate the data against the form, and if the form is valid,
         it will call form_valid(), else form_invalid().
         """
+        self.form_submitted = True
+        self.form = self.get_form(self._data())
+        for field_name, field in self.form.fields.items():
+            if field.required:
+                field.required = True
+
         if self.form.is_valid():
             self.form_valid(self.form)
         else:
+            self.form_errors = self.form.errors.get_json_data(escape_html=True)
             self.form_invalid(self.form)
 
     # @classmethod
