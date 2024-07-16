@@ -704,8 +704,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         self.form_errors = {}
         self.form = self.get_form(self._data())
         if not self.form_submitted:
-            for field in self.form.fields.values():
-                field.required = False
+            self.form.errors.clear()
 
     def get_form_class(self):
         """Returns the form class to use in this component."""
