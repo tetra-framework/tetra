@@ -694,8 +694,8 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     """
 
     form_class: type(forms.BaseForm) = None
-    form_errors: dict = {}
     form: Form = None
+    form_errors: dict = {}
     form_submitted: bool = False
 
     def _pre_load(self, *args, **kwargs) -> None:
