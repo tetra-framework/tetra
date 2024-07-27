@@ -782,7 +782,7 @@ class GenericObjectFormComponent(FormComponent):
     """
     Component that can render a Model object using a ModelForm, load and
     save the given object, and validate it. This is basically the equivalent of the
-    UpadteView/CreateView class for views in Django.
+    UpdateView/CreateView class for views in Django.
 
     Attributes:
         form_class (type(ModelForm)): the ModelForm class to use
