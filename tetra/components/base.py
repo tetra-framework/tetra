@@ -674,7 +674,7 @@ class FormComponentMetaClass(ComponentMetaClass):
         # iter through form fields, and set a public attribute to the component
         # for each field
 
-        form_class = dct["form_class"]
+        form_class = dct.get("form_class", None)
 
         if form_class:
             for field_name in form_class.base_fields:
