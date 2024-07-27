@@ -497,6 +497,15 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         in `load()`).
         """
 
+    def _post_load(self, *args, **kwargs):
+        """This method is called right after the component's `load()` method.
+        You can e.g. set up some attributes here that are permanently needed in your
+        component subclass - They will NOT be saved with the server state (same as
+        in `load()`).
+        Because it's called *after* `load()`, you can assume the component's setup is
+        completed.
+        """
+
     def _call_load(self, *args, **kwargs) -> None:
         """Load the component's state and attributes.
         It keeps a record of the given parameters for later recalls and
@@ -509,6 +518,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         try:
             self._pre_load(*args, **kwargs)
             self.load(*args, **kwargs)
+            self._post_load(*args, **kwargs)
             props = tracing_component_load[self]
         finally:
             del tracing_component_load[self]
