@@ -741,8 +741,11 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
                 setattr(self, attr, value)
 
     def form_valid(self, form) -> None:
-        """Hook that gets called when form was validated successfully. Override this
-        method to customize behaviour.
+        """This method is called when the form data is valid.
+        It saves the form data to the database.
+
+        Parameters:
+        form (Form): The form instance that contains the validated form data.
         """
         pass
 
