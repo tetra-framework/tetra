@@ -194,7 +194,9 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         if not hasattr(_request, "tetra_components_used"):
             _request.tetra_components_used = set()
         _request.tetra_components_used.add(cls)
-        return cls(_request, *args, **kwargs).render()
+        component = cls(_request, *args, **kwargs)
+        component.ready()
+        return component.render()
 
     def _call_load(self, *args, **kwargs) -> None:
         self.load(*args, **kwargs)
@@ -242,6 +244,14 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
                 html = self._template._render(context)
 
         return mark_safe(html)
+
+    def ready(self):
+        """Hook method when component is fully loaded and ready to render.
+
+        You can use this method to do additional initialization logic.
+        Attributes that are set here override attributes set in `load()` or the ones
+        recovered from the state, or frontend data.
+        """
 
 
 empty = object()
@@ -441,6 +451,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             setattr(component, key, value)
         component._leaded_from_state = True
         component._leaded_from_state_data = data["data"]
+        component.ready()
         return component
 
     @classmethod

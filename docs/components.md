@@ -489,6 +489,22 @@ This way, no component re-rendering in the browser is triggered, just the values
 This removes and destroys the component in the browser and re-inserts a new copy into the DOM. Any client side state,
 such as cursor location in text inputs will be lost.
 
+
+### `ready`
+
+Called when the component is fully loaded, just before rendering. The state is restored, `load()` was called, and data from the frontend was already applied to the backend state.
+You can do some further initialization here that should override all other rules; Especially attributes set in `load()` are not saved with the state, and would be lost.
+It can be used to add dynamical changing elements to an attached Django form. 
+
+```python
+class SignupForm(DynamicFormMixin, FormComponent):
+    ...
+    def ready(self):
+        # people that pay more than 20 bucks per month may be anonymous.
+        self._form.fields["name"].required = self.pay_sum_per_month >= 20
+```
+
+
 ## Combining Alpine.js and backend methods
 
 Alpine functionality and Tetra components' backend methods can bee freely combined, so you can use the advantages of
