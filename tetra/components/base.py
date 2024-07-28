@@ -750,18 +750,20 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
             for attr, value in self.form.cleaned_data.items():
                 setattr(self, attr, value)
 
-    def form_valid(self, form) -> None:
+    def form_valid(self, form: BaseForm) -> None:
         """This method is called when the form data is valid.
-        It saves the form data to the database.
+        It should save the form data.
 
         Parameters:
-        form (Form): The form instance that contains the validated form data.
+            form: The form instance that contains the validated form data.
         """
-        pass
 
-    def form_invalid(self, form) -> None:
+    def form_invalid(self, form: BaseForm) -> None:
         """Hook that gets called when form was validated with errors. Override this
         method to customize behaviour.
+
+        Parameters:
+            form: The form instance that contains the invalid form data.
         """
 
     @public
