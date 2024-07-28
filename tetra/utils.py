@@ -40,7 +40,7 @@ class TetraJSONEncoder(json.JSONEncoder):
     Based on DjangoJSONEncoder
     """
 
-    def default(self, obj: Any) -> str | dict:
+    def default(self, obj: Any) -> str | dict | int | list:
         # See "Date Time String Format" in the ECMA-262 specification.
         # https://262.ecma-international.org/#sec-date-time-string-format
         if isinstance(obj, datetime.datetime):
@@ -68,15 +68,19 @@ class TetraJSONEncoder(json.JSONEncoder):
         # elif isinstance(obj, (decimal.Decimal, uuid.UUID, Promise)):
         #     return str(obj)
         elif isinstance(obj, models.Model):
-            return {
-                "__type": f"model.{obj._meta.app_label}.{obj.__class__.__name__}",
-                "value": obj.pk,
-            }
-        # FIXME: to_json does not work properly
-        elif hasattr(obj, "to_json"):
-            return {"__type": "generic", "value": obj.to_json()}
+            # just return the object's pk, as it mostly will be used for lookups
+            return obj.pk
+        # # FIXME: to_json does not work properly
+        # elif hasattr(obj, "to_json"):
+        #     return {"__type": "generic", "value": obj.to_json()}
         else:
-            return super().default(obj)
+            # as last resort, rty to serialize into str
+            try:
+                return str(obj)
+            except (TypeError, ValueError):
+                pass
+
+        return super().default(obj)
 
 
 class TetraJSONDecoder(json.JSONDecoder):
@@ -91,12 +95,6 @@ class TetraJSONDecoder(json.JSONDecoder):
             return datetime_parser.parse(obj["value"])
         if _type == "set":
             return set(obj["value"])
-        if _type.startswith("model."):
-            _, app_name, model_name = _type.split(".")
-            model = apps.get_model(app_name, model_name)
-            # FIXME: error handling if model.DoesNotExist
-            m = model._default_manager.get(pk=obj["value"])
-            return m
         raise json.JSONDecodeError(f"Cannot decode '{_type}' object from JSON.", obj, 0)
 
 
