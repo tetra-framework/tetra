@@ -839,7 +839,93 @@ class DependencyFormMixin:
         def make_changed(self, value, old_value, attr) -> None:
             self.update_field_queryset("model", CarModel.objects.filter(make=value))
 
-class GenericObjectFormComponent(FormComponent):
+            # hide engine_type if make is Tesla
+            if value == Make.objects.get(name="Tesla")
+                self._form.fields["engine_type"].visible = True
+        ```
+
+        It is possible that you call this method in `load()` too, if you e.g. prefill
+        the parent field and want to have its dependent fields updated accordingly.
+
+    Attributes:
+        field_dependencies: A dictionary that maps child field names to their
+        corresponding parent. The dict keys are the child field names, and the dict
+        values are the parents that they depend on.
+        Examples:
+            field_dependencies = {
+              "model": "make",  # model depends on make
+              "year": "make"  # year depends on make
+            }
+
+    """
+
+    field_dependencies: dict[str, str | tuple] = {}
+
+    def __init__(self, *args, **kwargs):
+        if not self.field_dependencies:
+            raise AttributeError(
+                f"{self.__class__.__name__} needs a 'field_dependencies' attribute."
+            )
+        super().__init__(*args, **kwargs)
+
+    def get_form(self, *args, **kwargs):
+        """Updates querysets of dependent fields when the form is created."""
+        form = super().get_form(*args, **kwargs)
+        for field_name, parent_name in self.field_dependencies.items():
+            if getattr(self, parent_name, None):
+                get_queryset = getattr(self, f"get_{field_name}_queryset", None)
+                if get_queryset:
+                    form.fields[field_name].queryset = get_queryset()
+        return form
+
+    # def _get_queryset_for_field(self, field_name: str) -> QuerySet:
+    #     """Returns the queryset for the given field."""
+    #     parent_name = self.field_dependencies.get(field_name)
+    #     if parent_name:
+    #         parent_value = getattr(self, parent_name, None)
+    #         if parent_value:
+    #             return self.model._default_manager.filter(**{parent_name: parent_value})
+    #     return self.model._default_manager.none()
+
+    def update_field_queryset(
+        self,
+        child_field_name: str,
+        queryset: QuerySet,
+        old_value: Any = None,
+    ):
+        """Helper method that updates the queryset of the child field based on the
+        value of its parent field.
+
+        If the parent field value changes, the child field's queryset is updated
+        accordingly.
+        """
+        if not child_field_name:
+            return
+        parent_field_name = self.field_dependencies[child_field_name]
+        parent_value = getattr(self, parent_field_name, None)
+        if not parent_value:
+            # if parent is not available/set, always empty child's queryset
+            self._form.fields[child_field_name].queryset = queryset.none()
+            setattr(self, child_field_name, None)
+            print(f"Set {child_field_name} to None")
+            return
+
+        # clear children field's errors and value ONLY if parent value has changed
+        # if old_value and parent_value != old_value:
+        #     setattr(self, child_field_name, None)
+        #     print(f"reset {child_field_name} to None")
+        #     errors = self._form.errors.get(child_field_name, None)
+        #     if errors:
+        #         print(f"clean form errors for {child_field_name}: {errors}")
+        #         # errors.clear()
+        self._form.fields[child_field_name].queryset = queryset
+
+        def set_field_visibility(self, field_name: str, visible: bool):
+            """Helper method to set the visibility of a field in the form."""
+            self._form.fields[field_name].visible = visible
+
+
+class GenericObjectFormComponent(ModelFormComponent):
     """
     Component that can render a Model object using a ModelForm, load and
     save the given object, and validate it. This is basically the equivalent of the
