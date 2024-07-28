@@ -316,7 +316,7 @@ There are a number of Tetra built in methods, these are all prefixed with a sing
 
 ### `_parent` attribute
 
-The `_parent` attribute allows you to access the component parent component if there is one. Via this you can call methods, both JavaScript and public Python, on an ancestor component:
+The `_parent` attribute allows you to access the component's parent component if there is one. Via this you can call methods, both JavaScript and public Python, on an ancestor component:
 
 ``` python
 @default.register
@@ -340,7 +340,7 @@ class MyComponent(Component):
         self.client._parent._parent.clientMethod('A value')
 ```
 
-### `_redirect`
+### `_redirect()`
 
 The `_redirect` method allows you to instruct the client to redirect to another url after calling a public method:
 
@@ -364,7 +364,7 @@ class MyComponent(Component):
         self.client._redirect(reverse(views.archive))
 ```
 
-### `_dispatch`
+### `_dispatch()`
 
 The `_dispatch` method is a wrapper around the Alpine.js [`dispatch` magic](https://alpinejs.dev/magics/dispatch) allowing you to dispatch events from public server methods. These bubble up the DOM and be captured by listeners on (grand)parent components. It takes an event name as it's first argument, and an extended JSON serialisable object as its second argument. see Alpine.js [`$dispatch`](https://alpinejs.dev/magics/dispatch) for details.
 
@@ -406,7 +406,7 @@ class MyComponent(Component):
     """
 ```
 
-### `_removeComponent`
+### `_removeComponent()`
 
 the `_removeComponent` method removed the component from the DOM and destroys it. This is useful when deleting an item on the server and wanting to remove the corresponding component in the browser:
 
@@ -420,7 +420,7 @@ class MyComponent(Component):
         self.client._removeComponent()
 ```
 
-### `_updateData`
+### `_updateData()`
 
 The `_updateData` method allows you to update specific public state data on the client. It takes a `dict` of values to update on the client:
 
@@ -454,7 +454,7 @@ class MyComponent(Component):
 
 There are a number of built-in server methods:
 
-### `update`
+### `update()`
 
 The `update` method instructs the component to rerender after the public method has completed, sending the updated HTML to the browser and "morphing" the DOM. Usually public methods do this by default. However, if this has been turned off with `update=False`, and you want to conditionally update the html, you can use this:
 
@@ -469,7 +469,7 @@ class MyComponent(Component):
             self.update()
 ```
 
-### `update_data`
+### `update_data()`
 
 The `update_data` method instructs the component to send the complete set of public attribute to the client, updating their values, useful in combination with `@public(update=False)`:
 
@@ -484,10 +484,26 @@ class MyComponent(Component):
 ```
 This way, no component re-rendering in the browser is triggered, just the values itself are updated.
 
-### `replace_component`
+### `replace_component()`
 
 This removes and destroys the component in the browser and re-inserts a new copy into the DOM. Any client side state,
 such as cursor location in text inputs will be lost.
+
+
+### `ready()`
+
+Called when the component is fully loaded, just before rendering. The state is restored, `load()` was called, and data from the frontend was already applied to the backend state.
+You can do some further initialization here that should override all other rules; Especially attributes set in `load()` are not saved with the state, and would be lost.
+It can be used to add dynamical changing elements to an attached Django form. 
+
+```python
+class SignupForm(DynamicFormMixin, FormComponent):
+    ...
+    def ready(self):
+        # people that pay more than 20 bucks per month may be anonymous.
+        self._form.fields["name"].required = self.pay_sum_per_month >= 20
+```
+
 
 ## Combining Alpine.js and backend methods
 

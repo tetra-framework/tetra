@@ -9,6 +9,7 @@ import base64
 from django.conf import settings
 from django.db.models.query import QuerySet
 from django.db.models import Model
+from django.forms import BaseForm
 from django.template import RequestContext, engines
 from django.template.base import Origin
 from django.template.loader_tags import BlockNode
@@ -143,6 +144,13 @@ class StatePickler(pickle.Pickler):
         if isinstance(obj, Origin):
             obj.loader = None
 
+        # Hacky solution to prevent pickling Django Forms:
+        # save form to a temporary attribute and then restore it after unpickling
+        saved_form = None
+        if hasattr(obj, "_form") and obj._form and isinstance(obj._form, BaseForm):
+            saved_form = obj._form
+            obj._form = None
+
         pickler = None
         if type(obj) in picklers_by_type:
             pickler = picklers_by_type[type(obj)]
@@ -152,6 +160,8 @@ class StatePickler(pickle.Pickler):
                     pickler = pickler_option
         if pickler:
             pickled = pickler.pickle(obj)
+            if saved_form:
+                obj._form = saved_form
             if pickled is not None:
                 return b":".join([pickler.prefix, pickled])
         return None

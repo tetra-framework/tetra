@@ -13,7 +13,8 @@ from threading import local
 from django import forms
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
-from django.forms import Form
+from django.db.models import QuerySet
+from django.forms import Form, modelform_factory, BaseForm
 from django.template.base import Template
 from django.template.loader import render_to_string, get_template
 from django.template import RequestContext, TemplateSyntaxError
@@ -25,7 +26,7 @@ from django.http import JsonResponse, HttpRequest
 from django.urls import reverse
 
 from ..utils import camel_case_to_underscore, to_json, TetraJSONEncoder, isclassmethod
-from ..state import encode_component, decode_component
+from ..state import encode_component, decode_component, skip_check
 from ..templates import InlineOrigin, InlineTemplate
 
 from .callbacks import CallbackList
@@ -194,7 +195,9 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         if not hasattr(_request, "tetra_components_used"):
             _request.tetra_components_used = set()
         _request.tetra_components_used.add(cls)
-        return cls(_request, *args, **kwargs).render()
+        component = cls(_request, *args, **kwargs)
+        component.ready()
+        return component.render()
 
     def _call_load(self, *args, **kwargs) -> None:
         self.load(*args, **kwargs)
@@ -242,6 +245,14 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
                 html = self._template._render(context)
 
         return mark_safe(html)
+
+    def ready(self):
+        """Hook method when component is fully loaded and ready to render.
+
+        You can use this method to do additional initialization logic.
+        Attributes that are set here override attributes set in `load()` or the ones
+        recovered from the state, or frontend data.
+        """
 
 
 empty = object()
@@ -441,6 +452,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             setattr(component, key, value)
         component._leaded_from_state = True
         component._leaded_from_state_data = data["data"]
+        component.ready()
         return component
 
     @classmethod
@@ -490,13 +502,6 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         before = re.sub(r"\S", " ", before)
         return f"{before}{cls.script}"
 
-    def _pre_load(self, *args, **kwargs):
-        """This method is called just before the component's `load()` method is called.
-        You can e.g. set up some attributes here that are permanently needed in your
-        component subclass - They will NOT be saved with the server state (same as
-        in `load()`).
-        """
-
     def _call_load(self, *args, **kwargs) -> None:
         """Load the component's state and attributes.
         It keeps a record of the given parameters for later recalls and
@@ -507,7 +512,6 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         # prevent properties set in load() to be save with the state
         tracing_component_load[self] = set()
         try:
-            self._pre_load(*args, **kwargs)
             self.load(*args, **kwargs)
             props = tracing_component_load[self]
         finally:
@@ -674,7 +678,7 @@ class FormComponentMetaClass(ComponentMetaClass):
         # iter through form fields, and set a public attribute to the component
         # for each field
 
-        form_class = dct["form_class"]
+        form_class = dct.get("form_class", None)
 
         if form_class:
             for field_name in form_class.base_fields:
@@ -694,17 +698,23 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     """
 
     form_class: type(forms.BaseForm) = None
-    form: Form = None
-    form_errors: dict = {}
     form_submitted: bool = False
+    form_errors: dict = {}  # TODO: make protected + include in render context
 
-    def _pre_load(self, *args, **kwargs) -> None:
-        # FIXME: files must be supported too in uploads.
-        #  Tetra should handle them differently than _data(), like Django does.
-        self.form_errors = {}
-        self.form = self.get_form(self._data())
+    _form: Form = None
+
+    def ready(self):
+        self._form = self.get_form(self._data())
+
+    def render(self, data=RenderData.INIT) -> SafeString:
         if not self.form_submitted:
-            self.form.errors.clear()
+            self._form.errors.clear()
+        return super().render(data=data)
+
+    def get_context_data(self, **kwargs) -> RequestContext:
+        context = super().get_context_data(**kwargs)
+        context["form"] = self._form
+        return context
 
     def get_form_class(self):
         """Returns the form class to use in this component."""
@@ -718,39 +728,43 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
 
         cls = self.get_form_class()
         form = cls(data=data, files=files, **kwargs)
-        self._connect_form_fields(form)
+        self._add_alpine_models_to_fields(form)
         return form
 
-    def _connect_form_fields(self, form) -> None:
+    def _add_alpine_models_to_fields(self, form) -> None:
         """Connects the form's fields to the Tetra backend using x-model attributes."""
         for field_name, field in form.fields.items():
             if field_name in self._public_properties:
-                # self.form.fields[field_name].initial = getattr(self, field_name)
+                # form.fields[field_name].initial = getattr(self, field_name)
                 form.fields[field_name].widget.attrs.update({"x-model": field_name})
 
     @public
     def validate(self) -> None:
         """Validates the data using the form defined in `form_class`, and re-renders
         the component, without saving the form."""
-        if self.form.is_valid():
+        if self._form.is_valid():
             pass
         else:
-            self.form_errors = self.form.errors.get_json_data(escape_html=True)
+            self.form_errors = self._form.errors.get_json_data(escape_html=True)
             # set the possibly cleaned values back to the component's attributes
-            for attr, value in self.form.cleaned_data.items():
+            for attr, value in self._form.cleaned_data.items():
                 setattr(self, attr, value)
 
-    def form_valid(self, form) -> None:
-        """Hook that gets called when form was validated successfully. Override this
-        method to customize behaviour.
-        """
-        pass
+    def form_valid(self, form: BaseForm) -> None:
+        """This method is called when the form data is valid.
+        It should save the form data.
 
-    def form_invalid(self, form) -> None:
+        Parameters:
+            form: The form instance that contains the validated form data.
+        """
+
+    def form_invalid(self, form: BaseForm) -> None:
         """Hook that gets called when form was validated with errors. Override this
         method to customize behaviour.
+
+        Parameters:
+            form: The form instance that contains the invalid form data.
         """
-        pass
 
     @public
     def submit(self) -> None:
@@ -760,29 +774,162 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         it will call form_valid(), else form_invalid().
         """
         self.form_submitted = True
-        self.form = self.get_form(self._data())
-        for field_name, field in self.form.fields.items():
-            if field.required:
-                field.required = True
 
-        if self.form.is_valid():
-            self.form_valid(self.form)
+        if self._form.is_valid():
+            self.form_valid(self._form)
         else:
-            self.form_errors = self.form.errors.get_json_data(escape_html=True)
-            self.form_invalid(self.form)
+            self.form_errors = self._form.errors.get_json_data(escape_html=True)
+            # set the possibly cleaned values back to the component's attributes
+            for attr, value in self._form.cleaned_data.items():
+                if type(value) in skip_check:
+                    setattr(self, attr, value)
+                else:
+                    setattr(self, attr, TetraJSONEncoder().default(value))
+            self.form_invalid(self._form)
 
-    # @classmethod
-    # def as_tag(cls, _request, *args, **kwargs) -> SafeString:
-    #     s = super().as_tag(_request, *args, **kwargs)
-    #     self.form.errors.clear()
-    #     return cls(_request, *args, **kwargs).render()
+    def clear(self):
+        """Clears the form data (sets all values to defaults) and renders the
+        component."""
+        for attr in self._public_properties:
+            setattr(self, attr, getattr(self.__class__, attr))
 
 
-class GenericObjectFormComponent(FormComponent):
+class ModelFormComponent(FormComponent):
+    form_class: type(forms.ModelForm) = None
+    model: type(models.Model) = None
+    fields: list[str] = "__all__"
+
+    def get_form_class(self):
+        """Returns the form class to use in this component."""
+        if self.form_class:
+            return self.form_class
+        if self.model:
+            return modelform_factory(model=self.model, fields=self.fields)
+        raise ImproperlyConfigured(
+            f"'{self.__class__.__name__}' must either define 'form_class' "
+            "or 'model', or override 'get_form_class()'"
+        )
+
+    def form_valid(self, form) -> None:
+        """Overrides the form_valid method to save the ModelForm data to the
+        database.
+
+        Override This method if you need custom functionality."""
+        form.save()
+
+
+class DependencyFormMixin:
+    """
+    A mixin class that provides functionality for updating dependent fields based on
+    parent fields in Tetra components
+
+    This class uses a declarative dependency dictionary (`field_dependencies`) to
+    define the relationship between child and parent fields, and some helper methods
+    to update child fields based on parent field changes.
+
+    Usage:
+        Inherit a FormComponent from this class, and add field_dependencies to it.
+        You should now call `self.update_dependent_fields` method whenever a parent
+        field changes its value, using the `@public.watch("field_name")` decorator:
+
+        ```python
+        field_dependencies = {"model": "make"}
+
+        @þublic.watch("make")
+        def make_changed(self, value, old_value, attr) -> None:
+            self.update_field_queryset("model", CarModel.objects.filter(make=value))
+
+            # hide engine_type if make is Tesla
+            if value == Make.objects.get(name="Tesla")
+                self._form.fields["engine_type"].visible = True
+        ```
+
+        It is possible that you call this method in `load()` too, if you e.g. prefill
+        the parent field and want to have its dependent fields updated accordingly.
+
+    Attributes:
+        field_dependencies: A dictionary that maps child field names to their
+        corresponding parent. The dict keys are the child field names, and the dict
+        values are the parents that they depend on.
+        Examples:
+            field_dependencies = {
+              "model": "make",  # model depends on make
+              "year": "make"  # year depends on make
+            }
+
+    """
+
+    field_dependencies: dict[str, str | tuple] = {}
+
+    def __init__(self, *args, **kwargs):
+        if not self.field_dependencies:
+            raise AttributeError(
+                f"{self.__class__.__name__} needs a 'field_dependencies' attribute."
+            )
+        super().__init__(*args, **kwargs)
+
+    def get_form(self, *args, **kwargs):
+        """Updates querysets of dependent fields when the form is created."""
+        form = super().get_form(*args, **kwargs)
+        for field_name, parent_name in self.field_dependencies.items():
+            if getattr(self, parent_name, None):
+                get_queryset = getattr(self, f"get_{field_name}_queryset", None)
+                if get_queryset:
+                    form.fields[field_name].queryset = get_queryset()
+        return form
+
+    # def _get_queryset_for_field(self, field_name: str) -> QuerySet:
+    #     """Returns the queryset for the given field."""
+    #     parent_name = self.field_dependencies.get(field_name)
+    #     if parent_name:
+    #         parent_value = getattr(self, parent_name, None)
+    #         if parent_value:
+    #             return self.model._default_manager.filter(**{parent_name: parent_value})
+    #     return self.model._default_manager.none()
+
+    def update_field_queryset(
+        self,
+        child_field_name: str,
+        queryset: QuerySet,
+        old_value: Any = None,
+    ):
+        """Helper method that updates the queryset of the child field based on the
+        value of its parent field.
+
+        If the parent field value changes, the child field's queryset is updated
+        accordingly.
+        """
+        if not child_field_name:
+            return
+        parent_field_name = self.field_dependencies[child_field_name]
+        parent_value = getattr(self, parent_field_name, None)
+        if not parent_value:
+            # if parent is not available/set, always empty child's queryset
+            self._form.fields[child_field_name].queryset = queryset.none()
+            setattr(self, child_field_name, None)
+            print(f"Set {child_field_name} to None")
+            return
+
+        # clear children field's errors and value ONLY if parent value has changed
+        # if old_value and parent_value != old_value:
+        #     setattr(self, child_field_name, None)
+        #     print(f"reset {child_field_name} to None")
+        #     errors = self._form.errors.get(child_field_name, None)
+        #     if errors:
+        #         print(f"clean form errors for {child_field_name}: {errors}")
+        #         # errors.clear()
+        self._form.fields[child_field_name].queryset = queryset
+
+        def set_field_visibility(self, field_name: str, visible: bool):
+            """Helper method to set the visibility of a field in the form."""
+            self._form.fields[field_name].visible = visible
+
+
+class GenericObjectFormComponent(ModelFormComponent):
     """
     Component that can render a Model object using a ModelForm, load and
     save the given object, and validate it. This is basically the equivalent of the
-    UpadteView/CreateView class for views in Django.
+    UpdateView/CreateView class for views in Django.
 
     Attributes:
         form_class (type(ModelForm)): the ModelForm class to use
@@ -791,7 +938,6 @@ class GenericObjectFormComponent(FormComponent):
     """
 
     object: models.Model = None
-    form_class: type(forms.ModelForm) = None
     _fields: list[str] = []
     _context_object_name = None  # TODO
 
@@ -813,11 +959,11 @@ class GenericObjectFormComponent(FormComponent):
         """Returns a form, bound to given model instance."""
         return super().get_form(data=data, files=files, instance=self.object, **kwargs)
 
-    def get_context_data(self, **kwargs):
-        """Insert the form into the context dict."""
-        if "form" not in kwargs:
-            kwargs["form"] = self.get_form()
-        return super().get_context_data(**kwargs)
+    # def get_context_data(self, **kwargs):
+    #     """Insert the form into the context dict."""
+    #     if "form" not in kwargs:
+    #         kwargs["form"] = self.get_form()
+    #     return super().get_context_data(**kwargs)
 
     def _get_context_object_name(self, is_list=False):
         """
