@@ -739,10 +739,10 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
 
         cls = self.get_form_class()
         form = cls(data=data, files=files, **kwargs)
-        self._connect_form_fields(form)
+        self._add_alpine_models_to_fields(form)
         return form
 
-    def _connect_form_fields(self, form) -> None:
+    def _add_alpine_models_to_fields(self, form) -> None:
         """Connects the form's fields to the Tetra backend using x-model attributes."""
         for field_name, field in form.fields.items():
             if field_name in self._public_properties:
