@@ -763,7 +763,6 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         """Hook that gets called when form was validated with errors. Override this
         method to customize behaviour.
         """
-        pass
 
     @public
     def submit(self) -> None:
