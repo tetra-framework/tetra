@@ -622,6 +622,9 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         If `include_state` is True, it includes the component's state in the HTML.
         Otherwise, it only includes the component's attributes.
         """
+        if self.client is None:
+            logger.warning("client not found")
+            return
         if include_state:
             self.client._updateHtml(self.render(data=RenderData.UPDATE))
         else:
@@ -686,6 +689,18 @@ class FormComponentMetaClass(ComponentMetaClass):
         return super().__new__(cls, name, bases, dct)
 
 
+class FormFactory:
+    @staticmethod
+    def factory(Form: object):
+
+        class AddFormIdentifier(Form):
+            identifier = forms.CharField(widget=forms.HiddenInput(), required=False,
+                                         initial=str(Form))
+            form_class = str(Form)
+
+        return AddFormIdentifier
+
+
 class FormComponent(Component, metaclass=FormComponentMetaClass):
     """
     Component that can render a form, and validate it.
@@ -702,6 +717,11 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     form_errors: dict = {}  # TODO: make protected + include in render context
 
     _form: Form = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.request.method == 'POST':
+            self.submit()
 
     def ready(self):
         self._form = self.get_form(self._data())
@@ -773,19 +793,25 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         The component will validate the data against the form, and if the form is valid,
         it will call form_valid(), else form_invalid().
         """
-        self.form_submitted = True
+        if self.request.method.upper() == 'POST':
+            form_id = self.request.POST.get('identifier', None)
+            if form_id and form_id == self.form_class.form_class:
+                self.form_submitted = True
+                self._form = self.get_form(self.request.POST, self.request.FILES)
 
-        if self._form.is_valid():
-            self.form_valid(self._form)
-        else:
-            self.form_errors = self._form.errors.get_json_data(escape_html=True)
-            # set the possibly cleaned values back to the component's attributes
-            for attr, value in self._form.cleaned_data.items():
-                if type(value) in skip_check:
-                    setattr(self, attr, value)
+                if self._form.is_valid():
+                    self.form_valid(self._form)
+                    self._form = self.get_form()  # Get a fresh, unbound form
+                    self.form_submitted = False
                 else:
-                    setattr(self, attr, TetraJSONEncoder().default(value))
-            self.form_invalid(self._form)
+                    self.form_errors = self._form.errors.get_json_data(escape_html=True)
+                    # set the possibly cleaned values back to the component's attributes
+                    for attr, value in self._form.cleaned_data.items():
+                        if type(value) in skip_check:
+                            setattr(self, attr, value)
+                        else:
+                            setattr(self, attr, TetraJSONEncoder().default(value))
+                    self.form_invalid(self._form)
 
     def clear(self):
         """Clears the form data (sets all values to defaults) and renders the

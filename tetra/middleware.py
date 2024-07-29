@@ -21,8 +21,9 @@ class TetraMiddleware:
     def __call__(self, request):
         csrf_token = get_token(request)
         response = self.get_response(request)
+        content_type = response.headers.get("Content-Type", "")
 
-        if "text/html" not in response.headers["Content-Type"]:
+        if "text/html" not in content_type:
             return response
         if int(response.status_code) >= 500:
             return response
