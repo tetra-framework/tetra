@@ -78,7 +78,7 @@ def make_template(cls) -> Template:
             from django.conf import settings
 
             logger.warning(
-                "Failed to compile inline template for component {cls.__name__}: {e}"
+                f"Failed to compile inline template for component {cls.__name__}: {e}"
             )
             if settings.DEBUG:
                 making_lazy_after_exception = True
