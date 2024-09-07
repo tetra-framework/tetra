@@ -245,8 +245,8 @@ class ComponentNode(template.Node):
         # when component starts with "=", assume it is a dynamic variable name
         if self.component_name.startswith("="):
             # Handle dotted paths for dynamic component names
-            self.component_name = self.component_name[1:]
-            path = self.component_name.split(".")
+            component_name = self.component_name[1:]
+            path = component_name.split(".")
             # traverse the context for the component name
             c = context
             for part in path:
@@ -256,8 +256,7 @@ class ComponentNode(template.Node):
                     c = getattr(c, part, None)
                 if c is None:
                     raise ComponentException(
-                        f"Unable to resolve dynamic component: '"
-                        f"{self.component_name}'"
+                        f"Unable to resolve dynamic component: '" f"{component_name}'"
                     )
             Component = c
         else:
