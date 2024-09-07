@@ -599,7 +599,14 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         html = super().render()
         if set_thread_local:
             del thread_local._tetra_render_data
-        tag_name_end = re.match(r"^\s*<\w+", html).end(0)
+        tag_name = re.match(r"^\s*<\w+", html)
+        if not tag_name:
+            raise ComponentException(
+                f"Error in {self.__class__.__name__}: The component's template is "
+                "not enclosed in HTML tags."
+            )
+        tag_name_end = tag_name.end(0)
+
         extra_tags = [
             f'tetra-component="{self.full_component_name()}"',
             f'x-bind="__rootBind"',
