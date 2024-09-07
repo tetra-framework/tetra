@@ -12,7 +12,14 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - unreleased
+## [0.1.2] - unreleased
+### Added
+- FormComponent support
+- improve demo site
+- add debug logging handler
+- improved component import error handling
+- allow component names to be dynamic
+## [0.1.1] - 2024-04-10
 ### Changes
 - **New package name: tetra**
 - add conditional block check within components
