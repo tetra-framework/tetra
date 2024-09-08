@@ -13,7 +13,7 @@ $ pip install tetra
 ```
 
 !!! note
-    As Tetra is still being developed it has only been tested with Python 3.9 and 3.10, we intend to support at least 3.8 before a V1 release.
+    As Tetra is still being developed it has only been tested with Python 3.9-3.12, we intend to support all officially Python versions at the time of v1.0.0.
 
 ## Initial configuration
 
@@ -23,11 +23,12 @@ Modify your Django `settings.py`:
 INSTALLED_APPS = [
     ...
     # Add the tetra app!
-    # Tetra must be before the Django staticfiles app in INSTALLED_APPS so that the 
-    # Tetra's 'runserver' command takes precedence as it will automatically recompile 
-    # your JS & CSS during development.
-    'tetra',
-    'django.contrib.staticfiles',
+    # Tetra must be before the Django staticfiles app (and daphne, if you use it) 
+    # in INSTALLED_APPS so that the Tetra's 'runserver' command takes precedence as it will 
+    # automatically recompile your JS & CSS during development.
+    "tetra",
+    # "daphne",
+    "django.contrib.staticfiles",
     ...
 ]
 
@@ -35,7 +36,7 @@ MIDDLEWARE = [
     ...
     # Add the Tetra middleware at the end of the list.
     # This adds the JS and CSS for your components to HTML responses
-    'tetra.middleware.TetraMiddleware'
+    "tetra.middleware.TetraMiddleware"
 ]
 ```
 
@@ -58,7 +59,7 @@ urlpatterns = [
 
 ## Installing esbuild
 
-Tetra requires [esbuild](https://esbuild.github.io), this is used to build your components' JavaScript/CSS into packages, and create sourcemaps so that you can trace errors back to your source Python files. The easiest way to install esbuild is via [Node.js](https://nodejs.org) [npm](https://www.npmjs.com), in the root of your Django project:
+Tetra requires [esbuild](https://esbuild.github.io), this is used to build your components' JavaScript/CSS into packages, and create sourcemaps so that you can trace errors back to your source Python files. The easiest way to install esbuild is via [Node.js](https://nodejs.org) [npm](https://www.npmjs.com), in the root of your Django project (the directory where `./manage.py` is located):
 
 ```
 $ npm init  # If you don't already have a npm package.json and ./node_modules directory
