@@ -77,7 +77,7 @@ def do_component(parser, token):
         has_content = False
         bits = bits[:-1]
 
-    # bits can be split in to sections stating with one of:
+    # bits can be split into sections stating with one of:
     # 'args:', 'attrs:' or 'context:'
     # The fist section defaults to 'args:' if it  is unprefixed.
     bits_grouped = {

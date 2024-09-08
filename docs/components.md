@@ -318,7 +318,7 @@ class MyComponent(Component):
     """
 ```
 
-If is implemented as a queue that is sent to the client after thee public method returns. The client they calls all scheduled callbacks with the provided arguments.
+It is implemented as a queue that is sent to the client after thee public method returns. The client they calls all scheduled callbacks with the provided arguments.
 
 Arguments must be of the same types as our extended JSON, see [public attributes](#public-attributes) for details.
 
