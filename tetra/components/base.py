@@ -77,8 +77,8 @@ def make_template(cls) -> Template:
             # TODO: turn this off when DEBUG=False
             from django.conf import settings
 
-            logger.warning(
-                f"Failed to compile inline template for component {cls.__name__}: {e}"
+            logger.error(
+                f"Failed to compile inline template for component '{cls.__name__}': {e}"
             )
             if settings.DEBUG:
                 making_lazy_after_exception = True
@@ -88,9 +88,12 @@ def make_template(cls) -> Template:
                         origin=origin,
                     )
                 )
-        # FIXME: when DEBUG=False and template compilation fails, the exception is
-        #  raised and teh `template` variable is None, and will crash next line
-        if not making_lazy_after_exception:
+            else:
+                raise ComponentException(
+                    f"Template compilation failed for component '{cls.__name__}': {e}"
+                )
+
+        if not making_lazy_after_exception and template is not None:
             for i, block_node in enumerate(
                 get_nodes_by_type_deep(template.nodelist, BlockNode)
             ):
