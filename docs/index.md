@@ -27,7 +27,7 @@ Furthermore, components can expose attributes and methods as *public*, making th
 
 ## Walkthrough of a simple "To Do App"
 
-To introduce the main aspects of Tetra we will walkthrough the code implementing the [To Do App demo](#examples) on the homepage.
+To introduce the main aspects of Tetra we will walkthrough the code implementing the [To Do App demo](https://tetraframework.com/#examples) on the homepage.
 
 *If you haven't used Django before you should follow their [tutorial](https://docs.djangoproject.com/en/4.2/intro/tutorial01/) before coming back here.*
 
