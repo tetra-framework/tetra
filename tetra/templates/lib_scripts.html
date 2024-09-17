@@ -10,6 +10,11 @@
 {% endfor %}
 <script defer src="{% static 'tetra/js/tetra.js' %}"></script>
 {% if include_alpine %}
-<script defer src="{% static 'tetra/js/alpinejs.morph.cdn.min.js' %}"></script>
-<script defer src="{% static 'tetra/js/alpinejs.cdn.min.js' %}"></script>
+  {% if debug %}
+    <script defer src="{% static 'tetra/js/alpinejs.morph.cdn.js' %}"></script>
+    <script defer src="{% static 'tetra/js/alpinejs.cdn.js' %}"></script>
+  {% else %}
+    <script defer src="{% static 'tetra/js/alpinejs.morph.cdn.min.js' %}"></script>
+    <script defer src="{% static 'tetra/js/alpinejs.cdn.min.js' %}"></script>
+  {% endif %}
 {% endif %}
