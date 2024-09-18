@@ -53,6 +53,13 @@ demo = [
     "PyYAML>=6.0",
     "markdown>=3.3.7",
 ]
+doc = [
+    "mkdocs",
+    "mkdocs-material",
+    "pymdown-extensions",
+    "pygments",
+    "mkdocstrings[python]",
+]
 
 [tool.setuptools.dynamic]
 version = {attr = "tetra.__version__"}
