@@ -17,6 +17,7 @@ import pickle
 from io import BytesIO
 from .utils import isclassmethod
 from .templates import InlineOrigin
+from django.utils.functional import SimpleLazyObject, LazyObject
 
 
 class StateException(Exception):
@@ -36,6 +37,13 @@ def register_pickler(obj_type, prefix):
         return cls
 
     return dec
+
+
+def resolve_lazy_object(lazy_object: Model | LazyObject) -> Model:
+    """If it's a SimpleLazyObject, resolve it by accessing the underlying object."""
+    if isinstance(lazy_object, SimpleLazyObject):
+        return lazy_object._wrapped
+    return lazy_object
 
 
 @register_pickler(QuerySet, b"QuerySet")
@@ -60,7 +68,7 @@ class PickleModel:
     def pickle(obj: Model) -> bytes:
         return pickle.dumps(
             {
-                "class": type(obj),
+                "class": type(resolve_lazy_object(obj)),
                 "pk": obj.pk,
             }
         )
