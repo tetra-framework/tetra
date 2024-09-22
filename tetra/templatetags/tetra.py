@@ -69,7 +69,6 @@ def do_component(parser, token):
     component_name = split_contents[1]
     bits = split_contents[2:]
 
-    # TODO: Allow component_name to be dynamic, maybe prefixwith a '='?
     component_name = component_name.strip("'\"")
 
     # If the tag ends with a / than it has no content, otherwise it does.
@@ -243,7 +242,27 @@ class ComponentNode(template.Node):
             )
 
     def render(self, context):
-        Component = resolve_component(context, self.component_name)
+        # when component starts with "=", assume it is a dynamic variable name
+        if self.component_name.startswith("="):
+            # Handle dotted paths for dynamic component names
+            self.component_name = self.component_name[1:]
+            path = self.component_name.split(".")
+            # traverse the context for the component name
+            c = context
+            for part in path:
+                try:
+                    c = c[part]
+                except TypeError:
+                    c = getattr(c, part, None)
+                if c is None:
+                    raise ComponentException(
+                        f"Unable to resolve dynamic component: '"
+                        f"{self.component_name}'"
+                    )
+            Component = c
+        else:
+            Component = resolve_component(context, self.component_name)
+
         try:
             request = context.request
         except AttributeError:

@@ -77,6 +77,9 @@ def make_template(cls) -> Template:
             # TODO: turn this off when DEBUG=False
             from django.conf import settings
 
+            logger.warning(
+                f"Failed to compile inline template for component {cls.__name__}: {e}"
+            )
             if settings.DEBUG:
                 making_lazy_after_exception = True
                 template = SimpleLazyObject(
@@ -85,6 +88,8 @@ def make_template(cls) -> Template:
                         origin=origin,
                     )
                 )
+        # FIXME: when DEBUG=False and template compilation fails, the exception is
+        #  raised and teh `template` variable is None, and will crash next line
         if not making_lazy_after_exception:
             for i, block_node in enumerate(
                 get_nodes_by_type_deep(template.nodelist, BlockNode)
@@ -594,7 +599,14 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         html = super().render()
         if set_thread_local:
             del thread_local._tetra_render_data
-        tag_name_end = re.match(r"^\s*<\w+", html).end(0)
+        tag_name = re.match(r"^\s*<\w+", html)
+        if not tag_name:
+            raise ComponentException(
+                f"Error in {self.__class__.__name__}: The component's template is "
+                "not enclosed in HTML tags."
+            )
+        tag_name_end = tag_name.end(0)
+
         extra_tags = [
             f'tetra-component="{self.full_component_name()}"',
             f'x-bind="__rootBind"',

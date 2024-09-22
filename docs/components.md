@@ -235,6 +235,18 @@ bypass wrapping elements when a block was not used:
 {% endif %}
 ```
 
+## Dynamic component names
+
+Sometimes you want to determine the component name at runtime, e.g. when the components are part of a plugin system, or when you render components in a for loop. Tetra allows you to  determinie the component name at runtime. Just use the `=` character before the variable name:
+
+```django
+{% for component in components %}
+    {% @ =component /%}
+{% endfor %}
+```
+
+
+
 ## Client side JavaScript
 
 The `script` attribute holds the client side Alpine.js JavaScript for your component. It should use `export default` to export an object forming the [Alpine.js component "Data"](https://alpinejs.dev/globals/alpine-data). This will be extended with your public attributes and methods.
