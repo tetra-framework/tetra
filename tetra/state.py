@@ -68,7 +68,7 @@ class PickleModel:
     def pickle(obj: Model) -> bytes:
         return pickle.dumps(
             {
-                "class": type(resolve_lazy_object(obj)),
+                "class": type(obj),
                 "pk": obj.pk,
             }
         )
@@ -151,6 +151,9 @@ class StatePickler(pickle.Pickler):
         # an exception.
         if isinstance(obj, Origin):
             obj.loader = None
+
+        # for LazyObjects, resolve them before pickling
+        obj = resolve_lazy_object(obj)
 
         # Hacky solution to prevent pickling Django Forms:
         # save form to a temporary attribute and then restore it after unpickling
