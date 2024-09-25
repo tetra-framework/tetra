@@ -9,7 +9,7 @@ from collections import defaultdict
 from .components.base import InlineTemplate, ComponentNotFound, Component
 from .library import Library, ComponentLibraryException
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 libraries = defaultdict(dict)
 find_libraries_done = False
