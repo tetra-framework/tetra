@@ -242,26 +242,7 @@ class ComponentNode(template.Node):
             )
 
     def render(self, context):
-        # when component starts with "=", assume it is a dynamic variable name
-        if self.component_name.startswith("="):
-            # Handle dotted paths for dynamic component names
-            component_name = self.component_name[1:]
-            path = component_name.split(".")
-            # traverse the context for the component name
-            c = context
-            for part in path:
-                try:
-                    c = c[part]
-                except TypeError:
-                    c = getattr(c, part, None)
-                if c is None:
-                    raise ComponentException(
-                        f"Unable to resolve dynamic component: '" f"{component_name}'"
-                    )
-            Component = c
-        else:
-            Component = resolve_component(context, self.component_name)
-
+        Component = resolve_component(context, self.component_name)
         try:
             request = context.request
         except AttributeError:
