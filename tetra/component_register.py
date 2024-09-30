@@ -86,7 +86,7 @@ def resolve_component(context, name) -> Component:
         if len(name_parts) > 3:
             raise ComponentNotFound(
                 f'Component name "{name}" invalid, should be in form '
-                '"[app_name.][library_name.]component_name".'
+                '"[app_name.][library_name.]ComponentName".'
             )
 
         # if component is called with 2 parts, we need a current_app context to find the
@@ -115,7 +115,7 @@ def resolve_component(context, name) -> Component:
         if not current_app and len(name_parts) < 3:
             raise ComponentNotFound(
                 f'Unable to ascertain current app and so component name "{name}" should be '
-                'in full form "app_name.library_name.component_name".'
+                'in full form "app_name.library_name.ComponentName".'
             )
 
         if current_app and len(name_parts) == 1:
