@@ -44,6 +44,16 @@ All components belong to a component library, which in turn belong to a "Django 
 
 Resolution is attempted in the order above.
 
+## Dynamically resolved component names
+
+Sometimes you want to determine the component name at runtime, e.g. when the components are part of a plugin system, or when you render components in a for loop. Tetra allows you to  determinie the component name at runtime. Just use the `=` character before the variable name:
+
+```django
+{% for component in components %}
+    {% @ =component /%}
+{% endfor %}
+```
+
 ## Passing Arguments
 
 Both positional and keyword arguments can be passed to a component via the `@` tag. These are passed to the `load` method of the component:
