@@ -84,7 +84,7 @@ It is possible to further chain the filters such as:
 
 ## The `@v` tag
 
-When variables are displayed in components, a common pattern is that a string should reflect a variable name "live", as you type. While a normal Django variable `{{ title }}` will get only updated after the next rendering of the component (e.g. after you call a backend method), Tetra provides a convenience templatetag to render a variable instantly in the frontend using Alpine.js.
+When variables are displayed in components, a common pattern is that a string should reflect a variable name "live", as you type. While a normal Django variable `{{ title }}` will get only updated after the next rendering of the component (e.g. after you call a backend method), Tetra provides a convenience way to render a variable instantly in the frontend using Alpine.js: `{% @v title %}`.
 
 ```django
 <div class="card">
