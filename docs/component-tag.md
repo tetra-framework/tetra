@@ -87,7 +87,31 @@ It is  also possible to explicitly pass all template context to a component with
 
 This should be used sparingly as the whole template context will be saved with the component's saved (encrypted) state, and sent to the client, see [state security](state-security.md).
 
-In general, if the value is something that is needed for the component to function (and be available to methods or be "public") it should be passed as an *argument* [(see above)](#passing-attributes.md). Passing context is ideal for composing your components with inner content passed down from an outer template [(see passing blocks)](#passing-blocks).
+In general, if the value is something that is needed for the component to function (and be available to methods or be "public") it should be passed as an *argument* [(see above)](#passing-attributes). Passing context is ideal for composing your components with inner content passed down from an outer template [(see passing blocks)](#passing-blocks).
+
+
+### Passing context to a whole component *class* directly
+
+If you have a component that e.g. *always* needs the user object (or another context variable), you could either pass it with every template call using `{% @ my_component context: user %}`, or you tell the component on the Python side to always take that context variable, using the `_extra_context` attribute:
+
+```django
+class MyComponent(Component):
+    _extra_context = ["user", "a_context_var"]
+```
+
+The given context vars will then be available within the component, even if not passed explicitly at the template calling line. If a component needs the whole context, you can add the "__all__" string instead of a list:
+
+```django
+class MyComponent(Component):
+    _extra_context = "__all__"
+```
+
+This has the same implications as `context: **context` [above](#passing-context), except that context vars at the template calling line override the global context:
+
+``` django
+Global context var: {{ var }} {# 5 #}
+Component: {% @ my_component context: var=3 / %} {# overrides 'global' var with '3' #}
+```
 
 ## Passing Blocks
 

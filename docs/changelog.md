@@ -14,11 +14,12 @@ title: Changelog
 
 ## [0.1.2] - unreleased
 ### Added
-- add debug logging handler
+- debug logging handler
 - allow component names to be dynamic
 - @v templatetag for "live" rendering of frontend variables
 - support Django models in TetraJSONEn/Decoder
 - experimental FormComponent and GenericObjectFormComponent support with form validation
+- definable extra context per component class
 
 ### Changed
 - more verbose error when template is not enclosed in HTML tags
