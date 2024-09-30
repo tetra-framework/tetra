@@ -22,7 +22,7 @@ class DeleteRowTable(Component):
     </thead>
     <tbody>
         {% for row in rows %}
-            {% @ demo.examples.delete_row row=row key=row.id / %}
+            {% @ demo.examples.DeleteRow row=row key=row.id / %}
         {% endfor %}
     </tbody>
     </table>

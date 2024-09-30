@@ -5,7 +5,13 @@ import pytest
 from django.utils import timezone
 
 from tests.main.models import SimpleModel, AwareDateTimeModel
-from tetra.utils import TetraJSONDecoder, TetraJSONEncoder, isclassmethod
+from tetra.utils import (
+    TetraJSONDecoder,
+    TetraJSONEncoder,
+    isclassmethod,
+    underscore_to_pascal_case,
+    camel_case_to_underscore,
+)
 
 
 @pytest.fixture
@@ -94,3 +100,43 @@ def test_isclassmethod():
 
     assert isclassmethod(MockClass.class_method) is True
     assert isclassmethod(MockClass.noclass_method) is False
+
+
+def test_camel_case_to_underscore():
+    # normal camel case to underscore conversion
+    assert camel_case_to_underscore("camelCase") == "camel_case"
+    assert camel_case_to_underscore("PascalCase") == "pascal_case"
+    # single word
+    assert camel_case_to_underscore("Camel") == "camel"
+    # multiple words
+    assert (
+        camel_case_to_underscore("CamelCaseToUnderscore") == "camel_case_to_underscore"
+    )
+    # multiple uppercase letters
+    assert camel_case_to_underscore("ABC") == "abc"
+    # input is already lower case
+    assert camel_case_to_underscore("already_lower") == "already_lower"
+    # empty string
+    assert camel_case_to_underscore("") == ""
+    # input is just a single capital letter
+    assert camel_case_to_underscore("A") == "a"
+    # digits
+    assert camel_case_to_underscore("CamelCase1") == "camel_case1"
+
+
+def test_underscore_to_pascal_case():
+    # normal snake_case to PascalCase conversion
+    assert underscore_to_pascal_case("my_example_string") == "MyExampleString"
+    # single lowercase word
+    assert underscore_to_pascal_case("example") == "Example"
+    # leading and trailing underscores
+    assert underscore_to_pascal_case("_leading_underscore") == "LeadingUnderscore"
+    assert underscore_to_pascal_case("trailing_underscore_") == "TrailingUnderscore"
+    # multiple underscores
+    assert underscore_to_pascal_case("multiple___underscores") == "MultipleUnderscores"
+    # empty string
+    assert underscore_to_pascal_case("") == ""
+    # numbers
+    assert underscore_to_pascal_case("example_with_123") == "ExampleWith123"
+    # already PascalCase
+    assert underscore_to_pascal_case("PascalCase") == "PascalCase"

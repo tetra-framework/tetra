@@ -235,6 +235,30 @@ bypass wrapping elements when a block was not used:
 {% endif %}
 ```
 
+## Extra context
+
+By default, outer template context is not passed down to the component's template when rendering; this is to optimise the size of the saved component state.
+If you need a component class to generally receive some context variables, you can set that explicitly using `_extra_context` in the class:
+
+```python
+class MyComponent(BasicComponent):
+    _extra_context = ["user", "a_context_var"]
+    ...
+```
+
+This component has access to the global `user` and `a_context_var` variables.
+If a component needs the whole context, you can add the "__all__" string instead of a list:
+
+```django
+class MyComponent(Component):
+    _extra_context = "__all__"
+```
+
+!!! warning
+    This should be used sparingly as the whole template context will be saved with the component's saved (encrypted) state, and sent to the client, see [state security](state-security.md).
+
+Explicitly passed variables [in component tags](component-tag.md#passing-context) will override this behaviour.
+
 
 ## Client side JavaScript
 

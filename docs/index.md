@@ -97,7 +97,7 @@ Then there is the template; this uses the standard Django template language. You
         </div>
         <div class="list-group">
             {% for todo in todos %}
-                {% @ to_do_item todo=todo key=todo.id / %}
+                {% @ ToDoItem todo=todo key=todo.id / %}
             {% endfor %}
         </div>
     </div>
@@ -225,7 +225,7 @@ As we are doing this outside of a Tetra component we need to explicitly load the
 {# index.html #}
 {% load tetra %}
 <h4>Your todo list:</h4>
-{% @ to_do_list / %}
+{% @ ToDoList / %}
 ```
 
  To get started, follow the [install instructions](install.md).

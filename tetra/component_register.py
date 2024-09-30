@@ -8,6 +8,7 @@ from collections import defaultdict
 
 from .components.base import InlineTemplate, ComponentNotFound, Component
 from .library import Library, ComponentLibraryException
+from .utils import camel_case_to_underscore, underscore_to_pascal_case
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,9 @@ def resolve_component(context, name) -> Component:
         if len(name_parts) == 3:
             # Full component name, easy!
             try:
-                return libraries[name_parts[0]][name_parts[1]].components[name_parts[2]]
+                return libraries[name_parts[0]][name_parts[1]].components[
+                    camel_case_to_underscore(name_parts[2])
+                ]
             except KeyError:
                 ComponentNotFound(f'Component "{name}" not found.')
 
@@ -118,7 +121,9 @@ def resolve_component(context, name) -> Component:
         if current_app and len(name_parts) == 1:
             # Try in current apps default library
             try:
-                return libraries[current_app.label]["default"].components[name_parts[0]]
+                return libraries[current_app.label]["default"].components[
+                    camel_case_to_underscore(name_parts[0])
+                ]
             except KeyError:
                 pass
 
@@ -126,7 +131,7 @@ def resolve_component(context, name) -> Component:
             # try other library name in current_app
             try:
                 return libraries[current_app.label][name_parts[0]].components[
-                    name_parts[1]
+                    camel_case_to_underscore(name_parts[1])
                 ]
             except KeyError:
                 pass
@@ -134,7 +139,9 @@ def resolve_component(context, name) -> Component:
         if len(name_parts) == 2:
             # try other part1.default.part2
             try:
-                return libraries[name_parts[0]]["default"].components[name_parts[1]]
+                return libraries[name_parts[0]]["default"].components[
+                    camel_case_to_underscore(name_parts[1])
+                ]
             except KeyError:
                 pass
 
@@ -146,7 +153,9 @@ def resolve_component(context, name) -> Component:
             for lib_name, library in lib.items():
                 if library.components:
                     for component_name in library.components:
-                        components.append(f"{app_name}.{lib_name}.{component_name}")
+                        components.append(
+                            f"{app_name}.{lib_name}.{underscore_to_pascal_case(component_name)}"
+                        )
 
     raise ComponentNotFound(
         f'Component "{name}" not found. Available components are: {components}'

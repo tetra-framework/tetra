@@ -35,7 +35,7 @@ def test_use_extra_context_not_scoped(request):
     """Component may not display outer context vars, if not explicitly included."""
     content = render_component(
         request,
-        component_string="{% @ main.default.simple_component_with_default_block %}"
+        component_string="{% @ main.default.SimpleComponentWithDefaultBlock %}"
         "{{foo}}"
         "{% /@ %}",
         context={"foo": "bar"},  # global, outer context
@@ -48,7 +48,7 @@ def test_use_extra_context(request):
     _extra_context."""
     content = render_component(
         request,
-        component_string="{% @ main.default.simple_component_with_foo_context %}"
+        component_string="{% @ main.default.SimpleComponentWithFooContext %}"
         "{{foo}}"
         "{% /@ %}",
         context={"foo": "bar"},  # global, outer context
@@ -61,7 +61,7 @@ def test_use_extra_context_empty(request):
     _extra_context, but var==empty."""
     content = render_component(
         request,
-        component_string="{% @ main.default.simple_component_with_foo_context %}"
+        component_string="{% @ main.default.SimpleComponentWithFooContext %}"
         "{{foo}}"
         "{% /@ %}",  # FIXME:KeyError(key)
         # context={"foo": "bar"},  # global, outer context
@@ -74,7 +74,7 @@ def test_use_extra_context_all_empty(request):
     but var==empty."""
     content = render_component(
         request,
-        component_string="{% @ main.default.simple_component_with_extra_context_all %}"
+        component_string="{% @ main.default.SimpleComponentWithExtraContextAll %}"
         "{{foo}}"
         "{% /@ %}",
         # context={"foo": "bar"},  # global, outer context
@@ -86,7 +86,7 @@ def test_use_extra_context_all(request):
     """Component must display outer context vars, if __all__ in _extra_context."""
     content = render_component(
         request,
-        component_string="{% @ main.default.simple_component_with_extra_context_all %}"
+        component_string="{% @ main.default.SimpleComponentWithExtraContextAll %}"
         "{{foo}}"
         "{% /@ %}",
         context={"foo": "bar"},  # global, outer context
@@ -101,7 +101,7 @@ def test_use_context_attr(request):
     """context must be available when ctx var explicitly given on template calling"""
     content = render_component(
         request,
-        component_string="{% @ main.default.simple_component_with_default_block "
+        component_string="{% @ main.default.SimpleComponentWithDefaultBlock "
         "context: foo='bar' %}"
         "{{foo}}"
         "{% /@ %}",
@@ -113,7 +113,7 @@ def test_use_context_attr_all(request):
     """context must be available when ctx == all on template calling"""
     content = render_component(
         request,
-        component_string="{% @ main.default.simple_component_with_default_block "
+        component_string="{% @ main.default.SimpleComponentWithDefaultBlock "
         "context: **context %}"
         "{{foo}}"
         "{% /@ %}",
@@ -126,7 +126,7 @@ def test_use_context_attr_all(request):
     """context: **context must add all outer context to the component"""
     content = render_component(
         request,
-        component_string="{% @ main.default.simple_component_with_default_block "
+        component_string="{% @ main.default.SimpleComponentWithDefaultBlock "
         "context: **context %}"
         "{{foo}}"
         "{% /@ %}",
@@ -139,7 +139,7 @@ def test_extra_context(request):
     """_extra_context must be available automatically."""
     content = render_component(
         request,
-        component_string="{% @ main.default.simple_component_with_extra_context_all %}"
+        component_string="{% @ main.default.SimpleComponentWithExtraContextAll %}"
         "{{foo}}"
         "{% /@ %}",
         context={"foo": "bar"},  # global, outer context, included in __all__
@@ -151,7 +151,7 @@ def test_context_attr_overrides_extra_context(request):
     """context given on the template calling line must override the outer context."""
     content = render_component(
         request,
-        component_string="{% @ main.default.simple_component_with_extra_context_all "
+        component_string="{% @ main.default.SimpleComponentWithExtraContextAll "
         "context: foo='nobaz' %}"
         "{{foo}}"
         "{% /@ %}",

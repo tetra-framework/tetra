@@ -21,6 +21,9 @@ title: Changelog
 - experimental FormComponent and GenericObjectFormComponent support with form validation
 - definable extra context per component class
 
+### Breaking changes
+- components should be referenced using PascalCase in templates now
+
 ### Changed
 - more verbose error when template is not enclosed in HTML tags
 - improved component import error handling

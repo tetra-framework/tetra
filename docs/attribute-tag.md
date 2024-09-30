@@ -44,7 +44,7 @@ The `class` attribute treats each class name as an individual option concatenati
 
 ``` django
 {# where the component is used #}
-{% @ component attrs: class="class1" %}
+{% @ Component attrs: class="class1" %}
 
 {# component template with a_list_of_classes=["classA", "classB"] #}
 <div {% ... class="class2" attrs class="class3 class4" class=a_list_of_classes %}>

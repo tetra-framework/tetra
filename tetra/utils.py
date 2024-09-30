@@ -11,11 +11,19 @@ from django.utils.timezone import is_aware
 from django.conf import settings
 
 
-def camel_case_to_underscore(value):
+def camel_case_to_underscore(value: str):
     """
-    Splits CamelCase and converts to lower case with underscores.
+    Splits camelCase and PascalCase and converts to lower case with underscores.
     """
     return re_camel_case.sub(r"_\1", value).strip("_").lower()
+
+
+def underscore_to_pascal_case(value: str):
+    """builds a PascalCase string from a snake_case like."""
+    # special case: value is already pascal or camel case, then don't touch it.
+    if not "_" in value and not value.islower():
+        return value
+    return "".join(word.capitalize() for word in value.split("_"))
 
 
 def render_styles(request):

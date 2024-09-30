@@ -11,34 +11,39 @@ The component tag is automatically available in your components' templates. In o
 Unlike most Django template tags, the `@` tag can optionally be "open" accepting content, or "closed". To indicate that it is 'closed' it should end with a forward slash `/` such as:
 
 ``` django
-{% @ my_component / %}
+{% @ MyComponent / %}
 ```
 
 An open tag is closed with a `{% /@ %}` tag.  This can optionally take the name of the component to aid in following the flow of your template:
 
 ``` django
-{% @ my_component %}
+{% @ MyComponent %}
   Some content
-{% /@ my_component %}
+{% /@ MyComponent %}
 ```
+
+!!! note
+    Since v0.1.2, Tetra uses PascalCase component references in templates, to match the class name - this is better for finding components and its usages during coding.
+    As legacy feature, you can also use the `snake_case_name` to reference your component, but this may be removed in a future version.
+
 
 ## Resolving components
 
 All components belong to a component library, which in turn belong to a "Django App". You can specify a component as either:
 
-  - `component_name`
+  - `ComponentName`
 
     When you only specify the component name, Tetra attempts to resolve the component in the current app's `default` library.
 
-  - `library.component_name`
+  - `library.ComponentName`
 
     You can specify which library the component is in within the current app.
 
-  - `app.component_name`
+  - `app.ComponentName`
 
     You can also specify an app name and component. Tetra will look in the `default` library of the app.
 
-  - `app.library.component_name`
+  - `app.library.ComponentName`
 
     Finally, you can fully specify the component path.
 
@@ -46,7 +51,7 @@ Resolution is attempted in the order above.
 
 ## Dynamically resolved component names
 
-Sometimes you want to determine the component name at runtime, e.g. when the components are part of a plugin system, or when you render components in a for loop. Tetra allows you to  determinie the component name at runtime. Just use the `=` character before the variable name:
+Sometimes you want to determine the component name at runtime, e.g. when the components are part of a plugin system, or when you render components in a for loop. Tetra allows you to  determine the component name at runtime. Just use the `=` character before the variable name:
 
 ```django
 {% for component in components %}
@@ -66,7 +71,7 @@ class MyComponent(Component):
 ```
 
 ``` django
-{% @ my_component "a string" something=123 another=value_of_a_context_var / %}
+{% @ MyComponent "a string" something=123 another=value_of_a_context_var / %}
 ```
 
 Your components `load` methods can accept any number of optional positional and keyword arguments by using `*args` and `**kwargs`.
@@ -76,7 +81,7 @@ Your components `load` methods can accept any number of optional positional and 
 It is common to want to set HTML attributes on the root element of your component  - this can be done with the `attrs:` label, followed by a space-separated list of `key=value` pairs, with the "key" being the name of the attribute. The value can be a context variable that will be resolved when rendering.
 
 ``` django
-{% @ my_component attrs: class="my-class" style="font-wight:bold;" / %}
+{% @ MyComponent attrs: class="my-class" style="font-wight:bold;" / %}
 ```
 
 These are made available as `attrs` in the component's template, the [attribute  `...` tag](attribute-tag.md) should be used to unpack them into the root tag, its [docs](attribute-tag.md) details how this works.
@@ -86,41 +91,25 @@ These are made available as `attrs` in the component's template, the [attribute 
 By default, outer template context is not passed down to the component's template when rendering; this is to optimise the size of the saved component state. You can explicitly pass context to a component with the `context:` label, followed by a space-separated list of either variable names or `key=value` pairs, where the "key" will be the new name for a context var, and the value either a variable name or a literal.
 
 ``` django
-{% @ my_component context: a_context_var something=old_name another="a string" / %}
+{% @ MyComponent context: a_context_var something=old_name another="a string" / %}
 ```
 
 It is  also possible to explicitly pass all template context to a component with the `**context` argument:
 
 ``` django
-{% @ my_component context: **context / %}
+{% @ MyComponent context: **context / %}
 ```
 
-This should be used sparingly as the whole template context will be saved with the component's saved (encrypted) state, and sent to the client, see [state security](state-security.md).
+!!! warning
+    This should be used sparingly as the whole template context will be saved with the component's saved (encrypted) state, and sent to the client, see [state security](state-security.md).
 
-In general, if the value is something that is needed for the component to function (and be available to methods or be "public") it should be passed as an *argument* [(see above)](#passing-attributes). Passing context is ideal for composing your components with inner content passed down from an outer template [(see passing blocks)](#passing-blocks).
+In general, if the value is something that is needed for the component to function (and be available to methods or be "public") it should be generally passed as an *argument* [(see above)](#passing-attributes). Passing context is ideal for composing your components with inner content passed down from an outer template [(see passing blocks)](#passing-blocks).
 
-
-### Passing context to a whole component *class* directly
-
-If you have a component that e.g. *always* needs the user object (or another context variable), you could either pass it with every template call using `{% @ my_component context: user %}`, or you tell the component on the Python side to always take that context variable, using the `_extra_context` attribute:
-
-```django
-class MyComponent(Component):
-    _extra_context = ["user", "a_context_var"]
-```
-
-The given context vars will then be available within the component, even if not passed explicitly at the template calling line. If a component needs the whole context, you can add the "__all__" string instead of a list:
-
-```django
-class MyComponent(Component):
-    _extra_context = "__all__"
-```
-
-This has the same implications as `context: **context` [above](#passing-context), except that context vars at the template calling line override the global context:
+When context is passed using the `_extra_context` class attribute, you can always override these variables in the component tag:
 
 ``` django
-Global context var: {{ var }} {# 5 #}
-Component: {% @ my_component context: var=3 / %} {# overrides 'global' var with '3' #}
+{{ var }} {# this is "5" #}
+{% @ MyComponent context: var=3 / %} {# overrides global var with "3" #}
 ```
 
 ## Passing Blocks
@@ -128,11 +117,11 @@ Component: {% @ my_component context: var=3 / %} {# overrides 'global' var with 
 It is possible to pass template `{% block %}`s to a component, overriding or inserting content into the component:
 
 ``` django
-{% @ my_component %}
+{% @ MyComponent %}
   {% block title %}
     Some content
   {% endblock %}
-{% /@ my_component %}
+{% /@ MyComponent %}
 ```
 
 > Other frameworks refer to these "blocks" as "slots", but as Tetra is built on Django we use the Django terminology.
@@ -140,32 +129,32 @@ It is possible to pass template `{% block %}`s to a component, overriding or ins
 You can pass as many blocks to a component as you like:
 
 ``` django
-{% @ my_component %}
+{% @ MyComponent %}
   {% block title %}
     A title
   {% endblock %}
   {% block main %}
     Some content
   {% endblock %}
-{% /@ my_component %}
+{% /@ MyComponent %}
 ```
 
 If you pass content to a component without a top-level block it infers that you are targeting the `default` block:
 
 ``` django
-{% @ my_component %}
+{% @ MyComponent %}
   Some content
-{% /@ my_component %}
+{% /@ MyComponent %}
 ```
 
 Is the equivalent of:
 
 ``` django
-{% @ my_component %}
+{% @ MyComponent %}
   {% block default %}
     Some content
   {% endblock %}
-{% /@ my_component %}
+{% /@ MyComponent %}
 ```
 
 By default, blocks within a component are not available to override in a template that `extends` a template using a component with passed blocks. This is so that you can use components multiple times on a page and not have block names conflict with each other.
@@ -173,21 +162,21 @@ By default, blocks within a component are not available to override in a templat
 It is, however, possible to explicitly expose a block to the wider template so that it can be overridden with the `expose` flag:
 
 ``` django
-{% @ my_component %}
+{% @ MyComponent %}
   {% block title expose %}
     Some content
   {% endblock %}
-{% /@ my_component %}
+{% /@ MyComponent %}
 ```
 
 You can also specify under what name a block should be exposed with `expose as [name]`:
 
 ``` django
-{% @ my_component %}
+{% @ MyComponent %}
   {% block title expose as header_title %}
     Some content
   {% endblock %}
-{% /@ my_component %}
+{% /@ MyComponent %}
 ```
 
 See [component templates](components.md#templates) for details of how the component handles blocks in its templates.

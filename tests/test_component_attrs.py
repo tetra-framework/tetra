@@ -10,7 +10,7 @@ import pytest
 def test_basic_component(request):
     """Tests a simple component with / end"""
     content = render_component(
-        request, "{% @ main.default.simple_component_with_attrs / %}"
+        request, "{% @ main.default.SimpleComponentWithAttrs / %}"
     )
     assert extract_component(content) == "content"
     assert (
