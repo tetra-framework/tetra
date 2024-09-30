@@ -1008,7 +1008,6 @@ class GenericObjectFormComponent(ModelFormComponent):
         """Convenience method to be called by the frontend to reset the form.
 
         All values will be reset to the initial object values.
-        You can call this method from the backend or the frontend.
         """
         for field in self.get_form_class().base_fields:
             setattr(self, field, getattr(self.object, field))

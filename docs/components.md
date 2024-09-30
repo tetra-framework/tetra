@@ -250,12 +250,13 @@ This component has access to the global `user` and `a_context_var` variables.
 If a component needs the whole context, you can add the "__all__" string instead of a list:
 
 ```django
-class MyComponent(Component):
+class MyComponent(BasicComponent):
     _extra_context = "__all__"
 ```
 
 !!! warning
-    This should be used sparingly as the whole template context will be saved with the component's saved (encrypted) state, and sent to the client, see [state security](state-security.md).
+    You want to use `__all__` mostly in `BasicComponent`s which have no saved state.
+    It should be used sparingly in a `Component` as the whole template context will be saved with the component's saved (encrypted) state, and sent to the client, see [state security](state-security.md).
 
 Explicitly passed variables [in component tags](component-tag.md#passing-context) will override this behaviour.
 
