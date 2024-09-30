@@ -1,4 +1,5 @@
 import logging
+import warnings
 
 from django import template
 from django.template.loader_tags import BlockNode, BLOCK_CONTEXT_KEY
@@ -137,13 +138,26 @@ def do_component(parser, token):
             )
 
     # Context bits:
-    if "**context" in bits_grouped["context:"]:
+    if "__all__" in bits_grouped["context:"]:
+        if len(bits_grouped["context:"]) > 1:
+            raise template.TemplateSyntaxError(
+                f"__all__ and multiple context arguments are mutually exclusive in "
+                f"Component '{component_name}'."
+            )
+        context_args = ALL_CONTEXT
+    elif "**context" in bits_grouped["context:"]:
+        # TODO: remove in 1.0
         if len(bits_grouped["context:"]) > 1:
             raise template.TemplateSyntaxError(
                 f"Component '{component_name}' has multiple context arguments as well a "
                 "**context for all context."
             )
         context_args = ALL_CONTEXT
+        warnings.warn(
+            f"Component '{component_name}': 'context: **context' is deprecated and "
+            f"will be removed in future versions of Tetra. Please use 'context: __all__' instead.",
+            DeprecationWarning,
+        )
     else:
         context_args = {}
         for bit in bits_grouped["context:"]:
@@ -285,7 +299,7 @@ class ComponentNode(template.Node):
 
         if self.context_args != ALL_CONTEXT:
             # update context with the explicitly given params. This may not
-            # happen if ALL context is requested directly on the template calling line.
+            # happen if __all__ context is requested directly on the template tag.
             resolved_context.update(
                 {k: v.resolve(context) for k, v in self.context_args.items()}
             )

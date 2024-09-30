@@ -114,7 +114,7 @@ def test_use_context_attr_all(request):
     content = render_component(
         request,
         component_string="{% @ main.default.SimpleComponentWithDefaultBlock "
-        "context: **context %}"
+        "context: __all__ %}"
         "{{foo}}"
         "{% /@ %}",
         context={"foo": "bar"},  # global, outer context
@@ -123,11 +123,11 @@ def test_use_context_attr_all(request):
 
 
 def test_use_context_attr_all(request):
-    """context: **context must add all outer context to the component"""
+    """context: __all__ must add all outer context to the component"""
     content = render_component(
         request,
         component_string="{% @ main.default.SimpleComponentWithDefaultBlock "
-        "context: **context %}"
+        "context: __all__ %}"
         "{{foo}}"
         "{% /@ %}",
         context={"foo": "bar"},  # global, outer context
@@ -148,7 +148,7 @@ def test_extra_context(request):
 
 
 def test_context_attr_overrides_extra_context(request):
-    """context given on the template calling line must override the outer context."""
+    """context given at the template tag must override the outer context."""
     content = render_component(
         request,
         component_string="{% @ main.default.SimpleComponentWithExtraContextAll "

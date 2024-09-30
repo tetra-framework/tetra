@@ -97,7 +97,7 @@ By default, outer template context is not passed down to the component's templat
 It is  also possible to explicitly pass all template context to a component with the `**context` argument:
 
 ``` django
-{% @ MyComponent context: **context / %}
+{% @ MyComponent context: __all__ / %}
 ```
 
 !!! warning

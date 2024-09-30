@@ -23,6 +23,7 @@ title: Changelog
 
 ### Breaking changes
 - components should be referenced using PascalCase in templates now
+- replace **context with __all__ when passing all context in template tags
 
 ### Changed
 - more verbose error when template is not enclosed in HTML tags
