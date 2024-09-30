@@ -20,6 +20,7 @@ title: Changelog
 - support Django models in TetraJSONEn/Decoder
 - experimental FormComponent and GenericObjectFormComponent support with form validation
 - definable extra context per component class
+- reset() method to FormComponent
 
 ### Breaking changes
 - components should be referenced using PascalCase in templates now

@@ -249,7 +249,7 @@ class MyComponent(BasicComponent):
 This component has access to the global `user` and `a_context_var` variables.
 If a component needs the whole context, you can add the "__all__" string instead of a list:
 
-```django
+```python
 class MyComponent(BasicComponent):
     _extra_context = "__all__"
 ```

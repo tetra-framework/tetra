@@ -973,6 +973,11 @@ class GenericObjectFormComponent(ModelFormComponent):
             "or both 'object' and '_fields', or override 'get_form_class()'"
         )
 
+    def load(self, object: models.Model, *args, **kwargs) -> None:
+        self.object = object
+        self._reset()
+        super().load(*args, **kwargs)
+
     def get_form(self, data=None, files=None, **kwargs):
         """Returns a form, bound to given model instance."""
         return super().get_form(data=data, files=files, instance=self.object, **kwargs)
@@ -998,10 +1003,13 @@ class GenericObjectFormComponent(ModelFormComponent):
                 else self.object.__name__.lower()
             )
 
-    def load(self, object, *args, **kwargs) -> None:
-        self.object = object
-        self.reset()
-        super().load(*args, **kwargs)
+    def _reset(self):
+        """Resets all form fields. This internal method is not exposed as a public
+        API and can be called by load() too."""
+        for field in self.get_form_class().base_fields:
+            if hasattr(self.object, field):
+                setattr(self, field, getattr(self.object, field))
+                # FIXME: does not work yet? include non-object fields like new_password1
 
     @public
     def reset(self):
@@ -1009,8 +1017,7 @@ class GenericObjectFormComponent(ModelFormComponent):
 
         All values will be reset to the initial object values.
         """
-        for field in self.get_form_class().base_fields:
-            setattr(self, field, getattr(self.object, field))
+        self._reset()
 
     def form_valid(self, form) -> None:
         self.object = form.save()
