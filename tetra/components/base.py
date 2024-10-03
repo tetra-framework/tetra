@@ -720,8 +720,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.request.method == 'POST':
-            self.submit()
+        self.submit()
 
     def ready(self):
         self._form = self.get_form(self._data())
@@ -793,25 +792,24 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         The component will validate the data against the form, and if the form is valid,
         it will call form_valid(), else form_invalid().
         """
-        if self.request.method.upper() == 'POST':
-            form_id = self.request.POST.get('identifier', None)
-            if form_id and form_id == self.form_class.form_class:
-                self.form_submitted = True
-                self._form = self.get_form(self.request.POST, self.request.FILES)
+        form_id = self.request.POST.get('identifier', None)
+        if form_id and form_id == self.form_class.form_class:
+            self.form_submitted = True
+            self._form = self.get_form(self.request.POST, self.request.FILES)
 
-                if self._form.is_valid():
-                    self.form_valid(self._form)
-                    self._form = self.get_form()  # Get a fresh, unbound form
-                    self.form_submitted = False
-                else:
-                    self.form_errors = self._form.errors.get_json_data(escape_html=True)
-                    # set the possibly cleaned values back to the component's attributes
-                    for attr, value in self._form.cleaned_data.items():
-                        if type(value) in skip_check:
-                            setattr(self, attr, value)
-                        else:
-                            setattr(self, attr, TetraJSONEncoder().default(value))
-                    self.form_invalid(self._form)
+            if self._form.is_valid():
+                self.form_valid(self._form)
+                self._form = self.get_form()  # Get a fresh, unbound form
+                self.form_submitted = False
+            else:
+                self.form_errors = self._form.errors.get_json_data(escape_html=True)
+                # set the possibly cleaned values back to the component's attributes
+                for attr, value in self._form.cleaned_data.items():
+                    if type(value) in skip_check:
+                        setattr(self, attr, value)
+                    else:
+                        setattr(self, attr, TetraJSONEncoder().default(value))
+                self.form_invalid(self._form)
 
     def clear(self):
         """Clears the form data (sets all values to defaults) and renders the
