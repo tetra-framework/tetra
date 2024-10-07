@@ -14,7 +14,7 @@ from django import forms
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models import QuerySet
-from django.forms import Form, modelform_factory, BaseForm
+from django.forms import Form, modelform_factory, BaseForm, FileField
 from django.template.base import Template
 from django.template.loader import render_to_string, get_template
 from django.template import RequestContext, TemplateSyntaxError
@@ -753,8 +753,11 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         """Connects the form's fields to the Tetra backend using x-model attributes."""
         for field_name, field in form.fields.items():
             if field_name in self._public_properties:
-                # form.fields[field_name].initial = getattr(self, field_name)
-                form.fields[field_name].widget.attrs.update({"x-model": field_name})
+                if isinstance(field, FileField):
+                    pass
+                else:
+                    # form.fields[field_name].initial = getattr(self, field_name)
+                    form.fields[field_name].widget.attrs.update({"x-model": field_name})
 
     @public
     def validate(self) -> None:
