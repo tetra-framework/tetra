@@ -659,6 +659,14 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         """
         self.client._replaceComponent(self.render())
 
+    def push_url(self, url: str) -> None:
+        """Pushes a new URL to the browser's history."""
+        self.client._pushUrl(url)
+
+    def replace_url(self, url: str) -> None:
+        """Replaces the current URL with a new one."""
+        self.client._pushUrl(url, replace=True)
+
     def _call_public_method(
         self, request, method_name, children_state, *args
     ) -> JsonResponse:

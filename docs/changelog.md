@@ -21,6 +21,7 @@ title: Changelog
 - experimental FormComponent and GenericObjectFormComponent support with form validation
 - definable extra context per component class
 - reset() method to FormComponent
+- push_url() and replace_url() component methods
 
 ### Breaking changes
 - components should be referenced using PascalCase in templates now

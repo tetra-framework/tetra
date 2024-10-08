@@ -515,6 +515,13 @@ This way, no component re-rendering in the browser is triggered, just the values
 This removes and destroys the component in the browser and re-inserts a new copy into the DOM. Any client side state,
 such as cursor location in text inputs will be lost.
 
+### `push_url(url)`
+
+Pushes a given URL to the URL bar of your browser. This adds the URL to the browser history, so "back buttons" would work.
+
+### `replace_url(url)`
+
+Replaces the current browser URL with the new one. This method does not add the URL to the browser history, it just replaces it. 
 
 ### `ready()`
 
