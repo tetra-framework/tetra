@@ -68,6 +68,13 @@
             ...data
           });
         },
+        _pushUrl(url, replace = false) {
+          if (replace) {
+            window.history.replaceState(null, "", url);
+          } else {
+            window.history.pushState(null, "", url);
+          }
+        },
         __initServerWatchers() {
           this.__serverMethods.forEach((item) => {
             if (item.watch) {
