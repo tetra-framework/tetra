@@ -99,7 +99,6 @@ def make_template(cls) -> Template:
             ):
                 if not getattr(block_node, "origin", None):
                     block_node.origin = origin
-
     # if "template_name" is defined, use it as template file source.
     elif hasattr(cls, "template_name"):
         template = get_template(cls.template_name).template

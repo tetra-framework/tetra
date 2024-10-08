@@ -78,7 +78,7 @@ Your components `load` methods can accept any number of optional positional and 
 
 ## Passing Attributes
 
-It is common to want to set HTML attributes on the root element of your component  - this can be done with the `attrs:` label, followed by a space-separated list of `key=value` pairs, with the "key" being the name of the attribute. The value can be a context variable that will be resolved when rendering.
+It is common to want to set HTML attributes on the root element of your component - this can be done with the `attrs:` label, followed by a space-separated list of `key=value` pairs, with the "key" being the name of the attribute. The value can be a context variable that will be resolved when rendering.
 
 ``` django
 {% @ MyComponent attrs: class="my-class" style="font-wight:bold;" / %}
@@ -94,7 +94,7 @@ By default, outer template context is not passed down to the component's templat
 {% @ MyComponent context: a_context_var something=old_name another="a string" / %}
 ```
 
-It is  also possible to explicitly pass all template context to a component with the `**context` argument:
+It is also possible to explicitly pass all template context to a component with the `__all__` argument:
 
 ``` django
 {% @ MyComponent context: __all__ / %}

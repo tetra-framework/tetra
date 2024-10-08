@@ -32,7 +32,7 @@ title: Changelog
 - improve demo site
 
 ## [0.1.1] - 2024-04-10
-### Changes
+### Changed
 - **New package name: tetra**
 - add conditional block check within components
 - Update Alpine.js to v3.13.8

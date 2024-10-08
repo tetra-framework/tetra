@@ -85,7 +85,7 @@ class TetraJSONEncoder(json.JSONEncoder):
         # elif hasattr(obj, "to_json"):
         #     return {"__type": "generic", "value": obj.to_json()}
         else:
-            # as last resort, rty to serialize into str
+            # as last resort, try to serialize into str
             try:
                 return str(obj)
             except (TypeError, ValueError):

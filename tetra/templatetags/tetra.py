@@ -387,11 +387,11 @@ class AttrsNode(template.Node):
         attrs = {}
         for key, value in self.arg_gen(context):
             if key == "class":
-                # TODO: class from boolian var
+                # TODO: class from boolean var
                 attrs.setdefault("class", set())
                 attrs["class"].update(value.split())
             elif key == "style":
-                # TODO: advanced style via dict or doted path from vars
+                # TODO: advanced style via dict or dotted path from vars
                 attrs.setdefault("style", {})
                 for rule in value.split(";"):
                     prop_key, prop_val = rule.split(":", 1)
