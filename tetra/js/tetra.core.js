@@ -194,7 +194,7 @@ const Tetra = {
 
   async callServerMethod(component, methodName, methodEndpoint, args) {
     // TODO: error handling
-    body = Tetra.getStateWithChildren(component);
+    let body = Tetra.getStateWithChildren(component);
     body.args = args;
     const response = await fetch(methodEndpoint, {
       method: 'POST',
