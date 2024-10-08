@@ -51,13 +51,16 @@ Resolution is attempted in the order above.
 
 ## Dynamically resolved component names
 
-Sometimes you want to determine the component name at runtime, e.g. when the components are part of a plugin system, or when you render components in a for loop. Tetra allows you to  determine the component name at runtime. Just use the `=` character before the variable name:
+Sometimes you want to determine the component name at runtime, e.g. when the components are part of a plugin system, or when you render components in a for loop. Tetra allows you to determine the component name at runtime. Just use the `=` character before the variable name:
 
 ```django
 {% for component in components %}
     {% @ =component /%}
 {% endfor %}
 ```
+
+!!! note
+    Due to their undetermined nature, Tetra is not able to save dynamic components' states. Hence, **dynamic components are always rendered using their initial state** when loaded in the template. However, their state is saved within the component itself, so if the component reacts to an inside event (e.g. a button click *in* the component), the state is certainly saved and reused.
 
 ## Passing Arguments
 

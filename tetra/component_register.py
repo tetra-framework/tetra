@@ -77,6 +77,10 @@ def resolve_component(context, name: str) -> Component:
             try:
                 # try to get component as key from context dict
                 value = value[key]
+            except KeyError:
+                raise ComponentNotFound(
+                    f"Dynamic component '{name}' not found in context."
+                )
             except TypeError:
                 # then this name part is already an object.
                 # try to read attribute from object

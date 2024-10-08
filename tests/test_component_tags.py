@@ -3,8 +3,11 @@ from django.urls import reverse
 from django.template.exceptions import TemplateSyntaxError
 
 from tests.conftest import extract_component
+from tests.main.components import SimpleBasicComponent
 from tests.main.helpers import render_component
 import pytest
+
+from tetra.components import ComponentNotFound
 
 
 def test_basic_component(request):
@@ -53,3 +56,25 @@ def test_css_component(client):
     #  problem...
     # assert response.status_code == 200
     # assert b".text-red { color: red; }" in response.content
+
+
+# ---------- Dynamic components ------------
+
+
+def test_basic_dynamic_component(request):
+    """Tests a simple dynamic component"""
+    content = render_component(
+        request,
+        "{% @ =dynamic_component /%}",
+        {"dynamic_component": SimpleBasicComponent},
+    )
+    assert extract_component(content) == "foo"
+
+
+def test_basic_dynamic_non_existing_component(request):
+    """Tests a simple non-existing component - must produce ComponentNotFound"""
+    with pytest.raises(ComponentNotFound):
+        render_component(
+            request,
+            "{% @ =foo.bar.NotExistingComponent /%}",
+        )

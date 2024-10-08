@@ -266,6 +266,7 @@ class ComponentNode(template.Node):
             as per the resolved state.
         """
         Component = resolve_component(context, self.component_name)
+        is_dynamic = self.component_name.startswith("=")
         try:
             request = context.request
         except AttributeError:
@@ -323,7 +324,13 @@ class ComponentNode(template.Node):
                         blocks[block_name] = new_block
 
         children_state = context.get("_loaded_children_state", None)
-        if children_state and (resolved_kwargs["key"] in children_state):
+        # if component is dynamic, don't try to get a state when rendering, just render
+        # it as a tag
+        if (
+            children_state
+            and (resolved_kwargs["key"] in children_state)
+            and not is_dynamic
+        ):
             component_state = children_state[resolved_kwargs["key"]]
             component = Component.from_state(
                 component_state,
