@@ -3,8 +3,7 @@ import warnings
 
 from django import template
 from django.template.loader_tags import BlockNode, BLOCK_CONTEXT_KEY
-from django.apps import apps
-from django.utils.safestring import mark_safe
+from django.utils.safestring import mark_safe, SafeString
 from uuid import uuid4
 import re
 import copy
@@ -259,10 +258,12 @@ class ComponentNode(template.Node):
                 (n.name, n) for n in self.nodelist.get_nodes_by_type(BlockNode)
             )
 
-    def render(self, context):
+    def render(self, context) -> SafeString:
         """
-        :param context: The template context in which the component is being rendered. It must include the "request" attribute.
-        :return: The rendered component as a tag string or directly rendered component as per the resolved state.
+        :param context: The template context in which the component is being rendered.
+            It must include the "request" attribute.
+        :return: The rendered component as a tag string or directly rendered component
+            as per the resolved state.
         """
         Component = resolve_component(context, self.component_name)
         try:
@@ -276,6 +277,7 @@ class ComponentNode(template.Node):
         resolved_kwargs = {k: v.resolve(context) for k, v in self.kwargs.items()}
         resolved_attrs = {k: v.resolve(context) for k, v in self.attrs.items()}
 
+        # check extra context arguments
         extra_context = getattr(Component, "_extra_context", [])
         if type(extra_context) == str:
             extra_context = [extra_context]

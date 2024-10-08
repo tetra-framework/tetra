@@ -50,7 +50,18 @@ def find_component_libraries():
     find_libraries_done = True
 
 
-def resolve_component(context, name) -> Component:
+def resolve_component(context, name: str) -> Component:
+    """Takes a Django context and a component name, and returns the corresponding
+    component instance.
+
+    Attributes:
+        context (RequestContext): The Django context in which the component is being rendered.
+        name (str): The name of the component to resolve. This can be a full component name,
+            or a dot-separated string representing a context variable containing a
+            component.
+        Returns:
+            The resolved component instance.
+    """
     template = context.template
     current_app = None
     dynamic = False

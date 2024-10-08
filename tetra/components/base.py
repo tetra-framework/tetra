@@ -724,6 +724,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         self._form = self.get_form(self._data())
 
     def render(self, data=RenderData.INIT) -> SafeString:
+        # Don't show form errors if form is not submitted yet
         if not self.form_submitted:
             self._form.errors.clear()
         return super().render(data=data)
