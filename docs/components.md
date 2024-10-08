@@ -523,7 +523,7 @@ You can do some further initialization here that should override all other rules
 It can be used to add dynamical changing elements to an attached Django form. 
 
 ```python
-class SignupForm(DynamicFormMixin, FormComponent):
+class SignupForm(FormComponent):
     ...
     def ready(self):
         # people that pay more than 20 bucks per month may be anonymous.
