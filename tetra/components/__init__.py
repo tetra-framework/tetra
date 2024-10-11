@@ -5,4 +5,5 @@ from .base import (
     Component,
     FormComponent,
     public,
+    FormFactory,
 )
