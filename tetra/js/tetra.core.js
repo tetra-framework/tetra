@@ -281,8 +281,7 @@ const Tetra = {
   },
 
   jsonDecode(s) {
-    var obj= JSON.parse(s, Tetra.jsonReviver);
-    return obj
+    return JSON.parse(s, Tetra.jsonReviver)
   },
 
   debounce(func, wait, immediate) {
