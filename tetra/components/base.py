@@ -100,15 +100,7 @@ def make_template(cls) -> Template:
             raise TemplateDoesNotExist(
                 f"Component {cls.__name__} has no template " f"file at {template_path}"
             )
-        # Create a Django template engine instance (optional settings can be customized)
-        # TODO: cache Engine
-        original_dirs = settings.TEMPLATES[0]["DIRS"]
-        settings.TEMPLATES[0]["DIRS"] += [module_path]
-        # custom_engine = Engine(
-        #     dirs=[os.path.dirname(template_path)], debug=settings.DEBUG
-        # )
-
-        # Load the template using the custom engine
+        # Load the template using the custom loader
         try:
             template = get_template(f"{component_name}.html").template
         except TemplateDoesNotExist as e:
