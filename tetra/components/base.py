@@ -99,7 +99,7 @@ def make_template(cls) -> Template:
         template_path = os.path.join(module_path, template_file_name)
         if not os.path.exists(template_path):
             raise TemplateDoesNotExist(
-                f"Component {cls.__name__} has no template " f"file at {template_path}"
+                f"Component {cls.__name__} has no template file at {template_path}"
             )
         # Load the template using the custom loader
         try:
