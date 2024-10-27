@@ -11,8 +11,9 @@ class Loader(FileSystemLoader):
         # Collect all `components` directories from each app
         component_dirs = []
         for app_config in apps.get_app_configs():
-            # TODO use dynamic components_module_names
-            components_dir = Path(app_config.path) / "components"
-            if components_dir.is_dir():
-                component_dirs.append(components_dir)
+            if app_config.label != "tetra":
+                # TODO use dynamic components_module_names
+                components_dir = Path(app_config.path) / "components"
+                if components_dir.is_dir():
+                    component_dirs.append(components_dir)
         return component_dirs
