@@ -14,7 +14,6 @@ title: Changelog
 
 ## [0.1.2] - unreleased
 ### Added
-- FormComponent support
 - improve demo site
 - add debug logging handler
 - improved component import error handling
