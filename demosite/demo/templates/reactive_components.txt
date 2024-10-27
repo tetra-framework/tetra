@@ -4,7 +4,7 @@ from tetra import Component, public, Library
 from .movies import movies
 
 @default.register
-class reactive_search(Component):
+class ReactiveSearch(Component):
     query = public("")
     results = []
 
