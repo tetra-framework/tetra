@@ -83,6 +83,10 @@ class Library:
         else:
             return dec
 
+    def __contains__(self, component_name: str) -> bool:
+        """Check if the library contains the given component name."""
+        return component_name in self.components
+
     def build(self):
         # TODO: check if source has changed and only build if it has
         print(f"# Building {self.display_name}")

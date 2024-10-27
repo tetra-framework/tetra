@@ -1,3 +1,5 @@
+import importlib
+import os
 from copy import copy
 from typing import Optional
 from types import FunctionType
@@ -9,9 +11,14 @@ from weakref import WeakKeyDictionary
 from functools import wraps
 from threading import local
 
+from django.conf import settings
 from django.template.base import Template
 from django.template.loader import render_to_string, get_template
-from django.template import RequestContext, TemplateSyntaxError
+from django.template import (
+    RequestContext,
+    TemplateSyntaxError,
+    TemplateDoesNotExist,
+)
 from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockContext, BlockNode
 from django.utils.safestring import mark_safe
 from django.utils.html import escapejs, escape
@@ -67,7 +74,6 @@ def make_template(cls) -> Template:
             # a nice stack trace in the browser. We therefore create a "Lazy" template
             # after a compile error that will run in the browser when testing.
             # TODO: turn this off when DEBUG=False
-            from django.conf import settings
 
             if settings.DEBUG:
                 making_lazy_after_exception = True
@@ -84,15 +90,32 @@ def make_template(cls) -> Template:
                 if not getattr(block_node, "origin", None):
                     block_node.origin = origin
 
-    # if "template_name" is defined, use it as template file source.
-    elif hasattr(cls, "template_name"):
-        template = get_template(cls.template_name).template
     else:
-        raise ComponentException(
-            f"You must provide either a `template_name` or a `template` in Component"
-            f" {cls.__name__}."
-        )
+        # try to find <component_name>.html within component's directory
+        module = importlib.import_module(cls.__module__)
+        component_name = module.__name__.split(".")[-1]
+        module_path = module.__path__[0]
+        template_path = os.path.join(module_path, f"{component_name}.html")
+        if not os.path.exists(template_path):
+            raise TemplateDoesNotExist(
+                f"Component {cls.__name__} has no template " f"file at {template_path}"
+            )
+        # Create a Django template engine instance (optional settings can be customized)
+        # TODO: cache Engine
+        original_dirs = settings.TEMPLATES[0]["DIRS"]
+        settings.TEMPLATES[0]["DIRS"] += [module_path]
+        # custom_engine = Engine(
+        #     dirs=[os.path.dirname(template_path)], debug=settings.DEBUG
+        # )
 
+        # Load the template using the custom engine
+        try:
+            template = get_template(f"{component_name}.html").template
+        except TemplateDoesNotExist as e:
+            raise ComponentException(
+                f"Template file '{template_path}' not found for component"
+                f" {cls.__name__}."
+            )
     return template
 
 
@@ -100,7 +123,7 @@ class BasicComponentMetaClass(type):
     def __new__(mcls, name, bases, attrs):
         newcls = super().__new__(mcls, name, bases, attrs)
         newcls._name = camel_case_to_underscore(newcls.__name__)
-        if hasattr(newcls, "template") or hasattr(newcls, "template_name"):
+        if not "__abstract__" in attrs:
             newcls._template = make_template(newcls)
         return newcls
 
@@ -112,6 +135,7 @@ class RenderData(Enum):
 
 
 class BasicComponent(metaclass=BasicComponentMetaClass):
+    __abstract__ = True
     style: Optional[str] = None
     _name = None
     _library = None
@@ -349,6 +373,7 @@ class ComponentMetaClass(BasicComponentMetaClass):
 
 
 class Component(BasicComponent, metaclass=ComponentMetaClass):
+    __abstract__ = True
     script: Optional[str] = None
     _callback_queue = None
     _excluded_props_from_saved_state = [
