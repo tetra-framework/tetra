@@ -95,18 +95,19 @@ def make_template(cls) -> Template:
         module = importlib.import_module(cls.__module__)
         component_name = module.__name__.split(".")[-1]
         module_path = module.__path__[0]
-        template_path = os.path.join(module_path, f"{component_name}.html")
+        template_file_name = f"{component_name}.html"
+        template_path = os.path.join(module_path, template_file_name)
         if not os.path.exists(template_path):
             raise TemplateDoesNotExist(
                 f"Component {cls.__name__} has no template " f"file at {template_path}"
             )
         # Load the template using the custom loader
         try:
-            template = get_template(f"{component_name}.html").template
-        except TemplateDoesNotExist as e:
+            template = get_template(template_file_name).template
+        except TemplateDoesNotExist:
             raise ComponentException(
-                f"Template file '{template_path}' not found for component"
-                f" {cls.__name__}."
+                f"Template file '{template_file_name}' not found for component"
+                f" '{cls.__name__}'."
             )
     return template
 
