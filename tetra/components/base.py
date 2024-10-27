@@ -18,6 +18,7 @@ from django.template import (
     RequestContext,
     TemplateSyntaxError,
     TemplateDoesNotExist,
+    Engine,
 )
 from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockContext, BlockNode
 from django.utils.safestring import mark_safe
@@ -96,14 +97,31 @@ def make_template(cls) -> Template:
         component_name = module.__name__.split(".")[-1]
         module_path = module.__path__[0]
         template_file_name = f"{component_name}.html"
-        template_path = os.path.join(module_path, template_file_name)
-        if not os.path.exists(template_path):
-            raise TemplateDoesNotExist(
-                f"Component {cls.__name__} has no template file at {template_path}"
-            )
-        # Load the template using the custom loader
+        # Load the template using a custom loader
+        from django.template.loaders.filesystem import Loader as FileSystemLoader
+
         try:
-            template = get_template(template_file_name).template
+            engine = Engine(dirs=[module_path], app_dirs=False)
+            loader = FileSystemLoader(engine)
+            for template_path in loader.get_template_sources(template_file_name):
+                try:
+                    # Open and read the template source
+                    with open(template_path.name, "r", encoding="utf-8") as f:
+                        template_source = f.read()
+
+                    # Compile the template
+                    template = Template(template_source)
+                    break
+                except FileNotFoundError:
+                    # If the file is not found, continue with the next source
+                    continue
+            else:
+                # If no template is found, raise an error
+                raise ComponentException(
+                    f"Template file '{template_file_name}' not found for component"
+                    f" '{cls.__name__}'."
+                )
+            # template = get_template(template_file_name).template
         except TemplateDoesNotExist:
             raise ComponentException(
                 f"Template file '{template_file_name}' not found for component"
