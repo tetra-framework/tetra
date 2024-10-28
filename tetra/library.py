@@ -17,6 +17,7 @@ class ComponentLibraryException(Exception):
 class Library:
     def __init__(self):
         self.components = {}
+        self.path = ""
 
     @property
     def display_name(self):

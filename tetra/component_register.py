@@ -82,6 +82,7 @@ def find_component_libraries():
                                     library_info.module_finder.path,
                                     library_info.name,
                                 )
+                                library.path = library_path
 
                                 # search for component packages within library
                                 for component_info in pkgutil.iter_modules(
