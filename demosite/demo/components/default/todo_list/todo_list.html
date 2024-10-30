@@ -8,7 +8,7 @@
   </div>
   <div class="list-group">
     {% for todo in todos %}
-      {% @ to_do_item todo=todo key=todo.id / %}
+      {% @ ToDoItem todo=todo key=todo.id / %}
     {% endfor %}
   </div>
 </div>
