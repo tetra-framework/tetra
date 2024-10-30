@@ -112,8 +112,14 @@ def make_template(cls) -> Template:
                     with open(template_path.name, "r", encoding="utf-8") as f:
                         template_source = f.read()
 
+                    origin = InlineOrigin(
+                        name=os.path.join(module_path, template_file_name),
+                        template_name=template_file_name,
+                        start_line=0,
+                        component=cls,
+                    )
                     # Compile the template
-                    template = Template(template_source)
+                    template = Template(template_source, origin, template_file_name)
                     break
                 except FileNotFoundError:
                     # If the file is not found, continue with the next source
