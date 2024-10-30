@@ -95,6 +95,9 @@ def make_template(cls) -> Template:
         # try to find <component_name>.html within component's directory
         module = importlib.import_module(cls.__module__)
         component_name = module.__name__.split(".")[-1]
+        # FIXME: this triggers an error as __path__ does not exist when component has
+        #  syntax errors, has to be investigated further:
+        #  AttributeError: partially initialized module 'tests.main.components.faulty' has no attribute '__path__'
         module_path = module.__path__[0]
         template_file_name = f"{component_name}.html"
         # Load the template using a custom loader

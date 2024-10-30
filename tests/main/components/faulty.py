@@ -9,11 +9,13 @@ from .base import faulty
 
 @faulty.register
 class FaultyComponent1(Component):
+    template = ""
     def __init__(self, *args, **kwargs):
         import foo_bar_not_existing_module
 
 
 @faulty.register
 class FaultyComponent2(Component):
+    template = ""
     def __init__(self, *args, **kwargs):
         foo  #  This must raise a NameError
