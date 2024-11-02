@@ -15,11 +15,11 @@ def watch_extra_files(sender, *args, **kwargs):
     for app_name, library in libraries.items():
         for lib_name, library_info in library.items():
             if library_info:
-                watch_list = glob(f"{library_info.path}/**/*.html", recursive=True)
+                # watch for html, js, and css files
+                watch_list = glob(f"{library_info.path}/**/*.*", recursive=True)
                 for file in watch_list:
-                    if os.path.exists(file):
+                    if os.path.exists(file) and file.endswith(('.html', '.css', '.js')):
                         watch(Path(file))
-
 
 class TetraConfig(AppConfig):
     name = "tetra"
