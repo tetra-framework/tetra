@@ -247,9 +247,9 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
             start = py_source.index(cls.style, comp_start_offset)
             before = py_source[:start]
             before = re.sub(f"\S", " ", before)
-            return f"{before}{cls.style}"
+            return f"{before}{cls.style}", True
         else:
-            return cls._read_component_file_with_extension("css")
+            return cls._read_component_file_with_extension("css"), False
 
     @classmethod
     def as_tag(cls, _request, *args, **kwargs):
@@ -538,10 +538,10 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             start = py_source.index(cls.script, comp_start_offset)
             before = py_source[:start]
             before = re.sub(f"\S", " ", before)
-            return f"{before}{cls.script}"
+            return f"{before}{cls.script}", True
         else:
             # Find script in the component's directory
-            return cls._read_component_file_with_extension("js")
+            return cls._read_component_file_with_extension("js"), False
 
 
     def _call_load(self, *args, **kwargs):
