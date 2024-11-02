@@ -55,7 +55,7 @@ def make_template(cls) -> Template:
     from ..templatetags.tetra import get_nodes_by_type_deep
 
     # if only "template" is defined, use it as inline template string.
-    if hasattr(cls, "template"):
+    if bool(hasattr(cls, "template") and cls.template):
         making_lazy_after_exception = False
         filename, line = cls.get_template_source_location()
         origin = InlineOrigin(
@@ -192,6 +192,26 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         line = source[:start].count("\n") + 1
         return filename, line
 
+
+    @classmethod
+    def _get_component_file_path_with_extension(cls, extension):
+        module = importlib.import_module(cls.__module__)
+        component_name = module.__name__.split(".")[-1]
+        module_path = module.__path__[0]
+        file_name = f"{component_name}.{extension}"
+        return os.path.join(module_path, file_name)
+
+    @classmethod
+    def _read_component_file_with_extension(cls, extension):
+        file_path = cls._get_component_file_path_with_extension(extension)
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, "r") as f:
+                    return f.read()
+            except FileNotFoundError:
+                return ""
+        else:
+            return ""
     @classmethod
     def has_script(cls):
         return False
@@ -203,22 +223,33 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
 
     @classmethod
     def has_styles(cls):
-        return bool(hasattr(cls, "style") and cls.style)
+        if bool(hasattr(cls, "style") and cls.style):
+            return True
+        else:
+            return os.path.exists(cls._get_component_file_path_with_extension("css"))
 
     @classmethod
     def make_styles(cls):
-        return cls.style
+        # check if the style is defined in the class otherwise check if there is a file in the component directory
+        if bool(hasattr(cls, "style") and cls.style):
+            return cls.style
+        else:
+            return cls._read_component_file_with_extension("css")
 
     @classmethod
     def make_styles_file(cls):
-        filename, comp_start_line, source_len = cls.get_source_location()
-        with open(filename, "r") as f:
-            py_source = f.read()
-        comp_start_offset = len("\n".join(py_source.split("\n")[:comp_start_line]))
-        start = py_source.index(cls.style, comp_start_offset)
-        before = py_source[:start]
-        before = re.sub(f"\S", " ", before)
-        return f"{before}{cls.style}"
+        # check if we have a style defined in the class otherwise check if there is a file in the component directory
+        if bool(hasattr(cls, "style") and cls.style):
+            filename, comp_start_line, source_len = cls.get_source_location()
+            with open(filename, "r") as f:
+                py_source = f.read()
+            comp_start_offset = len("\n".join(py_source.split("\n")[:comp_start_line]))
+            start = py_source.index(cls.style, comp_start_offset)
+            before = py_source[:start]
+            before = re.sub(f"\S", " ", before)
+            return f"{before}{cls.style}", True
+        else:
+            return cls._read_component_file_with_extension("css"), False
 
     @classmethod
     def as_tag(cls, _request, *args, **kwargs):
@@ -463,7 +494,11 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     @classmethod
     def has_script(cls):
-        return bool(cls.script)
+        # check if the script is defined in the class otherwise check if there is a file in the component directory
+        if bool(hasattr(cls, "script") and cls.script):
+            return True
+        else:
+            return os.path.exists(cls._get_component_file_path_with_extension("js"))
 
     @classmethod
     def _component_url(cls, method_name):
@@ -495,14 +530,19 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     @classmethod
     def make_script_file(cls):
-        filename, comp_start_line, source_len = cls.get_source_location()
-        with open(filename, "r") as f:
-            py_source = f.read()
-        comp_start_offset = len("\n".join(py_source.split("\n")[:comp_start_line]))
-        start = py_source.index(cls.script, comp_start_offset)
-        before = py_source[:start]
-        before = re.sub(f"\S", " ", before)
-        return f"{before}{cls.script}"
+        if bool(hasattr(cls, "script") and cls.script):
+            filename, comp_start_line, source_len = cls.get_source_location()
+            with open(filename, "r") as f:
+                py_source = f.read()
+            comp_start_offset = len("\n".join(py_source.split("\n")[:comp_start_line]))
+            start = py_source.index(cls.script, comp_start_offset)
+            before = py_source[:start]
+            before = re.sub(f"\S", " ", before)
+            return f"{before}{cls.script}", True
+        else:
+            # Find script in the component's directory
+            return cls._read_component_file_with_extension("js"), False
+
 
     def _call_load(self, *args, **kwargs):
         self._load_args = args

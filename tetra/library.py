@@ -118,10 +118,13 @@ class Library:
             for component_name, component in self.components.items():
                 print(f" - {component_name}")
                 if component.has_script():
-                    script = component.make_script_file()
+                    script, is_inline = component.make_script_file()
                     py_filename, _, _ = component.get_source_location()
                     py_dir = os.path.dirname(py_filename)
-                    filename = f"{os.path.basename(py_filename)}__{component_name}.js"
+                    if is_inline:
+                        filename = f"{os.path.basename(py_filename)}__{component_name}.js"
+                    else:
+                        filename = f"{component_name}.js"
                     component_path = os.path.join(py_dir, filename)
                     files_to_remove.append(component_path)
                     with open(component_path, "w") as f:
@@ -173,10 +176,13 @@ class Library:
             for component_name, component in self.components.items():
                 if component.has_styles():
                     print(f" - {component_name}")
-                    styles = component.make_styles_file()
+                    styles, is_inline = component.make_styles_file()
                     py_filename, _, _ = component.get_source_location()
                     py_dir = os.path.dirname(py_filename)
-                    filename = f"{os.path.basename(py_filename)}__{component_name}.css"
+                    if is_inline:
+                        filename = f"{os.path.basename(py_filename)}__{component_name}.css"
+                    else:
+                        filename = f"{component_name}.css"
                     component_path = os.path.join(py_dir, filename)
                     files_to_remove.append(component_path)
                     with open(component_path, "w") as f:
