@@ -97,7 +97,7 @@ Then there is the template; this uses the standard Django template language. You
         </div>
         <div class="list-group">
             {% for todo in todos %}
-                {% @ to_do_item todo=todo key=todo.id / %}
+                {% @ ToDoItem todo=todo key=todo.id / %}
             {% endfor %}
         </div>
     </div>

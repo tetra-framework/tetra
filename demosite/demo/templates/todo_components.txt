@@ -9,7 +9,9 @@ class ToDoList(Component):
     title = public("")
 
     def load(self):
-        self.todos = ToDo.objects.filter(session_key=self.request.session.session_key)
+        self.todos = ToDo.objects.filter(
+            session_key=self.request.session.session_key
+        )
 
     @public
     def add_todo(self, title):
@@ -30,7 +32,7 @@ class ToDoList(Component):
         </div>
         <div class="list-group">
             {% for todo in todos %}
-                {% @ to_do_item todo=todo key=todo.id / %}
+                {% @ ToDoItem todo=todo key=todo.id / %}
             {% endfor %}
         </div>
     </div>
