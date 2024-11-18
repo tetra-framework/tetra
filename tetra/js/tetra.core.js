@@ -79,6 +79,19 @@ const Tetra = {
           window.history.pushState(null, '', url);
         }
       },
+      _uploadFile(event) {
+        // TODO: Consider how multiple files can be handled
+        const file = event.target.files[0];
+        const method = '_upload_temp_file';
+        const endpoint = this.__serverMethods.find(item => item.name === '_upload_temp_file').endpoint;
+        const args = [event.target.name, event.target.files[0].name];
+        Tetra.callServerMethodWithFile(this, method, endpoint, file, args).then((result) => {
+            //TODO: Determine if we need to do anything with the resulting filename
+            //event.target.dataset.tetraTempFileName = result;
+            //this._updateData(result);
+        });
+
+      },
       // Tetra private:
       __initServerWatchers() {
         this.__serverMethods.forEach(item => {
@@ -198,21 +211,9 @@ const Tetra = {
     });
   },
 
-  async callServerMethod(component, methodName, methodEndpoint, args) {
-    // TODO: error handling
-    let body = Tetra.getStateWithChildren(component);
-    body.args = args;
-    const response = await fetch(methodEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': window.__tetra_csrfToken,
-      },
-      mode: 'same-origin',
-      body: Tetra.jsonEncode(body),
-    });
+  async handleServerMethodResponse(response, component) {
     if (response.status === 200) {
-      const respData = Tetra.jsonDecode(await response.text()); 
+      const respData = Tetra.jsonDecode(await response.text());
       if (respData.success) {
         let loadingResources = [];
         respData.js.forEach(src => {
@@ -248,6 +249,41 @@ const Tetra = {
     } else {
       throw new Error(`Server responded with an error ${response.status} (${response.statusText})`);
     }
+  },
+  async callServerMethod(component, methodName, methodEndpoint, args) {
+    // TODO: error handling
+    let body = Tetra.getStateWithChildren(component);
+    body.args = args;
+    const response = await fetch(methodEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': window.__tetra_csrfToken,
+      },
+      mode: 'same-origin',
+      body: Tetra.jsonEncode(body),
+    });
+    return await this.handleServerMethodResponse(response, component);
+  },
+
+  async callServerMethodWithFile(component, methodName, methodEndpoint, file, args) {
+    // TODO: error handling
+    let state = Tetra.getStateWithChildren(component);
+    state.args = args;
+    let formData = new FormData();
+    formData.append('file', file);
+    formData.append('state', Tetra.jsonEncode(state));
+    //body.args = args;
+    const response = await fetch(methodEndpoint, {
+      method: 'POST',
+      headers: {
+        //'Content-Type': 'application/json',
+        'X-CSRFToken': window.__tetra_csrfToken,
+      },
+      mode: 'same-origin',
+      body: formData,
+    });
+    return await this.handleServerMethodResponse(response, component);
   },
 
   jsonReplacer(key, value) {
