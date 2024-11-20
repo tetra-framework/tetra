@@ -839,7 +839,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     def _upload_temp_file(self, form_field, original_name, file) -> str | None:
         """Uploads a file to the server temporarily."""
         # TODO: Add validation
-        if file and form_field in self._form.fields:
+        if file and form_field in self._form.fields and isinstance(self._form.fields[form_field], FileField):
             temp_file_name = f"tetra_temp_upload/{uuid.uuid4()}"
             storage = self._form.fields[form_field].storage if hasattr(self._form.fields[form_field], 'storage') else default_storage
             storage.save(temp_file_name, file)

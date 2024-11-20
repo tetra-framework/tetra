@@ -267,7 +267,7 @@ const Tetra = {
   },
 
   async callServerMethodWithFile(component, methodName, methodEndpoint, file, args) {
-    // TODO: error handling
+    // TODO: error handling and add security to prevent arbitrary file uploads
     let state = Tetra.getStateWithChildren(component);
     state.args = args;
     let formData = new FormData();
