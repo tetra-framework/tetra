@@ -443,7 +443,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     def __init__(self, _request, key=None, *args, **kwargs):
         super().__init__(_request, *args, **kwargs)
-        self.key = key
+        self.key = key if key is not None else self.full_component_name()
 
     @classmethod
     def from_state(

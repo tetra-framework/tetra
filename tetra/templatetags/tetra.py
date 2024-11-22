@@ -298,6 +298,8 @@ class ComponentNode(template.Node):
                         blocks[block_name] = new_block
 
         children_state = context.get("_loaded_children_state", None)
+        if "key" not in resolved_kwargs:
+            resolved_kwargs["key"] = Component.full_component_name()
         if children_state and (resolved_kwargs["key"] in children_state):
             component_state = children_state[resolved_kwargs["key"]]
             component = Component.from_state(
