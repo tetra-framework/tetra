@@ -11,7 +11,7 @@ from .components import ComponentError
 from .utils import camel_case_to_underscore
 
 
-class ComponentLibraryException(Exception):
+class LibraryError(ComponentError):
     pass
 
 
@@ -72,8 +72,9 @@ class Library:
 
         def dec(cls):
             if hasattr(cls, "_library") and cls._library:
-                raise ComponentLibraryException(
-                    f"Component {component.__name__} already registered to a library."
+                raise LibraryError(
+                    f"Component {component.__name__} is already registered to "
+                    f"library {cls._library}."
                 )
             component._library = self
             component._name = name
