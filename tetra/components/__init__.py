@@ -1,5 +1,5 @@
 from .base import (
-    ComponentException,
+    ComponentError,
     ComponentNotFound,
     BasicComponent,
     Component,

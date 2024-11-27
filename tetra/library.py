@@ -7,6 +7,7 @@ from django.conf import settings
 from django.templatetags.static import static
 from django.utils.functional import cached_property
 
+from .components import ComponentError
 from .utils import camel_case_to_underscore
 
 

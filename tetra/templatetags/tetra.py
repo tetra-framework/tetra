@@ -7,7 +7,7 @@ import re
 import copy
 from threading import local
 
-from ..components import ComponentException
+from ..components import ComponentError
 from ..component_register import resolve_component
 
 
@@ -255,7 +255,7 @@ class ComponentNode(template.Node):
                 except TypeError:
                     c = getattr(c, part, None)
                 if c is None:
-                    raise ComponentException(
+                    raise ComponentError(
                         f"Unable to resolve dynamic component: '"
                         f"{self.component_name}'"
                     )
@@ -266,7 +266,7 @@ class ComponentNode(template.Node):
         try:
             request = context.request
         except AttributeError:
-            raise ComponentException(
+            raise ComponentError(
                 'Tetra Components require "request" in the template context.'
             )
 

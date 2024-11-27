@@ -37,11 +37,11 @@ from .callbacks import CallbackList
 thread_local = local()
 
 
-class ComponentException(Exception):
+class ComponentError(Exception):
     pass
 
 
-class ComponentNotFound(ComponentException):
+class ComponentNotFound(ComponentError):
     pass
 
 
@@ -126,13 +126,13 @@ def make_template(cls) -> Template:
                     continue
             else:
                 # If no template is found, raise an error
-                raise ComponentException(
+                raise ComponentError(
                     f"Template file '{template_file_name}' not found for component"
                     f" '{cls.__name__}'."
                 )
             # template = get_template(template_file_name).template
         except TemplateDoesNotExist:
-            raise ComponentException(
+            raise ComponentError(
                 f"Template file '{template_file_name}' not found for component"
                 f" '{cls.__name__}'."
             )
@@ -575,7 +575,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         try:
             to_json(load_args)
         except TypeError:
-            raise ComponentException(
+            raise ComponentError(
                 f"Tetra Component {self.__class__.__name__} tried to self.set_load_args() with a none json serializable value."
             )
         self._load_args = load_args
