@@ -22,8 +22,8 @@ def test_component_importing_missing_module(request):
 
 def test_component_with_name_error(request):
     """If a component calls not-existing code, this must be raised transparently."""
-    with pytest.raises(NameError) as exc_info:
-        render_component(request, "{% @ main.faulty.faulty_component2 / %}")
+    with pytest.raises(NameError):
+        render_component_tag(request, "{% @ main.faulty.faulty_component2 / %}")
 
 def test_component_with_no_root_tag(request):
     """If a component calls not-existing code, this must be raised transparently."""

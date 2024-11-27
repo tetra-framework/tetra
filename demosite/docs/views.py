@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from django.http import Http404
 from django.conf import settings
-from pathlib import Path
 import yaml
 import markdown
 from markdown.extensions.toc import TocExtension

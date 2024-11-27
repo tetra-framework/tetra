@@ -125,7 +125,7 @@ def find_component_libraries():
                                             member, camel_case_to_underscore(name)
                                         )
 
-                    except ModuleNotFoundError as e:
+                    except ModuleNotFoundError:
                         pass
 
                     # else:

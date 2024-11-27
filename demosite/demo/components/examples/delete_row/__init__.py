@@ -1,4 +1,3 @@
-from demo.models import ToDo
 from tetra import Component, public
 
 

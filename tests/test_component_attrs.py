@@ -1,10 +1,6 @@
-from bs4 import BeautifulSoup
-from django.urls import reverse
-from django.template.exceptions import TemplateSyntaxError
 
 from tests.conftest import extract_component
 from tests.main.helpers import render_component_tag
-import pytest
 
 
 def test_basic_component(request):

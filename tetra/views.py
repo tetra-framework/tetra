@@ -1,7 +1,6 @@
 import json
 from django.http import HttpResponseNotFound, HttpResponseBadRequest
 from .component_register import libraries
-from .state import decode_component
 from .utils import from_json
 
 

@@ -17,10 +17,10 @@ class FaultyComponent2(Component):
     template = "<div></div>"
 
     def __init__(self, *args, **kwargs):  # noqa
-        foo  # noqa; This must raise a NameError
+        # This must raise a NameError:
+        foo  # noqa: F821
 
 
 class FaultyComponent3(Component):
     # this component has no html tag as root element in the template
     template = "foo"
-

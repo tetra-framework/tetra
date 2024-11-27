@@ -1,6 +1,5 @@
 from django import template
 from django.template.loader_tags import BlockNode, BLOCK_CONTEXT_KEY
-from django.apps import apps
 from django.utils.safestring import mark_safe
 from uuid import uuid4
 import re
@@ -168,10 +167,10 @@ def do_component(parser, token):
         # so that we can reuse block names inside each individual use tag
         current_loaded_blocks = getattr(parser, "__loaded_blocks", None)
         parser.__loaded_blocks = []
-        nodelist = parser.parse((f"/@",))
-        if not current_loaded_blocks is None:
+        nodelist = parser.parse(("/@",))
+        if current_loaded_blocks is not None:
             parser.__loaded_blocks = (
-                current_loaded_blocks  # Return origional __loaded_blocks
+                current_loaded_blocks  # Return original __loaded_blocks
             )
         parser.delete_first_token()
 
@@ -366,11 +365,11 @@ class AttrsNode(template.Node):
         attrs = {}
         for key, value in self.arg_gen(context):
             if key == "class":
-                # TODO: class from boolian var
+                # TODO: class from boolean var
                 attrs.setdefault("class", set())
                 attrs["class"].update(value.split())
             elif key == "style":
-                # TODO: advanced style via dict or doted path from vars
+                # TODO: advanced style via dict or dotted path from vars
                 attrs.setdefault("style", {})
                 for rule in value.split(";"):
                     prop_key, prop_val = rule.split(":", 1)
@@ -456,7 +455,7 @@ def if_filter(value, arg):
 
 
 @register.filter(name="else")
-def if_filter(value, arg):
+def if_filter(value, arg):  # noqa: F811
     if value:
         return value
     else:

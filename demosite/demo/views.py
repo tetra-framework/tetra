@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-from pathlib import Path
 
 import markdown
 from django.conf import settings
@@ -67,7 +66,7 @@ def examples(request, slug: str = FIRST_SLUG) -> HttpResponse:
             if demo_html:
                 content += "<hr class='hr'/><h2>Demo</h2>"
                 content += demo_html
-        except TemplateDoesNotExist as e:
+        except TemplateDoesNotExist:
             pass
 
         logger.debug(md.Meta)

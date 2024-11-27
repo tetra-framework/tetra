@@ -1,5 +1,5 @@
 from demo.models import ToDo
-from tetra import Component, public
+from tetra import Component
 
 
 class DeleteRowTable(Component):

@@ -1,5 +1,4 @@
 from django import template
-from django.template.loader import get_template
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.template.loaders.app_directories import Loader

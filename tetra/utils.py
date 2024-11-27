@@ -3,7 +3,6 @@ import datetime
 from dateutil import parser as datetime_parser
 from django.utils.text import re_camel_case
 from django.template.loader import render_to_string
-from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.timezone import is_aware
 
 

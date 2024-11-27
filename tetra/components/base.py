@@ -13,7 +13,7 @@ from threading import local
 
 from django.conf import settings
 from django.template.base import Template
-from django.template.loader import render_to_string, get_template
+from django.template.loader import render_to_string
 from django.template import (
     RequestContext,
     TemplateSyntaxError,
@@ -57,9 +57,7 @@ def make_template(cls) -> Template:
     # if only "template" is defined, use it as inline template string.
     if hasattr(cls, "template"):
         if not cls.template:
-            raise ComponentError(
-                f"Component '{cls.__name__}' has an empty template."
-            )
+            raise ComponentError(f"Component '{cls.__name__}' has an empty template.")
         making_lazy_after_exception = False
         filename, line = cls.get_template_source_location()
         origin = InlineOrigin(
@@ -73,11 +71,12 @@ def make_template(cls) -> Template:
                 "{% load tetra %}" + cls.template,
                 origin=origin,
             )
-        except TemplateSyntaxError as e:
-            # By default we want to compile templates during python compile time, however
-            # the template exceptions are much better when raised at runtime as it shows
-            # a nice stack trace in the browser. We therefore create a "Lazy" template
-            # after a compile error that will run in the browser when testing.
+        except TemplateSyntaxError:
+            # By default, we want to compile templates during python compile time,
+            # however, the template exceptions are much better when raised at runtime
+            # as it shows a nice stack trace in the browser. We therefore create a
+            # "Lazy" template after a compile error that will run in the browser when
+            # testing.
             if settings.DEBUG:
                 making_lazy_after_exception = True
                 template = SimpleLazyObject(
@@ -101,7 +100,7 @@ def make_template(cls) -> Template:
         component_name = module.__name__.split(".")[-1]
         module_path = module.__path__[0]
         # if path is a file, get the containing directory
-        template_dir = os.path.dirname(module_path)
+        # template_dir = os.path.dirname(module_path)
 
         template_file_name = f"{component_name}.html"
         # Load the template using a custom loader
@@ -147,7 +146,7 @@ class BasicComponentMetaClass(type):
     def __new__(mcls, name, bases, attrs):
         newcls = super().__new__(mcls, name, bases, attrs)
         newcls._name = camel_case_to_underscore(newcls.__name__)
-        if not "__abstract__" in attrs or attrs["__abstract__"] is False:
+        if "__abstract__" not in attrs or attrs["__abstract__"] is False:
             newcls._template = make_template(newcls)
         return newcls
 
@@ -253,7 +252,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
             comp_start_offset = len("\n".join(py_source.split("\n")[:comp_start_line]))
             start = py_source.index(cls.style, comp_start_offset)
             before = py_source[:start]
-            before = re.sub(f"\S", " ", before)
+            before = re.sub(r"\S", " ", before)
             return f"{before}{cls.style}", True
         else:
             return cls._read_component_file_with_extension("css"), False
@@ -544,7 +543,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             comp_start_offset = len("\n".join(py_source.split("\n")[:comp_start_line]))
             start = py_source.index(cls.script, comp_start_offset)
             before = py_source[:start]
-            before = re.sub(f"\S", " ", before)
+            before = re.sub(r"\S", " ", before)
             return f"{before}{cls.script}", True
         else:
             # Find script in the component's directory
@@ -628,23 +627,24 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         try:
             tag_name_end = re.match(r"^\s*<\w+", html).end(0)
         except AttributeError:
-            raise ComponentError(f"Tetra component {self.__class__.__name__} has no "
-                                 f"root HTML element.")
+            raise ComponentError(
+                f"Tetra component {self.__class__.__name__} has no root HTML element."
+            )
         extra_tags = [
             f'tetra-component="{self.full_component_name()}"',
-            f'x-bind="__rootBind"',
+            'x-bind="__rootBind"',
         ]
         if self.key:
             extra_tags.append(f'key="{self.key}"')
         if data == RenderData.UPDATE and self._leaded_from_state:
             data_json = escape(to_json(self._render_data()))
             old_data_json = escape(to_json(self._leaded_from_state_data))
-            extra_tags.append(f'x-data=""')
+            extra_tags.append('x-data=""')
             extra_tags.append(f'x-data-update="{data_json}"')
             extra_tags.append(f'x-data-update-old="{old_data_json}"')
         elif data == RenderData.MAINTAIN:
-            extra_tags.append(f'x-data=""')
-            extra_tags.append(f"x-data-maintain")
+            extra_tags.append('x-data=""')
+            extra_tags.append("x-data-maintain")
         else:
             data_json = escapejs(to_json(self._render_data()))
             extra_tags.append(f"x-data=\"{self.full_component_name()}('{data_json}')\"")

@@ -108,25 +108,23 @@ class PickleBlockNode:
             raise TypeError("Unpicked data for template block incorrect.")
 
 
-skip_check = set(
-    [
-        str,
-        bytes,
-        int,
-        float,
-        bool,
-        dict,
-        list,
-        set,
-        frozenset,
-        tuple,
-        range,
-        bytes,
-        bytearray,
-        complex,
-        type(None),
-    ]
-)
+skip_check = {
+    str,
+    bytes,
+    int,
+    float,
+    bool,
+    dict,
+    list,
+    set,
+    frozenset,
+    tuple,
+    range,
+    bytes,
+    bytearray,
+    complex,
+    type(None),
+}
 
 
 class StatePickler(pickle.Pickler):
@@ -249,6 +247,5 @@ def encode_component(component):
 
 def decode_component(state_token, request):
     fernet = _get_fernet_for_request(request)
-    s = gzip.decompress(fernet.decrypt(state_token.encode()))
     state = unpickle_state(gzip.decompress(fernet.decrypt(state_token.encode())))
     return state

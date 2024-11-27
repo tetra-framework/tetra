@@ -1,5 +1,4 @@
 from glob import glob
-from pickle import NONE
 from django.apps import AppConfig
 from pathlib import Path
 import os
