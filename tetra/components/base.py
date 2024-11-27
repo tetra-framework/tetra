@@ -143,7 +143,7 @@ class BasicComponentMetaClass(type):
     def __new__(mcls, name, bases, attrs):
         newcls = super().__new__(mcls, name, bases, attrs)
         newcls._name = camel_case_to_underscore(newcls.__name__)
-        if not "__abstract__" in attrs:
+        if not "__abstract__" in attrs or attrs["__abstract__"] is False:
             newcls._template = make_template(newcls)
         return newcls
 
