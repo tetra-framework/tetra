@@ -12,6 +12,11 @@ def test_basic_component(request):
     content = render_component(request, "{% @ main.default.simple_basic_component / %}")
     assert extract_component(content) == "foo"
 
+def test_basic_component_as_default(request):
+    """Tests a simple component that implicitly is found in the default library"""
+    # FIXME: this does not work, as tetra does not fund the current app while in testing
+    content = render_component(request, "{% @ main.simple_basic_component / %}")
+    assert extract_component(content) == "foo"
 
 def test_basic_component_with_end_tag(request):
     """Tests a simple component with  /@ end tag"""
