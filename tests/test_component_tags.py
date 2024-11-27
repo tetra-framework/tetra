@@ -3,24 +3,24 @@ from django.urls import reverse
 from django.template.exceptions import TemplateSyntaxError
 
 from tests.conftest import extract_component
-from tests.main.helpers import render_component
+from tests.main.helpers import render_component_tag
 import pytest
 
 
 def test_basic_component(request):
     """Tests a simple component with / end"""
-    content = render_component(request, "{% @ main.default.simple_basic_component / %}")
+    content = render_component_tag(request, "{% @ main.default.simple_basic_component / %}")
     assert extract_component(content) == "foo"
 
 def test_basic_component_as_default(request):
     """Tests a simple component that implicitly is found in the default library"""
     # FIXME: this does not work, as tetra does not fund the current app while in testing
-    content = render_component(request, "{% @ main.simple_basic_component / %}")
+    content = render_component_tag(request, "{% @ main.simple_basic_component / %}")
     assert extract_component(content) == "foo"
 
 def test_basic_component_with_end_tag(request):
     """Tests a simple component with  /@ end tag"""
-    content = render_component(
+    content = render_component_tag(
         request, "{% @ main.default.simple_basic_component %}{% /@ %}"
     )
     assert extract_component(content) == "foo"
@@ -28,7 +28,7 @@ def test_basic_component_with_end_tag(request):
 
 def test_basic_component_with_end_tag_and_name(request):
     """Tests a simple component with `/@ <name>` end tag"""
-    content = render_component(
+    content = render_component_tag(
         request,
         "{% @ main.default.simple_basic_component %}{% /@ simple_basic_component%}",
     )
@@ -38,7 +38,7 @@ def test_basic_component_with_end_tag_and_name(request):
 def test_basic_component_with_missing_end_tag(request):
     """Tests a simple component without end tag - must produce TemplateSyntaxError"""
     with pytest.raises(TemplateSyntaxError):
-        content = render_component(
+        content = render_component_tag(
             request,
             "{% @ main.default.simple_basic_component %}",
         )

@@ -1,10 +1,10 @@
 from tests.conftest import extract_component
-from tests.main.helpers import render_component
+from tests.main.helpers import render_component_tag
 
 
 def test_component_with_default_block(request):
     """Tests a simple component with default block"""
-    content = render_component(
+    content = render_component_tag(
         request,
         "{% @ main.default.simple_component_with_default_block %}content{% /@ %}",
     )
@@ -13,7 +13,7 @@ def test_component_with_default_block(request):
 
 def test_component_with_named_block(request):
     """Tests a simple component with empty default block (unfilled)"""
-    content = render_component(
+    content = render_component_tag(
         request,
         "{% @ main.default.simple_component_with_named_block %}{% /@ %}",
     )
@@ -22,7 +22,7 @@ def test_component_with_named_block(request):
 
 def test_component_with_named_block_and_content(request):
     """Tests a simple component with "foo" block"""
-    content = render_component(
+    content = render_component_tag(
         request,
         "{% @ main.default.simple_component_with_named_block %}"
         "{% block foo %}foo{% endblock %}"
@@ -33,7 +33,7 @@ def test_component_with_named_block_and_content(request):
 
 def test_component_with_named_block_and_default_content(request):
     """Tests a simple component with "foo" block and default content in it"""
-    content = render_component(
+    content = render_component_tag(
         request,
         "{% @ main.default.simple_component_with_named_block_with_content %}"
         "{% /@ %}",
@@ -43,7 +43,7 @@ def test_component_with_named_block_and_default_content(request):
 
 def test_component_with_notexisting_block_and_content(request):
     """Tests a simple component with notexisting block filled. Must be ignored."""
-    content = render_component(
+    content = render_component_tag(
         request,
         "{% @ main.default.simple_component_with_named_block %}"
         "{% block notexisting %}foo{% endblock %}"
@@ -54,7 +54,7 @@ def test_component_with_notexisting_block_and_content(request):
 
 def test_component_with_named_block_empty(request):
     """Tests a simple component named"""
-    content = render_component(
+    content = render_component_tag(
         request,
         "{% @ main.default.simple_component_with_named_block %}"
         "{% block foo %}{% endblock %}"
@@ -79,7 +79,7 @@ def test_component_with_named_block_empty(request):
 def test_component_with_2_blocks_unfilled(request):
     """Tests a simple component with `foo` and `default` blocks unfilled. Default
     block contains some default content"""
-    content = render_component(
+    content = render_component_tag(
         request,
         "{% @ main.default.simple_component_with2_blocks %}"
         "{% block foo %}{% endblock %}"
@@ -90,7 +90,7 @@ def test_component_with_2_blocks_unfilled(request):
 
 def test_component_with_2_blocks_partly_filled(request):
     """Tests a simple component with 2 blocks partly filled"""
-    content = render_component(
+    content = render_component_tag(
         request,
         "{% @ main.default.simple_component_with2_blocks %}"
         "{% block foo %}bar{% endblock %}"
@@ -101,7 +101,7 @@ def test_component_with_2_blocks_partly_filled(request):
 
 def test_component_with_block_and_default_content_overridden(request):
     """Tests a simple component overridden default content"""
-    content = render_component(
+    content = render_component_tag(
         request,
         "{% @ main.default.simple_component_with_named_block %}"
         "{% block foo %}overridden{% endblock %}"
@@ -114,7 +114,7 @@ def test_component_with_conditional_block_empty(request):
     """Tests a simple component with conditional block that is not rendered,
     as it is empty
     """
-    content = render_component(
+    content = render_component_tag(
         request, "{% @ main.default.simple_component_with_conditional_block / %}"
     )
     assert extract_component(content) == "always"
@@ -124,7 +124,7 @@ def test_component_with_conditional_block_filled_empty(request):
     """Tests a simple component with default content, that is overridden with empty
     block.
     """
-    content = render_component(
+    content = render_component_tag(
         request,
         "{% @ main.default.simple_component_with_conditional_block  %}"
         "{% block foo %}{% endblock %}"
@@ -136,7 +136,7 @@ def test_component_with_conditional_block_filled_empty(request):
 def test_component_with_conditional_block_filled(request):
     """Tests a simple component with conditional block, filled, with mixed text from
     component and block overrides."""
-    content = render_component(
+    content = render_component_tag(
         request,
         "{% @ main.default.simple_component_with_conditional_block  %}"
         "{% block foo %}foo{% endblock %}"
