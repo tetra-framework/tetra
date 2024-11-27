@@ -3,6 +3,7 @@ import shutil
 import subprocess
 import json
 
+from django.apps import AppConfig
 from django.conf import settings
 from django.templatetags.static import static
 from django.utils.functional import cached_property
@@ -16,9 +17,17 @@ class LibraryError(ComponentError):
 
 
 class Library:
-    def __init__(self):
+    def __init__(self,name="", path="", app=None):
         self.components = {}
-        self.path = ""
+        self.name = name
+        self.path = path
+        self.app: AppConfig | None = app
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return f"<Library: {self.display_name}>"
 
     @property
     def display_name(self):
@@ -124,7 +133,9 @@ class Library:
                     py_filename, _, _ = component.get_source_location()
                     py_dir = os.path.dirname(py_filename)
                     if is_inline:
-                        filename = f"{os.path.basename(py_filename)}__{component_name}.js"
+                        filename = (
+                            f"{os.path.basename(py_filename)}__{component_name}.js"
+                        )
                     else:
                         filename = f"{component_name}.js"
                     component_path = os.path.join(py_dir, filename)
@@ -182,7 +193,9 @@ class Library:
                     py_filename, _, _ = component.get_source_location()
                     py_dir = os.path.dirname(py_filename)
                     if is_inline:
-                        filename = f"{os.path.basename(py_filename)}__{component_name}.css"
+                        filename = (
+                            f"{os.path.basename(py_filename)}__{component_name}.css"
+                        )
                     else:
                         filename = f"{component_name}.css"
                     component_path = os.path.join(py_dir, filename)

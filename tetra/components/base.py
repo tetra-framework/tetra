@@ -49,13 +49,17 @@ def make_template(cls) -> Template:
     """Create a template from a component class.
 
     Uses either the `cls.template` attribute as inline template string,
-    or `cls.template_name` as template file source. If both are defined, 'template'
-    overrides 'template_name'.
+    or the html template file source in the component's directory. If both are defined,
+    'template' overrides 'template_name'.
     """
     from ..templatetags.tetra import get_nodes_by_type_deep
 
     # if only "template" is defined, use it as inline template string.
-    if bool(hasattr(cls, "template") and cls.template):
+    if hasattr(cls, "template"):
+        if not cls.template:
+            raise ComponentError(
+                f"Component '{cls.__name__}' has an empty template."
+            )
         making_lazy_after_exception = False
         filename, line = cls.get_template_source_location()
         origin = InlineOrigin(
@@ -74,8 +78,6 @@ def make_template(cls) -> Template:
             # the template exceptions are much better when raised at runtime as it shows
             # a nice stack trace in the browser. We therefore create a "Lazy" template
             # after a compile error that will run in the browser when testing.
-            # TODO: turn this off when DEBUG=False
-
             if settings.DEBUG:
                 making_lazy_after_exception = True
                 template = SimpleLazyObject(
@@ -92,13 +94,15 @@ def make_template(cls) -> Template:
                     block_node.origin = origin
 
     else:
+        # Here we definitely are in a dir-style component
+
         # try to find <component_name>.html within component's directory
         module = importlib.import_module(cls.__module__)
         component_name = module.__name__.split(".")[-1]
-        # FIXME: this triggers an error as __path__ does not exist when component has
-        #  syntax errors, has to be investigated further:
-        #  AttributeError: partially initialized module 'tests.main.components.faulty' has no attribute '__path__'
         module_path = module.__path__[0]
+        # if path is a file, get the containing directory
+        template_dir = os.path.dirname(module_path)
+
         template_file_name = f"{component_name}.html"
         # Load the template using a custom loader
         from django.template.loaders.filesystem import Loader as FileSystemLoader
@@ -192,9 +196,11 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         line = source[:start].count("\n") + 1
         return filename, line
 
-
     @classmethod
     def _get_component_file_path_with_extension(cls, extension):
+        if hasattr(cls, "template") and cls.template:
+            # assume this is an inline component, no css/js files available
+            return ""
         module = importlib.import_module(cls.__module__)
         component_name = module.__name__.split(".")[-1]
         module_path = module.__path__[0]
@@ -212,6 +218,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
                 return ""
         else:
             return ""
+
     @classmethod
     def has_script(cls):
         return False
@@ -542,7 +549,6 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         else:
             # Find script in the component's directory
             return cls._read_component_file_with_extension("js"), False
-
 
     def _call_load(self, *args, **kwargs):
         self._load_args = args

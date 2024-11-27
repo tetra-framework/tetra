@@ -3,7 +3,6 @@ from sourcetypes import django_html
 from tetra import Component, public, Library
 from .movies import movies
 
-@default.register
 class ReactiveSearch(Component):
     query = public("")
     results = []

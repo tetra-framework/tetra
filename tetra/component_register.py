@@ -8,8 +8,14 @@ from django.template import Template
 import inspect
 from collections import defaultdict
 
-from .components.base import InlineTemplate, ComponentNotFound, Component
-from .library import Library, ComponentLibraryException
+from .components import ComponentError
+from .components.base import (
+    InlineTemplate,
+    ComponentNotFound,
+    BasicComponent,
+)
+from .library import Library
+from .utils import camel_case_to_underscore
 
 logger = logging.getLogger(__file__)
 
@@ -28,99 +34,121 @@ def find_component_libraries():
         return
     importlib.invalidate_caches()
     for components_module_name in components_module_names:
-        for app in apps.get_app_configs():
-            if app.module.__name__ != "tetra":
-                module_name = f"{app.module.__name__}.{components_module_name}"
-                try:
-                    components_module = importlib.import_module(module_name)
-                    for name, member in inspect.getmembers(components_module):
-                        if isinstance(member, Library):
-                            if name in libraries[app.label]:
-                                raise ComponentLibraryException(
-                                    f'Library named "{name}" already in app "{app.label}".'
-                                )
-                            libraries[app.label][name] = member
-                            member.name = name
-                            member.app = app
-                    # iter over a list of submodules in the
-                    # components/tetra_components directory
-                    for library_info in pkgutil.iter_modules(
-                        components_module.__path__
-                    ):
-                        # if submodule is a package, it must be a library
-                        if library_info.ispkg:
-                            # import module dynamically and load it as library
-                            # library_dotted_path = ".".join(
-                            #     [
-                            #         app.module.__name__,
-                            #         components_module_name,
-                            #         library_module_info.name,
-                            #     ]
-                            # )
-                            try:
-                                # module = importlib.import_module(component_dotted_path)
+        for app_config in [
+            a for a in apps.get_app_configs() if a.module.__name__ != "tetra"
+        ]:
+            # from django.utils.module_loading import *
 
-                                # check if library name is already registered.
-                                library = libraries[app.label].get(library_info.name)
-                                if not library:
-                                    library = Library()
-                                    # save library in a dictionary for later usage.
-                                    libraries[app.label][library_info.name] = library
-                                    library.name = library_info.name
-                                    library.app = app
+            module_name = f"{app_config.name}.{components_module_name}"
+            try:
+                components_module = importlib.import_module(module_name)
 
-                                library_module = importlib.import_module(
-                                    ".".join(
-                                        [
-                                            app.label,
-                                            components_module_name,
-                                            library_info.name,
-                                        ]
-                                    )
-                                )
-                                library_path = os.path.join(
-                                    library_info.module_finder.path,
-                                    library_info.name,
-                                )
-                                library.path = library_path
+                # iter over a list of submodules in the
+                # components directory
+                for module_finder, library_name, ispkg in pkgutil.iter_modules(
+                    components_module.__path__
+                ):
+                    # check if library name is already registered, else register it.
+                    library = libraries[app_config.label].get(library_name)
+                    if not library:
+                        library = Library(name=library_name, app=app_config)
+                        # save library in a dictionary for later usage.
+                        libraries[app_config.label][library_name] = library
 
-                                # search for component packages within library
-                                for component_info in pkgutil.iter_modules(
-                                    [library_path]
+                    # if submodule is a package, treat it as library package
+                    try:
+                        library_module = importlib.import_module(
+                            ".".join(
+                                [
+                                    app_config.label,
+                                    components_module_name,
+                                    library_name,
+                                ]
+                            )
+                        )
+
+                        library.path = os.path.join(
+                            module_finder.path,
+                            library_name,
+                        )
+
+                        # Search for components directly defined in the library package.
+                        # this could be in e.g. default.py or in default/__init__.py
+                        for name, member in inspect.getmembers(
+                            library_module, inspect.isclass
+                        ):
+                            # accept only BasicComponent subclasses, and ignore imports:
+                            # only classes defined in that module are registered as
+                            # components.
+                            if (
+                                issubclass(member, BasicComponent)
+                                and getattr(member, "__module__", None)
+                                == library_module.__name__
+                            ):
+                                library.register(member, camel_case_to_underscore(name))
+
+                        # if library is a package, search for component packages within
+                        # library
+                        if ispkg:
+                            components_found = 0
+                            for component_info in pkgutil.iter_modules([library.path]):
+                                component_name = ".".join(
+                                    [
+                                        app_config.label,
+                                        components_module_name,
+                                        library.name,
+                                        component_info.name,
+                                    ]
+                                )
+                                component_module = importlib.import_module(
+                                    component_name
+                                )
+                                for name, member in inspect.getmembers(
+                                    component_module, inspect.isclass
                                 ):
-                                    component_name = (
-                                        f"{app.label}."
-                                        f"{components_module_name}."
-                                        f"{library.name}.{component_info.name}"
-                                    )
-                                    component_module = importlib.import_module(
-                                        component_name
-                                    )
-
-                                    for name, member in inspect.getmembers(
-                                        component_module, inspect.isclass
+                                    # accept only BasicComponent subclasses, and ignore imports:
+                                    # only classes defined in that module are registered as
+                                    # components.
+                                    if (
+                                        issubclass(member, BasicComponent)
+                                        and getattr(member, "__module__", None)
+                                        == component_module.__name__
                                     ):
-                                        if (
-                                            issubclass(member, Component)
-                                            and member is not Component
-                                        ):
-                                            library.register(member, name)
+                                        components_found += 1
+                                        if components_found > 1:
+                                            raise ComponentError(
+                                                f"Multiple components found "
+                                                f"in '{component_module.__name__}' in app '{app_config.label}'."
+                                                f"This is not supported"
+                                            )
+                                        library.register(
+                                            member, camel_case_to_underscore(name)
+                                        )
 
-                            except ModuleNotFoundError as e:
-                                pass
-                        else:
-                            # TODO: library is a file, register all components in it
-                            #  automatically.
-                            pass
+                    except ModuleNotFoundError as e:
+                        pass
 
-                except ModuleNotFoundError as e:
-                    # only raise the exception if the import raises secondary import errors.
-                    # E.g. if the component imports a module that is non-existent.
-                    if e.name != module_name:
-                        raise e
+                    # else:
+                    #     # TODO: library is a file, register all components in it
+                    #     #  automatically.
+                    #     for name, member in inspect.getmembers(components_module):
+                    #         if isinstance(member, Library):
+                    #             if name in libraries[app_config.label]:
+                    #                 raise ComponentLibraryException(
+                    #                     f'Library named "{name}" already in app "{app_config.label}".'
+                    #                 )
+                    #             libraries[app_config.label][name] = member
+                    #             member.name = name
+                    #             member.app = app_config
 
-                    # if the module just is not present, just ignore it - this just means
-                    # that this app does not have a "components" package, which is ok.
+            except ModuleNotFoundError as e:
+                # only raise the exception if the import raises secondary import errors.
+                # E.g. if the component imports a module that is non-existent.
+                if e.name != module_name:
+                    raise e
+
+                # if the module just is not present, just ignore it - this just means
+                # that this app does not have a "components" package, which is ok.
 
     find_libraries_done = True
 

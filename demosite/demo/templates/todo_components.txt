@@ -1,10 +1,7 @@
 from sourcetypes import javascript, css, django_html
-from tetra import Component, public, Library
+from tetra import Component, public
 from .models import ToDo
 
-default = Library()
-
-@default.register
 class ToDoList(Component):
     title = public("")
 
@@ -38,7 +35,6 @@ class ToDoList(Component):
     </div>
     """
 
-@default.register
 class ToDoItem(Component):
     title = public("")
     done = public(False)

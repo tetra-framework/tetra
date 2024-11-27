@@ -8,7 +8,6 @@ The click-to-edit pattern enables inline editing of a record without refreshing 
 
 This is a simple way to implement this as Tetra component, including save/cancel buttons:
 ```python
-@default.register
 class ClickToEdit(Component):
     name = public("John Doe")
     old_name = ""

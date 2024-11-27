@@ -3,16 +3,15 @@ title: Components
 ---
 # Components
 
-A component is created as a subclass of `BasicComponent` or `Component` and registered to a library with the `@libraryname.register` decorator, see [component libraries](component-libraries.md).
+A component is created as a subclass of `BasicComponent` or `Component` and registered to a library by placing it into a library package, see [component libraries](component-libraries.md).
 
 ``` python
-# yourapp/components.py
+# yourapp/components/default.py
+# or
+# yourapp/components/default/__init__.py
 from sourcetypes import django_html, javascript, css
-from tetra import Library, Component, public
+from tetra import Component, public
 
-default = Library()
-
-@default.register
 class MyComponent(Component):
     ...
 ```
@@ -20,16 +19,14 @@ class MyComponent(Component):
 Attributes on a component are standard Python types. When the component is rendered, the state of the whole class is saved (using Pickle, see [state security](state-security.md)) to enable resuming the component with its full state when public method calls are made by the browser.
 
 ``` python
-@default.register
 class MyComponent(Component):
-    something = 'My string'
-    a_value = True
+    something:str = 'My string'
+    a_value:bool = True
 ```
 
 As components are standard Python classes you can construct them with any number of methods. These are by default private, and only available on the server and to your template.
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     def do_something(self):
@@ -45,7 +42,6 @@ Arguments are passed to the `load` method from the Tetra [component "`@`" templa
 Note: Django Models and Querysets are saved as references to your database, not the current 'snapshots', see [state optimisations](state-security.md#state-optimisations).
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     def load(self, a_var):
@@ -59,7 +55,6 @@ Public attributes are created with `public()`. These are available to the JavaSc
 Values must be serializable via our extended JSON - this includes all standard JSON types as well as `datetime`, `date`, `time`, and `set`. In the browser these translate to `Date` and `Set`.
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     test = public("Initial String")
@@ -77,7 +72,6 @@ Values passed to, or returned from, public methods must be of the same extended 
 By default, public methods re-render your template and updates the HTML in place in the browser.
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public
@@ -88,7 +82,6 @@ class MyComponent(Component):
 Public methods can disable the re-rendering by setting `update=False`.
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public(update=False)
@@ -99,7 +92,6 @@ class MyComponent(Component):
 Python public methods can also call JavaScript methods in the browser as callbacks. These are exposed on the `self.client` "callback queue" object, see [`client` API](#client-api). They are executed by the client when it receives the response from the method call.
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public(update=False)
@@ -113,7 +105,6 @@ Public methods can "watch" public attributes and be called automatically when th
 They can watch multiple attributes by passing multiple names to `.watch()`.
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public.watch("message")
@@ -135,7 +126,6 @@ When the `.watch` decorator is applied, the method receives 3 parameters:
  It takes an optional `immediate` boolean argument (i.e. `.debounce(200, immediate=True)`), this changes the implementation to "leading edge" triggering the method immediately.
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public.watch("message").debounce(200)
@@ -149,7 +139,6 @@ class MyComponent(Component):
     On older versions you can apply the decorator multiple times with each method required:
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public.watch("message")
@@ -165,7 +154,6 @@ class MyComponent(Component):
  By default `throttle` is "leading edge" triggering immediately. You can instruct it to also trigger on the "trailing edge" by setting argument `trailing=True`. The leading edge trigger can be disabled with `leading=False`.
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public.watch("message").throttle(200, trailing=True)
@@ -204,7 +192,6 @@ The template can contain replaceable `{% block(s) %}`, the `default` block is th
 You can use the [Python Inline Source Syntax Highlighting](https://marketplace.visualstudio.com/items?itemName=samwillis.python-inline-source) VS Code extension to syntax highlight the inline HTML, CSS and JavaScript in your component files using type annotations.
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     template: django_html = """
@@ -246,7 +233,6 @@ Other JavaScript files can be imported using standard `import` syntax relative t
 You can use the `javascript` type annotation for syntax highlighting in VS Code.
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     script: javascript = """
@@ -271,7 +257,6 @@ The `styles` attribute holds the CSS for your component.
 You can use the `css` type annotation for syntax highlighting in VS Code.
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     style: css = """
@@ -290,7 +275,6 @@ class MyComponent(Component):
 From public methods its possible to call client side javascript via the `.client` API. Any of your JavaScript methods can be called via this api:
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public(update=False)
@@ -319,7 +303,6 @@ There are a number of Tetra built in methods, these are all prefixed with a sing
 The `_parent` attribute allows you to access the component parent component if there is one. Via this you can call methods, both JavaScript and public Python, on an ancestor component:
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public(update=False)
@@ -331,7 +314,6 @@ class MyComponent(Component):
 You can chain `_parent` to traverse back up the component tree:
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public(update=False)
@@ -345,7 +327,6 @@ class MyComponent(Component):
 The `_redirect` method allows you to instruct the client to redirect to another url after calling a public method:
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public(update=False)
@@ -356,7 +337,6 @@ class MyComponent(Component):
 This can be combined with [Django's `reverse()`](https://docs.djangoproject.com/en/4.2/ref/urlresolvers/#reverse) function:
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public(update=False)
@@ -369,7 +349,6 @@ class MyComponent(Component):
 The `_dispatch` method is a wrapper around the Alpine.js [`dispatch` magic](https://alpinejs.dev/magics/dispatch) allowing you to dispatch events from public server methods. These bubble up the DOM and be captured by listeners on (grand)parent components. It takes an event name as it's first argument, and an extended JSON serialisable object as its second argument. see Alpine.js [`$dispatch`](https://alpinejs.dev/magics/dispatch) for details.
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public
@@ -381,7 +360,6 @@ In a (grand)parent component you can subscribe to these events with the Alpine.j
 
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public
@@ -411,7 +389,6 @@ class MyComponent(Component):
 the `_removeComponent` method removed the component from the DOM and destroys it. This is useful when deleting an item on the server and wanting to remove the corresponding component in the browser:
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public(update=False)
@@ -425,7 +402,6 @@ class MyComponent(Component):
 The `_updateData` method allows you to update specific public state data on the client. It takes a `dict` of values to update on the client:
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public(update=False)
@@ -439,7 +415,6 @@ class MyComponent(Component):
 This can be used to update data on a parent component:
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public(update=False)
@@ -459,7 +434,6 @@ There are a number of built-in server methods:
 The `update` method instructs the component to rerender after the public method has completed, sending the updated HTML to the browser and "morphing" the DOM. Usually public methods do this by default. However, if this has been turned off with `update=False`, and you want to conditionally update the html, you can use this:
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public(update=False)
@@ -474,7 +448,6 @@ class MyComponent(Component):
 The `update_data` method instructs the component to send the complete set of public attribute to the client, updating their values, useful in combination with `@public(update=False)`:
 
 ``` python
-@default.register
 class MyComponent(Component):
     ...
     @public(update=False)
@@ -499,7 +472,6 @@ on the client - it would use too much overhead to send a request to the server j
 additionally, the component calls the server side check method to monitor if the user has entered a valid password.
 
 ```python
-@default.register
 class PasswordInput(Component):
     visible: bool = public(False)
     password: str = public("")
