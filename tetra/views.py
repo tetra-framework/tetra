@@ -19,10 +19,21 @@ def component_method(
     if method_name not in (m["name"] for m in Component._public_methods):
         return HttpResponseNotFound()
 
-    try:
-        data = from_json(request.body.decode())
-    except json.decoder.JSONDecodeError:
-        return HttpResponseBadRequest()
+    # check if request is form data
+    if request.content_type == "multipart/form-data":
+        try:
+            data = from_json(request.POST["state"])
+            if "args" not in data:
+                data["args"] = []
+            data["args"].extend(request.FILES.values())
+        except json.decoder.JSONDecodeError:
+            return HttpResponseBadRequest()
+    else:
+        try:
+            data = from_json(request.body.decode())
+
+        except json.decoder.JSONDecodeError:
+            return HttpResponseBadRequest()
 
     if not (
         isinstance(data, dict) and "args" in data and isinstance(data["args"], list)

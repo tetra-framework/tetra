@@ -1,17 +1,19 @@
 import logging
 from copy import copy
-from typing import Optional, Self, Any
+from typing import Optional, Self, Any, Dict
 from types import FunctionType
 from enum import Enum
 import inspect
 import re
 import itertools
+import uuid
 from weakref import WeakKeyDictionary
 from functools import wraps
 from threading import local
 
 from django import forms
 from django.core.exceptions import ImproperlyConfigured
+from django.core.files.storage import default_storage
 from django.db import models
 from django.db.models import QuerySet
 from django.forms import Form, modelform_factory, BaseForm, FileField
@@ -489,6 +491,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             method_data = copy(method)
             method_data["endpoint"] = (cls._component_url(method["name"]),)
             component_server_methods.append(method_data)
+
+        component_server_methods.append({"name": "_upload_temp_file", "endpoint": cls._component_url("_upload_temp_file")})
         if not component_var:
             component_var = cls.script if cls.has_script() else "{}"
         return render_to_string(
@@ -725,6 +729,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     form_class: type(forms.BaseForm) = None
     form_submitted: bool = False
     form_errors: dict = {}  # TODO: make protected + include in render context
+    form_temp_files: dict = {}
 
     _form: Form = None
 
@@ -762,7 +767,10 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         for field_name, field in form.fields.items():
             if field_name in self._public_properties:
                 if isinstance(field, FileField):
-                    pass
+                    form.fields[field_name].widget.attrs.update({"@change": "_uploadFile"})
+                    if hasattr(field, "temp_file"):
+                        # TODO: Check if we need to send back the temp file name and which attribute to use, might not be necessary
+                        form.fields[field_name].widget.attrs.update({"data-tetra-temp-file": field.temp_file})
                 else:
                     # form.fields[field_name].initial = getattr(self, field_name)
                     form.fields[field_name].widget.attrs.update({"x-model": field_name})
@@ -802,6 +810,17 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         The component will validate the data against the form, and if the form is valid,
         it will call form_valid(), else form_invalid().
         """
+
+        # find all temporary files in the form and read them and write to the form fields
+        for field_name, file_details in self.form_temp_files.items():
+            if file_details:
+                storage = self._form.fields[field_name].storage if hasattr(self._form.fields[field_name], 'storage') else default_storage
+                with storage.open(file_details["temp_name"], 'rb') as file:
+                    storage.save(file_details["original_name"], file)
+                # TODO: Add error checking and double check the form value is being set correctly
+                storage.delete(file_details["temp_name"])
+                self._form.fields[field_name].initial = file_details["original_name"]
+
         self.form_submitted = True
 
         if self._form.is_valid():
@@ -815,6 +834,21 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
                 else:
                     setattr(self, attr, TetraJSONEncoder().default(value))
             self.form_invalid(self._form)
+
+    @public
+    def _upload_temp_file(self, form_field, original_name, file) -> str | None:
+        """Uploads a file to the server temporarily."""
+        # TODO: Add validation
+        if file and form_field in self._form.fields and isinstance(self._form.fields[form_field], FileField):
+            temp_file_name = f"tetra_temp_upload/{uuid.uuid4()}"
+            storage = self._form.fields[form_field].storage if hasattr(self._form.fields[form_field], 'storage') else default_storage
+            storage.save(temp_file_name, file)
+            # TODO: Add error checking, double check this - it seems like we need call setattr as well as setting directly?
+            self.form_temp_files[form_field] = dict(temp_name = temp_file_name, original_name = original_name)
+            setattr(self, self.form_temp_files[form_field]["temp_name"], temp_file_name)
+            setattr(self, self.form_temp_files[form_field]["original_name"], original_name)
+            return temp_file_name
+        return None
 
     def clear(self):
         """Clears the form data (sets all values to defaults) and renders the

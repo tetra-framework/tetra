@@ -75,6 +75,14 @@
             window.history.pushState(null, "", url);
           }
         },
+        _uploadFile(event) {
+          const file = event.target.files[0];
+          const method = "_upload_temp_file";
+          const endpoint = this.__serverMethods.find((item) => item.name === "_upload_temp_file").endpoint;
+          const args = [event.target.name, event.target.files[0].name];
+          Tetra.callServerMethodWithFile(this, method, endpoint, file, args).then((result) => {
+          });
+        },
         __initServerWatchers() {
           this.__serverMethods.forEach((item) => {
             if (item.watch) {
@@ -186,18 +194,7 @@
         document.head.appendChild(link);
       });
     },
-    async callServerMethod(component, methodName, methodEndpoint, args) {
-      let body = Tetra.getStateWithChildren(component);
-      body.args = args;
-      const response = await fetch(methodEndpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": window.__tetra_csrfToken
-        },
-        mode: "same-origin",
-        body: Tetra.jsonEncode(body)
-      });
+    async handleServerMethodResponse(response, component) {
       if (response.status === 200) {
         const respData = Tetra.jsonDecode(await response.text());
         if (respData.success) {
@@ -233,6 +230,36 @@
       } else {
         throw new Error(`Server responded with an error ${response.status} (${response.statusText})`);
       }
+    },
+    async callServerMethod(component, methodName, methodEndpoint, args) {
+      let body = Tetra.getStateWithChildren(component);
+      body.args = args;
+      const response = await fetch(methodEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": window.__tetra_csrfToken
+        },
+        mode: "same-origin",
+        body: Tetra.jsonEncode(body)
+      });
+      return await this.handleServerMethodResponse(response, component);
+    },
+    async callServerMethodWithFile(component, methodName, methodEndpoint, file, args) {
+      let state = Tetra.getStateWithChildren(component);
+      state.args = args;
+      let formData = new FormData();
+      formData.append("file", file);
+      formData.append("state", Tetra.jsonEncode(state));
+      const response = await fetch(methodEndpoint, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": window.__tetra_csrfToken
+        },
+        mode: "same-origin",
+        body: formData
+      });
+      return await this.handleServerMethodResponse(response, component);
     },
     jsonReplacer(key, value) {
       if (value instanceof Date) {
