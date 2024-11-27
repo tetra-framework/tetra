@@ -9,13 +9,20 @@ from .base import faulty
 
 @faulty.register
 class FaultyComponent1(Component):
-    template = ""
-    def __init__(self, *args, **kwargs):
-        import foo_bar_not_existing_module
+    template = "<div></div>"
 
+    def __init__(self, *args, **kwargs):  # noqa
+        import foo_bar_not_existing_module  # noqa
 
 @faulty.register
 class FaultyComponent2(Component):
-    template = ""
-    def __init__(self, *args, **kwargs):
-        foo  #  This must raise a NameError
+    template = "<div></div>"
+
+    def __init__(self, *args, **kwargs):  # noqa
+        foo  # noqa; This must raise a NameError
+
+
+class FaultyComponent3(Component):
+    # this component has no html tag as root element in the template
+    template = "foo"
+

@@ -619,7 +619,11 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         html = super().render()
         if set_thread_local:
             del thread_local._tetra_render_data
-        tag_name_end = re.match(r"^\s*<\w+", html).end(0)
+        try:
+            tag_name_end = re.match(r"^\s*<\w+", html).end(0)
+        except AttributeError:
+            raise ComponentError(f"Tetra component {self.__class__.__name__} has no "
+                                 f"root HTML element.")
         extra_tags = [
             f'tetra-component="{self.full_component_name()}"',
             f'x-bind="__rootBind"',

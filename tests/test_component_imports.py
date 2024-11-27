@@ -1,7 +1,7 @@
 import pytest
 
 from tests.main.helpers import render_component
-from tetra.components import ComponentNotFound
+from tetra.components import ComponentNotFound, ComponentError
 
 
 def test_error_when_using_missing_component(request):
@@ -24,3 +24,8 @@ def test_component_with_name_error(request):
     """If a component calls not-existing code, this must be raised transparently."""
     with pytest.raises(NameError) as exc_info:
         render_component(request, "{% @ main.faulty.faulty_component2 / %}")
+
+def test_component_with_no_root_tag(request):
+    """If a component calls not-existing code, this must be raised transparently."""
+    with pytest.raises(ComponentError) :
+        render_component(request, "{% @ main.faulty.faulty_component3 / %}")
