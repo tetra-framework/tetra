@@ -2,7 +2,6 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from demo import views as demo_views
 
 urlpatterns = [
     path("", include("demo.urls")),

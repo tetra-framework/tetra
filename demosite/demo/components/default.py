@@ -1,15 +1,11 @@
 from sourcetypes import javascript, css, django_html
-from tetra import Component, public, Library
+from tetra import Component, public
 import itertools
 from ..models import ToDo
 from ..movies import movies
 
-__all__ = "default"
-
-default = Library()
 
 
-@default.register
 class ToDoList(Component):
     title = public("")
 
@@ -43,7 +39,6 @@ class ToDoList(Component):
     """
 
 
-@default.register
 class ToDoItem(Component):
     todo: ToDo = None
     title = public("")
@@ -108,7 +103,6 @@ class ToDoItem(Component):
     """
 
 
-@default.register
 class Counter(Component):
     count = 0
     current_sum = 0
@@ -138,8 +132,7 @@ class Counter(Component):
     """
 
 
-@default.register
-class reactive_search(Component):
+class ReactiveSearch(Component):
     query = public("")
     results = []
 

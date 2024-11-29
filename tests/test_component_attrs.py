@@ -1,15 +1,11 @@
-from bs4 import BeautifulSoup
-from django.urls import reverse
-from django.template.exceptions import TemplateSyntaxError
 
 from tests.conftest import extract_component
-from tests.main.helpers import render_component
-import pytest
+from tests.main.helpers import render_component_tag
 
 
 def test_basic_component(request):
     """Tests a simple component with / end"""
-    content = render_component(
+    content = render_component_tag(
         request, "{% @ main.default.SimpleComponentWithAttrs / %}"
     )
     assert extract_component(content) == "content"

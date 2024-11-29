@@ -2,7 +2,7 @@ from django.http import HttpRequest
 from django.template import Template, Context
 
 
-def render_component(request: HttpRequest, component_string, context=None):
+def render_component_tag(request: HttpRequest, component_string, context=None):
     """Helper function to return a full html document with loaded Tetra stuff,
     and the component_string as body content.
 

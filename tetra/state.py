@@ -270,6 +270,5 @@ def encode_component(component) -> str:
 
 def decode_component(state_token, request) -> Any:
     fernet = _get_fernet_for_request(request)
-    s = gzip.decompress(fernet.decrypt(state_token.encode()))
     state = unpickle_state(gzip.decompress(fernet.decrypt(state_token.encode())))
     return state

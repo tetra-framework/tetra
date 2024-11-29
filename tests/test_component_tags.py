@@ -4,7 +4,7 @@ from django.template.exceptions import TemplateSyntaxError
 
 from tests.conftest import extract_component
 from tests.main.components import SimpleBasicComponent
-from tests.main.helpers import render_component
+from tests.main.helpers import render_component_tag
 import pytest
 
 from tetra.components import ComponentNotFound
@@ -12,13 +12,22 @@ from tetra.components import ComponentNotFound
 
 def test_basic_component(request):
     """Tests a simple component with / end"""
-    content = render_component(request, "{% @ main.default.SimpleBasicComponent / %}")
+    content = render_component_tag(
+        request, "{% @ main.default.SimpleBasicComponent / %}"
+    )
     assert extract_component(content) == "foo"
+
+
+# def test_basic_component_as_default(request):
+#     """Tests a simple component that implicitly is found in the default library"""
+#     # FIXME: this does not work, as tetra does not fund the current app while in testing
+#     content = render_component_tag(request, "{% @ main.simple_basic_component / %}")
+#     assert extract_component(content) == "foo"
 
 
 def test_basic_component_with_end_tag(request):
     """Tests a simple component with  /@ end tag"""
-    content = render_component(
+    content = render_component_tag(
         request, "{% @ main.default.SimpleBasicComponent %}{% /@ %}"
     )
     assert extract_component(content) == "foo"
@@ -26,7 +35,7 @@ def test_basic_component_with_end_tag(request):
 
 def test_basic_component_with_end_tag_and_name(request):
     """Tests a simple component with `/@ <name>` end tag"""
-    content = render_component(
+    content = render_component_tag(
         request,
         "{% @ main.default.SimpleBasicComponent %}{% /@ SimpleBasicComponent %}",
     )
@@ -36,7 +45,7 @@ def test_basic_component_with_end_tag_and_name(request):
 def test_basic_component_with_missing_end_tag(request):
     """Tests a simple component without end tag - must produce TemplateSyntaxError"""
     with pytest.raises(TemplateSyntaxError):
-        render_component(
+        render_component_tag(
             request,
             "{% @ main.default.SimpleBasicComponent %}",
         )

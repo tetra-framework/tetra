@@ -9,6 +9,7 @@ original_template_compile_nodelist = Template.compile_nodelist
 
 class InlineTemplate(Template):
     """Represents an "inline" template string within a component."""
+
     def get_exception_info(self, *args, **kwargs):
         ret = super().get_exception_info(*args, **kwargs)
         line_offset = self.origin.start_line - 1
@@ -21,7 +22,9 @@ class InlineTemplate(Template):
             lambda m: f"{m.group(1)}{int(m.group(2))+line_offset}{m.group(3)}",
             ret["message"],
         )
-        ret["source_lines"] = [(l + line_offset, s) for (l, s) in ret["source_lines"]]
+        ret["source_lines"] = [
+            (line + line_offset, s) for (line, s) in ret["source_lines"]
+        ]
         return ret
 
 

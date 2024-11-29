@@ -1,4 +1,6 @@
 import logging
+import importlib
+import os
 from copy import copy
 from typing import Optional, Self, Any, Dict
 from types import FunctionType
@@ -11,6 +13,7 @@ from weakref import WeakKeyDictionary
 from functools import wraps
 from threading import local
 
+from django.conf import settings
 from django import forms
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import default_storage
@@ -18,8 +21,13 @@ from django.db import models
 from django.db.models import QuerySet
 from django.forms import Form, modelform_factory, BaseForm, FileField
 from django.template.base import Template
-from django.template.loader import render_to_string, get_template
-from django.template import RequestContext, TemplateSyntaxError
+from django.template.loader import render_to_string
+from django.template import (
+    RequestContext,
+    TemplateSyntaxError,
+    TemplateDoesNotExist,
+    Engine,
+)
 from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockContext, BlockNode
 from django.utils.safestring import mark_safe, SafeString
 from django.utils.html import escapejs, escape
@@ -39,11 +47,11 @@ thread_local = local()
 logger = logging.getLogger(__name__)
 
 
-class ComponentException(Exception):
+class ComponentError(Exception):
     pass
 
 
-class ComponentNotFound(ComponentException):
+class ComponentNotFound(ComponentError):
     pass
 
 
@@ -51,13 +59,15 @@ def make_template(cls) -> Template:
     """Create a template from a component class.
 
     Uses either the `cls.template` attribute as inline template string,
-    or `cls.template_name` as template file source. If both are defined, 'template'
-    overrides 'template_name'.
+    or the html template file source in the component's directory. If both are defined,
+    'template' overrides 'template_name'.
     """
     from ..templatetags.tetra import get_nodes_by_type_deep
 
     # if only "template" is defined, use it as inline template string.
     if hasattr(cls, "template"):
+        if not cls.template:
+            raise ComponentError(f"Component '{cls.__name__}' has an empty template.")
         making_lazy_after_exception = False
         filename, line = cls.get_template_source_location()
         origin = InlineOrigin(
@@ -71,12 +81,12 @@ def make_template(cls) -> Template:
                 "{% load tetra %}" + cls.template,
                 origin=origin,
             )
-        except TemplateSyntaxError as e:
-            # By default we want to compile templates during python compile time, however
-            # the template exceptions are much better when raised at runtime as it shows
-            # a nice stack trace in the browser. We therefore create a "Lazy" template
-            # after a compile error that will run in the browser when testing.
-            # TODO: turn this off when DEBUG=False
+        except TemplateSyntaxError:
+            # By default, we want to compile templates during python compile time,
+            # however, the template exceptions are much better when raised at runtime
+            # as it shows a nice stack trace in the browser. We therefore create a
+            # "Lazy" template after a compile error that will run in the browser when
+            # testing.
             from django.conf import settings
 
             logger.error(
@@ -101,15 +111,54 @@ def make_template(cls) -> Template:
             ):
                 if not getattr(block_node, "origin", None):
                     block_node.origin = origin
-    # if "template_name" is defined, use it as template file source.
-    elif hasattr(cls, "template_name"):
-        template = get_template(cls.template_name).template
+    
     else:
-        raise ComponentException(
-            f"You must provide either a `template_name` or a `template` in Component"
-            f" {cls.__name__}."
-        )
+        # Here we definitely are in a dir-style component
 
+        # try to find <component_name>.html within component's directory
+        module = importlib.import_module(cls.__module__)
+        component_name = module.__name__.split(".")[-1]
+        module_path = module.__path__[0]
+        # if path is a file, get the containing directory
+        # template_dir = os.path.dirname(module_path)
+
+        template_file_name = f"{component_name}.html"
+        # Load the template using a custom loader
+        from django.template.loaders.filesystem import Loader as FileSystemLoader
+
+        try:
+            engine = Engine(dirs=[module_path], app_dirs=False)
+            loader = FileSystemLoader(engine)
+            for template_path in loader.get_template_sources(template_file_name):
+                try:
+                    # Open and read the template source
+                    with open(template_path.name, "r", encoding="utf-8") as f:
+                        template_source = f.read()
+
+                    origin = InlineOrigin(
+                        name=os.path.join(module_path, template_file_name),
+                        template_name=template_file_name,
+                        start_line=0,
+                        component=cls,
+                    )
+                    # Compile the template
+                    template = Template(template_source, origin, template_file_name)
+                    break
+                except FileNotFoundError:
+                    # If the file is not found, continue with the next source
+                    continue
+            else:
+                # If no template is found, raise an error
+                raise ComponentError(
+                    f"Template file '{template_file_name}' not found for component"
+                    f" '{cls.__name__}'."
+                )
+            # template = get_template(template_file_name).template
+        except TemplateDoesNotExist:
+            raise ComponentError(
+                f"Template file '{template_file_name}' not found for component"
+                f" '{cls.__name__}'."
+            )
     return template
 
 
@@ -117,7 +166,7 @@ class BasicComponentMetaClass(type):
     def __new__(mcls, name, bases, attrs):
         newcls = super().__new__(mcls, name, bases, attrs)
         newcls._name = camel_case_to_underscore(newcls.__name__)
-        if hasattr(newcls, "template") or hasattr(newcls, "template_name"):
+        if "__abstract__" not in attrs or attrs["__abstract__"] is False:
             newcls._template = make_template(newcls)
         return newcls
 
@@ -129,6 +178,7 @@ class RenderData(Enum):
 
 
 class BasicComponent(metaclass=BasicComponentMetaClass):
+    __abstract__ = True
     style: Optional[str] = None
     _name = None
     _library = None
@@ -172,6 +222,29 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         return filename, line
 
     @classmethod
+    def _get_component_file_path_with_extension(cls, extension):
+        if hasattr(cls, "template") and cls.template:
+            # assume this is an inline component, no css/js files available
+            return ""
+        module = importlib.import_module(cls.__module__)
+        component_name = module.__name__.split(".")[-1]
+        module_path = module.__path__[0]
+        file_name = f"{component_name}.{extension}"
+        return os.path.join(module_path, file_name)
+
+    @classmethod
+    def _read_component_file_with_extension(cls, extension):
+        file_path = cls._get_component_file_path_with_extension(extension)
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, "r") as f:
+                    return f.read()
+            except FileNotFoundError:
+                return ""
+        else:
+            return ""
+
+    @classmethod
     def has_script(cls) -> bool:
         return False
 
@@ -182,22 +255,33 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
 
     @classmethod
     def has_styles(cls) -> bool:
-        return bool(hasattr(cls, "style") and cls.style)
+        if bool(hasattr(cls, "style") and cls.style):
+            return True
+        else:
+            return os.path.exists(cls._get_component_file_path_with_extension("css"))
 
     @classmethod
     def make_styles(cls) -> str:
-        return cls.style
+        # check if the style is defined in the class otherwise check if there is a file in the component directory
+        if bool(hasattr(cls, "style") and cls.style):
+            return cls.style
+        else:
+            return cls._read_component_file_with_extension("css")
 
     @classmethod
     def make_styles_file(cls) -> str:
-        filename, comp_start_line, source_len = cls.get_source_location()
-        with open(filename, "r") as f:
-            py_source = f.read()
-        comp_start_offset = len("\n".join(py_source.split("\n")[:comp_start_line]))
-        start = py_source.index(cls.style, comp_start_offset)
-        before = py_source[:start]
-        before = re.sub(r"\S", " ", before)
-        return f"{before}{cls.style}"
+        # check if we have a style defined in the class otherwise check if there is a file in the component directory
+        if bool(hasattr(cls, "style") and cls.style):
+            filename, comp_start_line, source_len = cls.get_source_location()
+            with open(filename, "r") as f:
+                py_source = f.read()
+            comp_start_offset = len("\n".join(py_source.split("\n")[:comp_start_line]))
+            start = py_source.index(cls.style, comp_start_offset)
+            before = py_source[:start]
+            before = re.sub(r"\S", " ", before)
+            return f"{before}{cls.style}", True
+        else:
+            return cls._read_component_file_with_extension("css"), False
 
     @classmethod
     def as_tag(cls, _request, *args, **kwargs) -> SafeString:
@@ -396,6 +480,7 @@ class ComponentMetaClass(BasicComponentMetaClass):
 
 
 class Component(BasicComponent, metaclass=ComponentMetaClass):
+    __abstract__ = True
     script: Optional[str] = None
     _callback_queue = None
     _excluded_props_from_saved_state = [
@@ -414,7 +499,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     def __init__(self, _request, key=None, *args, **kwargs) -> None:
         super().__init__(_request, *args, **kwargs)
-        self.key = key
+        self.key = key if key is not None else self.full_component_name()
 
     @classmethod
     def from_state(
@@ -470,7 +555,11 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     @classmethod
     def has_script(cls) -> bool:
         """Returns True if the component has a javascript script, else False."""
-        return bool(cls.script)
+        # check if the script is defined in the class otherwise check if there is a file in the component directory
+        if bool(hasattr(cls, "script") and cls.script):
+            return True
+        else:
+            return os.path.exists(cls._get_component_file_path_with_extension("js"))
 
     @classmethod
     def _component_url(cls, method_name) -> str:
@@ -507,14 +596,18 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     @classmethod
     def make_script_file(cls) -> str:
-        filename, comp_start_line, source_len = cls.get_source_location()
-        with open(filename, "r") as f:
-            py_source = f.read()
-        comp_start_offset = len("\n".join(py_source.split("\n")[:comp_start_line]))
-        start = py_source.index(cls.script, comp_start_offset)
-        before = py_source[:start]
-        before = re.sub(r"\S", " ", before)
-        return f"{before}{cls.script}"
+        if bool(hasattr(cls, "script") and cls.script):
+            filename, comp_start_line, source_len = cls.get_source_location()
+            with open(filename, "r") as f:
+                py_source = f.read()
+            comp_start_offset = len("\n".join(py_source.split("\n")[:comp_start_line]))
+            start = py_source.index(cls.script, comp_start_offset)
+            before = py_source[:start]
+            before = re.sub(r"\S", " ", before)
+            return f"{before}{cls.script}", True
+        else:
+            # Find script in the component's directory
+            return cls._read_component_file_with_extension("js"), False
 
     def _call_load(self, *args, **kwargs) -> None:
         """Load the component's state and attributes.
@@ -558,7 +651,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         try:
             to_json(load_args)
         except TypeError:
-            raise ComponentException(
+            raise ComponentError(
                 f"Tetra Component {self.__class__.__name__} tried to self.set_load_args() with a none json serializable value."
             )
         self._load_args = load_args
@@ -610,7 +703,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             del thread_local._tetra_render_data
         tag_name = re.match(r"^\s*<\w+", html)
         if not tag_name:
-            raise ComponentException(
+            raise ComponentError(
                 f"Error in {self.__class__.__name__}: The component's template is "
                 "not enclosed in HTML tags."
             )
@@ -618,19 +711,19 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
         extra_tags = [
             f'tetra-component="{self.full_component_name()}"',
-            f'x-bind="__rootBind"',
+            'x-bind="__rootBind"',
         ]
         if self.key:
             extra_tags.append(f'key="{self.key}"')
         if data == RenderData.UPDATE and self._leaded_from_state:
             data_json = escape(to_json(self._render_data()))
             old_data_json = escape(to_json(self._leaded_from_state_data))
-            extra_tags.append(f'x-data=""')
+            extra_tags.append('x-data=""')
             extra_tags.append(f'x-data-update="{data_json}"')
             extra_tags.append(f'x-data-update-old="{old_data_json}"')
         elif data == RenderData.MAINTAIN:
-            extra_tags.append(f'x-data=""')
-            extra_tags.append(f"x-data-maintain")
+            extra_tags.append('x-data=""')
+            extra_tags.append("x-data-maintain")
         else:
             data_json = escapejs(to_json(self._render_data()))
             extra_tags.append(f"x-data=\"{self.full_component_name()}('{data_json}')\"")

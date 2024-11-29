@@ -18,9 +18,8 @@ Supported features:
 - Private methods and attributes
 
 ``` python
-from tetra import Library, BasicComponent
+from tetra import BasicComponent
 
-@default.register
 class MyBasicComponent(BasicComponent):
     ...
 ```

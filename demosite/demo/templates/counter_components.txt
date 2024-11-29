@@ -1,4 +1,3 @@
-@default.register
 class Counter(Component):
     count = 0
     current_sum = 0

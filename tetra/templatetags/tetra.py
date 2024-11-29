@@ -9,7 +9,7 @@ import re
 import copy
 from threading import local
 
-from ..components import ComponentException
+from ..components import ComponentError
 from ..component_register import resolve_component
 
 logger = logging.getLogger(__name__)
@@ -185,8 +185,8 @@ def do_component(parser, token):
         # so that we can reuse block names inside each individual use tag
         current_loaded_blocks = getattr(parser, "__loaded_blocks", None)
         parser.__loaded_blocks = []
-        nodelist = parser.parse((f"/@",))
-        if not current_loaded_blocks is None:
+        nodelist = parser.parse(("/@",))
+        if current_loaded_blocks is not None:
             parser.__loaded_blocks = (
                 current_loaded_blocks  # Return original __loaded_blocks
             )
@@ -265,12 +265,32 @@ class ComponentNode(template.Node):
         :return: The rendered component as a tag string or directly rendered component
             as per the resolved state.
         """
-        Component = resolve_component(context, self.component_name)
+        # when component starts with "=", assume it is a dynamic variable name
         is_dynamic = self.component_name.startswith("=")
+        if is_dynamic:
+            # Handle dotted paths for dynamic component names
+            self.component_name = self.component_name[1:]
+            path = self.component_name.split(".")
+            # traverse the context for the component name
+            c = context
+            for part in path:
+                try:
+                    c = c[part]
+                except TypeError:
+                    c = getattr(c, part, None)
+                if c is None:
+                    raise ComponentError(
+                        f"Unable to resolve dynamic component: '"
+                        f"{self.component_name}'"
+                    )
+            Component = c
+        else:
+            Component = resolve_component(context, self.component_name)
+
         try:
             request = context.request
         except AttributeError:
-            raise ComponentException(
+            raise ComponentError(
                 'Tetra Components require "request" in the template context.'
             )
 
@@ -324,8 +344,8 @@ class ComponentNode(template.Node):
                         blocks[block_name] = new_block
 
         children_state = context.get("_loaded_children_state", None)
-        # if component is dynamic, don't try to get a state when rendering, just render
-        # it as a tag
+        if "key" not in resolved_kwargs:
+            resolved_kwargs["key"] = Component.full_component_name()
         if (
             children_state
             and (resolved_kwargs["key"] in children_state)
@@ -519,7 +539,7 @@ def if_filter(value, arg):
 
 
 @register.filter(name="else")
-def if_filter(value, arg):
+def if_filter(value, arg):  # noqa: F811
     if value:
         return value
     else:

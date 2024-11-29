@@ -14,7 +14,9 @@ title: Changelog
 
 ## [0.1.2] - unreleased
 ### Added
-- debug logging handler
+- improve demo site
+- add debug logging handler
+- improved component import error handling
 - allow component names to be dynamic
 - @v templatetag for "live" rendering of frontend variables
 - support Django models in TetraJSONEn/Decoder

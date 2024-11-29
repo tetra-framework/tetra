@@ -1,0 +1,19 @@
+{% load tetra %}
+<div class="list-group-item d-flex gap-1 p-1" {% ... attrs %}>
+  <label class="align-middle px-2 d-flex">
+    <input class="form-check-input m-0 align-self-center" type="checkbox"
+           x-model="done">
+  </label>
+  <input
+      type="text"
+      class="form-control border-0 p-0 m-0"
+      :class="{'text-muted': done, 'todo-strike': done}"
+      x-model="title"
+      maxlength="80"
+      @keydown.backspace="inputDeleteDown()"
+      @keyup.backspace="inputDeleteUp()"
+  >
+  <button @click="delete_item()" class="btn btn-sm">
+    <i class="fa-solid fa-trash"></i>
+  </button>
+</div>

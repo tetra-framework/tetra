@@ -4,85 +4,52 @@ title: Libraries
 
 # Component Libraries
 
-Every Tetra component belongs to a component library. When resolving a component your apps `default` library is checked first, however, you can have infinite libraries. This is a good way to organise components into related sets. Each library's JS and CSS is packaged together.
+Every Tetra component belongs to a component library. Your component libraries are found automatically as packages within `<yourapp>.components` (or, alternatively, `<yourapp>.tetra_components`):
 
-Your component libraries are found in `yourapp.components` or `yourapp.tetra_components`, this can be a module or package.
-
-If you are creating many components you will likely want to split them between multiple files. As long as they are registered to a library and that library instance is available in `yourapp.components` or `yourapp.tetra_components` they will be available to use from templates, and within other components.
-
-``` python
-# yourapp/components.py
-from tetra import Library, Component, BasicComponent
-
-default = Library()
-anotherlib = Library()
+```
+myapp
+├── components/
+│      ├──anotherlib
+│      ├──default *
+│      ├──ui
 ```
 
-A component is created as a subclass of `BasicComponent` or `Component` and registered to a library with the `@libraryname.register` decorator.
+The first module layer within `components` are libraries. It doesn't matter if you create libraries as file modules, or packages, both are equally used, with one difference: package modules allow components-as-directories, see below.
 
-``` python
-@default.register
-class MyComponent(Component):
+When resolving a component, and you don't specify a library in your component tag, Tetra assumes you put the component in the `default` library. However, you can have infinite libraries. This is a good way to organise components into related sets. Each library's JS and CSS is packaged together. As long as components are registered to a library and that library instance is available in `<yourapp>.components` or `<yourapp>.tetra_components` they will be available to use from templates, and within other components.
+
+#### Directory style components
+A component is created as a subclass of `BasicComponent` or `Component` and registered to a library by placing it into the library package. Let's see how the directory structure would look like for a `MyCalendar` component:
+
+```
+myapp
+├── components/
+│    │   └──default
+│    │       └── my_calendar/
+│    │           ├──__init__.py*  <-- here is the component class defined
+│    │           ├──script.js
+│    │           ├──style.css
+│    │           └──my_calendar.html*
+```
+
+The `__init__.py` and `my_calendar.html` template are mandatory, css/js and other files are optional.
+
+#### Inline components
+
+There is another (shortcut) way of creating components, especially for simple building bricks (like BasicComponents without Js):
+Create a component class and place it directly into a library module. You can create multiple components directly in the module.
+```
+myapp
+├── components/
+│   │   ├──default
+│   │   │   └──__init__.py   <-- put all "default" component classes in here
+│   │   ├──otherlib.py       <-- put all "otherlib" component classes in here
+│   │   ├──widgets
+│   │   │   ├──__init__.py   <-- put all "widgets" component classes in here
     ...
 ```
 
-As standard, the component's name is converted from the "CamelCase" class name to "snake_case". You can provide your own component name to the register decorator.
+You can mix directory libraries and file libraries as you want: Put a few components into `default/__init__.py`, and another into `default/my_component/__init__.py`. Both are found.
 
-``` python
-@anotherlib.register(name="my_other_component")
-class AnotherComponent(Component):
-    ...
-```
-
-## Splitting up component files
-
-You may find that when you have multiple components and component libraries you will want to split the files up to organise them better. As noted above, as long as your `Library` instances are in `yourapp.components` or `yourapp.tetra_components` you can place the components anywhere. However, this is the recommended way to organise them:
-
-With a `components` package, your `__init__.py` needs to have all your `Library` instances imported and available:
-
-``` python
-# components/__init__.py
-from .default import default
-from .my_components import my_components
-```
-    
-You can then define your component libraries in other modules. Best practice is to name your module/package the same as the component library:
-
-``` python
-# components/default.py
-from tetra import Library, Component
-
-default = Library()
-...
-```
-
-Component libraries can be split across multiple files. Define the library instance in a `base.py` file within a module with the same name as your library:
-
-``` python
-# components/my_components/base.py
-from tetra import Library, Component
-
-my_components = Library()
-...
-```
-
-Then import the library instance into other modules, and register your components there. For larger components you may want to have a single file per component:
-
-``` python
-# components/my_components/a_component.py
-from tetra import Component, BasicComponent
-from .base import my_components
-
-@my_components.register
-class AComponent(Component):
-    ...
-```
-
-You must ensure that all modules that register components are imported into your packages `__init__.py`:
-
-``` python
-# components/my_components/__init__.py
-from .base import my_components
-from .a_component import *
-from .another_module import *
-```
+!!! note
+    If you use a directory style component, make sure you only define ONE component class within the component's module (e.g. in `components/default/my_calendar/__init__.py`). If you use

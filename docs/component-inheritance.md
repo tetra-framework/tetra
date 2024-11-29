@@ -20,15 +20,13 @@ class CardBase(BasicComponent):
     """
 
 # now register the components
-@default.register
 class Card(CardBase):
     template: django_html = """
     <div class="card">
-      {% block default %]{% endblock %]}
+      {% block default %}{% endblock %]}
     </div>
     """
 
-@default.register
 class GreenCard(CardBase):
     style: css = """
     .mycard {

@@ -1,15 +1,14 @@
 from sourcetypes import javascript, css, django_html
-from tetra import Component, public, Library
+from tetra import Component, public
 from .models import ToDo
 
-default = Library()
-
-@default.register
 class ToDoList(Component):
     title = public("")
 
     def load(self):
-        self.todos = ToDo.objects.filter(session_key=self.request.session.session_key)
+        self.todos = ToDo.objects.filter(
+            session_key=self.request.session.session_key
+        )
 
     @public
     def add_todo(self, title):
@@ -36,7 +35,6 @@ class ToDoList(Component):
     </div>
     """
 
-@default.register
 class ToDoItem(Component):
     title = public("")
     done = public(False)

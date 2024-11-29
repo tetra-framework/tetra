@@ -3,20 +3,31 @@ import shutil
 import subprocess
 import json
 
+from django.apps import AppConfig
 from django.conf import settings
 from django.templatetags.static import static
 from django.utils.functional import cached_property
 
+from .components import ComponentError
 from .utils import camel_case_to_underscore
 
 
-class ComponentLibraryException(Exception):
+class LibraryError(ComponentError):
     pass
 
 
 class Library:
-    def __init__(self):
+    def __init__(self,name="", path="", app=None):
         self.components = {}
+        self.name = name
+        self.path = path
+        self.app: AppConfig | None = app
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return f"<Library: {self.display_name}>"
 
     @property
     def display_name(self):
@@ -70,8 +81,9 @@ class Library:
 
         def dec(cls):
             if hasattr(cls, "_library") and cls._library:
-                raise ComponentLibraryException(
-                    f"Component {component.__name__} already registered to a library."
+                raise LibraryError(
+                    f"Component {component.__name__} is already registered to "
+                    f"library {cls._library}."
                 )
             component._library = self
             component._name = name
@@ -82,6 +94,10 @@ class Library:
             return dec(component)
         else:
             return dec
+
+    def __contains__(self, component_name: str) -> bool:
+        """Check if the library contains the given component name."""
+        return component_name in self.components
 
     def build(self):
         # TODO: check if source has changed and only build if it has
@@ -113,10 +129,15 @@ class Library:
             for component_name, component in self.components.items():
                 print(f" - {component_name}")
                 if component.has_script():
-                    script = component.make_script_file()
+                    script, is_inline = component.make_script_file()
                     py_filename, _, _ = component.get_source_location()
                     py_dir = os.path.dirname(py_filename)
-                    filename = f"{os.path.basename(py_filename)}__{component_name}.js"
+                    if is_inline:
+                        filename = (
+                            f"{os.path.basename(py_filename)}__{component_name}.js"
+                        )
+                    else:
+                        filename = f"{component_name}.js"
                     component_path = os.path.join(py_dir, filename)
                     files_to_remove.append(component_path)
                     with open(component_path, "w") as f:
@@ -168,10 +189,15 @@ class Library:
             for component_name, component in self.components.items():
                 if component.has_styles():
                     print(f" - {component_name}")
-                    styles = component.make_styles_file()
+                    styles, is_inline = component.make_styles_file()
                     py_filename, _, _ = component.get_source_location()
                     py_dir = os.path.dirname(py_filename)
-                    filename = f"{os.path.basename(py_filename)}__{component_name}.css"
+                    if is_inline:
+                        filename = (
+                            f"{os.path.basename(py_filename)}__{component_name}.css"
+                        )
+                    else:
+                        filename = f"{component_name}.css"
                     component_path = os.path.join(py_dir, filename)
                     files_to_remove.append(component_path)
                     with open(component_path, "w") as f:

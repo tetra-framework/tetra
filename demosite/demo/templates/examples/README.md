@@ -15,4 +15,4 @@ other_example/
 
 * The `text.md` file contains the description of the example, with code sections. This is rendered ad HTML. It must contain a `title` as front matter. 
 * The `demo.html` part, which is a django template, using the Tetra component, is rendered.
-* The `component` itself is located in <`demo/components/examples` as `Library()` named "examples". 
+* The `component` itself is located in `demo/components/examples` as `Library()` named "examples". 

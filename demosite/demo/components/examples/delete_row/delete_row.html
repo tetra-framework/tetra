@@ -1,0 +1,14 @@
+{% load tetra %}
+<table class='table'>
+  <thead>
+  <tr>
+    <th>Title</th>
+    <th>Actions</th>
+  </tr>
+  </thead>
+  <tbody>
+  {% for row in rows %}
+    {% @ demo.examples.DeleteRow row=row key=row.id / %}
+  {% endfor %}
+  </tbody>
+</table>

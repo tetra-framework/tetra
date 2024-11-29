@@ -4,7 +4,7 @@ from .component_register import libraries
 
 def build(libs_to_build):
     print("Tetra: Building Javascript and CSS")
-    print(f" - Libraries: %s" % ",".join(o.display_name for o in libs_to_build))
+    print(" - Libraries: %s" % ",".join(o.display_name for o in libs_to_build))
     for lib in libs_to_build:
         lib.build()
 
