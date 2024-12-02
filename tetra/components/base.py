@@ -73,7 +73,7 @@ def make_template(cls) -> Template:
                 "{% load tetra %}" + cls.template,
                 origin=origin,
             )
-        except TemplateSyntaxError:
+        except TemplateSyntaxError as e:
             # By default, we want to compile templates during python compile time,
             # however, the template exceptions are much better when raised at runtime
             # as it shows a nice stack trace in the browser. We therefore create a
@@ -1038,6 +1038,8 @@ class DependencyFormMixin:
               "year": "make"  # year depends on make
             }
 
+    Methods:
+        get_<field_name>_queryset(): Returns the queryset for the given field.
     """
 
     field_dependencies: dict[str, str | tuple] = {}
