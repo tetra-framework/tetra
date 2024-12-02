@@ -1,8 +1,8 @@
 import json
-from datetime import datetime
+import zoneinfo
+from datetime import datetime, timedelta
 
 import pytest
-from django.utils import timezone
 
 from tests.main.models import SimpleModel, AwareDateTimeModel
 from tetra.utils import (
@@ -17,8 +17,7 @@ from tetra.utils import (
 @pytest.fixture
 def simple_model_instance():
     # Create an instance of SimpleModel
-    instance = SimpleModel(name="Test Model")
-    instance.save()
+    instance = SimpleModel.objects.create(name="Test Model")
     return instance
 
 
@@ -31,10 +30,14 @@ def test_TetraJSONEncoder_with_model(simple_model_instance):
     # Parse the serialized instance back into a Python object using the normal Python
     # decoder - it should be a dict then.
     parsed_instance = json.loads(serialized_instance)
-    assert "__type" in parsed_instance
-    assert parsed_instance["__type"] == "model.main.SimpleModel"
+    assert parsed_instance["__type"] == "model"
+    assert parsed_instance["model"] == "main.simplemodel"
     assert "value" in parsed_instance
     assert isinstance(parsed_instance["value"], int)
+
+    parsed_instance = json.loads(serialized_instance, cls=TetraJSONDecoder)
+    assert isinstance(parsed_instance, SimpleModel)
+    assert parsed_instance.name == "Test Model"
 
 
 @pytest.mark.django_db
@@ -52,10 +55,69 @@ def test_TetraJSONDecoder_with_model(simple_model_instance):
 
 
 @pytest.mark.django_db
-def test_model_encoding_with_aware_datetime():
+def test_model_encoding_decoding_with_aware_datetime():
     # Create a model instance with an aware datetime field
 
-    now = timezone.now()
+    tz = zoneinfo.ZoneInfo("Europe/Vienna")
+    created_at = datetime.now(tz=tz)
+    model = AwareDateTimeModel.objects.create(
+        name="Aware DateTime Model",
+        created_at=created_at,
+    )
+    # Serialize the Model instance using the TetraJSONEncoder
+    serialized_instance = json.dumps(model, cls=TetraJSONEncoder)
+
+    # Parse the serialized instance back into a Python object using the normal Python
+    # decoder - it should be a dict then.
+    deserialized_dict = json.loads(serialized_instance)
+
+    # Assert that the parsed instance is of the correct type and has the correct
+    # attributes
+    assert isinstance(deserialized_dict, dict)
+    assert "__type" in deserialized_dict
+    assert deserialized_dict["__type"] == "model"
+    assert deserialized_dict["model"] == "main.awaredatetimemodel"
+    assert "value" in deserialized_dict
+    assert isinstance(deserialized_dict["value"], int)  # This must be the primary key
+
+    # Parse the serialized instance back into a Python object using the TetraDecoder
+    # - it should be a model then.
+    deserialized_model = json.loads(serialized_instance, cls=TetraJSONDecoder)
+
+    assert deserialized_model.name == "Aware DateTime Model"
+    # assert deserialized_model.created_at.tzinfo == tz
+    # Assert that the parsed instance has the correct attributes
+    assert deserialized_model.name == "Aware DateTime Model"
+
+    # Assert that the parsed instance has the correct datetime format
+    assert deserialized_model.created_at == created_at
+    assert len(deserialized_model["created_at"]) > 26  # ISO 8601 format with timezone
+
+
+def _timedelta_to_offset_string(td: timedelta) -> str:
+    """
+    Helper function that converts a timedelta to a timezone offset string.
+
+    Returns:
+        str: A string representation of the offset in the format "+HH:MM" or "-HH:MM".
+    """
+    total_seconds = int(td.total_seconds())
+    sign = "+" if total_seconds >= 0 else "-"
+    total_seconds = abs(total_seconds)
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, _ = divmod(remainder, 60)
+    return f"{sign}{hours:02d}:{minutes:02d}"
+
+
+def test_timezone_aware_datetime_encoding():
+    # Create a model instance with an aware datetime field
+
+    tz = zoneinfo.ZoneInfo("Europe/Berlin")
+    now = datetime.now(tz=tz)
+
+    # use only first 3 digits (of 6) of microsecond. Tetra cuts the last 3 digits,
+    # resulting in a wrong comparison.
+    now = now.replace(microsecond=234000)
 
     # Serialize the model instance using the TetraJSONEncoder
     serialized_instance = json.dumps(now, cls=TetraJSONEncoder)
@@ -68,20 +130,17 @@ def test_model_encoding_with_aware_datetime():
     # attributes
     assert isinstance(parsed_instance, dict)
     assert "__type" in parsed_instance
-    assert parsed_instance["__type"] == "model.main.AwareDateTimeModel"
+    assert parsed_instance["__type"] == "datetime"
     assert "value" in parsed_instance
-    assert isinstance(parsed_instance["value"], int)  # This should be the primary key
-
-    # Assert that the parsed instance has the correct attributes
-    assert "name" in parsed_instance
-    assert isinstance(parsed_instance["name"], str)
-    assert parsed_instance["name"] == "Aware DateTime Model"
+    assert isinstance(parsed_instance["value"], str)
 
     # Assert that the parsed instance has the correct datetime format
-    assert "created_at" in parsed_instance
-    assert isinstance(parsed_instance["created_at"], str)
-    assert len(parsed_instance["created_at"]) > 26  # ISO 8601 format with timezone
-    parsed_instance = json.loads(serialized_instance)
+    value = parsed_instance["value"]
+    # make sure the timezone offset is correct
+    assert value.endswith(_timedelta_to_offset_string(tz.utcoffset(now)))
+
+    # make sure the parsed instance has the correct datetime value as the original
+    assert datetime.fromisoformat(value) == now
 
 
 class MockClass:

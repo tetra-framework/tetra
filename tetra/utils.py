@@ -65,6 +65,7 @@ class TetraJSONEncoder(json.JSONEncoder):
         if isinstance(obj, datetime.datetime):
             r = obj.isoformat()
             if obj.microsecond:
+                # cut last 3 digits from microseconds
                 r = r[:23] + r[26:]
             if r.endswith("+00:00"):
                 r = r[:-6] + "Z"
@@ -88,7 +89,12 @@ class TetraJSONEncoder(json.JSONEncoder):
         #     return str(obj)
         elif isinstance(obj, models.Model):
             # just return the object's pk, as it mostly will be used for lookups
-            return obj.pk
+            return {
+                "__type": "model",
+                "model": f"{obj._meta.app_label}.{obj._meta.model_name}",
+                "value": obj.pk,
+            }
+            # return obj.pk
         # # FIXME: to_json does not work properly
         # elif hasattr(obj, "to_json"):
         #     return {"__type": "generic", "value": obj.to_json()}
@@ -114,6 +120,9 @@ class TetraJSONDecoder(json.JSONDecoder):
             return datetime_parser.parse(obj["value"])
         if _type == "set":
             return set(obj["value"])
+        if _type == "model":
+            model = apps.get_model(obj["model"])
+            return model.objects.get(pk=obj["value"])
         raise json.JSONDecodeError(f"Cannot decode '{_type}' object from JSON.", obj, 0)
 
 
@@ -136,3 +145,10 @@ def isclassmethod(method):
         if descriptor is not None:
             return isinstance(descriptor, classmethod)
     return False
+
+
+def is_abstract(component) -> bool:
+    """Returns True if a component is abstract, False otherwise."""
+    return "__abstract__" in component.__dict__ and getattr(
+        component, "__abstract__", False
+    )
