@@ -15,6 +15,7 @@ from .utils import (
     camel_case_to_underscore,
     underscore_to_pascal_case,
     unsupported_modules,
+    is_abstract,
 )
 
 logger = logging.getLogger(__name__)
@@ -86,14 +87,15 @@ def find_component_libraries():
                                 issubclass(member, BasicComponent)
                                 and getattr(member, "__module__", None)
                                 == library_module.__name__
+                                and not is_abstract(member)
                             ):
                                 library.register(member, camel_case_to_underscore(name))
 
                         # if library is a package, search for component packages within
                         # library
                         if ispkg:
-                            components_found = 0
                             for component_info in pkgutil.iter_modules([library.path]):
+                                components_found = 0
                                 component_name = ".".join(
                                     [
                                         app_config.label,
@@ -115,6 +117,7 @@ def find_component_libraries():
                                         issubclass(member, BasicComponent)
                                         and getattr(member, "__module__", None)
                                         == component_module.__name__
+                                        and not is_abstract(member)
                                     ):
                                         components_found += 1
                                         if components_found > 1:
@@ -127,8 +130,8 @@ def find_component_libraries():
                                             member, camel_case_to_underscore(name)
                                         )
 
-                    except ModuleNotFoundError:
-                        pass
+                    except ModuleNotFoundError as e:
+                        logger.critical(e)
 
                     # else:
                     #     # TODO: library is a file, register all components in it
