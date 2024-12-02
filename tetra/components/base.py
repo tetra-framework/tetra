@@ -109,6 +109,10 @@ def make_template(cls) -> Template:
 
         # try to find <component_name>.html within component's directory
         module = importlib.import_module(cls.__module__)
+        if not hasattr(module, "__path__"):
+            raise ComponentError(
+                f"Component module '{cls.__module__}' seems not to be a component."
+            )
         component_name = module.__name__.split(".")[-1]
         module_path = module.__path__[0]
         # if path is a file, get the containing directory
@@ -575,6 +579,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
         component_server_methods.append(
             {
+                # TODO: security & efficiency: only append _upload_temp_file if
+                #  necessary, e.g. file field present.
                 "name": "_upload_temp_file",
                 "endpoint": cls._component_url("_upload_temp_file"),
             }
