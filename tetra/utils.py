@@ -29,7 +29,7 @@ def camel_case_to_underscore(value: str):
 def underscore_to_pascal_case(value: str):
     """builds a PascalCase string from a snake_case like."""
     # special case: value is already pascal or camel case, then don't touch it.
-    if not "_" in value and not value.islower():
+    if "_" not in value and not value.islower():
         return value
     return "".join(word.capitalize() for word in value.split("_"))
 
