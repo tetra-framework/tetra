@@ -11,7 +11,11 @@ from collections import defaultdict
 from .components.base import InlineTemplate, Component, BasicComponent
 from .exceptions import ComponentError, ComponentNotFound
 from .library import Library
-from .utils import camel_case_to_underscore, underscore_to_pascal_case
+from .utils import (
+    camel_case_to_underscore,
+    underscore_to_pascal_case,
+    unsupported_modules,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +35,9 @@ def find_component_libraries():
     importlib.invalidate_caches()
     for components_module_name in components_module_names:
         for app_config in [
-            a for a in apps.get_app_configs() if a.module.__name__ != "tetra"
+            a
+            for a in apps.get_app_configs()
+            if a.module.__name__ not in unsupported_modules
         ]:
             # from django.utils.module_loading import *
 

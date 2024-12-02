@@ -10,6 +10,14 @@ from django.template.loader import render_to_string
 from django.utils.timezone import is_aware
 from django.conf import settings
 
+# list of hardcoded modules that are not searched for components
+# this is necessary as some 3rd party modules contain a "components" package with
+# other forms of their components. Even tetra.components is meant to be not a
+# "components" directory.
+# FIXME: This is badly designed, and should be replaced with a non-hardcoded approach
+#  someday[tm]
+unsupported_modules = ["tetra", "wagtail.documents", "wagtail.images"]
+
 
 def camel_case_to_underscore(value: str):
     """
