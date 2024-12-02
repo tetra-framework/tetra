@@ -8,8 +8,8 @@ from django.template import Template
 import inspect
 from collections import defaultdict
 
-from .components.base import InlineTemplate, ComponentNotFound, Component, \
-    BasicComponent, ComponentError
+from .components.base import InlineTemplate, Component, BasicComponent
+from .exceptions import ComponentError, ComponentNotFound
 from .library import Library
 from .utils import camel_case_to_underscore, underscore_to_pascal_case
 

@@ -2,7 +2,7 @@ import logging
 import importlib
 import os
 from copy import copy
-from typing import Optional, Self, Any, Dict
+from typing import Optional, Self, Any
 from types import FunctionType
 from enum import Enum
 import inspect
@@ -13,7 +13,6 @@ from weakref import WeakKeyDictionary
 from functools import wraps
 from threading import local
 
-from django.conf import settings
 from django import forms
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import default_storage
@@ -35,6 +34,7 @@ from django.utils.functional import SimpleLazyObject
 from django.http import JsonResponse, HttpRequest
 from django.urls import reverse
 
+from ..exceptions import ComponentError
 from ..utils import camel_case_to_underscore, to_json, TetraJSONEncoder, isclassmethod
 from ..state import encode_component, decode_component, skip_check
 from ..templates import InlineOrigin, InlineTemplate
@@ -45,14 +45,6 @@ from .callbacks import CallbackList
 thread_local = local()
 
 logger = logging.getLogger(__name__)
-
-
-class ComponentError(Exception):
-    pass
-
-
-class ComponentNotFound(ComponentError):
-    pass
 
 
 def make_template(cls) -> Template:
@@ -101,7 +93,7 @@ def make_template(cls) -> Template:
                     )
                 )
             else:
-                raise ComponentException(
+                raise ComponentError(
                     f"Template compilation failed for component '{cls.__name__}': {e}"
                 )
 
@@ -111,7 +103,7 @@ def make_template(cls) -> Template:
             ):
                 if not getattr(block_node, "origin", None):
                     block_node.origin = origin
-    
+
     else:
         # Here we definitely are in a dir-style component
 
@@ -581,7 +573,12 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             method_data["endpoint"] = (cls._component_url(method["name"]),)
             component_server_methods.append(method_data)
 
-        component_server_methods.append({"name": "_upload_temp_file", "endpoint": cls._component_url("_upload_temp_file")})
+        component_server_methods.append(
+            {
+                "name": "_upload_temp_file",
+                "endpoint": cls._component_url("_upload_temp_file"),
+            }
+        )
         if not component_var:
             component_var = cls.script if cls.has_script() else "{}"
         return render_to_string(
@@ -819,6 +816,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
             and initialized with the form's fields' initial values.
     """
 
+    __abstract__ = True
     form_class: type(forms.BaseForm) = None
     form_submitted: bool = False
     form_errors: dict = {}  # TODO: make protected + include in render context
@@ -860,10 +858,14 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         for field_name, field in form.fields.items():
             if field_name in self._public_properties:
                 if isinstance(field, FileField):
-                    form.fields[field_name].widget.attrs.update({"@change": "_uploadFile"})
+                    form.fields[field_name].widget.attrs.update(
+                        {"@change": "_uploadFile"}
+                    )
                     if hasattr(field, "temp_file"):
                         # TODO: Check if we need to send back the temp file name and which attribute to use, might not be necessary
-                        form.fields[field_name].widget.attrs.update({"data-tetra-temp-file": field.temp_file})
+                        form.fields[field_name].widget.attrs.update(
+                            {"data-tetra-temp-file": field.temp_file}
+                        )
                 else:
                     # form.fields[field_name].initial = getattr(self, field_name)
                     form.fields[field_name].widget.attrs.update({"x-model": field_name})
@@ -907,8 +909,12 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         # find all temporary files in the form and read them and write to the form fields
         for field_name, file_details in self.form_temp_files.items():
             if file_details:
-                storage = self._form.fields[field_name].storage if hasattr(self._form.fields[field_name], 'storage') else default_storage
-                with storage.open(file_details["temp_name"], 'rb') as file:
+                storage = (
+                    self._form.fields[field_name].storage
+                    if hasattr(self._form.fields[field_name], "storage")
+                    else default_storage
+                )
+                with storage.open(file_details["temp_name"], "rb") as file:
                     storage.save(file_details["original_name"], file)
                 # TODO: Add error checking and double check the form value is being set correctly
                 storage.delete(file_details["temp_name"])
@@ -932,14 +938,26 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     def _upload_temp_file(self, form_field, original_name, file) -> str | None:
         """Uploads a file to the server temporarily."""
         # TODO: Add validation
-        if file and form_field in self._form.fields and isinstance(self._form.fields[form_field], FileField):
+        if (
+            file
+            and form_field in self._form.fields
+            and isinstance(self._form.fields[form_field], FileField)
+        ):
             temp_file_name = f"tetra_temp_upload/{uuid.uuid4()}"
-            storage = self._form.fields[form_field].storage if hasattr(self._form.fields[form_field], 'storage') else default_storage
+            storage = (
+                self._form.fields[form_field].storage
+                if hasattr(self._form.fields[form_field], "storage")
+                else default_storage
+            )
             storage.save(temp_file_name, file)
             # TODO: Add error checking, double check this - it seems like we need call setattr as well as setting directly?
-            self.form_temp_files[form_field] = dict(temp_name = temp_file_name, original_name = original_name)
+            self.form_temp_files[form_field] = dict(
+                temp_name=temp_file_name, original_name=original_name
+            )
             setattr(self, self.form_temp_files[form_field]["temp_name"], temp_file_name)
-            setattr(self, self.form_temp_files[form_field]["original_name"], original_name)
+            setattr(
+                self, self.form_temp_files[form_field]["original_name"], original_name
+            )
             return temp_file_name
         return None
 
@@ -951,6 +969,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
 
 
 class ModelFormComponent(FormComponent):
+    __abstract__ = True
     form_class: type(forms.ModelForm) = None
     model: type(models.Model) = None
     fields: list[str] = "__all__"
@@ -1093,6 +1112,7 @@ class GenericObjectFormComponent(ModelFormComponent):
         _context_object_name (str): the name of the context object in the template (TODO)
     """
 
+    __abstract__ = True
     object: models.Model = None
     _fields: list[str] = []
     _context_object_name = None  # TODO

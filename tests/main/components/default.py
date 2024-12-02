@@ -71,3 +71,21 @@ class SimpleComponentWithAttrs(BasicComponent):
     template: django_html = """
 <div id="component" {% ... attrs class="class1" %}>content</div>
 """
+
+
+class SimpleComponentWithFooContext(BasicComponent):
+    """Simple component that adds "foo" context"""
+
+    _extra_context = ["foo"]
+    template: django_html = """
+    <div id="component">{% block default %}{% endblock %}</div>
+    """
+
+
+class SimpleComponentWithExtraContextAll(BasicComponent):
+    """Simple component that adds __all__ global context"""
+
+    _extra_context = ["__all__"]
+    template: django_html = """
+    <div id="component">{% block default %}{% endblock %}</div>
+    """

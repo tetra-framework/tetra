@@ -1,11 +1,10 @@
 from .base import (
-    ComponentError,
-    ComponentNotFound,
     BasicComponent,
     Component,
     FormComponent,
     public,
 )
+from ..exceptions import ComponentError, ComponentNotFound
 
 __all__ = [
     ComponentError,

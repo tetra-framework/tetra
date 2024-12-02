@@ -149,7 +149,7 @@ def test_component_with_conditional_block_filled(request):
 def test_component_with_conditional_addcontent_block_filled(request):
     """Tests a simple component with conditional block, filled, with mixed text from
     component and block overrides."""
-    content = render_component(
+    content = render_component_tag(
         request,
         "{% @ main.default.SimpleComponentWithConditionalBlockAndAdditionalContent %}"
         "{% block foo %}foo{% endblock %}"
@@ -160,7 +160,7 @@ def test_component_with_conditional_addcontent_block_filled(request):
 
 def test_component_with_conditional_addcontent_block_filled_and_html_tags(request):
     """Tests a simple component with conditional block, filled, with html tags"""
-    content = render_component(
+    content = render_component_tag(
         request,
         """
 {% @ main.default.simple_component_with_conditional_block_and_additional_html_content %}

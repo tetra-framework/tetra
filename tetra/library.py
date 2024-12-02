@@ -8,16 +8,12 @@ from django.conf import settings
 from django.templatetags.static import static
 from django.utils.functional import cached_property
 
-from .components import ComponentError
+from .exceptions import LibraryError
 from .utils import camel_case_to_underscore
 
 
-class LibraryError(ComponentError):
-    pass
-
-
 class Library:
-    def __init__(self,name="", path="", app=None):
+    def __init__(self, name="", path="", app=None):
         self.components = {}
         self.name = name
         self.path = path

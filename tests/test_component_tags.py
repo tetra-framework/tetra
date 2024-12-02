@@ -2,12 +2,12 @@ from bs4 import BeautifulSoup
 from django.urls import reverse
 from django.template.exceptions import TemplateSyntaxError
 
+from main.components.default import SimpleBasicComponent
 from tests.conftest import extract_component
-from tests.main.components import SimpleBasicComponent
 from tests.main.helpers import render_component_tag
 import pytest
 
-from tetra.components import ComponentNotFound
+from tetra.exceptions import ComponentNotFound
 
 
 def test_basic_component(request):
@@ -72,7 +72,7 @@ def test_css_component(client):
 
 def test_basic_dynamic_component(request):
     """Tests a simple dynamic component"""
-    content = render_component(
+    content = render_component_tag(
         request,
         "{% @ =dynamic_component /%}",
         {"dynamic_component": SimpleBasicComponent},
@@ -83,7 +83,7 @@ def test_basic_dynamic_component(request):
 def test_basic_dynamic_non_existing_component(request):
     """Tests a simple non-existing component - must produce ComponentNotFound"""
     with pytest.raises(ComponentNotFound):
-        render_component(
+        render_component_tag(
             request,
             "{% @ =foo.bar.NotExistingComponent /%}",
         )

@@ -9,7 +9,7 @@ import re
 import copy
 from threading import local
 
-from ..components import ComponentError
+from ..exceptions import ComponentError
 from ..component_register import resolve_component
 
 logger = logging.getLogger(__name__)
