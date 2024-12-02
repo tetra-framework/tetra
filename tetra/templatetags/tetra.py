@@ -9,7 +9,7 @@ import re
 import copy
 from threading import local
 
-from ..exceptions import ComponentError
+from ..exceptions import ComponentError, ComponentNotFound
 from ..component_register import resolve_component
 
 logger = logging.getLogger(__name__)
@@ -278,10 +278,12 @@ class ComponentNode(template.Node):
                     c = c[part]
                 except TypeError:
                     c = getattr(c, part, None)
+                except KeyError:
+                    c = None
+
                 if c is None:
-                    raise ComponentError(
-                        f"Unable to resolve dynamic component: '"
-                        f"{self.component_name}'"
+                    raise ComponentNotFound(
+                        f"Unable to resolve dynamic component: '{self.component_name}'"
                     )
             Component = c
         else:
