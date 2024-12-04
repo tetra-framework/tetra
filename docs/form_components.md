@@ -143,3 +143,10 @@ Here, `@click.prevent` is used to prevent the Browser submitting the form the us
 
 You can reset the form to its default values by calling `reset()`, from the frontend, or the backend.
 
+### File uploading
+
+It is a fact that HTML forms traditionally have some problems with files, as they are designed around the *submit -> POST-request -> response -> full-page-reload* cycle. This works, as long as after the submission, the server saves the file. If the form does not validate correctly (e.g. some unfilled input field), Django renders the form again using a GET request. And here HTML (for security reasons) does not add the file again to the form. So with the next submit, the file field is empty again. This is not solvable with normal Django tools.
+
+Tetra finds a solution to that problem within FormComponent. When you use a FileField in a Django Form, FormComponent makes sure that when the user adds a file to the field, it is instantly uploaded to the server, and saved as a temporary file. After submitting the FormComponent, when validation succeeds, the file is simply moved to its target position. This all works transparently in the background.
+
+Just keep in mind, that the file is **uploaded already at the `@change` event** of the file field.

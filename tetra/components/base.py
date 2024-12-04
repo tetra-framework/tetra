@@ -33,6 +33,7 @@ from django.utils.html import escapejs, escape
 from django.utils.functional import SimpleLazyObject
 from django.http import JsonResponse, HttpRequest
 from django.urls import reverse
+from django.conf import settings
 
 from ..exceptions import ComponentError
 from ..utils import camel_case_to_underscore, to_json, TetraJSONEncoder, isclassmethod
@@ -45,6 +46,11 @@ from .callbacks import CallbackList
 thread_local = local()
 
 logger = logging.getLogger(__name__)
+
+try:
+    temp_file_upload_path = settings.TETRA["TEMP_UPLOAD_PATH"]
+except (AttributeError, KeyError):
+    temp_file_upload_path = "tetra_temp_upload"
 
 
 def make_template(cls) -> Template:
@@ -949,7 +955,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
             and form_field in self._form.fields
             and isinstance(self._form.fields[form_field], FileField)
         ):
-            temp_file_name = f"tetra_temp_upload/{uuid.uuid4()}"
+            temp_file_name = f"{temp_file_upload_path}/{uuid.uuid4()}"
             storage = (
                 self._form.fields[form_field].storage
                 if hasattr(self._form.fields[form_field], "storage")
