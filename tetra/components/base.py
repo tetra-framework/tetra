@@ -933,9 +933,6 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
                         storage.save(file_details["original_name"], file)
                     # TODO: Add error checking and double check the form value is being set correctly
                     storage.delete(file_details["temp_name"])
-                    self._form.fields[field_name].initial = file_details[
-                        "original_name"
-                    ]
             self.form_valid(self._form)
         else:
             self.form_errors = self._form.errors.get_json_data(escape_html=True)
