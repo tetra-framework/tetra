@@ -918,23 +918,24 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         it will call form_valid(), else form_invalid().
         """
 
-        # find all temporary files in the form and read them and write to the form fields
-        for field_name, file_details in self.form_temp_files.items():
-            if file_details:
-                storage = (
-                    self._form.fields[field_name].storage
-                    if hasattr(self._form.fields[field_name], "storage")
-                    else default_storage
-                )
-                with storage.open(file_details["temp_name"], "rb") as file:
-                    storage.save(file_details["original_name"], file)
-                # TODO: Add error checking and double check the form value is being set correctly
-                storage.delete(file_details["temp_name"])
-                self._form.fields[field_name].initial = file_details["original_name"]
-
         self.form_submitted = True
 
         if self._form.is_valid():
+            # find all temporary files in the form and read them and write to the form fields
+            for field_name, file_details in self.form_temp_files.items():
+                if file_details:
+                    storage = (
+                        self._form.fields[field_name].storage
+                        if hasattr(self._form.fields[field_name], "storage")
+                        else default_storage
+                    )
+                    with storage.open(file_details["temp_name"], "rb") as file:
+                        storage.save(file_details["original_name"], file)
+                    # TODO: Add error checking and double check the form value is being set correctly
+                    storage.delete(file_details["temp_name"])
+                    self._form.fields[field_name].initial = file_details[
+                        "original_name"
+                    ]
             self.form_valid(self._form)
         else:
             self.form_errors = self._form.errors.get_json_data(escape_html=True)
