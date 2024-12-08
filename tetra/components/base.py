@@ -929,6 +929,10 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
                         if hasattr(self._form.fields[field_name], "storage")
                         else default_storage
                     )
+                    # FIXME: don't save in storage's base directory directly.
+                    #  When using a ModelForm, use the model.FileField.upload_to dir
+                    #  When using another Form, it is up to the user where to save
+                    #  the file
                     with storage.open(file_details["temp_name"], "rb") as file:
                         storage.save(file_details["original_name"], file)
                     # TODO: Add error checking and double check the form value is being set correctly
@@ -953,6 +957,11 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
             and form_field in self._form.fields
             and isinstance(self._form.fields[form_field], FileField)
         ):
+            # FIXME: Rather use django.core.files.upladedfile.TemporaryUploadedFile
+            #  than using own temp file storage in _upload_temp_file().
+            #  Maybe modify Django's upload handler on the fly in FormComponents to
+            #  always use TemporaryFileUploadHandler - and keep track of the uploaded
+            #  file name?
             temp_file_name = f"{temp_file_upload_path}/{uuid.uuid4()}"
             storage = (
                 self._form.fields[form_field].storage
