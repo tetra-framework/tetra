@@ -934,7 +934,13 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
                     #  When using another Form, it is up to the user where to save
                     #  the file
                     with storage.open(file_details["temp_name"], "rb") as file:
-                        storage.save(file_details["original_name"], file)
+                        storage.save(
+                            os.path.join(
+                                file_details["upload_to"],
+                                file_details["original_name"],
+                            ),
+                            file,
+                        )
                     # TODO: Add error checking and double check the form value is being set correctly
                     storage.delete(file_details["temp_name"])
             self.form_valid(self._form)
@@ -969,9 +975,17 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
                 else default_storage
             )
             storage.save(temp_file_name, file)
+            upload_to = ""
+            try:
+                # if ModelForm is used, we have an upload_to available
+                upload_to = self._form.instance._meta.get_field(form_field).upload_to
+            except AttributeError:
+                pass
             # TODO: Add error checking, double check this - it seems like we need call setattr as well as setting directly?
             self.form_temp_files[form_field] = dict(
-                temp_name=temp_file_name, original_name=original_name
+                temp_name=temp_file_name,
+                original_name=original_name,
+                upload_to=upload_to,
             )
             setattr(self, self.form_temp_files[form_field]["temp_name"], temp_file_name)
             setattr(
