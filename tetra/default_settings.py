@@ -23,3 +23,5 @@ TETRA_ESBUILD_CSS_ARGS = [
     "--loader:.woff2=file",
     "--loader:.ttf=file",
 ]
+
+TETRA_TEMP_UPLOAD_PATH = "tetra_temp_upload"

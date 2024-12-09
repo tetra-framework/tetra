@@ -48,11 +48,6 @@ thread_local = local()
 
 logger = logging.getLogger(__name__)
 
-try:
-    temp_file_upload_path = settings.TETRA["TEMP_UPLOAD_PATH"]
-except (AttributeError, KeyError):
-    temp_file_upload_path = "tetra_temp_upload"
-
 
 def make_template(cls) -> Template:
     """Create a template from a component class.
@@ -970,7 +965,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
             #  Maybe modify Django's upload handler on the fly in FormComponents to
             #  always use TemporaryFileUploadHandler - and keep track of the uploaded
             #  file name?
-            temp_file_name = f"{temp_file_upload_path}/{uuid.uuid4()}"
+            temp_file_name = f"{settings.TETRA_TEMP_UPLOAD_PATH}/{uuid.uuid4()}"
             storage = (
                 self._form.fields[form_field].storage
                 if hasattr(self._form.fields[form_field], "storage")
