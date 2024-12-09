@@ -981,16 +981,13 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
                 upload_to = self._form.instance._meta.get_field(form_field).upload_to
             except AttributeError:
                 pass
-            # TODO: Add error checking, double check this - it seems like we need call setattr as well as setting directly?
+            # TODO: Add error checking, double check this
             self.form_temp_files[form_field] = dict(
                 temp_name=temp_file_name,
                 original_name=original_name,
                 upload_to=upload_to,
             )
-            setattr(self, self.form_temp_files[form_field]["temp_name"], temp_file_name)
-            setattr(
-                self, self.form_temp_files[form_field]["original_name"], original_name
-            )
+            setattr(self, form_field, file)
             return temp_file_name
         return None
 
