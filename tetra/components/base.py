@@ -833,9 +833,8 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     form_class: type(forms.BaseForm) = None
     form_submitted: bool = False
     form_errors: dict = {}  # TODO: make protected + include in render context
-    form_temp_files: dict = {}
-
     _form: Form = None
+    _form_temp_files: dict = {}
 
     def ready(self):
         self._form = self.get_form(self._data())
@@ -985,7 +984,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
             except AttributeError:
                 pass
             # TODO: Add error checking, double check this
-            self.form_temp_files[form_field] = dict(
+            self._form_temp_files[form_field] = dict(
                 temp_name=temp_file_name,
                 original_name=original_name,
                 upload_to=upload_to,
