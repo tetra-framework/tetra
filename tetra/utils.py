@@ -118,9 +118,9 @@ class TetraJSONDecoder(json.JSONDecoder):
         _type: str = obj["__type"]
         if _type == "datetime":
             return datetime_parser.parse(obj["value"])
-        if _type == "set":
+        elif _type == "set":
             return set(obj["value"])
-        if _type == "model":
+        elif _type == "model":
             model = apps.get_model(obj["model"])
             return model.objects.get(pk=obj["value"])
         raise json.JSONDecodeError(f"Cannot decode '{_type}' object from JSON.", obj, 0)
