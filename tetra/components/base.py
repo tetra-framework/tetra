@@ -971,7 +971,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
                 if hasattr(self._form.fields[form_field], "storage")
                 else default_storage
             )
-            storage.save(temp_file_name, file)
+            temp_file_name = storage.save(temp_file_name, file)
             upload_to = ""
             try:
                 # if ModelForm is used, we have an upload_to available
