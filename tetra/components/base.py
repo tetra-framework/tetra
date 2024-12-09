@@ -950,9 +950,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
             self.form_invalid(self._form)
 
     @public
-    def _upload_temp_file(
-        self, form_field, original_name, file: UploadedFile
-    ) -> str | None:
+    def _upload_temp_file(self, form_field, original_name, file: UploadedFile) -> None:
         """Uploads a file to the server temporarily."""
         # TODO: Add validation
         if (
@@ -985,8 +983,6 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
                 upload_to=upload_to,
             )
             setattr(self, form_field, file)
-            return temp_file_name
-        return None
 
     def clear(self):
         """Clears the form data (sets all values to defaults) and renders the
