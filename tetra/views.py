@@ -1,7 +1,13 @@
 import json
+import logging
+
 from django.http import HttpResponseNotFound, HttpResponseBadRequest, HttpResponse
 from .component_register import libraries
 from .utils import from_json
+
+
+logger = logging.getLogger(__name__)
+
 
 
 def component_method(
@@ -16,6 +22,9 @@ def component_method(
         return HttpResponseNotFound()
 
     if method_name not in (m["name"] for m in Component._public_methods):
+        logger.warning(
+            f"Tetra method was requested, but not found: {component_name}.{method_name}()"
+        )
         return HttpResponseNotFound()
 
     # check if request is form data
@@ -25,13 +34,15 @@ def component_method(
             if "args" not in data:
                 data["args"] = []
             data["args"].extend(request.FILES.values())
-        except json.decoder.JSONDecodeError:
+        except json.decoder.JSONDecodeError as e:
+            logger.error(e)
             return HttpResponseBadRequest()
     else:
         try:
             data = from_json(request.body.decode())
 
-        except json.decoder.JSONDecodeError:
+        except json.decoder.JSONDecodeError as e:
+            logger.error(e)
             return HttpResponseBadRequest()
 
     if not (
