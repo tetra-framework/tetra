@@ -15,7 +15,7 @@ from django.template.base import Origin
 from django.template.loader_tags import BlockNode
 import pickle
 from io import BytesIO
-from .utils import isclassmethod
+from .utils import isclassmethod, TetraTemporaryUploadedFile
 from .templates import InlineOrigin
 from django.utils.functional import SimpleLazyObject, LazyObject
 
