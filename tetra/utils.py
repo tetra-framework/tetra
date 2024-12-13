@@ -1,9 +1,13 @@
 import json
 import datetime
+import os
+import tempfile
 from typing import Any
 
 from dateutil import parser as datetime_parser
 from django.apps import apps
+from django.core.files.uploadedfile import UploadedFile
+from django.core.files.uploadhandler import FileUploadHandler
 from django.db import models
 from django.utils.text import re_camel_case
 from django.template.loader import render_to_string
@@ -53,6 +57,89 @@ def render_scripts(request, csrf_token):
     )
 
 
+class TetraTemporaryUploadedFile(UploadedFile):
+    """
+    A file uploaded to a "persistent" temporary location, to be persisted
+    across page refreshes.
+    The file can be copied to its destination when needed.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        content_type: str,
+        size: int,
+        charset,
+        temp_name=None,
+        content_type_extra=None,
+    ):
+        _, ext = os.path.splitext(name)
+        if temp_name:
+            temp_file = open(
+                os.path.join(
+                    settings.MEDIA_ROOT, settings.TETRA_TEMP_UPLOAD_PATH, temp_name
+                ),
+                "rb",
+            )
+        else:
+            temp_file = tempfile.NamedTemporaryFile(
+                suffix=".upload" + ext,
+                dir=os.path.join(settings.MEDIA_ROOT, settings.TETRA_TEMP_UPLOAD_PATH),
+                delete_on_close=False,
+            )
+        # save the original name for later
+        self.orig_name = name
+        super().__init__(
+            temp_file, name, content_type, size, charset, content_type_extra
+        )
+
+    def temporary_file_path(self):
+        """Return the full path of this file."""
+        return self.file.name
+
+    def close(self):
+        try:
+            return self.file.close()
+        except FileNotFoundError:
+            pass
+
+
+class PersistentTemporaryFileUploadHandler(FileUploadHandler):
+    """
+    Upload handler that streams data into a "persistent" (across page requests)
+    temporary file, which can be
+    saved to its destination when a form is submitted finally.
+
+    Modified after Django's TemporaryFileUploadHandler
+    """
+
+    def new_file(self, *args, **kwargs):
+        """
+        Create the file object to append to as data is coming in.
+        """
+        super().new_file(*args, **kwargs)
+        self.file = TetraTemporaryUploadedFile(
+            self.file_name, self.content_type, 0, self.charset, self.content_type_extra
+        )
+
+    def receive_data_chunk(self, raw_data, start):
+        self.file.write(raw_data)
+
+    def file_complete(self, file_size):
+        self.file.seek(0)
+        self.file.size = file_size
+        return self.file
+
+    def upload_interrupted(self):
+        if hasattr(self, "file"):
+            temp_location = self.file.temporary_file_path()
+            try:
+                self.file.close()
+                os.remove(temp_location)
+            except FileNotFoundError:
+                pass
+
+
 class TetraJSONEncoder(json.JSONEncoder):
     """
     JSONEncoder subclass that knows how to encode date/times and sets.
@@ -98,6 +185,16 @@ class TetraJSONEncoder(json.JSONEncoder):
         # # FIXME: to_json does not work properly
         # elif hasattr(obj, "to_json"):
         #     return {"__type": "generic", "value": obj.to_json()}
+        elif isinstance(obj, TetraTemporaryUploadedFile):
+            return {
+                "__type": "file",
+                "value": dict(
+                    name=obj.name,
+                    size=obj.size,
+                    content_type=obj.content_type,
+                    temp_path=obj.temporary_file_path(),
+                ),
+            }
         else:
             # as last resort, try to serialize into str
             try:
@@ -123,6 +220,14 @@ class TetraJSONDecoder(json.JSONDecoder):
         elif _type == "model":
             model = apps.get_model(obj["model"])
             return model.objects.get(pk=obj["value"])
+        elif _type == "file":
+            return TetraTemporaryUploadedFile(
+                name=obj["value"]["name"],
+                size=obj["value"]["size"],
+                content_type=obj["value"]["content_type"],
+                temp_name=obj["value"]["temp_path"],
+                charset=settings.DEFAULT_CHARSET,
+            )
         raise json.JSONDecodeError(f"Cannot decode '{_type}' object from JSON.", obj, 0)
 
 

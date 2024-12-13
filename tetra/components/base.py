@@ -37,7 +37,13 @@ from django.urls import reverse
 from django.conf import settings
 
 from ..exceptions import ComponentError
-from ..utils import camel_case_to_underscore, to_json, TetraJSONEncoder, isclassmethod
+from ..utils import (
+    camel_case_to_underscore,
+    to_json,
+    TetraJSONEncoder,
+    isclassmethod,
+    TetraTemporaryUploadedFile,
+)
 from ..state import encode_component, decode_component, skip_check
 from ..templates import InlineOrigin, InlineTemplate
 
@@ -916,28 +922,29 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         self.form_submitted = True
 
         if self._form.is_valid():
-            # find all temporary files in the form and read them and write to the form fields
-            for field_name, file_details in self.form_temp_files.items():
-                if file_details:
+            # find all temporary files in the form, read them and write to the form fields
+            for (
+                field_name,
+                file,
+            ) in self._form_temp_files.items():  # type: str, TetraTemporaryUploadedFile
+                if file:
                     storage = (
                         self._form.fields[field_name].storage
                         if hasattr(self._form.fields[field_name], "storage")
                         else default_storage
                     )
-                    # FIXME: don't save in storage's base directory directly.
-                    #  When using a ModelForm, use the model.FileField.upload_to dir
-                    #  When using another Form, it is up to the user where to save
-                    #  the file
-                    with storage.open(file_details["temp_name"], "rb") as file:
-                        storage.save(
-                            os.path.join(
-                                file_details["upload_to"],
-                                file_details["original_name"],
-                            ),
-                            file,
-                        )
+                    upload_to = ""
+                    if hasattr(self._form, "instance"):
+                        # if ModelForm is used, we have an upload_to available in the ModelField
+                        upload_to = self._form.instance._meta.get_field(
+                            field_name
+                        ).upload_to
                     # TODO: Add error checking and double check the form value is being set correctly
-                    storage.delete(file_details["temp_name"])
+                    new_path = storage.save(os.path.join(upload_to, file.name), file)
+                    # os.remove(file.temporary_file_path())
+                    # FIXME: the file is somehow not correctly attached to the form
+                    #  and gets not saved to the model instance...
+                    self._form.cleaned_data[field_name] = file
             self.form_valid(self._form)
         else:
             self.form_errors = self._form.errors.get_json_data(escape_html=True)
@@ -950,39 +957,22 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
             self.form_invalid(self._form)
 
     @public
-    def _upload_temp_file(self, form_field, original_name, file: UploadedFile) -> None:
+    def _upload_temp_file(
+        self, form_field: str, original_name, file: TetraTemporaryUploadedFile
+    ) -> None:
         """Uploads a file to the server temporarily."""
-        # TODO: Add validation
-        if (
-            file
-            and form_field in self._form.fields
-            and isinstance(self._form.fields[form_field], FileField)
+        if not file:
+            raise ValueError("File must be provided.")  # TODO: Add validation
+        if form_field not in self._form.fields or not isinstance(
+            self._form.fields[form_field], FileField
         ):
-            # FIXME: Rather use django.core.files.upladedfile.TemporaryUploadedFile
-            #  than using own temp file storage in _upload_temp_file().
-            #  Maybe modify Django's upload handler on the fly in FormComponents to
-            #  always use TemporaryFileUploadHandler - and keep track of the uploaded
-            #  file name?
-            temp_file_name = f"{settings.TETRA_TEMP_UPLOAD_PATH}/{uuid.uuid4()}"
-            storage = (
-                self._form.fields[form_field].storage
-                if hasattr(self._form.fields[form_field], "storage")
-                else default_storage
-            )
-            temp_file_name = storage.save(temp_file_name, file)
-            upload_to = ""
-            try:
-                # if ModelForm is used, we have an upload_to available
-                upload_to = self._form.instance._meta.get_field(form_field).upload_to
-            except AttributeError:
-                pass
-            # TODO: Add error checking, double check this
-            self._form_temp_files[form_field] = dict(
-                temp_name=temp_file_name,
-                original_name=original_name,
-                upload_to=upload_to,
-            )
-            setattr(self, form_field, file)
+            raise ValueError(f"Form field '{form_field}' is not a FileField")
+        # TODO: further Validate inputs
+        # TODO: Add error checking, double check saving file unconditionally
+
+        # keep track of the uploaded file
+        self._form_temp_files[form_field] = file
+        setattr(self, form_field, file)
 
     def clear(self):
         """Clears the form data (sets all values to defaults) and renders the

@@ -2,15 +2,25 @@ import json
 import logging
 
 from django.http import HttpResponseNotFound, HttpResponseBadRequest, HttpResponse
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
+
 from .component_register import libraries
-from .utils import from_json
+from .utils import from_json, PersistentTemporaryFileUploadHandler
 
 
 logger = logging.getLogger(__name__)
 
 
+@csrf_exempt
+def component_method(request, *args, **kwargs):
+    """Override default upload handlers, to create a "persistent" temporary file for
+    file uploads that are done using Tetra methods."""
+    request.upload_handlers = [PersistentTemporaryFileUploadHandler(request)]
+    return _component_method(request, *args, **kwargs)
 
-def component_method(
+
+@csrf_protect
+def _component_method(
     request, app_name, library_name, component_name, method_name
 ) -> HttpResponse:
     if not request.method == "POST":
