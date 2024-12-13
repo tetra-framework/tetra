@@ -28,7 +28,32 @@ picklers_by_type = {}
 picklers_by_prefix = {}
 
 
-def register_pickler(obj_type, prefix):
+class Pickler:
+    """Base class for picklers.
+
+    Define pickle and unpickle methods in a subclass and register it with
+    the `register_pickler` decorator, e.g.
+
+    ```python
+    @register_pickler(MyObjectPickler, b"MyObject")
+    ```
+    """
+
+    @staticmethod
+    def pickle(obj: Any) -> bytes | None:
+        pass
+
+    @staticmethod
+    def unpickle(bs: bytes) -> Any:
+        pass
+
+
+def register_pickler(obj_type, prefix: bytes):
+    """Decorator for registering classes as picklers.
+
+    See [Pickler](Pickler) class on how to implement a pickler.
+    """
+
     def dec(cls):
         cls.obj_type = obj_type
         cls.prefix = prefix
@@ -47,8 +72,9 @@ def resolve_lazy_object(lazy_object: Model | LazyObject) -> Model:
 
 
 @register_pickler(QuerySet, b"QuerySet")
-class PickleQuerySet:
-    def pickle(qs: QuerySet) -> bytes:
+class PickleQuerySet(Pickler):
+    @staticmethod
+    def pickle(qs: QuerySet) -> bytes | None:
         return pickle.dumps(
             {
                 "model": qs.model,
@@ -56,7 +82,8 @@ class PickleQuerySet:
             }
         )
 
-    def unpickle(bs) -> Any:
+    @staticmethod
+    def unpickle(bs: bytes) -> Any:
         data = pickle.loads(bs)
         qs = data["model"].objects.all()
         qs.query = data["query"]
@@ -64,8 +91,9 @@ class PickleQuerySet:
 
 
 @register_pickler(Model, b"Model")
-class PickleModel:
-    def pickle(obj: Model) -> bytes:
+class PickleModel(Pickler):
+    @staticmethod
+    def pickle(obj: Model) -> bytes | None:
         return pickle.dumps(
             {
                 "class": type(obj),
@@ -73,7 +101,8 @@ class PickleModel:
             }
         )
 
-    def unpickle(bs) -> Model | None:
+    @staticmethod
+    def unpickle(bs: bytes) -> Model | None:
         data = pickle.loads(bs)
         model = data["class"]
         try:
@@ -82,9 +111,36 @@ class PickleModel:
             return None
 
 
+@register_pickler(TetraTemporaryUploadedFile, b"PersistentTemporaryUploadedFile")
+class PicklePersistentTemporaryUploadedFile(Pickler):
+    @staticmethod
+    def pickle(file: TetraTemporaryUploadedFile) -> bytes | None:
+        # save file to a temporary location, and return a reference to it
+        value = pickle.dumps(
+            {
+                "name": file.name,
+                "size": file.size,
+                "content_type": file.content_type,
+                "temp_path": file.temporary_file_path(),
+            }
+        )
+        return value
+
+    @staticmethod
+    def unpickle(bs: bytes) -> Any:
+        data = pickle.loads(bs)
+        return TetraTemporaryUploadedFile(
+            name=data["name"],
+            size=data["size"],
+            content_type=data["content_type"],
+            charset=settings.DEFAULT_CHARSET,
+            temp_name=data["temp_path"],
+        )
+
+
 @register_pickler(BlockNode, b"BlockNode")
-class PickleBlockNode:
-    def pickle(obj):
+class PickleBlockNode(Pickler):
+    def pickle(obj: Origin) -> bytes | None:
         origin = getattr(obj, "origin", None)
         if isinstance(origin, InlineOrigin) and hasattr(obj, "_path_key"):
             return pickle.dumps(
@@ -104,8 +160,8 @@ class PickleBlockNode:
             )
         return None
 
-    def unpickle(obj):
-        data = pickle.loads(obj)
+    def unpickle(bs: bytes) -> Origin:
+        data = pickle.loads(bs)
         if "loader_name" in data:
             loader = engines["django"].engine.find_template_loader(
                 f"{data['loader_module']}.{data['loader_name']}"
@@ -175,7 +231,6 @@ class StatePickler(pickle.Pickler):
                 obj._form = saved_form
             if pickled is not None:
                 return b":".join([pickler.prefix, pickled])
-        return None
 
 
 class StateUnpickler(pickle.Unpickler):
