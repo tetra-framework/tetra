@@ -271,7 +271,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
             return cls._read_component_file_with_extension("css")
 
     @classmethod
-    def make_styles_file(cls) -> str:
+    def make_styles_file(cls) -> tuple[str, bool]:
         # check if we have a style defined in the class otherwise check if there is a file in the component directory
         if bool(hasattr(cls, "style") and cls.style):
             filename, comp_start_line, source_len = cls.get_source_location()
@@ -604,7 +604,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         )
 
     @classmethod
-    def make_script_file(cls) -> str:
+    def make_script_file(cls) -> tuple[str, bool]:
         if bool(hasattr(cls, "script") and cls.script):
             filename, comp_start_line, source_len = cls.get_source_location()
             with open(filename, "r") as f:
