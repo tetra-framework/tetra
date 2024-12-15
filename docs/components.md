@@ -44,7 +44,7 @@ Note: Django Models and Querysets are saved as references to your database, not 
 ``` python
 class MyComponent(Component):
     ...
-    def load(self, a_var):
+    def load(self, a_var, *args, **kwargs):
         self.a_var = a_var
 ```
 

@@ -65,7 +65,7 @@ There is also a `load` method - this is called both when initially rendering the
 class ToDoList(Component):
     title = public("")
 
-    def load(self):
+    def load(self, *args, **kwargs):
         self.todos = ToDo.objects.filter(session_key=self.request.session.session_key)
 ```
 

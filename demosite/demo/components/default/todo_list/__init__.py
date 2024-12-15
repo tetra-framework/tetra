@@ -5,7 +5,7 @@ from tetra import Component, public
 class ToDoList(Component):
     title = public("")
 
-    def load(self):
+    def load(self, *args, **kwargs):
         self.todos = ToDo.objects.filter(
             session_key=self.request.session.session_key,
         )

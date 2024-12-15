@@ -4,7 +4,7 @@ from tetra import Component, public
 class DeleteRow(Component):
     title: str = public("")
 
-    def load(self, row):
+    def load(self, row, *args, **kwargs):
         self.row = row
         self.title = row.title
 

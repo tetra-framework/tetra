@@ -69,7 +69,7 @@ Both positional and keyword arguments can be passed to a component via the `@` t
 ``` python
 class MyComponent(Component):
     ...
-    def load(self, a_var, something=None, another=False):
+    def load(self, a_var, something=None, another=False, *args, **kwargs):
         ...
 ```
 
