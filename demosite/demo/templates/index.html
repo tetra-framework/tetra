@@ -109,58 +109,62 @@
   <h4 class="text-center display-7 my-5" id="features">What does Tetra do?</h4>
 
   <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4">
-    <div class="col">
-      <h6 class="fw-bold mb-0"><a href="http://djangoproject.com">Django</a> on the  backend, <a href="https://alpinejs.dev">Alpine.js</a> in the browser</h6>
-      <p>Tetra combines the power of Django with Alpine.js to make development easier and  quicker.</p>
-    </div>
-    <div class="col">
-      <h6 class="fw-bold mb-0">Component encapsulation</h6>
-      <p>Each component combines its Python, HTML, CSS and JavaScript in one place for close proximity of related code.</p>
-    </div>
-    <div class="col">
-      <h6 class="fw-bold mb-0">Resumable server state</h6>
-      <p>The components' full server state is saved between public method calls. This state is <a href="https://tetra.readthedocs.io/en/latest/state-security/">encrypted for security</a>.</p>
-    </div>
-    <div class="col">
-      <h6 class="fw-bold mb-0">Public server methods</h6>
-      <p>Methods can be made public, allowing you to easily call them from JS on the front end, resuming the component's state.</p>
-    </div>
-    <div class="col">
-      <h6 class="fw-bold mb-0">Shared public state</h6>
-      <p>Attributes can be decorated to indicate they should be available in the browser as Alpine.js data objects.</p>
-    </div>
-    <div class="col">
-      <h6 class="fw-bold mb-0">Server "watcher" methods</h6>
-      <p>Public methods can be instructed to watch a public attribute, enabling reactive re-rendering on the server.</p>
-    </div>
-    <div class="col">
-      <h6 class="fw-bold mb-0">Inplace updating from the server</h6>
-      <p>Server methods can update the rendered component in place. Powered by the Alpine.js morph plugin.</p>
-    </div>
-    <div class="col">
-      <h6 class="fw-bold mb-0">Component library packaging</h6>
-      <p>Every component belongs to a "library"; their JS & CSS is packed together for quicker browser downloads.</p>
-    </div>
-    <div class="col">
-      <h6 class="fw-bold mb-0">Components with overridable blocks</h6>
-      <p>Component can have multiple <code>{% verbatim %}{%&nbsp;block(s)&nbsp;%}{% endverbatim  %}</code> which can be overridden when used.</p>
-    </div>
-    <div class="col">
-      <h6 class="fw-bold mb-0">JS/CSS builds using <a href="https://esbuild.github.io">esbuild</a></h6>
-      <p>Both for development (built into <code>runserver</code>) and production your JS & CSS is built with esbuild.</p>
-    </div>
-    <div class="col">
-      <h6 class="fw-bold mb-0">Source Maps</h6>
-      <p>Source maps are generated during development so that you can track down errors to the original Python files.</p>
-    </div>
-    <div class="col">
-      <h6 class="fw-bold mb-0">Syntax highlighting with type annotations</h6>
-      <p>Tetra uses type annotations to syntax highlight your JS, CSS & HTML in your Python files with a <a href="https://github.com/samwillis/python-inline-source/tree/main/vscode-python-inline-source">VS Code plugin</a> </p>
-    </div>
+    {% @ col %}
+      {% block title %}
+        <a href="http://djangoproject.com">Django</a> on the  backend, <a href="https://alpinejs.dev">Alpine.js</a> in the browser
+      {% endblock %}
+      {% block default %}
+        Tetra combines the power of Django with Alpine.js to make development easier and  quicker.
+      {% endblock %}
+    {% /@ %}
+    {% @ col title="Component encapsulation" %}
+      Each component combines its Python, HTML, CSS and JavaScript in one place for close proximity of related code.
+    {% /@ %}
+    {% @ col title="Resumable server state" %}
+      The components' full server state is saved between public method calls. This state is <a href="https://tetra.readthedocs.io/en/latest/state-security/">encrypted for security</a>.
+    {% /@ %}
+    {% @ col title="Public server methods" %}
+      Methods can be made public, allowing you to easily call them from JS on the front end, resuming the component's state.
+    {% /@ %}
+    {% @ col title="Shared public state" %}
+      Attributes can be decorated to indicate they should be available in the browser as Alpine.js data objects.
+    {% /@ %}
+    {% @ col title='Server "watcher" methods' %}
+      Public methods can be instructed to watch a public attribute, enabling reactive re-rendering on the server.
+    {% /@ %}
+    {% @ col title='Inplace updating from the server' %}
+      Server methods can update the rendered component in place. Powered by the Alpine.js morph plugin.
+    {% /@ %}
+    {% @ col title='Component library packaging' %}
+      Every component belongs to a "library"; their JS & CSS is packed together for quicker browser downloads.
+    {% /@ %}
+    {% @ col title='Components with overridable blocks' %}
+      Component can have multiple <code>{% verbatim %}{%&nbsp;block(s)&nbsp;%}{% endverbatim  %}</code> which can be overridden when used.
+    {% /@ %}
+    {% @ col title='Inplace updating from the server' %}
+      {% block title %}
+        JS/CSS builds using <a href="https://esbuild.github.io">esbuild</a>
+      {% endblock %}
+      {% block default %}
+        Both for development (built into <code>runserver</code>) and production your JS & CSS is built with esbuild.
+      {% endblock %}
+    {% /@ %}
+    {% @ col title='Source Maps' %}
+      Source maps are generated during development so that you can track down errors to the original Python files.
+    {% /@ %}
+    {% @ col title='Syntax highlighting with type annotations' %}
+      Tetra uses type annotations to syntax highlight your JS, CSS & HTML in your Python files with a <a href="https://github.com/samwillis/python-inline-source/tree/main/vscode-python-inline-source">VS Code plugin</a>
+    {% /@ %}
+    {% @ col title='Form components' %}
+      A simple replacement for Django's FormView, but due to Tetra's dynamic nature, e.g. a field can change its value or disappear depending on other fields' values.
+    {% /@ %}
   </div>
 
+    <h4 class="text-center display-7 my-5" id="features">
+    This is only the beginning, with much more planned, including:
+    </h4>
+
   <p id="plans" class="text-center max-width mt-3">
-    This is only the beginning, with much more planned, including:<br>
     •&nbsp;ModelComponent for bootstrapping standard CRUD interactions. &nbsp;
     •&nbsp;Python type annotations &nbsp;
     •&nbsp;Intergration with Django Validators &nbsp;
