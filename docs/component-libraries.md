@@ -36,8 +36,19 @@ The `__init__.py` and `my_calendar.html` template are mandatory, css/js and othe
 
 #### Inline components
 
-There is another (shortcut) way of creating components, especially for simple building bricks (like BasicComponents without Js):
-Create a component class and place it directly into a library module. You can create multiple components directly in the module.
+There is another (shortcut) way of creating components, especially for simple building bricks (like `BasicComponents` without Js).
+Create a component class and place it directly into a library module. You can create multiple components directly in the module. The simplest form is directly in the `default` library:
+``` python
+#myapp/components/default.py
+
+class Link(BasicComponent):
+    href: str = ""
+    title: str = ""
+    template: django_html = "<a href='{{href}}'>{{title}}</a> 
+```
+
+However, You can mix directory libraries and file libraries as you want: Put a few components into `default/__init__.py`, and another into `default/my_component/__init__.py`. Both are found:
+
 ```
 myapp
 ├── components/
@@ -46,10 +57,13 @@ myapp
 │   │   ├──otherlib.py       <-- put all "otherlib" component classes in here
 │   │   ├──widgets
 │   │   │   ├──__init__.py   <-- put all "widgets" component classes in here
+│   │   │   ├──link
+│   │   │   │   ├──__init__.py  <-- Link component definition
+│   │   │   │   └──link.html
     ...
 ```
 
-You can mix directory libraries and file libraries as you want: Put a few components into `default/__init__.py`, and another into `default/my_component/__init__.py`. Both are found.
+
 
 !!! note
-    If you use a directory style component, make sure you only define ONE component class within the component's module (e.g. in `components/default/my_calendar/__init__.py`). If you use
+    If you use a **directory style component**, make sure you define only ONE component class per module (e.g. in `components/default/my_calendar.py`). If you use the library module directly to create components (`components/default.py`), you can certainly put multiple components in there.

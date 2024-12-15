@@ -44,20 +44,18 @@ class ToDo(models.Model):
     done = models.BooleanField(default=False)
 ```
 
-Assuming we have [installed and setup](install.md) Tetra, next we create a `components.py` file to contain our components. Every component belongs to a "Library", and for this simple app we just need one named `default`.
+Assuming we have [installed and setup](install.md) Tetra, next we create a `components/default.py` file to contain our components. Every component belongs to a "Library", this is done by putting the component class into a containing module named `default`.
 
 ``` python
-# components.py
+# components/default.py
 from sourcetypes import javascript, css, django_html
 from tetra import Component, public, Library
 from .models import ToDo
-
-default = Library()
 ```
 
 ### `ToDoList` Component
 
-Next, we create a `ToDoList` component by subclassing `Component` and `register`ing  it.
+Next, we create a `ToDoList` component by subclassing `Component`.
 
 We also create a "public attribute" named `title`; the value of this is available to both your server side code / template *and* to your front end JavaScript / Alpine.js.
 

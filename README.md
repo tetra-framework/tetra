@@ -61,3 +61,7 @@ pip install tetra
   - Syntax highlighting with type annotations
 
     Tetra uses type annotations to syntax highlight your JS, CSS & HTML in your Python files with a [VS Code plugin](https://github.com/samwillis/python-inline-source/tree/main/vscode-python-inline-source)
+
+  - Forms
+    
+    `FormComponent`s can act as simple replacements for Django's FormView, but due to Tetra's dynamic nature, a field can e.g. change its value or disappear depending on other fields' values. 

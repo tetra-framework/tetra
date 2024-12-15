@@ -1,14 +1,9 @@
 from sourcetypes import django_html
 
 from demo.models import ToDo
-from tetra import Library, Component, public
-
-__all__ = "examples"
-
-examples = Library()
+from tetra import Component, public
 
 
-@examples.register
 class ClickToEdit(Component):
     name = public("John Doe")
     old_name = ""
@@ -47,7 +42,6 @@ class ClickToEdit(Component):
     """
 
 
-@examples.register
 class DeleteRowTable(Component):
     def load(self):
         self.rows = ToDo.objects.filter(session_key=self.request.session.session_key)
@@ -70,7 +64,6 @@ class DeleteRowTable(Component):
     """
 
 
-@examples.register
 class DeleteRow(Component):
     title = public("")
 
