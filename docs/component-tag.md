@@ -4,7 +4,7 @@ title: The `@` Component Tag
 
 # `@` Component Tag
 
-Tetra components are included in a template with the `{% @ [component name] %}` template tag.
+Tetra components are included in a template with the `{% @ <component name> %}` template tag.
 
 The component tag is automatically available in your components' templates. In other templates ensure to `{% load tetra %}`.
 
