@@ -6,6 +6,7 @@ from django.utils.html import escape
 from django.utils.safestring import mark_safe, SafeString
 from django.template.loaders.app_directories import Loader
 import tetra
+from tetra.component_register import resolve_component
 
 register = template.Library()
 
@@ -33,7 +34,7 @@ def include_source(file_name, start=None, end=None) -> SafeString:
 
 
 @register.simple_tag
-def md_include_source(filename, first_line_comment="") -> SafeString:
+def md_include_source(filename: str, first_line_comment: str = "") -> SafeString:
     """Includes the source code of a file, rlative to the demo root directory.
 
     It returns a SafeString version of the file content, surrounded with
@@ -74,6 +75,32 @@ def md_include_source(filename, first_line_comment="") -> SafeString:
         language = "javascript"
         first_line_comment = f"// {first_line_comment or basename}\n"
     return mark_safe(f"```{language}\n{first_line_comment}{content}\n```")
+
+
+@register.simple_tag
+def md_include_component_source(
+    component_name: str, first_line_comment: str = ""
+) -> SafeString:
+    component = resolve_component(None, component_name)
+    if not component:
+        raise template.TemplateSyntaxError(
+            f"Unable to resolve dynamic component: '{component_name}'"
+        )
+    return md_include_source(component.get_source_location()[0], first_line_comment)
+
+
+@register.simple_tag
+def md_include_component_template(
+    component_name: str, first_line_comment: str = ""
+) -> SafeString:
+    component = resolve_component(None, component_name)
+    if not component:
+        raise template.TemplateSyntaxError(
+            f"Unable to resolve dynamic component: '{component_name}'"
+        )
+    return md_include_source(
+        component.get_template_source_location()[0], first_line_comment
+    )
 
 
 @register.simple_tag
