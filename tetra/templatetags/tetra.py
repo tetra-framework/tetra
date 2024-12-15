@@ -302,7 +302,7 @@ class ComponentNode(template.Node):
 
         # check extra context arguments
         extra_context = getattr(Component, "_extra_context", [])
-        if type(extra_context) == str:
+        if type(extra_context) is str:
             extra_context = [extra_context]
 
         if self.context_args == ALL_CONTEXT or "__all__" in extra_context:
