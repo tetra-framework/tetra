@@ -18,27 +18,20 @@ Public attributes are automatically created for all form fields, so you don't ha
 The FormComponent is easy to use. First, create a normal Django form (Form, ModelForm, etc.):
 
 ```python
+# components/default.py
 from tetra.components.base import FormComponent, public
-from tetra.library import Library
 from django import forms 
 
 class PersonForm(forms.Form):
     first_name = forms.CharField(max_length=25, initial="Jean-Luc")
     last_name = forms.CharField(max_length=25, initial="Picard")
 
-default=Library()
-
-@default.register
 class PersonFormEditor(FormComponent):
     form_class = PersonForm
     is_editing = public(False)
-```
-
-Tetra automatically creates the needed public fields in PersonFormEditor from the PersonForm, so you don't have to
-write them manually.
-```python
-    first_name = public("Jean-Luc")
-    last_name = public("Picard")
+    # Tetra automatically creates these fields for you:
+    # first_name = public("Jean-Luc")
+    # last_name = public("Picard")
 ```
 
 In a `FormComponent`, the form is instantiated automatically each time the component is loaded or updated
@@ -87,8 +80,7 @@ class PersonEditor(GenericObjectFormComponent):
     
     template = """..."""
 ```
-With a `GenericObjectFormComponent`, you just have to define the `form_class` and object, everything else does Tetra 
-for you, like Django's `UpdateView`.
+With a `GenericObjectFormComponent`, you just have to define the `form_class` and object, everything else does Tetra for you, like Django's `UpdateView`.
 
 ## Form processing and usage
 
@@ -99,6 +91,21 @@ can automatically use those fields in your frontend:
 
 ```html
 <input type="text" x-model="first_name">
+```
+
+You can use the variables as usual in your html code. 
+
+Normal Django variables are only changed after the component is reloaded:
+
+```django
+<div>{{ first_name }}</div>
+```
+
+If you want to use frontend variables, you can use the `@v` tag helper. In this case, a `<span>` tag is created with the `first_name` content that will reflect the variable instantly.
+
+```django
+<input type="text" x-model="first_name">
+<div>{% @v "first_name" %} is a good name!</div>
 ```
 
 !!! warning

@@ -819,7 +819,11 @@ class FormComponentMetaClass(ComponentMetaClass):
 
 class FormComponent(Component, metaclass=FormComponentMetaClass):
     """
-    Component that can render a form, and validate it.
+    Component that can render a form, validate and submit it.
+
+    The form itself is not saved with the client state, as pickling forms is somehow
+    complicated. Instead, it is recreated with every request and filled with the
+    current component attribute values.
 
     Attributes:
         form_class (type(BaseForm)):
@@ -833,6 +837,9 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     form_submitted: bool = False
     form_errors: dict = {}  # TODO: make protected + include in render context
     _form: Form = None
+
+    # _form_temp_files is an internal storage for temporary uploaded files' handles.
+    # it is saved with the state, so it can survive page requests.
     _form_temp_files: dict = {}
 
     def ready(self):
