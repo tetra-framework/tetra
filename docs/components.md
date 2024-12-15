@@ -175,11 +175,7 @@ component are available in the context.
 
 #### File templates
 
-You can also use the more traditional way and put your HTML code into a separate HTML file. You have to point to this
-file using the `template_name` attribute of the component class. Beware that you have to load the `tetra` templatetag
-yourself there. This has the advantage of having full syntax highlighting and IDE goodies support in your file which
-comes handy for especially bigger templates, but it splits a component a bit up into separate pieces.
-
+When using directory-style components, you can load templates from separate files too. See [Directory style components](component-libraries.md#directory-style-components).
 
 ### Generic template hints
 
@@ -201,9 +197,6 @@ class MyComponent(Component):
       {% block default %}{% endblock %}
     </div>
     """
-
-    # or:
-    template_name = "my_app/components/my_component.html"
 ```
 
 You can easily check if a block is "filled" with content by using `{% if blocks.<block name> %}`. With this, you can
