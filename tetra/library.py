@@ -13,11 +13,16 @@ from .utils import camel_case_to_underscore
 
 
 class Library:
-    def __init__(self, name="", path="", app=None):
+    def __init__(
+        self,
+        name: str,
+        app: AppConfig,
+        path: str = "",
+    ):
         self.components = {}
         self.name = name
         self.path = path
-        self.app: AppConfig | None = app
+        self.app: AppConfig = app
 
     def __str__(self):
         return self.name
