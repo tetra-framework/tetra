@@ -2,32 +2,32 @@ Title: Component Inheritance
 
 # Component Inheritance
 
-Components are inheritable, to create components that bundle common features, which can be reused and extended by more
-specialized ones.
+Components basically are inheritable, to create components that bundle common features, which can be reused and extended by more specialized ones. But: **You cannot inherit from already registered components.**
 
-The only thing you have to conform to is: **You cannot inherit from already registered components.**
-So create a "base" component without registering it, and just register the inherited components.
+As components are registered automatically by putting them into a library module, you can create *abstract components* to exclude them from registering.
 
 This works with both `BasicComponent` and `Component`.
 
 ``` python
 # no registering here!
 class CardBase(BasicComponent):
+
+    __abstract__ = True
+
+    template = "<div></div>"
+
+class Card(CardBase):
+    
+    __abstract__ = True
+
     template: django_html = """
     <div class="card mycard">
-      ...
-    </div>
-    """
-
-# now register the components
-class Card(CardBase):
-    template: django_html = """
-    <div class="card">
       {% block default %}{% endblock %]}
     </div>
     """
 
-class GreenCard(CardBase):
+# This component is registered:
+class GreenCard(Card):
     style: css = """
     .mycard {
       background-color: green
