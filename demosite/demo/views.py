@@ -6,7 +6,7 @@ import markdown
 from django.conf import settings
 from django.http import HttpResponse, Http404
 from django.shortcuts import render
-from django.template import TemplateDoesNotExist
+from django.template import TemplateDoesNotExist, Template, RequestContext
 from django.template.loader import render_to_string
 from markdown.extensions.toc import TocExtension
 
@@ -49,38 +49,61 @@ def examples(request, slug: str = FIRST_SLUG) -> HttpResponse:
     if slug not in structure and slug != FIRST_SLUG:
         raise Http404()
 
+    md = markdown.Markdown(
+        extensions=[
+            "extra",
+            "meta",
+            TocExtension(permalink="#", toc_depth=3),
+        ]
+    )
+    # first, render the markdown from text.md
     with open(examples_dir / slug / "text.md") as f:
-        md = markdown.Markdown(
-            extensions=[
-                "extra",
-                "meta",
-                TocExtension(permalink="#", toc_depth=3),
-            ]
+        # assume content has Django template directives, render them first
+        content = Template("{% load demo_tags %}" + f.read()).render(
+            context=RequestContext(request)
         )
-        content = md.convert(f.read())
-        demo_html = ""
-        # if there exists a demo, add it
-        try:
-            demo_html = render_to_string(
-                examples_dir / slug / "demo.html", request=request
-            )
-            if demo_html:
-                content += "<hr class='hr'/><h2>Demo</h2>"
-                content += demo_html
-        except TemplateDoesNotExist:
-            pass
+        content = md.convert(content)
 
-        logger.debug(md.Meta)
-        return render(
-            request,
-            "base_examples.html",
-            {
-                "structure": structure,
-                "FIRST_SLUG": {"slug": FIRST_SLUG, "title": titlify(FIRST_SLUG)},
-                "content": content,
-                "toc": md.toc,
-                "active_slug": slug,
-                "title": " ".join(md.Meta["title"]),
-                "has_demo": bool(demo_html),
-            },
-        )
+    # # then render component code, if available
+    # try:
+    #     component = resolve_component(None, f"demo.examples.{slug}")
+    #     if component:
+    #         filename, start, length = component.get_source_location()
+    #         with open(filename) as f:
+    #             # this only works if each component is located in one file
+    #             content += md.convert(
+    #                 "```python\n" + "# component source code\n" + f.read() + "\n```"
+    #             )
+    #             # content += """<div class="pt-2 ps-3 border-top border-secondary text-muted small"><b>models.py</b></div>"""
+    #         content += md.convert(
+    #             "```django\n# file template\n"
+    #             + component._read_component_file_with_extension("html")
+    #             + "\n```"
+    #         )
+    # except ComponentNotFound:
+    #     pass
+
+    # if there exists a demo, add it
+    demo_html = ""
+    try:
+        demo_html = render_to_string(examples_dir / slug / "demo.html", request=request)
+        if demo_html:
+            content += "<hr class='hr'/><h2>Demo</h2>"
+            content += demo_html
+    except TemplateDoesNotExist:
+        pass
+
+    logger.debug(md.Meta)
+    return render(
+        request,
+        "base_examples.html",
+        {
+            "structure": structure,
+            "FIRST_SLUG": {"slug": FIRST_SLUG, "title": titlify(FIRST_SLUG)},
+            "content": content,
+            "toc": md.toc,
+            "active_slug": slug,
+            "title": " ".join(md.Meta["title"]) if "title" in md.Meta else "",
+            "has_demo": bool(demo_html),
+        },
+    )

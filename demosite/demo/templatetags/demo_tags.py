@@ -1,9 +1,11 @@
+import os.path
+
 from django import template
+from django.conf import settings
 from django.utils.html import escape
 from django.utils.safestring import mark_safe, SafeString
 from django.template.loaders.app_directories import Loader
 import tetra
-
 
 register = template.Library()
 
@@ -28,6 +30,50 @@ def include_source(file_name, start=None, end=None) -> SafeString:
             pass
     if error:
         raise error
+
+
+@register.simple_tag
+def md_include_source(filename, first_line_comment="") -> SafeString:
+    """Includes the source code of a file, rlative to the demo root directory.
+
+    It returns a SafeString version of the file content, surrounded with
+    MarkDown triple-quote syntax including language hint,
+    so you can include the result directly in a markdown file:
+
+    {% md_include_source "path/to/file.py" "# some title" %}
+
+    You can provide a title for the code block. If no title is provided, the filename
+    itself is used.
+    """
+    ext = os.path.splitext(filename)[1]
+    basename = os.path.basename(filename)
+    if basename == "__init__.py":
+        # "__init__.py" isn't very explanative.
+        # So use the containing directory name + basename
+        basename = (
+            f"{os.path.basename(os.path.dirname(filename))}/"
+            f"{os.path.basename(filename)}"
+        )
+    try:
+        with open(settings.BASE_DIR / filename) as f:
+            content = f.read()
+    except FileNotFoundError as e:
+        return mark_safe(f"File not found: {filename}")
+
+    language = ""
+    if ext == ".html":
+        language = "django"
+        first_line_comment = f"<!-- {first_line_comment or basename} -->\n"
+    elif ext == ".py":
+        language = "python"
+        first_line_comment = f"# {first_line_comment or basename}\n"
+    elif ext == ".css":
+        language = "css"
+        first_line_comment = f"// {first_line_comment or basename}\n"
+    elif ext == ".js":
+        language = "javascript"
+        first_line_comment = f"// {first_line_comment or basename}\n"
+    return mark_safe(f"```{language}\n{first_line_comment}{content}\n```")
 
 
 @register.simple_tag

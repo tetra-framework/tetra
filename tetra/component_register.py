@@ -170,7 +170,7 @@ def resolve_component(context, name: str) -> Component:
         Returns:
             The resolved component instance.
     """
-    template = context.template
+    template = context.template if context else None
     current_app = None
     dynamic = False
     if name.startswith("="):

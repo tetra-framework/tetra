@@ -2,7 +2,7 @@ from tetra import Component, public
 
 
 class DeleteRow(Component):
-    title = public("")
+    title: str = public("")
 
     def load(self, row):
         self.row = row
@@ -10,5 +10,5 @@ class DeleteRow(Component):
 
     @public(update=False)
     def delete_item(self):
-        # self.row.delete()
+        # self.row.delete()  # delete the item in the DB here!
         self.client._removeComponent()

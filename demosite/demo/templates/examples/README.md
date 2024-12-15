@@ -13,6 +13,5 @@ other_example/
   component.py
 ```
 
-* The `text.md` file contains the description of the example, with code sections. This is rendered ad HTML. It must contain a `title` as front matter. 
+* The `text.md` file contains the description of the example, with code sections. This is rendered as HTML. It must contain a `title` as front matter. You can include source files using `{% md_include_source 'path/to/file' 'optional_first_line_comment' %}`
 * The `demo.html` part, which is a django template, using the Tetra component, is rendered.
-* The `component` itself is located in the `demo/components/examples` library module. 

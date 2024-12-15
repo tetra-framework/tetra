@@ -32,7 +32,7 @@ from django.utils.html import escapejs, escape
 from django.utils.functional import SimpleLazyObject
 from django.http import JsonResponse, HttpRequest
 from django.urls import reverse
-from django.conf import settings
+from django.template.loaders.filesystem import Loader as FileSystemLoader
 
 from ..exceptions import ComponentError
 from ..utils import (
@@ -126,8 +126,6 @@ def make_template(cls) -> Template:
 
         template_file_name = f"{component_name}.html"
         # Load the template using a custom loader
-        from django.template.loaders.filesystem import Loader as FileSystemLoader
-
         try:
             engine = Engine(dirs=[module_path], app_dirs=False)
             loader = FileSystemLoader(engine)
@@ -208,15 +206,20 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
 
     @classmethod
     def get_source_location(cls) -> tuple[str, int, int]:
+        """Returns the filename line number, and line count of the component's source code."""
         filename = inspect.getsourcefile(cls)
         lines, start = inspect.getsourcelines(cls)
         return filename, start, len(lines)
 
     @classmethod
     def get_template_source_location(cls) -> tuple[str, int | None]:
+        """Returns the filename and startline number of the component's template,
+        if available."""
         filename, comp_start, com_end = cls.get_source_location()
         if not hasattr(cls, "template") or not cls.template:
-            return filename, None
+            # this is a directory style component
+            filename = cls._get_component_file_path_with_extension("html")
+            return filename, 0
         with open(filename, "r") as f:
             source = f.read()
         start = source.index(cls.template)
