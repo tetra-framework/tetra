@@ -58,6 +58,7 @@ def examples(request, slug: str = FIRST_SLUG) -> HttpResponse:
             ]
         )
         content = md.convert(f.read())
+        demo_html = ""
         # if there exists a demo, add it
         try:
             demo_html = render_to_string(
