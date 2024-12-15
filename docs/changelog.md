@@ -14,42 +14,44 @@ title: Changelog
 
 ## [0.1.2] - unreleased
 ### Added
-- improve demo site
-- add debug logging handler
-- improved component import error handling
-- allow component names to be dynamic
-- @v templatetag for "live" rendering of frontend variables
-- support Django models in TetraJSONEn/Decoder
-- experimental FormComponent and GenericObjectFormComponent support with form validation
-- definable extra context per component class
-- reset() method to FormComponent
-- push_url() and replace_url() component methods
-
-### Breaking changes
-- components should be referenced using PascalCase in templates now
-- replace **context with __all__ when passing all context in template tags
+- Improve demo site
+- Add debug logging handler
+- Improved component import error handling
+- Allow component names to be dynamic
+- `@v` templatetag for "live" rendering of frontend variables
+- Support Django models in TetraJSONEn/Decoder
+- Experimental FormComponent and GenericObjectFormComponent support with form validation
+- Definable extra context per component class
+- `reset()` method for FormComponent
+- `push_url()` and `replace_url()` component methods
 
 ### Changed
-- more verbose error when template is not enclosed in HTML tags
-- improved component import error handling
-- improve demo site
+- Components should be referenced using PascalCase in templates now
+- The library automatically is the containing module name now. Explicit "default = Library()" ist disregarded.
+- Components
+- Replace **context with __all__ when passing all context in template tags
+
+### Changed
+- More verbose error when template is not enclosed in HTML tags
+- Improved component import error handling
+- Improved demo site
 
 ## [0.1.1] - 2024-04-10
 ### Changed
 - **New package name: tetra**
-- add conditional block check within components
+- Add conditional block check within components
 - Update Alpine.js to v3.13.8
-- switch to pyproject.toml based python package
-- improve demo project: TodoList component,- add django-environ for keeping secrets, use whitenoise for staticfiles
-- give users more hints when no components are found
+- Switch to pyproject.toml based python package
+- Improve demo project: TodoList component,- add django-environ for keeping secrets, use whitenoise for staticfiles
+- Give users more hints when no components are found
 - MkDocs based documentation
-- format codebase with Black
+- Format codebase with Black
 
 ### Added
-- basic testing using pytest
+- Basic testing using pytest
 
 ### Fixed
-- correctly find components
+- Correctly find components
 
 ## [0.0.5] - 2022-06-13
 ### Changed
