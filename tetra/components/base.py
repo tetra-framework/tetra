@@ -124,6 +124,9 @@ def make_template(cls) -> Template:
         # if path is a file, get the containing directory
         # template_dir = os.path.dirname(module_path)
 
+        # FIXME: better use cls.get_template_source_location() for this!
+        # template_source = cls._read_component_file_with_extension("html")
+
         template_file_name = f"{component_name}.html"
         # Load the template using a custom loader
         try:
