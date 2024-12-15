@@ -214,7 +214,7 @@ Next, we define some CSS styles for the component as the multiline Python string
 
 ### Including the "to do" list in a page
 
-Finally, we include our `to_do_list` component into a pages template using the `@` component tag.
+Finally, we include our `ToDoList` component into a pages template using the `@` component tag.
 As we are doing this outside of a Tetra component we need to explicitly load the Tetra template tags with `{% load tetra %}`.
 
 ``` django
