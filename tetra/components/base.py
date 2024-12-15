@@ -145,7 +145,9 @@ def make_template(cls) -> Template:
                         component=cls,
                     )
                     # Compile the template
-                    template = Template(template_source, origin, template_file_name)
+                    template = Template(
+                        "{% load tetra %}" + template_source, origin, template_file_name
+                    )
                     break
                 except FileNotFoundError:
                     # If the file is not found, continue with the next source

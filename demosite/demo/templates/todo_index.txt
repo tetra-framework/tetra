@@ -1,3 +1,2 @@
-{% load tetra %}
 <h4>Your todo list:</h4>
 {% @ ToDoList / %}

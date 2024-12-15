@@ -1,4 +1,3 @@
-{% load tetra %}
 {% @ demo.Counter key="counter-1" %}
   {% @ demo.Counter key="counter-2" current_sum=sum %}
     {% @ demo.Counter key="counter-3" current_sum=sum / %}
