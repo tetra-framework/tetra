@@ -848,10 +848,10 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
 
     # _form_temp_files is an internal storage for temporary uploaded files' handles.
     # it is saved with the state, so it can survive page requests.
-    _form_temp_files: dict = {}
+    _form_temp_files: dict[str, TetraTemporaryUploadedFile] = {}
 
     def ready(self):
-        self._form = self.get_form(self._data())
+        self._form = self.get_form(data=self._data(), files=self._form_temp_files)
 
     def render(self, data=RenderData.INIT) -> SafeString:
         # Don't show form errors if form is not submitted yet
@@ -935,29 +935,6 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         self.form_submitted = True
 
         if self._form.is_valid():
-            # find all temporary files in the form, read them and write to the form fields
-            for (
-                field_name,
-                file,
-            ) in self._form_temp_files.items():  # type: str, TetraTemporaryUploadedFile
-                if file:
-                    storage = (
-                        self._form.fields[field_name].storage
-                        if hasattr(self._form.fields[field_name], "storage")
-                        else default_storage
-                    )
-                    upload_to = ""
-                    if hasattr(self._form, "instance"):
-                        # if ModelForm is used, we have an upload_to available in the ModelField
-                        upload_to = self._form.instance._meta.get_field(
-                            field_name
-                        ).upload_to
-                    # TODO: Add error checking and double check the form value is being set correctly
-                    new_path = storage.save(os.path.join(upload_to, file.name), file)
-                    # os.remove(file.temporary_file_path())
-                    # FIXME: the file is somehow not correctly attached to the form
-                    #  and gets not saved to the model instance...
-                    self._form.cleaned_data[field_name] = file
             self.form_valid(self._form)
         else:
             self.form_errors = self._form.errors.get_json_data(escape_html=True)
@@ -990,8 +967,9 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     def clear(self):
         """Clears the form data (sets all values to defaults) and renders the
         component."""
-        for attr in self._public_properties:
-            setattr(self, attr, getattr(self.__class__, attr))
+        # FIXME: this crashes Tetra
+        # for attr in self._public_properties:
+        #     setattr(self, attr, getattr(self.__class__, attr))
 
 
 class ModelFormComponent(FormComponent):

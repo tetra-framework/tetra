@@ -2,6 +2,7 @@ import json
 import datetime
 import os
 import tempfile
+import logging
 from typing import Any
 
 from dateutil import parser as datetime_parser
@@ -21,6 +22,8 @@ from django.conf import settings
 # FIXME: This is badly designed, and should be replaced with a non-hardcoded approach
 #  someday[tm]
 unsupported_modules = ["tetra", "wagtail.documents", "wagtail.images"]
+
+logger = logging.getLogger(__name__)
 
 
 def camel_case_to_underscore(value: str):
@@ -61,8 +64,12 @@ class TetraTemporaryUploadedFile(UploadedFile):
     """
     A file uploaded to a "persistent" temporary location, to be persisted
     across page refreshes.
-    The file can be copied to its destination when needed.
     """
+
+    # Django's original InMemoryUploadedFile does not support temporary file paths,
+    # and TemporaryUploadedFile uses a really temporary file path that is deleted when
+    # the page is closed. So we need a file that stays where it is until it is
+    # deleted manually or saved to its destination.
 
     def __init__(
         self,
@@ -75,20 +82,27 @@ class TetraTemporaryUploadedFile(UploadedFile):
     ):
         _, ext = os.path.splitext(name)
         if temp_name:
-            temp_file = open(
-                os.path.join(
-                    settings.MEDIA_ROOT, settings.TETRA_TEMP_UPLOAD_PATH, temp_name
-                ),
-                "rb",
-            )
-        else:
+            try:
+                temp_file = open(
+                    os.path.join(
+                        settings.MEDIA_ROOT,
+                        settings.TETRA_TEMP_UPLOAD_PATH,
+                        temp_name,
+                    ),
+                    "rb",
+                )
+            except FileNotFoundError as e:
+                # if the file does not exist, we just use a new temporary file
+                logger.warning(e)
+                temp_name = None
+
+        if not temp_name:
+            # create a temporary file that is NOT deleted after closing.
             temp_file = tempfile.NamedTemporaryFile(
                 suffix=".upload" + ext,
                 dir=os.path.join(settings.MEDIA_ROOT, settings.TETRA_TEMP_UPLOAD_PATH),
                 delete_on_close=False,
             )
-        # save the original name for later
-        self.orig_name = name
         super().__init__(
             temp_file, name, content_type, size, charset, content_type_extra
         )
