@@ -8,7 +8,6 @@ from enum import Enum
 import inspect
 import re
 import itertools
-import uuid
 from weakref import WeakKeyDictionary
 from functools import wraps
 from threading import local
@@ -16,7 +15,6 @@ from threading import local
 from django import forms
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import default_storage
-from django.core.files.uploadedfile import UploadedFile
 from django.db import models
 from django.db.models import QuerySet
 from django.forms import Form, modelform_factory, BaseForm, FileField
