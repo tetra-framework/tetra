@@ -52,6 +52,12 @@
             this[key] = data[key];
           }
         },
+        _setValueByName(name, value) {
+          let inputs = document.getElementsByName(name);
+          for (let i = 0; i < inputs.length; i++) {
+            inputs[i].value = value;
+          }
+        },
         _removeComponent() {
           this.$root.remove();
         },
@@ -289,8 +295,7 @@
       return JSON.stringify(obj, Tetra.jsonReplacer);
     },
     jsonDecode(s) {
-      var obj = JSON.parse(s, Tetra.jsonReviver);
-      return obj;
+      return JSON.parse(s, Tetra.jsonReviver);
     },
     debounce(func, wait, immediate) {
       var timeout;

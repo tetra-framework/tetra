@@ -56,6 +56,14 @@ const Tetra = {
           this[key] = data[key];
         }
       },
+      _setValueByName(name, value){
+        // sets value to the input field with the given name
+        // This is especially useful for emptying a file field, as the browser doesn't do that on page refreshes.
+        let inputs = document.getElementsByName(name);
+        for (let i = 0; i < inputs.length; i++) {
+          inputs[i].value = value;
+        }
+      },
       _removeComponent() {
         this.$root.remove();
       },

@@ -964,12 +964,23 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         self._form_temp_files[form_field] = file
         setattr(self, form_field, file)
 
-    def clear(self):
-        """Clears the form data (sets all values to defaults) and renders the
-        component."""
-        # FIXME: this crashes Tetra
-        # for attr in self._public_properties:
-        #     setattr(self, attr, getattr(self.__class__, attr))
+    def _reset(self):
+        """Resets all form fields. This internal method is not exposed as a public
+        API and can be called by load() too."""
+        self._form = self.get_form()
+        for field_name in self._form.base_fields:
+            if hasattr(self, field_name):
+                setattr(self, field_name, self._form[field_name].initial)
+            if isinstance(self._form.fields[field_name], FileField):
+                self.client._setValueByName(field_name, "")
+
+    @public
+    def reset(self):
+        """Convenience method to be called by the frontend to reset the form.
+
+        All values will be reset to the initial object values.
+        """
+        self._reset()
 
 
 class ModelFormComponent(FormComponent):
@@ -1166,22 +1177,6 @@ class GenericObjectFormComponent(ModelFormComponent):
                 if is_list
                 else self.object.__name__.lower()
             )
-
-    def _reset(self):
-        """Resets all form fields. This internal method is not exposed as a public
-        API and can be called by load() too."""
-        for field in self.get_form_class().base_fields:
-            if hasattr(self.object, field):
-                setattr(self, field, getattr(self.object, field))
-                # FIXME: does not work yet? include non-object fields like new_password1
-
-    @public
-    def reset(self):
-        """Convenience method to be called by the frontend to reset the form.
-
-        All values will be reset to the initial object values.
-        """
-        self._reset()
 
     def form_valid(self, form) -> None:
         self.object = form.save()
