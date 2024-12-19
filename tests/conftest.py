@@ -3,7 +3,9 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup
 from django.conf import settings
+from django.contrib.sessions.backends.cache import SessionStore
 from django.core.management import call_command
+from django.test import RequestFactory
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -13,6 +15,21 @@ def setup_django_environment():
     # Call your `tetrabuild` command before running tests - to make sure the Js
     # scripts and CSS files are built.
     call_command("tetrabuild")
+
+
+@pytest.fixture
+def request_with_session():
+    """Fixture to provide an HttpRequest with a session."""
+    from django.contrib.auth.models import AnonymousUser
+
+    factory = RequestFactory()
+    req = factory.get("/")  # Create a request object
+
+    req.session = SessionStore()
+    req.session.create()
+    req.user = AnonymousUser()
+
+    return req
 
 
 def pytest_configure():
@@ -25,6 +42,7 @@ def pytest_configure():
             "django.contrib.auth",
             "django.contrib.contenttypes",
             "django.contrib.staticfiles",
+            "django.contrib.sessions",
             "tests.main",
         ],
         MIDDLEWARE=[

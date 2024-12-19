@@ -1,5 +1,6 @@
+from django.contrib.sessions.backends.cache import SessionStore
 from django.http import HttpRequest
-from django.template import Template, Context
+from django.template import Template, Context, RequestContext
 
 
 def render_component_tag(request: HttpRequest, component_string, context=None):
@@ -13,7 +14,7 @@ def render_component_tag(request: HttpRequest, component_string, context=None):
         context: The context the template is rendered with. This is the outer context
             of the component
     """
-    ctx = Context()
+    ctx = RequestContext(request)
     if context:
         ctx.update(context)
     ctx.request = request
