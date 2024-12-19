@@ -753,6 +753,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         If `include_state` is True, it includes the component's state in the HTML.
         Otherwise, it only includes the component's attributes.
         """
+        self.ready()
         if include_state:
             self.client._updateHtml(self.render(data=RenderData.UPDATE))
         else:
