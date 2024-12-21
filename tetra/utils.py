@@ -248,11 +248,11 @@ class TetraJSONDecoder(json.JSONDecoder):
         raise json.JSONDecodeError(f"Cannot decode '{_type}' object from JSON.", obj, 0)
 
 
-def to_json(obj):
+def to_json(obj: Any) -> str:
     return json.dumps(obj, cls=TetraJSONEncoder)
 
 
-def from_json(s):
+def from_json(s: str) -> dict:
     return json.loads(s, cls=TetraJSONDecoder)
 
 
