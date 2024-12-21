@@ -189,13 +189,16 @@ class TetraJSONEncoder(json.JSONEncoder):
         # elif isinstance(obj, (decimal.Decimal, uuid.UUID, Promise)):
         #     return str(obj)
         elif isinstance(obj, models.Model):
-            # just return the object's pk, as it mostly will be used for lookups
-            return {
-                "__type": "model",
-                "model": f"{obj._meta.app_label}.{obj._meta.model_name}",
-                "value": obj.pk,
-            }
-            # return obj.pk
+            # FIXME: returning a Model does not work ATM. When using a form it
+            #  expects the pk of the object, and not the object itself. But when
+            #  displaying the object, it should not display just the pk...
+            # # just return the object's pk, as it mostly will be used for lookups
+            # return {
+            #     "__type": "model",
+            #     "model": f"{obj._meta.app_label}.{obj._meta.model_name}",
+            #     "value": obj.pk,
+            # }
+            return obj.pk
         # # FIXME: to_json does not work properly
         # elif hasattr(obj, "to_json"):
         #     return {"__type": "generic", "value": obj.to_json()}
