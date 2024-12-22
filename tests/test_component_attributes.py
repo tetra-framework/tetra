@@ -1,15 +1,11 @@
 import pytest
-from django.contrib.auth.models import AnonymousUser
-from django.contrib.sessions.backends.cache import SessionStore
-from django.test import RequestFactory
-
 from tetra.component_register import libraries
 from tests.conftest import extract_component
 from tests.main.helpers import render_component_tag
 
 
 @pytest.mark.django_db
-def test_basic_component_attribute_str(request_with_session):
+def test_simple_component_attribute_str(request_with_session):
     """Tests a simple component with a str attribute"""
 
     content = render_component_tag(
@@ -19,7 +15,7 @@ def test_basic_component_attribute_str(request_with_session):
 
 
 @pytest.mark.django_db
-def test_basic_component_attribute_int(request_with_session):
+def test_simple_component_attribute_int(request_with_session):
     """Tests a simple component with an int attribute"""
 
     content = render_component_tag(
@@ -34,7 +30,7 @@ def test_basic_component_attribute_int(request_with_session):
 
 
 @pytest.mark.django_db
-def test_basic_component_attribute_float(request_with_session):
+def test_simple_component_attribute_float(request_with_session):
     """Tests a simple component with a float attribute"""
 
     content = render_component_tag(
@@ -44,7 +40,7 @@ def test_basic_component_attribute_float(request_with_session):
 
 
 @pytest.mark.django_db
-def test_basic_component_attribute_list(request_with_session):
+def test_simple_component_attribute_list(request_with_session):
     """Tests a simple component with a list attribute"""
 
     content = render_component_tag(
@@ -58,7 +54,7 @@ def test_basic_component_attribute_list(request_with_session):
 
 
 @pytest.mark.django_db
-def test_basic_component_attribute_dict(request_with_session):
+def test_simple_component_attribute_dict(request_with_session):
     """Tests a simple component with a dict attribute"""
 
     content = render_component_tag(
@@ -72,7 +68,7 @@ def test_basic_component_attribute_dict(request_with_session):
 
 
 @pytest.mark.django_db
-def test_basic_component_attribute_set(request_with_session):
+def test_simple_component_attribute_set(request_with_session):
     """Tests a simple component with a set attribute"""
 
     content = render_component_tag(
@@ -86,12 +82,12 @@ def test_basic_component_attribute_set(request_with_session):
 
 
 @pytest.mark.django_db
-def test_basic_component_attribute_frozenset(request_with_session):
+def test_simple_component_attribute_frozenset(request_with_session):
     """Tests a simple component with a frozenset attribute"""
 
     content = render_component_tag(
         request_with_session,
-        "{% @ " "main.default.SimpleComponentWithAttributeFrozenset / %}",
+        "{% @ main.default.SimpleComponentWithAttributeFrozenset / %}",
     )
     assert (
         extract_component(content, innerHTML=True)
@@ -100,12 +96,12 @@ def test_basic_component_attribute_frozenset(request_with_session):
 
 
 @pytest.mark.django_db
-def test_basic_component_attribute_bool(request_with_session):
+def test_simple_component_attribute_bool(request_with_session):
     """Tests a simple component with a bool attribute"""
 
     content = render_component_tag(
         request_with_session,
-        "{% @ " "main.default.SimpleComponentWithAttributeBool / %}",
+        "{% @ main.default.SimpleComponentWithAttributeBool / %}",
     )
     assert extract_component(content, innerHTML=True) == """bool: True"""
     component = libraries["main"]["default"].components.get(
