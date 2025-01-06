@@ -25,7 +25,6 @@ def _component_method(
 ) -> HttpResponse:
     if not request.method == "POST":
         return HttpResponseBadRequest()
-
     try:
         Component = libraries[app_name][library_name].components[component_name]
     except KeyError:
@@ -65,7 +64,9 @@ def _component_method(
     request.tetra_components_used.add(Component)
 
     component = Component.from_state(data, request)
-
+    logger.debug(
+        f"Calling component method {component.__class__.__name__}.{method_name}()"
+    )
     return component._call_public_method(
         request, method_name, data["children"], *data["args"]
     )
