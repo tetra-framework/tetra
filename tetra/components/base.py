@@ -14,7 +14,6 @@ from threading import local
 
 from django import forms
 from django.core.exceptions import ImproperlyConfigured
-from django.core.files.storage import default_storage
 from django.db import models
 from django.db.models import QuerySet
 from django.forms import Form, modelform_factory, BaseForm, FileField
@@ -876,9 +875,6 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     def get_form(self, data=None, files=None, **kwargs):
         """Returns a new form instance, initialized with data from the component
         attributes."""
-        if data is None:
-            data = self._data()
-
         cls = self.get_form_class()
         form = cls(data=data, files=files, **kwargs)
         self._add_alpine_models_to_fields(form)
