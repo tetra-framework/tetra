@@ -500,6 +500,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         "_excluded_load_props_from_saved_state",
         "_leaded_from_state",
         "_leaded_from_state_data",
+        "__abstract__",
     ]
     _excluded_load_props_from_saved_state = []
     _loaded_children_state = None
@@ -850,6 +851,9 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     # _form_temp_files is an internal storage for temporary uploaded files' handles.
     # it is saved with the state, so it can survive page requests.
     _form_temp_files: dict[str, TetraTemporaryUploadedFile] = {}
+    _excluded_props_from_saved_state = Component._excluded_props_from_saved_state + [
+        "_form_temp_files"
+    ]
 
     def ready(self):
         self._form = self.get_form(data=self._data(), files=self._form_temp_files)
