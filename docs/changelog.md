@@ -26,12 +26,10 @@ title: Changelog
 - `push_url()` and `replace_url()` component methods
 
 ### Changed
+- **BREAKING CHANGE**: registering libraries is completely different. Libraries are directories and automatically found. The library automatically is the containing module name now. Explicit "default = Library()" ist disregarded.
 - Components should be referenced using PascalCase in templates now
-- The library automatically is the containing module name now. Explicit "default = Library()" ist disregarded.
 - Components
 - Replace **context with __all__ when passing all context in template tags
-
-### Changed
 - More verbose error when template is not enclosed in HTML tags
 - Improved component import error handling
 - Improved demo site

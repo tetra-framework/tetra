@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 
 from bs4 import BeautifulSoup
+from django.apps import apps
 from django.conf import settings
 from django.contrib.sessions.backends.cache import SessionStore
 from django.core.management import call_command
@@ -32,6 +33,11 @@ def request_with_session():
     return req
 
 
+@pytest.fixture
+def current_app():
+    return apps.get_app_config("main")
+
+
 def pytest_configure():
     settings.configure(
         BASE_DIR=BASE_DIR,
@@ -44,6 +50,7 @@ def pytest_configure():
             "django.contrib.staticfiles",
             "django.contrib.sessions",
             "tests.main",
+            "tests.another_app",
         ],
         MIDDLEWARE=[
             "django.middleware.security.SecurityMiddleware",

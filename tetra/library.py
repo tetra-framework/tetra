@@ -1,28 +1,49 @@
+import logging
 import os
 import shutil
 import subprocess
 import json
 
-from django.apps import AppConfig
+from django.apps import AppConfig, apps
 from django.conf import settings
 from django.templatetags.static import static
 from django.utils.functional import cached_property
 
+from .components.base import BasicComponentMetaClass
 from .exceptions import LibraryError
 from .utils import camel_case_to_underscore
 
+logger = logging.getLogger(__name__)
 
-class Library:
+
+class LibraryMetaClass(type):
+    # makes sure that library names are unique per app
+    _instances = {}
+
+    def __call__(cls, name, app, *args, **kwargs):
+        # if Library is called with an app label instead of an AppConfig, correct that
+        if type(app) is str:
+            app = apps.get_app_config(app)
+        key = (name, app.label)
+        if key not in cls._instances:
+            cls._instances[key] = super().__call__(name, app, *args, **kwargs)
+        return cls._instances[key]
+
+
+class Library(metaclass=LibraryMetaClass):
+
     def __init__(
         self,
         name: str,
         app: AppConfig,
         path: str = "",
     ):
-        self.components = {}
-        self.name = name
-        self.path = path
-        self.app: AppConfig = app
+        # Initialize only if this is a new instance
+        if not hasattr(self, "components"):
+            self.components = {}
+            self.name = name
+            self.path = path
+            self.app: AppConfig = app
 
     def __str__(self):
         return self.name
@@ -76,16 +97,25 @@ class Library:
             styles_filename = f.read()
         return static(os.path.join(self.app.label, "tetra", self.name, styles_filename))
 
-    def register(self, component=None, name=None):
+    def register(self, component: BasicComponentMetaClass = None, name=None):
         if not name:
             name = camel_case_to_underscore(component.__name__)
 
-        def dec(cls):
+        def dec(cls: BasicComponentMetaClass):
             if hasattr(cls, "_library") and cls._library:
-                raise LibraryError(
-                    f"Component {component.__name__} is already registered to "
-                    f"library {cls._library}."
-                )
+                if cls._library is not self:
+                    raise LibraryError(
+                        f"Error registering component '{component.__name__}' to "
+                        f"library {self.display_name}, at it is "
+                        f"already registered to library {cls._library.display_name}."
+                    )
+                else:
+                    logger.warning(
+                        f"Component {component.__name__} is already "
+                        f"registered to library {cls._library}."
+                        f"Ignoring second registration."
+                    )
+                    return cls
             component._library = self
             component._name = name
             self.components[name] = component

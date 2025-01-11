@@ -4,7 +4,7 @@ title: Libraries
 
 # Component Libraries
 
-Every Tetra component belongs to a component library. Your component libraries are found automatically as packages within `<yourapp>.components` (or, alternatively, `<yourapp>.tetra_components`):
+Every Tetra component belongs to a component library. Basically, libraries are the modules within `<myapp>.components` (or, alternatively, `<myapp>.tetra_components`) where components are found automatically:
 
 ```
 myapp
@@ -14,9 +14,30 @@ myapp
 │      ├──ui
 ```
 
-The first module layer within `components` are libraries. It doesn't matter if you create libraries as file modules, or packages, both are equally used, with one difference: package modules allow components-as-directories, see below.
+With other words: The first module layer within `myapp.components` are libraries. It doesn't matter if you create libraries as file modules, or packages, both are equally used, with one difference: package modules allow [Directory style components](#directory-style-components), see below.
 
-When resolving a component, and you don't specify a library in your component tag, Tetra assumes you put the component in the `default` library. However, you can have infinite libraries. This is a good way to organise components into related sets. Each library's JS and CSS is packaged together. As long as components are registered to a library and that library instance is available in `<yourapp>.components` or `<yourapp>.tetra_components` they will be available to use from templates, and within other components.
+When resolving a component, and you don't specify a library in your *component tag*, Tetra assumes you put the component in the `default` library. However, you can have infinite libraries. This is a good way to organise components into related sets. Each library's Javascript and CSS is packaged together. As long as components are registered to a library and that library instance is available in `<myapp>.components` or `<myapp>.tetra_components` they will be available to use from templates, and within other components.
+
+While it is not necessary, it is also possible to create libraries manually (e.g. in your testing files). You have to provide a `name` and an `app`, and if the same library was already registered, it is not recreated - the library with that name is reused, so name and app are unique together within libraries.
+
+```python
+from tetra import Library, Component
+from django.apps import apps
+
+class FooComponent(Component):
+    template = "<div>foo!</div>"
+
+# create a new library named "default" for the "main" app
+default = Library(name="default", app=apps.get_app_config("main"))
+
+# register the FooComponent to the default library
+default.register(FooComponent)
+
+# if you create a library twice, or you use a library that was already created automatically by
+# creating a "default" folder in your `<myapp>.components` directory, that library is reused.
+default_double = Library("default", "main")
+assert default_double is default
+```
 
 #### Directory style components
 A component is created as a subclass of `BasicComponent` or `Component` and registered to a library by placing it into the library package. Let's see how the directory structure would look like for a `MyCalendar` component:
@@ -36,7 +57,7 @@ The `__init__.py` and `my_calendar.html` template are mandatory, css/js and othe
 
 #### Inline components
 
-There is another (shortcut) way of creating components, especially for simple building bricks (like `BasicComponents` without Js).
+There is another (shortcut) way of creating components, especially for simple building bricks (like `BasicComponents` without Js, CSS, and with small HTML templates).
 Create a component class and place it directly into a library module. You can create multiple components directly in the module. The simplest form is directly in the `default` library:
 ``` python
 #myapp/components/default.py
