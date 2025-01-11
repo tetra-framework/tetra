@@ -855,7 +855,8 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     # it is saved with the state, so it can survive page requests.
     _form_temp_files: dict[str, TetraTemporaryUploadedFile] = {}
     _excluded_props_from_saved_state = Component._excluded_props_from_saved_state + [
-        "_form_temp_files"
+        "_form_temp_files",
+        "_form",
     ]
 
     def ready(self):
