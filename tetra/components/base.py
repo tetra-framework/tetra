@@ -633,7 +633,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         """
         self._load_args = args
         self._load_kwargs = kwargs
-        # prevent properties set in load() to be save with the state
+        # prevent properties set in load() to be saved with the state
         tracing_component_load[self] = set()
         try:
             self.load(*args, **kwargs)
