@@ -242,7 +242,7 @@ def from_json(s: str) -> dict:
     return json.loads(s, cls=TetraJSONDecoder)
 
 
-def isclassmethod(method):
+def isclassmethod(method) -> bool:
     bound_to = getattr(method, "__self__", None)
     if not isinstance(bound_to, type):
         # must be bound to a class
