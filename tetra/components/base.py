@@ -302,7 +302,16 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         return component.render()
 
     def _call_load(self, *args, **kwargs) -> None:
+        self._pre_load(*args, **kwargs)
         self.load(*args, **kwargs)
+
+    def _pre_load(self, *args, **kwargs):
+        """Placeholder for code that should be run right before load() is called.
+        This can be used for inheriting base classes to auto-load some data,
+        but users don't have to call super().load() from their load() implementation
+        each time.
+        """
+        pass
 
     def load(self, *args, **kwargs) -> None:
         """Override this method to load the component's data, e.g. from the database.
@@ -636,6 +645,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         # prevent properties set in load() to be saved with the state
         tracing_component_load[self] = set()
         try:
+            self._pre_load(*args, **kwargs)
             self.load(*args, **kwargs)
             props = tracing_component_load[self]
         finally:
@@ -753,7 +763,6 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         If `include_state` is True, it includes the component's state in the HTML.
         Otherwise, it only includes the component's attributes.
         """
-        self.ready()
         if include_state:
             self.client._updateHtml(self.render(data=RenderData.UPDATE))
         else:
@@ -815,8 +824,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
 class FormComponentMetaClass(ComponentMetaClass):
     def __new__(cls, name, bases, dct):
-        # iter through form fields, and set a public attribute to the component
-        # for each field
+        # iter through form fields if there is a static form_class, and set a public
+        # attribute to the component for each field
 
         form_class = dct.get("form_class", None)
         dct.setdefault("__annotations__", {})
@@ -885,34 +894,38 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         self._add_alpine_models_to_fields(form)
         return form
 
-    def _add_alpine_models_to_fields(self, form) -> None:
+    def _add_alpine_models_to_fields(self, form, prefix: str = None) -> None:
         """Connects the form's fields to the Tetra backend using x-model attributes."""
         for field_name, field in form.fields.items():
-            if field_name in self._public_properties:
-                if isinstance(field, FileField):
+            if isinstance(field, FileField):
+                form.fields[field_name].widget.attrs.update({"@change": "_uploadFile"})
+                if hasattr(field, "temp_file"):
+                    # TODO: Check if we need to send back the temp file name and which attribute to use, might not be necessary
                     form.fields[field_name].widget.attrs.update(
-                        {"@change": "_uploadFile"}
+                        {"data-tetra-temp-file": field.temp_file}
                     )
-                    if hasattr(field, "temp_file"):
-                        # TODO: Check if we need to send back the temp file name and which attribute to use, might not be necessary
-                        form.fields[field_name].widget.attrs.update(
-                            {"data-tetra-temp-file": field.temp_file}
-                        )
-                else:
-                    # form.fields[field_name].initial = getattr(self, field_name)
-                    form.fields[field_name].widget.attrs.update({"x-model": field_name})
+            else:
+                if prefix is None:
+                    prefix = ""
+                if prefix and prefix[:-1] != ".":
+                    prefix += "."
+                # form.fields[field_name].initial = getattr(self, field_name)
+                form.fields[field_name].widget.attrs.update(
+                    {"x-model": prefix + field_name}
+                )
 
     @public
     def validate(self) -> None:
         """Validates the data using the form defined in `form_class`, and re-renders
         the component, without saving the form."""
-        if self._form.is_valid():
-            pass
-        else:
-            self.form_errors = self._form.errors.get_json_data(escape_html=True)
-            # set the possibly cleaned values back to the component's attributes
-            for attr, value in self._form.cleaned_data.items():
-                setattr(self, attr, value)
+        if self._form:
+            if self._form.is_valid():
+                pass
+            else:
+                self.form_errors = self._form.errors.get_json_data(escape_html=True)
+                # set the possibly cleaned values back to the component's attributes
+                for attr, value in self._form.cleaned_data.items():
+                    setattr(self, attr, value)
 
     def form_valid(self, form: BaseForm) -> None:
         """This method is called when the form data is valid.
@@ -946,10 +959,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
             self.form_errors = self._form.errors.get_json_data(escape_html=True)
             # set the possibly cleaned values back to the component's attributes
             for attr, value in self._form.cleaned_data.items():
-                if type(value) in skip_check:
-                    setattr(self, attr, value)
-                else:
-                    setattr(self, attr, TetraJSONEncoder().default(value))
+                setattr(self, attr, value)
             self.form_invalid(self._form)
 
     @public
@@ -971,14 +981,34 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         setattr(self, form_field, file)
 
     def _reset(self):
-        """Resets all form fields. This internal method is not exposed as a public
-        API and can be called by load() too."""
+        """Internally resets all form fields. This internal method is not exposed as a
+        public API and can be called by load() too. For client side calls use reset() instead.
+        """
+
+        # first, clear all temporary files saved in the component
+        try:
+            for file_name, file in self._form_temp_files.items():
+                self._form_temp_files.pop(file_name)
+                os.remove(file.name)
+        except FileNotFoundError:
+            # ignore any errors during file removal, file might be already deleted.
+            pass
+
+        # second, get a new form without any data, with just initial values of the
+        # Form class
         self._form = self.get_form()
-        for field_name in self._form.base_fields:
-            if hasattr(self, field_name):
-                setattr(self, field_name, self._form[field_name].initial)
-            if isinstance(self._form.fields[field_name], FileField):
-                self.client._setValueByName(field_name, "")
+        for field_name in self._public_properties:  # noqa
+            if field_name in self._form.fields:
+                field = self._form.fields[field_name]
+                initial = field.to_python(field.initial)
+                setattr(self, field_name, initial)
+                if isinstance(field, FileField):
+                    # we additionally have to set the initial value of FileFields to an empty string
+                    # as the browser doesn't reset the input field
+                    self.client._setValueByName(field_name, "")
+
+        # third, call load() again to apply the initial values meant by the component
+        self._recall_load()
 
     @public
     def reset(self):
@@ -990,28 +1020,85 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
 
 
 class ModelFormComponent(FormComponent):
+    """
+    Component that can render a Model object using a ModelForm, load and
+    save the given object, and validate it. This is basically the equivalent of the
+    UpdateView/CreateView class for views in Django.
+
+    Attributes:
+        form_class (type(ModelForm)): the ModelForm class to use
+        model (type(models.Model)): the Model class to use, as alternative to form_class
+        fields (list[str]|str): the fields to use in the form, as list, or "__all__" to use all fields
+        _context_object_name (str): the name of the context object in the template (TODO)
+    """
+
     __abstract__ = True
     form_class: type(forms.ModelForm) = None
     model: type(models.Model) = None
-    fields: list[str] = "__all__"
+    object: models.Model = None
+    fields: list[str] = []
+    _context_object_name = None  # TODO
+    _excluded_props_from_saved_state = (
+        FormComponent._excluded_props_from_saved_state
+        + ["_context_object_name", "fields", "object"]
+    )
 
     def get_form_class(self):
         """Returns the form class to use in this component."""
-        if self.form_class:
+
+        # if there is an explicit form_class defined, use it
+        if self.form_class is not None:
             return self.form_class
-        if self.model:
+        elif self.model and self.fields:
             return modelform_factory(model=self.model, fields=self.fields)
-        raise ImproperlyConfigured(
-            f"'{self.__class__.__name__}' must either define 'form_class' "
-            "or 'model', or override 'get_form_class()'"
-        )
+        else:
+            raise ImproperlyConfigured(
+                f"'{self.__class__.__name__}' must either define 'form_class' "
+                "or both 'object' and '_fields', or override 'get_form_class()'"
+            )
+
+    def _pre_load(self, object: models.Model = None, *args, **kwargs) -> None:
+        # TODO: do this in a "_pre_load()" method before load() to prevent users from
+        #  needing to explicitly call super().load() in inheriting methods
+        if not object:
+            object = self.model()
+        self.object = object
+
+    def get_form(self, data=None, files=None, **kwargs):
+        """Returns a form, bound to given model instance."""
+        cls = self.get_form_class()
+        form = cls(data=data, files=files, instance=self.object, **kwargs)
+        self._add_alpine_models_to_fields(form, prefix="object")
+        return form
+
+    # def get_context_data(self, **kwargs):
+    #     """Insert the form into the context dict."""
+    #     if "form" not in kwargs:
+    #         kwargs["form"] = self.get_form()
+    #     return super().get_context_data(**kwargs)
+
+    def _get_context_object_name(self, is_list=False):
+        """
+        Returns a descriptive name to use in the context in addition to the
+        default 'object'/'object_list'.
+        """
+        if self._context_object_name is not None:
+            return self._context_object_name
+
+        elif self.object is not None:
+            return (
+                f"{self.object.__name__.lower()}_list"
+                if is_list
+                else self.object.__name__.lower()
+            )
 
     def form_valid(self, form) -> None:
         """Overrides the form_valid method to save the ModelForm data to the
         database.
 
         Override This method if you need custom functionality."""
-        form.save()
+        self.object = form.save()
+        self._reset()
 
 
 class DependencyFormMixin:

@@ -66,18 +66,18 @@ class PersonForm(ModelForm):
 
 ```python
 # components.py
-from tetra.components.base import GenericObjectFormComponent, public
+from tetra.components.base import ModelFormComponent, public
 from .models import Person
 from .forms import PersonForm
 
 
-class PersonEditor(GenericObjectFormComponent):
+class PersonEditor(ModelFormComponent):
     form_class = PersonForm
     object: Person = None
 
     # define other attributes as you need them
     is_editing = public(False)
-    
+
     template = """..."""
 ```
 With a `GenericObjectFormComponent`, you just have to define the `form_class` and object, everything else does Tetra for you, like Django's `UpdateView`.

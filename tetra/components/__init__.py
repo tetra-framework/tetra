@@ -3,9 +3,8 @@ from .base import (
     Component,
     FormComponent,
     public,
-    GenericObjectFormComponent,
-    DependencyFormMixin,
     ModelFormComponent,
+    DependencyFormMixin,
 )
 from ..exceptions import ComponentError, ComponentNotFound
 
@@ -14,9 +13,8 @@ __all__ = [
     ComponentNotFound,
     BasicComponent,
     Component,
-    GenericObjectFormComponent,
+    ModelFormComponent,
     public,
     DependencyFormMixin,
     FormComponent,
-    ModelFormComponent,
 ]

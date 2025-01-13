@@ -19,8 +19,8 @@ title: Changelog
 - Improved component import error handling
 - Allow component names to be dynamic
 - `@v` templatetag for "live" rendering of frontend variables
-- Support Django models in TetraJSONEn/Decoder
-- Experimental FormComponent and GenericObjectFormComponent support with form validation
+- Better support for Django models
+- Experimental FormComponent and ModelFormComponent support with form validation
 - Definable extra context per component class
 - `reset()` method for FormComponent
 - `push_url()` and `replace_url()` component methods

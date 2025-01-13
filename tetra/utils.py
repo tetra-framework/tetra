@@ -6,7 +6,6 @@ import logging
 from typing import Any
 
 from dateutil import parser as datetime_parser
-from django.apps import apps
 from django.core.files.uploadedfile import UploadedFile
 from django.core.files.uploadhandler import FileUploadHandler
 from django.db import models
@@ -157,7 +156,10 @@ class PersistentTemporaryFileUploadHandler(FileUploadHandler):
 class TetraJSONEncoder(json.JSONEncoder):
     """
     JSONEncoder subclass that knows how to encode date/times and sets.
-    Based on DjangoJSONEncoder
+    Based on DjangoJSONEncoder.
+
+    Encodes all kind of objects into JSON which will then be used in the client side
+    Javascript code.
     """
 
     def default(self, obj: Any) -> str | dict | int | list:
@@ -189,29 +191,13 @@ class TetraJSONEncoder(json.JSONEncoder):
         # elif isinstance(obj, (decimal.Decimal, uuid.UUID, Promise)):
         #     return str(obj)
         elif isinstance(obj, models.Model):
-            # FIXME: returning a Model does not work ATM. When using a form it
-            #  expects the pk of the object, and not the object itself. But when
-            #  displaying the object, it should not display just the pk...
-            # # just return the object's pk, as it mostly will be used for lookups
-            # return {
-            #     "__type": "model",
-            #     "model": f"{obj._meta.app_label}.{obj._meta.model_name}",
-            #     "value": obj.pk,
-            # }
+            # just return the object's pk, as it mostly will be used for lookups
             return obj.pk
         # # FIXME: to_json does not work properly
         # elif hasattr(obj, "to_json"):
         #     return {"__type": "generic", "value": obj.to_json()}
         elif isinstance(obj, TetraTemporaryUploadedFile):
-            return {
-                "__type": "file",
-                "value": dict(
-                    name=obj.name,
-                    size=obj.size,
-                    content_type=obj.content_type,
-                    temp_path=obj.temporary_file_path(),
-                ),
-            }
+            return obj.name
         else:
             # as last resort, try to serialize into str
             try:
@@ -223,6 +209,9 @@ class TetraJSONEncoder(json.JSONEncoder):
 
 
 class TetraJSONDecoder(json.JSONDecoder):
+    """Decoder that decodes JSON from client side Javascript code into Python
+    objects."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(object_hook=self.object_hook, *args, **kwargs)
 
@@ -234,9 +223,6 @@ class TetraJSONDecoder(json.JSONDecoder):
             return datetime_parser.parse(obj["value"])
         elif _type == "set":
             return set(obj["value"])
-        elif _type == "model":
-            model = apps.get_model(obj["model"])
-            return model.objects.get(pk=obj["value"])
         elif _type == "file":
             return TetraTemporaryUploadedFile(
                 name=obj["value"]["name"],
