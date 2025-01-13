@@ -1,23 +1,26 @@
+import gzip
+import base64
+import pickle
 from copy import copy
-from typing import Any
+from typing import Any, TYPE_CHECKING
+from io import BytesIO
 
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-import gzip
-import base64
 from django.conf import settings
 from django.db.models.query import QuerySet
 from django.db.models import Model
-from django.forms import BaseForm
 from django.template import RequestContext, engines
 from django.template.base import Origin
 from django.template.loader_tags import BlockNode
-import pickle
-from io import BytesIO
+from django.utils.functional import SimpleLazyObject, LazyObject
+
 from .utils import isclassmethod, TetraTemporaryUploadedFile
 from .templates import InlineOrigin
-from django.utils.functional import SimpleLazyObject, LazyObject
+
+if TYPE_CHECKING:
+    from tetra.components import Component
 
 
 class StateException(Exception):
@@ -71,6 +74,10 @@ def resolve_lazy_object(lazy_object: Model | LazyObject) -> Model:
     return lazy_object
 
 
+# ----------- Picklers ------------
+# see https://tetra.readthedocs.io/en/stable/state-security/
+
+
 @register_pickler(QuerySet, b"QuerySet")
 class PickleQuerySet(Pickler):
     @staticmethod
@@ -115,7 +122,7 @@ class PickleModel(Pickler):
 class PicklePersistentTemporaryUploadedFile(Pickler):
     @staticmethod
     def pickle(file: TetraTemporaryUploadedFile) -> bytes | None:
-        # save file to a temporary location, and return a reference to it
+        # return a reference to file's temporary location
         value = pickle.dumps(
             {
                 "name": file.name,
@@ -195,7 +202,7 @@ skip_check = {
 
 
 class StatePickler(pickle.Pickler):
-    def persistent_id(self, obj):
+    def persistent_id(self, obj) -> bytes | None:
         if type(obj) in skip_check:
             return None
 
@@ -225,7 +232,7 @@ class StatePickler(pickle.Pickler):
 
 
 class StateUnpickler(pickle.Unpickler):
-    def persistent_load(self, persistent_id):
+    def persistent_load(self, persistent_id: bytes | None) -> Any | None:
         prefix, data = persistent_id.split(b":", 1)
         if prefix in picklers_by_prefix:
             pickler = picklers_by_prefix[prefix]
@@ -233,13 +240,13 @@ class StateUnpickler(pickle.Unpickler):
         return None
 
 
-def pickle_state(obj):
+def pickle_state(obj) -> bytes:
     out = BytesIO()
     StatePickler(out).dump(obj)
     return out.getvalue()
 
 
-def unpickle_state(data):
+def unpickle_state(data) -> Any | None:
     return StateUnpickler(BytesIO(data)).load()
 
 
@@ -314,7 +321,9 @@ def encode_component(component) -> str:
     return state_token
 
 
-def decode_component(state_token, request) -> Any:
+def decode_component(state_token, request) -> "Component":
     fernet = _get_fernet_for_request(request)
-    state = unpickle_state(gzip.decompress(fernet.decrypt(state_token.encode())))
-    return state
+    component: Component = unpickle_state(
+        gzip.decompress(fernet.decrypt(state_token.encode()))
+    )
+    return component
