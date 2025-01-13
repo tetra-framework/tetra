@@ -823,9 +823,9 @@ class FormComponentMetaClass(ComponentMetaClass):
 
         if form_class:
             for field_name, field in form_class.base_fields.items():
-                # dct[field_name] = public(form_class.base_fields[field_name].initial)
-                dct[field_name] = public(field.initial)
-                python_type = type(field.to_python(None))
+                initial = field.to_python(field.initial)
+                dct[field_name] = public(initial)
+                python_type = type(initial)
                 dct["__annotations__"][field_name] = python_type
         return super().__new__(cls, name, bases, dct)
 
