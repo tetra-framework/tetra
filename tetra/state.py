@@ -1,5 +1,6 @@
 import gzip
 import base64
+import logging
 import pickle
 from copy import copy
 from typing import Any, TYPE_CHECKING
@@ -27,6 +28,7 @@ class StateException(Exception):
     pass
 
 
+logger = logging.getLogger(__name__)
 picklers_by_type = {}
 picklers_by_prefix = {}
 
@@ -312,9 +314,10 @@ def encode_component(component) -> str:
         if not (key.startswith("_") or isclassmethod(getattr(component, key))):
             context.pop(key, None)
     component._context = context
-
+    logger.debug(
+        f"State before encoding: {component._data()}",
+    )
     pickled_component = pickle_state(component)
-
     component._context = original_context
 
     state_token = fernet.encrypt(gzip.compress(pickled_component)).decode()
@@ -325,5 +328,8 @@ def decode_component(state_token, request) -> "Component":
     fernet = _get_fernet_for_request(request)
     component: Component = unpickle_state(
         gzip.decompress(fernet.decrypt(state_token.encode()))
+    )
+    logger.debug(
+        f"State after decoding:  {component._data()}",
     )
     return component
