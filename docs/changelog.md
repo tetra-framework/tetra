@@ -14,6 +14,7 @@ title: Changelog
 
 ## [0.1.2] - unreleased
 ### Added
+- DynamicFormMixin for dynamically updatable FormComponents
 - Improve demo site
 - Add debug logging handler
 - Improved component import error handling

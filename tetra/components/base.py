@@ -1101,66 +1101,77 @@ class ModelFormComponent(FormComponent):
         self._reset()
 
 
-class DependencyFormMixin:
+class DynamicFormMixin:
     """
-    A mixin class that provides functionality for updating dependent fields based on
-    parent fields in Tetra components
+    A mixin class that provides functionality for dynamically updating fields'
+    attributes, based on other fields or circumstances.
 
-    This class uses a declarative dependency dictionary (`field_dependencies`) to
-    define the relationship between child and parent fields, and some helper methods
-    to update child fields based on parent field changes.
+    This class checks for the existence of special methods in your component,
+    and calls them to get the current `queryset`, `hidden`, `disabled` and `required`
+    status for the corresponding field.
+    Use this class as a mixin for a FormComponent and define methods in it according
+    to a specific scheme, and create public method that is called when trigger fields
+    are changed.
 
     Usage:
-        Inherit a FormComponent from this class, and add field_dependencies to it.
-        You should now call `self.update_dependent_fields` method whenever a parent
-        field changes its value, using the `@public.watch("field_name")` decorator:
+        Create a method that is called whenever a parent field changes its value, using
+        the `@public.watch("field_name")` decorator. The method itself could be
+        empty. It is just needed as trigger to rerender the form.
 
         ```python
-        field_dependencies = {"model": "make"}
+
 
         @þublic.watch("make")
-        def make_changed(self, value, old_value, attr) -> None:
-            self.update_field_queryset("model", CarModel.objects.filter(make=value))
+        def make_changed_dummy(self, value, old_value, attr) -> None:
+            pass
 
+        def get_engine_hidden(self) -> bool:
             # hide engine_type if make is Tesla
-            if value == Make.objects.get(name="Tesla")
-                self._form.fields["engine_type"].visible = True
+            return self.make == Make.objects.get(name="Tesla")
         ```
 
-        It is possible that you call this method in `load()` too, if you e.g. prefill
-        the parent field and want to have its dependent fields updated accordingly.
-
-    Attributes:
-        field_dependencies: A dictionary that maps child field names to their
-        corresponding parent. The dict keys are the child field names, and the dict
-        values are the parents that they depend on.
-        Examples:
-            field_dependencies = {
-              "model": "make",  # model depends on make
-              "year": "make"  # year depends on make
-            }
+    The following methods can be optionally defined in your component, and will get
+    called in time to determine the fields' attributes before rendering.
 
     Methods:
-        get_<field_name>_queryset(): Returns the queryset for the given field.
+        get_<field_name>_queryset(): Returns the current queryset for the given field.
+        get_<field_name>_disabled(): whether the given field should be
+            disabled, depending on the values of other fields.
+        get_<field_name>_hidden(): returns whether the given field should be
+            hidden, depending on the values of other fields.
+        get_<field_name>_required(): returns whether the given field is
+            required, depending on the values of other fields.
+
+        All these methods are instance methods (with a `self` parameter)
+        and should return a boolean value.
+
     """
 
-    field_dependencies: dict[str, str | tuple] = {}
-
-    def __init__(self, *args, **kwargs):
-        if not self.field_dependencies:
-            raise AttributeError(
-                f"{self.__class__.__name__} needs a 'field_dependencies' attribute."
-            )
-        super().__init__(*args, **kwargs)
-
     def get_form(self, *args, **kwargs):
-        """Updates querysets of dependent fields when the form is created."""
+        """Updates dynamic fields when the form is created."""
+
+        # get form and modify fields according to saved field state
         form = super().get_form(*args, **kwargs)
-        for field_name, parent_name in self.field_dependencies.items():
-            if getattr(self, parent_name, None):
-                get_queryset = getattr(self, f"get_{field_name}_queryset", None)
-                if get_queryset:
-                    form.fields[field_name].queryset = get_queryset()
+        # parents = self.field_dependencies.values()
+        for field_name, field in form.fields.items():
+
+            update_method = getattr(self, f"get_{field_name}_disabled", None)
+            if update_method:
+                form.fields[field_name].disabled = update_method()
+
+            update_method = getattr(self, f"get_{field_name}_hidden", None)
+            if update_method:
+                form.fields[field_name].widget.attrs["hidden"] = update_method()
+
+            update_method = getattr(self, f"get_{field_name}_required", None)
+            if update_method:
+                form.fields[field_name].required = update_method()
+
+            # check if there is a dynamic queryset
+            update_method = getattr(self, f"get_{field_name}_queryset", None)
+            if update_method:
+                form.fields[field_name].queryset = update_method()
+
         return form
 
     # def _get_queryset_for_field(self, field_name: str) -> QuerySet:

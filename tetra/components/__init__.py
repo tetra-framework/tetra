@@ -4,7 +4,7 @@ from .base import (
     FormComponent,
     public,
     ModelFormComponent,
-    DependencyFormMixin,
+    DynamicFormMixin,
 )
 from ..exceptions import ComponentError, ComponentNotFound
 
@@ -15,6 +15,6 @@ __all__ = [
     Component,
     ModelFormComponent,
     public,
-    DependencyFormMixin,
+    DynamicFormMixin,
     FormComponent,
 ]

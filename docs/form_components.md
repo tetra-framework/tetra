@@ -159,3 +159,70 @@ Tetra provides a solution to that problem within FormComponent. When you use a F
 If you want to change the location where Tetra uploads files temporarily, change the [TETRA_TEMP_UPLOAD_PATH](settings.md#tetra_temp_upload_path) setting.
 
 Just keep in mind, that the file is already **uploaded at the `@change` event** of the file field.
+
+
+### Dynamically dependent fields
+
+It is common that fields' values change dependent on another field's value. This is a common dilemma in Django and usually only can be solved using small chunks of Javascript that are sprinkled all over the client form. Tetra solves this problem smoothly by providing hook methods to dynamically update form fields. Have a look at this example:
+
+```python
+# models.py
+class Make(models.Model):
+    name = models.CharField(max_length=255)
+
+class EngineType(models.Model):
+    name = models.CharField(max_length=50)
+    
+class CarModel(models.Model)
+    make = models.ForeignKey(on_delete=models.CASCADE)
+    name = models.CharField
+    
+
+# forms.py
+from django.forms import forms
+class CarForm(forms.Form):
+    make = forms.ChoiceField()
+    model = forms.ChoiceField()
+        
+# components/default.py
+class CarComponent(DependencyFormMixin, FormComponent):
+    @þublic.watch("make")
+    def make_changed(self, value, old_value, attr) -> None:
+        """dummy trigger hook"""
+    
+    def get_model_queryset(self):
+        return CarModel.objects.filter(make=self.make)
+
+    def get_engine_type_queryset(self):
+        if self.make == Make.obejcts.get(name="Tesla"):
+            return EngineType.objects.filter(name="Electric")
+        return EngineType.objects.all()
+    
+    def get_engine_type_disabled(self):
+        # disable changing of engine type if brand == Tesla.
+        return self.make == Make.obejcts.get(name="Tesla")
+```
+
+Tetra makes sure that whenever the form is rendered, the `queryset` and `disabled` attributes of the `model` or `engine_type` fields are changed updated based on the selection made in the `make` field.
+
+You have to do two things:
+
+1. Make sure that whenever a parent field value changes, the form is reloaded usign Tetra. Just use an empty dummy method and decorate it with `@public("<field>"")`
+2. Create methods that are named using the scheme that Django also uses for `Form.clean_<field>()`. You have full access to all component methods and attributes in those methods:
+
+###### `get_<field>_queryset(self)`
+
+Return a `QuerySet` for that field that is valid for the current state of the component. 
+
+###### `get_<field>_disabled(self)`
+
+Determines whether a specific field should be dynamically **disabled** based on the current state of the component.
+
+###### `get_<field>_hidden(self)`
+
+Determines whether a specific field should be dynamically **hidden** based on the current state of the component.
+
+###### `get_<field>_required(self)`
+
+Determines whether a specific field should be dynamically **required** based on the current state of the component.
+
