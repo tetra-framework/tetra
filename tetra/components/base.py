@@ -777,9 +777,9 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         self.update_html(include_state=True)
 
     def replace_component(self) -> None:
-        """Replaces the current component with a new one. It first updates the HTML
-        and state of the current component, and then it creates a new component with
-        the same name and attributes as the current component.
+        """Replaces the current component with a new one. It first creates a new
+        component with the same name and attributes as the current component and
+        inserts it into the DOM, and then removes the current component from the DOM.
         """
         self.client._replaceComponent(self.render())
 

@@ -19,7 +19,7 @@ title: Changelog
 - Add debug logging handler
 - Improved component import error handling
 - Allow component names to be dynamic
-- `@v` templatetag for "live" rendering of frontend variables
+- `@v` shortcut templatetag for "live" rendering of frontend variables
 - Better support for Django models
 - Experimental FormComponent and ModelFormComponent support with form validation
 - Definable extra context per component class
