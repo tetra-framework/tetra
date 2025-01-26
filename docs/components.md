@@ -496,7 +496,7 @@ Replaces the current browser URL with the new one. This method does not add the 
 Called when the component is fully loaded, just before rendering. The state is restored, `load()` was called, and data 
 from the frontend was already applied to the backend state.
 You can do some further data updates here that should override all other rules;
-This method is used in [FormComponent](form_components.md) (especially [DynamicFormMixin](FIXME)) to add dynamical changing elements to an attached Django form. 
+This method is used in [FormComponent](form-components.md) (especially [DynamicFormMixin](FIXME)) to add dynamical changing elements to an attached Django form. 
 
 ```python
 class SignupForm(FormComponent):
