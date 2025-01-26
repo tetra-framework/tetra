@@ -41,6 +41,8 @@ Arguments are passed to the `load` method from the Tetra [component "`@`" templa
 
 Note: Django Models and Querysets are saved as references to your database, not the current 'snapshots', see [state optimisations](state-security.md#state-optimisations).
 
+If you want to know more how the flow of the attribute data works, see [data life cycle][data-life-cycle.md].
+
 ``` python
 class MyComponent(Component):
     ...
@@ -491,9 +493,10 @@ Replaces the current browser URL with the new one. This method does not add the 
 
 ### `ready()`
 
-Called when the component is fully loaded, just before rendering. The state is restored, `load()` was called, and data from the frontend was already applied to the backend state.
-You can do some further initialization here that should override all other rules; Especially attributes set in `load()` are not saved with the state, and would be lost.
-It can be used to add dynamical changing elements to an attached Django form. 
+Called when the component is fully loaded, just before rendering. The state is restored, `load()` was called, and data 
+from the frontend was already applied to the backend state.
+You can do some further data updates here that should override all other rules;
+This method is used in [FormComponent](form_components.md) (especially [DynamicFormMixin](FIXME)) to add dynamical changing elements to an attached Django form. 
 
 ```python
 class SignupForm(FormComponent):
