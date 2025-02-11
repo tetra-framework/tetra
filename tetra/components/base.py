@@ -979,6 +979,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         # keep track of the uploaded file
         self._form_temp_files[form_field] = file
         setattr(self, form_field, file)
+        self._form.errors.clear()
 
     def _reset(self):
         """Internally resets all form fields. This internal method is not exposed as a
