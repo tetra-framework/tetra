@@ -244,7 +244,10 @@ class StateUnpickler(pickle.Unpickler):
 
 def pickle_state(obj) -> bytes:
     out = BytesIO()
-    StatePickler(out).dump(obj)
+    try:
+        StatePickler(out).dump(obj)
+    except pickle.PicklingError as e:
+        raise ComponentError(f"Failed to pickle state for {obj}: {e}")
     return out.getvalue()
 
 
