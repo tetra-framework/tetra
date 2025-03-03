@@ -185,6 +185,41 @@ class PickleBlockNode(Pickler):
             raise TypeError("Unpicked data for template block incorrect.")
 
 
+# @register_pickler(Form, b"Form")
+# class PickleForm(Pickler):
+#     """This is just a stub pickler that always returns empty bytes when ṕickling
+#     a form."""
+#
+#     def pickle(form: Form) -> bytes | None:
+#         return b""
+#
+#     def unpickle(bs: bytes) -> Form | None:
+#         return None
+#
+#
+# @register_pickler(widgets.Widget, b"Widget")
+# class PickleWidget(Pickler):
+#     @staticmethod
+#     def pickle(widget: widgets.Widget) -> bytes | None:
+#         print("PICKLE WIDGET!")
+#         return pickle.dumps(
+#             {
+#                 "class": widget.__class__.__name__,
+#                 "module": widget.__class__.__module__,
+#                 "attrs": getattr(widget, "attrs", {}),
+#             }
+#         )
+#
+#     @staticmethod
+#     def unpickle(bs: bytes) -> Any:
+#         data = pickle.loads(bs)
+#         module = importlib.import_module(data["module"])
+#         widget_class = getattr(module, data["class"])
+#         widget = widget_class()
+#         widget.attrs = data["attrs"]
+#         return widget
+#
+#
 skip_check = {
     str,
     bytes,
@@ -318,9 +353,9 @@ def encode_component(component) -> str:
         if not (key.startswith("_") or isclassmethod(getattr(component, key))):
             context.pop(key, None)
     component._context = context
-    logger.debug(
-        f"State before encoding: {component._data()}",
-    )
+    # logger.debug(
+    #     f"State before encoding: {component._data()}",
+    # )
     pickled_component = pickle_state(component)
     component._context = original_context
 
@@ -333,7 +368,7 @@ def decode_component(state_token, request) -> "Component":
     component: Component = unpickle_state(
         gzip.decompress(fernet.decrypt(state_token.encode()))
     )
-    logger.debug(
-        f"State after decoding:  {component._data()}",
-    )
+    # logger.debug(
+    #     f"State after decoding:  {component._data()}",
+    # )
     return component

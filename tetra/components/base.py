@@ -831,6 +831,10 @@ class FormComponentMetaClass(ComponentMetaClass):
         dct.setdefault("__annotations__", {})
 
         if form_class:
+            # logger.debug(
+            #     f"Automatically creating component attributes from form fields for "
+            #     f"class {name}"
+            # )
             for field_name, field in form_class.base_fields.items():
                 initial = field.to_python(field.initial)
                 dct[field_name] = public(initial)
