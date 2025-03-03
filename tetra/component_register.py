@@ -173,10 +173,10 @@ def resolve_component(context, name: str) -> Component:
     template = context.template if context else None
     current_app = None
     dynamic = False
-    if name.startswith("="):
-        name = name[1:]
-        dynamic = True
     name_parts = name.split(".")
+    if name.startswith("="):
+        dynamic = True
+        name_parts[0] = name_parts[0][1:]
 
     if dynamic:
         # traverse context

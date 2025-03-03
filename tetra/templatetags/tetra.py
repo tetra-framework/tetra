@@ -269,8 +269,8 @@ class ComponentNode(template.Node):
         is_dynamic = self.component_name.startswith("=")
         if is_dynamic:
             # Handle dotted paths for dynamic component names
-            self.component_name = self.component_name[1:]
             path = self.component_name.split(".")
+            path[0] = path[0][1:]
             # traverse the context for the component name
             c = context
             for part in path:
