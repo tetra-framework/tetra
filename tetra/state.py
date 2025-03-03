@@ -17,6 +17,7 @@ from django.template.base import Origin
 from django.template.loader_tags import BlockNode
 from django.utils.functional import SimpleLazyObject, LazyObject
 
+from .exceptions import ComponentError
 from .utils import isclassmethod, TetraTemporaryUploadedFile
 from .templates import InlineOrigin
 
