@@ -116,7 +116,8 @@ def make_template(cls) -> Template:
         module = importlib.import_module(cls.__module__)
         if not hasattr(module, "__path__"):
             raise ComponentError(
-                f"Component module '{cls.__module__}' seems not to be a component."
+                f"'{cls.__module__}' is not a valid component library of component "
+                f"'{cls.__name__}'."
             )
         component_name = module.__name__.split(".")[-1]
         module_path = module.__path__[0]
