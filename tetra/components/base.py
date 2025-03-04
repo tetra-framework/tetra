@@ -15,8 +15,16 @@ from threading import local
 from django import forms
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
-from django.db.models import QuerySet
-from django.forms import Form, modelform_factory, BaseForm, FileField
+from django.db.models import Model
+from django.db.models.base import ModelBase
+from django.forms import (
+    Form,
+    modelform_factory,
+    BaseForm,
+    FileField,
+    ModelForm,
+    ModelChoiceField,
+)
 from django.template.base import Template
 from django.template.loader import render_to_string
 from django.template import (
@@ -41,7 +49,7 @@ from ..utils import (
     isclassmethod,
     TetraTemporaryUploadedFile,
 )
-from ..state import encode_component, decode_component, skip_check
+from ..state import encode_component, decode_component
 from ..templates import InlineOrigin, InlineTemplate
 
 from .callbacks import CallbackList
@@ -109,18 +117,27 @@ def make_template(cls) -> Template:
                 if not getattr(block_node, "origin", None):
                     block_node.origin = origin
 
+    elif hasattr(cls, "template_name"):
+        raise NotImplementedError(
+            f"'template_name' is not implemented yet for Tetra components ({cls})"
+        )
+        # template_file_name = cls.template_name
+        # template_dir = os.path.dirname(template_file_name)
+
     else:
-        # Here we definitely are in a dir-style component
 
         # try to find <component_name>.html within component's directory
         module = importlib.import_module(cls.__module__)
+
+        # No template, no template_name attrs found
+        # Here we definitely must have a dir-style component
         if not hasattr(module, "__path__"):
             raise ComponentError(
                 f"'{cls.__module__}' is not a valid component library of component "
                 f"'{cls.__name__}'."
             )
-        component_name = module.__name__.split(".")[-1]
         module_path = module.__path__[0]
+        component_name = module.__name__.split(".")[-1]
         # if path is a file, get the containing directory
         # template_dir = os.path.dirname(module_path)
 
@@ -128,6 +145,7 @@ def make_template(cls) -> Template:
         # template_source = cls._read_component_file_with_extension("html")
 
         template_file_name = f"{component_name}.html"
+
         # Load the template using a custom loader
         try:
             engine = Engine(dirs=[module_path], app_dirs=False)
@@ -575,6 +593,21 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         component._recall_load()
 
         for key, value in data["data"].items():
+            attr_type = (
+                component.__annotations__[key]
+                if (key in component.__annotations__)
+                else type(key)
+            )
+            # if client data type is a model, try to see the value in the
+            # recovered data as Model.pk and get the model again.
+            if issubclass(attr_type, Model) and attr_type is not type(value):
+                if value:
+                    # TODO: optimization: before hitting the DB another time (the
+                    #  unpickling already did this), we could check if the pk
+                    #  changed? If not, just keep the object.
+                    value = attr_type.objects.get(pk=value)
+                else:
+                    value = None  # or attr_type.objects.none()
             setattr(component, key, value)
         component._leaded_from_state = True
         component._leaded_from_state_data = data["data"]
@@ -846,9 +879,15 @@ class FormComponentMetaClass(ComponentMetaClass):
             #     f"class {name}"
             # )
             for field_name, field in form_class.base_fields.items():
-                initial = field.to_python(field.initial)
+                # try to read the type of the component attribute from the form field
+                initial = field.to_python(field.initial or "")
+                if isinstance(field, ModelChoiceField):
+                    python_type = field.queryset.model
+                else:
+                    python_type = type(initial)
+
+                # logger.debug(f"  {field_name} -> {python_type}")
                 dct[field_name] = public(initial)
-                python_type = type(initial)
                 dct["__annotations__"][field_name] = python_type
         return super().__new__(cls, name, bases, dct)
 
@@ -873,32 +912,58 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     form_submitted: bool = False
     form_errors: dict = {}  # TODO: make protected + include in render context
     _form: Form = None
+    _validate_called: bool = False
 
     # _form_temp_files is an internal storage for temporary uploaded files' handles.
-    # it is saved with the state, so it can survive page requests.
+    # it is saved with the state, so it can survive page requests. FIXME! not true!
     _form_temp_files: dict[str, TetraTemporaryUploadedFile] = {}
     _excluded_props_from_saved_state = Component._excluded_props_from_saved_state + [
         "_form_temp_files",
         "_form",
+        "_validate_called",
+        "form_errors",
     ]
 
-    def ready(self):
-        self._form = self.get_form(data=self._data(), files=self._form_temp_files)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.form_class:
+            raise AttributeError(
+                f"Error in {self.__class__.__name__}: The 'form_class' attribute is not set."
+            )
+
+    def recalculate_attrs(self, before_component_method: bool):
+        if before_component_method:
+            self._form = self.get_form()
+        else:
+            # Don't show form errors if form is not submitted yet
+            if not self.form_submitted:
+                self._form.errors.clear()
 
     def get_context_data(self, **kwargs) -> RequestContext:
-        context = super().get_context_data(**kwargs)
-        context["form"] = self._form
-        return context
+        if "form" not in kwargs:
+            kwargs["form"] = self._form
+        return super().get_context_data(**kwargs)
 
-    def get_form_class(self):
-        """Returns the form class to use in this component."""
-        return self.form_class
+    def get_form_kwargs(self):
+        """Return the keyword arguments for instantiating the form."""
+        kwargs = {
+            "initial": {},  # TODO
+            # "prefix": self.get_prefix(), # TODO
+        }
 
-    def get_form(self, data=None, files=None, **kwargs):
+        kwargs.update(
+            {
+                "data": self._data(),
+                "files": self._form_temp_files,
+            }
+        )
+        return kwargs
+
+    def get_form(self):
         """Returns a new form instance, initialized with data from the component
         attributes."""
-        cls = self.get_form_class()
-        form = cls(data=data, files=files, **kwargs)
+        cls = self.form_class
+        form = cls(**self.get_form_kwargs())
         self._add_alpine_models_to_fields(form)
         return form
 
@@ -923,17 +988,38 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
                 )
 
     @public
-    def validate(self) -> None:
+    def validate(self, field_names: str | list = None) -> dict | None:
         """Validates the data using the form defined in `form_class`, and re-renders
         the component, without saving the form."""
+
+        if self._validate_called:
+            return self.form_errors
+        self._validate_called = True
+
         if self._form:
-            if self._form.is_valid():
-                pass
+            form_errors = self._form.errors.get_json_data(escape_html=True)
+
+            # Synchronize existing errors with current form errors
+            if self.form_errors:
+                self.form_errors = {
+                    key: value
+                    for key, value in self.form_errors.items()
+                    if key in form_errors
+                }
+
+            if type(field_names) is str:
+                field_names = [field_names]
+            # Update errors based on provided field names or include all form errors
+            if field_names is not None:
+                self.form_errors.update(
+                    {
+                        key: value
+                        for key, value in form_errors.items()
+                        if key in field_names
+                    }
+                )
             else:
-                self.form_errors = self._form.errors.get_json_data(escape_html=True)
-                # set the possibly cleaned values back to the component's attributes
-                for attr, value in self._form.cleaned_data.items():
-                    setattr(self, attr, value)
+                self.form_errors.update(form_errors)
 
     def form_valid(self, form: BaseForm) -> None:
         """This method is called when the form data is valid.
@@ -959,6 +1045,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         it will call form_valid(), else form_invalid().
         """
 
+        # we should not render form errors
         self.form_submitted = True
 
         if self._form.is_valid():
@@ -987,10 +1074,10 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         # keep track of the uploaded file
         self._form_temp_files[form_field] = file
         setattr(self, form_field, file)
-        self._form.errors.clear()
 
     def _reset(self):
-        """Internally resets all form fields. This internal method is not exposed as a
+        """Internally resets all form fields to their defaults set in load(). This
+        internal method is not exposed as a
         public API and can be called by load() too. For client side calls use reset() instead.
         """
 
@@ -1005,16 +1092,17 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
 
         # second, get a new form without any data, with just initial values of the
         # Form class
+
+        self.form_submitted = False
         self._form = self.get_form()
-        for field_name in self._public_properties:  # noqa
-            if field_name in self._form.fields:
-                field = self._form.fields[field_name]
-                initial = field.to_python(field.initial)
-                setattr(self, field_name, initial)
-                if isinstance(field, FileField):
-                    # we additionally have to set the initial value of FileFields to an empty string
-                    # as the browser doesn't reset the input field
-                    self.client._setValueByName(field_name, "")
+
+        for field_name, field in self._form.fields.items():
+            initial = field.to_python(field.initial)
+            setattr(self, field_name, initial)
+            if isinstance(field, FileField):
+                # we additionally have to set the initial value of FileFields to an empty string
+                # as the browser doesn't reset the input field
+                self.client._setValueByName(field_name, "")
 
         # third, call load() again to apply the initial values meant by the component
         self._recall_load()
@@ -1028,11 +1116,62 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         self._reset()
 
 
-class ModelFormComponent(FormComponent):
+class ModelFormComponentMetaClass(FormComponentMetaClass):
+    def __new__(cls, name, bases, dct):
+        """additionally to FormComponentMetaClass.__new__(), add the object's pk to
+        the component's attributes"""
+        dct.setdefault("__annotations__", {})
+        if "__abstract__" not in dct:
+            model = dct.get("model", None)
+            abstract = dct.get("__abstract__", False)
+            # if no form_class nor model/fields is defined in the new class -> Error
+            if (
+                not dct.get("form_class", None)
+                and (not model or not dct.get("fields", None))
+                and not abstract
+            ):
+                raise AttributeError(
+                    f"{name} class requires either a 'form_class' or 'model' and "
+                    "'fields' attributes"
+                )
+
+            # if form_class is not provided, but model/fields, create a form_class on
+            # the fly.
+            if "form_class" in dct:
+                form_class = dct["form_class"]
+                if not issubclass(form_class, forms.ModelForm):
+                    raise TypeError(
+                        f"'{name}.form_class' must be a "
+                        f"subclass of 'ModelForm', not '{form_class.__name__}'"
+                    )
+                # form_class' model must match the model's class
+                elif model and model != form_class.Meta.model:
+                    raise TypeError(
+                        f"'{name}.form_class.model' must match "
+                        f"'{name}.model' class, if provided. "
+                        f"({form_class.Meta.model.__name__} != {model.__name__})"
+                    )
+            else:
+                # logger.debug(
+                #     f"Creating component attributes from model/fields for class {name}"
+                # )
+                form_class = modelform_factory(model=dct["model"], fields=dct["fields"])
+                dct["form_class"] = form_class
+
+            # So the new class *in any case* has a form_class
+        return super().__new__(cls, name, bases, dct)
+
+
+class ModelFormComponent(FormComponent, metaclass=ModelFormComponentMetaClass):
     """
     Component that can render a Model object using a ModelForm, load and
     save the given object, and validate it. This is basically the equivalent of the
     UpdateView/CreateView class for views in Django.
+
+    Like FormComponent, the class mirrors all FormFields to the component's
+    attributes which are then automatically available in the template and the client
+    as Javascript/Alpine.js data. When a component attribute is set,
+    it is automatically copied into the form instance's properties.
 
     Attributes:
         form_class (type(ModelForm)): the ModelForm class to use
@@ -1043,70 +1182,114 @@ class ModelFormComponent(FormComponent):
 
     __abstract__ = True
     form_class: type(forms.ModelForm) = None
-    model: type(models.Model) = None
+    model: ModelBase = None
     object: models.Model = None
-    fields: list[str] = []
+    fields: list[str] = None
     _context_object_name = None  # TODO
     _excluded_props_from_saved_state = (
         FormComponent._excluded_props_from_saved_state
-        + ["_context_object_name", "fields", "object"]
+        + ["_context_object_name", "model", "fields"]
     )
 
-    def get_form_class(self):
+    # def __init__(self, *args, **kwargs):
+    #     if not self.model:
+    #         self.model = self.get_form_class().Meta.model
+    #     super().__init__(*args, **kwargs)
+
+    def get_model(self):
+        """Returns the model to use in this component."""
+        if not self.model:
+            self.model = self.get_form_class()._meta.model
+        return self.model
+
+    def get_form_class(self) -> type(forms.ModelForm):
         """Returns the form class to use in this component."""
 
         # if there is an explicit form_class defined, use it
-        if self.form_class is not None:
+        if self.form_class:
             return self.form_class
-        elif self.model and self.fields:
-            return modelform_factory(model=self.model, fields=self.fields)
         else:
             raise ImproperlyConfigured(
                 f"'{self.__class__.__name__}' must either define 'form_class' "
-                "or both 'object' and '_fields', or override 'get_form_class()'"
+                "or both 'model' and 'fields', or override 'get_form_class()'"
             )
 
     def _pre_load(self, object: models.Model = None, *args, **kwargs) -> None:
-        # TODO: do this in a "_pre_load()" method before load() to prevent users from
-        #  needing to explicitly call super().load() in inheriting methods
-        if not object:
-            object = self.model()
-        self.object = object
+        """
+        Automatically makes the object available in the component's attributes.
+
+        Attributes:
+            object (models.Model): the object to load into the component
+        """
+        if object:
+            assert isinstance(object, self.get_model()), (
+                self.__class__.__name__
+                + " expects an instance of "
+                + self.get_model().__name__
+            )
+        self.object = object or self.get_model()()
+        self._copy_object_to_attrs()
+
+    def __setattr__(self, key, value):
+        """Additionally to setting the component attribute, set it on the attached
+        object, if applicable."""
+        super().__setattr__(key, value)
+        if self.object and key in {f.attname for f in self.object._meta.fields}:
+            # if the key is a field of the 'self.object' model, set it on self.object
+            setattr(self.object, key, value)
+
+    def _reset(self):
+        # set an empty model instance and initialize it with defaults
+        self.object = self.get_model()()
+        super()._reset()
+
+    def get_form_kwargs(self):
+        """Adds self.object as instance to the form kwargs."""
+        kwargs = super().get_form_kwargs()
+        kwargs["instance"] = self.object
+        return kwargs
+
+    def _copy_object_to_attrs(self):
+        """Copies all object attributes to the component props."""
+        for name in {f.attname for f in self.object._meta.fields}:
+            # FIXME: this recursively sets self.object.<attname> again:
+            setattr(self, name, getattr(self.object, name))
 
     def get_form(self, data=None, files=None, **kwargs):
         """Returns a form, bound to given model instance."""
-        cls = self.get_form_class()
-        form = cls(data=data, files=files, instance=self.object, **kwargs)
-        self._add_alpine_models_to_fields(form, prefix="object")
-        return form
+        # create an instance of model() and copy component's attributes to it
+        instance = self.object
+        for field_name, field in self.get_form_class().base_fields.items():
+            # print(f"set {field_name} to {getattr(self, field_name)}")
+            if isinstance(field, ModelChoiceField):
+                setattr(instance, f"{field_name}_id", getattr(self, field_name))
+            else:
+                setattr(instance, field_name, getattr(self, field_name))
 
-    # def get_context_data(self, **kwargs):
-    #     """Insert the form into the context dict."""
-    #     if "form" not in kwargs:
-    #         kwargs["form"] = self.get_form()
-    #     return super().get_context_data(**kwargs)
+        return super().get_form()
 
-    def _get_context_object_name(self, is_list=False):
-        """
-        Returns a descriptive name to use in the context in addition to the
-        default 'object'/'object_list'.
-        """
-        if self._context_object_name is not None:
-            return self._context_object_name
+    # def _get_context_object_name(self, is_list=False):
+    #     """
+    #     Returns a descriptive name to use in the context in addition to the
+    #     default 'object'/'object_list'.
+    #     """
+    #     if self._context_object_name is not None:
+    #         return self._context_object_name
+    #
+    #     elif self.object is not None:
+    #         return (
+    #             f"{self.object.__name__.lower()}_list"
+    #             if is_list
+    #             else self.object.__name__.lower()
+    #         )
 
-        elif self.object is not None:
-            return (
-                f"{self.object.__name__.lower()}_list"
-                if is_list
-                else self.object.__name__.lower()
-            )
-
-    def form_valid(self, form) -> None:
+    def form_valid(self, form: ModelForm) -> None:
         """Overrides the form_valid method to save the ModelForm data to the
         database.
 
         Override This method if you need custom functionality."""
-        self.object = form.save()
+        self.object = form.save(commit=True)
+        # FIXME: reset is not always wanted, only in Create, not Update
         self._reset()
 
 
@@ -1164,131 +1347,22 @@ class DynamicFormMixin:
         # parents = self.field_dependencies.values()
         for field_name, field in form.fields.items():
 
-            update_method = getattr(self, f"get_{field_name}_disabled", None)
-            if update_method:
+            if update_method := getattr(self, f"get_{field_name}_disabled", None):
                 form.fields[field_name].disabled = update_method()
 
-            update_method = getattr(self, f"get_{field_name}_hidden", None)
-            if update_method:
+            if update_method := getattr(self, f"get_{field_name}_hidden", None):
                 form.fields[field_name].widget.attrs["hidden"] = update_method()
 
-            update_method = getattr(self, f"get_{field_name}_required", None)
-            if update_method:
+            if update_method := getattr(self, f"get_{field_name}_required", None):
                 form.fields[field_name].required = update_method()
 
             # check if there is a dynamic queryset
-            update_method = getattr(self, f"get_{field_name}_queryset", None)
-            if update_method:
+            if update_method := getattr(self, f"get_{field_name}_queryset", None):
                 form.fields[field_name].queryset = update_method()
 
         return form
 
-    # def _get_queryset_for_field(self, field_name: str) -> QuerySet:
-    #     """Returns the queryset for the given field."""
-    #     parent_name = self.field_dependencies.get(field_name)
-    #     if parent_name:
-    #         parent_value = getattr(self, parent_name, None)
-    #         if parent_value:
-    #             return self.model._default_manager.filter(**{parent_name: parent_value})
-    #     return self.model._default_manager.none()
 
-    def update_field_queryset(
-        self,
-        child_field_name: str,
-        queryset: QuerySet,
-        old_value: Any = None,
-    ):
-        """Helper method that updates the queryset of the child field based on the
-        value of its parent field.
-
-        If the parent field value changes, the child field's queryset is updated
-        accordingly.
-        """
-        if not child_field_name:
-            return
-        parent_field_name = self.field_dependencies[child_field_name]
-        parent_value = getattr(self, parent_field_name, None)
-        if not parent_value:
-            # if parent is not available/set, always empty child's queryset
-            self._form.fields[child_field_name].queryset = queryset.none()
-            setattr(self, child_field_name, None)
-            return
-
-        # clear children field's errors and value ONLY if parent value has changed
-        # if old_value and parent_value != old_value:
-        #     setattr(self, child_field_name, None)
-        #     print(f"reset {child_field_name} to None")
-        #     errors = self._form.errors.get(child_field_name, None)
-        #     if errors:
-        #         print(f"clean form errors for {child_field_name}: {errors}")
-        #         # errors.clear()
-        self._form.fields[child_field_name].queryset = queryset
-
-        def set_field_visibility(self, field_name: str, visible: bool):
-            """Helper method to set the visibility of a field in the form."""
-            self._form.fields[field_name].visible = visible
-
-
-class GenericObjectFormComponent(ModelFormComponent):
-    """
-    Component that can render a Model object using a ModelForm, load and
-    save the given object, and validate it. This is basically the equivalent of the
-    UpdateView/CreateView class for views in Django.
-
-    Attributes:
-        form_class (type(ModelForm)): the ModelForm class to use
-        _fields (list[str]): the fields to use in the form
-        _context_object_name (str): the name of the context object in the template (TODO)
-    """
-
+# this is just experimental
+class WizardFormComponent(FormComponent):
     __abstract__ = True
-    object: models.Model = None
-    _fields: list[str] = []
-    _context_object_name = None  # TODO
-
-    def get_form_class(self):
-        """Returns the form class to use in this component."""
-
-        if self.form_class is not None:
-            return self.form_class
-
-        if self.object is not None and self._fields is not None:
-            return forms.modelform_factory(self.object._meta.model, fields=self._fields)
-
-        raise ImproperlyConfigured(
-            f"'{self.__class__.__name__}' must either define 'form_class' "
-            "or both 'object' and '_fields', or override 'get_form_class()'"
-        )
-
-    def load(self, object: models.Model, *args, **kwargs) -> None:
-        self.object = object
-        self._reset()
-        super().load(*args, **kwargs)
-
-    def get_form(self, data=None, files=None, **kwargs):
-        """Returns a form, bound to given model instance."""
-        return super().get_form(data=data, files=files, instance=self.object, **kwargs)
-
-    # def get_context_data(self, **kwargs):
-    #     """Insert the form into the context dict."""
-    #     if "form" not in kwargs:
-    #         kwargs["form"] = self.get_form()
-    #     return super().get_context_data(**kwargs)
-
-    def _get_context_object_name(self, is_list=False):
-        """
-        Returns a descriptive name to use in the context in addition to the
-        default 'object'/'object_list'.
-        """
-        if self._context_object_name is not None:
-            return self._context_object_name
-
-        elif self.object is not None:
-            return (
-                f"{self.object.__name__.lower()}_list"
-                if is_list
-                else self.object.__name__.lower()
-            )
-
-    def form_valid(self, form) -> None:
-        self.object = form.save()
