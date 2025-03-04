@@ -299,7 +299,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
             _request.tetra_components_used = set()
         _request.tetra_components_used.add(cls)
         component = cls(_request, *args, **kwargs)
-        component.ready()
+        component.recalculate_attrs(before_component_method=True)
         return component.render()
 
     def _call_load(self, *args, **kwargs) -> None:
@@ -341,6 +341,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         return context
 
     def render(self) -> SafeString:
+        self.recalculate_attrs(before_component_method=False)
         context = self.get_context_data()
 
         with context.render_context.push_state(self._template, isolated_context=True):
@@ -358,12 +359,20 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
 
         return mark_safe(html)
 
-    def ready(self):
-        """Hook method when component is fully loaded and ready to render.
+    def recalculate_attrs(self, before_component_method: bool):
+        """Code that should be run before and after user interactions with attributes.
 
-        You can use this method to do additional initialization logic.
-        Attributes that are set here override attributes set in `load()` or the ones
-        recovered from the state, or frontend data.
+        You can add code here that e.g. updates some attributes "in the last moment"
+        before rendering, like "dirty" flags that are set when any of the attributes
+        have changed, or property attributes that are calculated automatically,
+        after component methods have changed other attributes.
+
+        The method is called before and after the component methods are executed.
+
+        Attributes:
+            before_component_method (bool): Whether the recalculation was triggered
+                before or after (right before rendering) user interactions. You can
+                react on it differently.
         """
 
 
@@ -569,7 +578,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             setattr(component, key, value)
         component._leaded_from_state = True
         component._leaded_from_state_data = data["data"]
-        component.ready()
+        component.recalculate_attrs(before_component_method=True)
         return component
 
     @classmethod
@@ -875,12 +884,6 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
 
     def ready(self):
         self._form = self.get_form(data=self._data(), files=self._form_temp_files)
-
-    def render(self, data=RenderData.INIT) -> SafeString:
-        # Don't show form errors if form is not submitted yet
-        if not self.form_submitted:
-            self._form.errors.clear()
-        return super().render(data=data)
 
     def get_context_data(self, **kwargs) -> RequestContext:
         context = super().get_context_data(**kwargs)

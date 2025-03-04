@@ -15,8 +15,8 @@ title: Changelog
 ## [0.1.2] - unreleased
 ### Added
 - DynamicFormMixin for dynamically updatable FormComponents
-- Improve demo site
-- Add debug logging handler
+- Improved demo site
+- Added debug logging handler
 - Improved component import error handling
 - Allow component names to be dynamic
 - `@v` shortcut templatetag for "live" rendering of frontend variables
@@ -24,7 +24,11 @@ title: Changelog
 - Experimental FormComponent and ModelFormComponent support with form validation
 - Definable extra context per component class
 - `reset()` method for FormComponent
-- `push_url()` and `replace_url()` component methods
+- `push_url()` and `replace_url()` component methods for manipulating the URL in the address bar
+- `recalculate_attrs()` method for calculated updates to attributes before and after component methods
+
+### Removed
+- **BREAKING CHANGE** `ready()` method is removed and functionally replaced with `recalculate_attrs()`
 
 ### Changed
 - **BREAKING CHANGE**: registering libraries is completely different. Libraries are directories and automatically found. The library automatically is the containing module name now. Explicit "default = Library()" ist disregarded.

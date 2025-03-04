@@ -10,12 +10,12 @@ Public attributes are automatically created for all form fields, so you don't ha
 
 !!! note
     <p>Tetra does not encourage using `<form>` tags and form submits for each input element. You don't need form tags at all.
-    Best practice would be to only use `<form>` tags only if you actually build a form. If you just need an e.g. input
+    Best practice would be to only use `<form>` tags only if you actually build a *form*. If you just need an e.g. input
     field which acts as a search field and triggers a component refresh, don't use a `<form>` tag.
     </p>
     <p>What is meant with "Form support" is [Django forms](https://docs.djangoproject.com/en/5.0/topics/forms/)</p
 
-The FormComponent is easy to use. First, create a normal Django form (Form, ModelForm, etc.):
+The FormComponent is easy to use. First, create a normal Django form (Form, ModelForm, etc.), and a FormComponent that uses that form:
 
 ```python
 # components/default.py
@@ -33,9 +33,13 @@ class PersonFormEditor(FormComponent):
     # first_name = public("Jean-Luc")
     # last_name = public("Picard")
 ```
+Tetra automatically creates component attributes from Form fields. 
+In a `FormComponent`, the form itself is also instantiated automatically each time the component is loaded or updated. You can use `self._form` in backend methods, and in the template for rendering, even with e.g. [Crispy Forms](https://github.com/django-crispy-forms/django-crispy-forms):
 
-In a `FormComponent`, the form is instantiated automatically each time the component is loaded or updated
-.
+```django
+{{ form.first_name | as_crispy_field }}
+```
+
 ## ModelForm components
 Tetra provides you with a convenient form component named `GenericObjectFormComponent` that represents a Django model.
 

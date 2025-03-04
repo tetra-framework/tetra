@@ -491,17 +491,24 @@ Pushes a given URL to the URL bar of your browser. This adds the URL to the brow
 
 Replaces the current browser URL with the new one. This method does not add the URL to the browser history, it just replaces it. 
 
-### `ready()`
+### `calculate_attrs(before_component_method:bool)`
 
-Called when the component is fully loaded, just before rendering. The state is restored, `load()` was called, and data 
-from the frontend was already applied to the backend state.
-You can do some further data updates here that should override all other rules;
-This method is used in [FormComponent](form-components.md) (especially [DynamicFormMixin](FIXME)) to add dynamical changing elements to an attached Django form. 
+This hook is called when the component is fully loaded, just 
+1. before the state of a component is restored, `load()` was called, immediately before user interactions happen using component methods, and 
+2. just before rendering, after all user interactions
+
+You can do some further data updates here that should override all other rules - especially automatical 
+updates of attributes can be calculated here, like a "dirty" flag of a form component, or an update of
+an attribute that needs to be calculated from other attributes. 
+As example, this method is e.g. used in [FormComponent](form-components.md) to clear form errors if the form was not yet submitted.
+
+Attributes:
+    `before_component_method` is `True` when the hook is called before the component methods, and `False` afterwords.
 
 ```python
 class SignupForm(FormComponent):
     ...
-    def ready(self):
+    def calculate_attrs(self, before_component_method):
         # people that pay more than 20 bucks per month may be anonymous.
         self._form.fields["name"].required = self.pay_sum_per_month >= 20
 ```
