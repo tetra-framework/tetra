@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from dateutil import parser as datetime_parser
+from django.apps import apps
 from django.core.files.uploadedfile import UploadedFile
 from django.core.files.uploadhandler import FileUploadHandler
 from django.db import models
@@ -192,7 +193,12 @@ class TetraJSONEncoder(json.JSONEncoder):
         #     return str(obj)
         elif isinstance(obj, models.Model):
             # just return the object's pk, as it mostly will be used for lookups
-            return obj.pk
+            return {
+                "__type": "model",
+                "model": f"{obj._meta.app_label}.{obj._meta.model_name}",
+                "label": str(obj),
+                "value": obj.pk,
+            }
         # # FIXME: to_json does not work properly
         # elif hasattr(obj, "to_json"):
         #     return {"__type": "generic", "value": obj.to_json()}
@@ -231,6 +237,9 @@ class TetraJSONDecoder(json.JSONDecoder):
                 temp_name=obj["value"]["temp_path"],
                 charset=settings.DEFAULT_CHARSET,
             )
+        elif _type == "model":
+            Model = apps.get_model(obj["model"])
+            return Model.objects.get(pk=obj["value"])
         raise json.JSONDecodeError(f"Cannot decode '{_type}' object from JSON.", obj, 0)
 
 

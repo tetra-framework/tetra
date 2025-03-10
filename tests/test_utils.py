@@ -27,8 +27,31 @@ def test_TetraJSONEn_Decoder_with_model(simple_model_instance):
     # Serialize the Model instance using the TetraJSONEncoder
     serialized_instance: str = json.dumps(simple_model_instance, cls=TetraJSONEncoder)
 
-    pk = json.loads(serialized_instance)
-    assert pk == simple_model_instance.pk
+    # Parse the serialized instance back into a Python object using the normal Python
+    # decoder - it should be a dict then.
+    parsed_instance = json.loads(serialized_instance)
+    assert parsed_instance["__type"] == "model"
+    assert parsed_instance["model"] == "main.simplemodel"
+    assert "value" in parsed_instance
+    assert isinstance(parsed_instance["value"], int)
+
+    parsed_instance = json.loads(serialized_instance, cls=TetraJSONDecoder)
+    assert isinstance(parsed_instance, SimpleModel)
+    assert parsed_instance.name == "Test Model"
+
+
+@pytest.mark.django_db
+def test_TetraJSONDecoder_with_model(simple_model_instance):
+    # Serialize the Model instance using the TetraJSONEncoder
+    serialized_instance: str = json.dumps(simple_model_instance, cls=TetraJSONEncoder)
+    # Parse the serialized instance back into a Python object - it should be a Model
+    # again.
+    parsed_instance = json.loads(serialized_instance, cls=TetraJSONDecoder)
+
+    # Assert that the parsed instance is of the correct type and has the correct
+    # attributes
+    assert isinstance(parsed_instance, SimpleModel)
+    assert parsed_instance.name == "Test Model"
 
 
 @pytest.mark.django_db

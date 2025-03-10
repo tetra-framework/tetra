@@ -977,6 +977,10 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
                     form.fields[field_name].widget.attrs.update(
                         {"data-tetra-temp-file": field.temp_file}
                     )
+            elif isinstance(field, ModelChoiceField):
+                form.fields[field_name].widget.attrs.update(
+                    {"x-model": f"{field_name}.value"}
+                )
             else:
                 if prefix is None:
                     prefix = ""
