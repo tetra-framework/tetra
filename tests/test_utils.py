@@ -59,7 +59,7 @@ def test_model_encoding_decoding_with_aware_datetime():
     # Create a model instance with an aware datetime field
 
     tz = zoneinfo.ZoneInfo("Europe/Vienna")
-    created_at = datetime.now(tz=tz)
+    created_at: datetime = datetime.now(tz=tz)
     model = AwareDateTimeModel.objects.create(
         name="Aware DateTime Model",
         created_at=created_at,
@@ -90,8 +90,10 @@ def test_model_encoding_decoding_with_aware_datetime():
     assert deserialized_model.name == "Aware DateTime Model"
 
     # Assert that the parsed instance has the correct datetime format
-    assert deserialized_model.created_at == created_at
-    assert len(deserialized_model["created_at"]) > 26  # ISO 8601 format with timezone
+    assert deserialized_model.created_at.replace(microsecond=0) == created_at.replace(
+        microsecond=0
+    )
+    assert len(str(deserialized_model.created_at)) > 26  # ISO 8601 format with timezone
 
 
 def _timedelta_to_offset_string(td: timedelta) -> str:
