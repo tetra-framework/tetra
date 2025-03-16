@@ -947,16 +947,11 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     def get_form_kwargs(self):
         """Return the keyword arguments for instantiating the form."""
         kwargs = {
-            "initial": {},  # TODO
+            # "initial": self.get_initial(),  # TODO
             # "prefix": self.get_prefix(), # TODO
+            "data": self._data(),
+            "files": self._form_temp_files,
         }
-
-        kwargs.update(
-            {
-                "data": self._data(),
-                "files": self._form_temp_files,
-            }
-        )
         return kwargs
 
     def get_form(self):
@@ -1096,16 +1091,20 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         self.form_submitted = False
         self._form = self.get_form()
 
-        for field_name, field in self._form.fields.items():
-            initial = field.to_python(field.initial)
-            setattr(self, field_name, initial)
-            if isinstance(field, FileField):
-                # we additionally have to set the initial value of FileFields to an empty string
-                # as the browser doesn't reset the input field
-                self.client._setValueByName(field_name, "")
+        self._set_attrs_from_form_class_initial()
 
         # third, call load() again to apply the initial values meant by the component
         self._recall_load()
+
+    def _set_attrs_from_form_class_initial(self):
+        """Get 'initial' values from the form class and set them to the component's
+        attributes."""
+        for field_name, field in self.form_class.base_fields.items():
+            setattr(self, field_name, field.initial)
+            if self.client and isinstance(field, FileField):
+                # we additionally have to set the initial value of FileFields to an empty string
+                # as the browser doesn't set the input field
+                self.client._setValueByName(field_name, "")
 
     @public
     def reset(self):
@@ -1229,6 +1228,7 @@ class ModelFormComponent(FormComponent, metaclass=ModelFormComponentMetaClass):
             )
         self.object = object or self.get_model()()
         self._copy_object_to_attrs()
+        self._set_attrs_from_form_class_initial()
 
     def __setattr__(self, key, value):
         """Additionally to setting the component attribute, set it on the attached
