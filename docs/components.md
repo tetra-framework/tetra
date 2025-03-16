@@ -491,7 +491,7 @@ Pushes a given URL to the URL bar of your browser. This adds the URL to the brow
 
 Replaces the current browser URL with the new one. This method does not add the URL to the browser history, it just replaces it. 
 
-### `calculate_attrs(before_component_method:bool)`
+### `calculate_attrs(component_method_finished: bool)`
 
 This hook is called when the component is fully loaded, just 
 1. before the state of a component is restored, `load()` was called, immediately before user interactions happen using component methods, and 
@@ -503,14 +503,15 @@ an attribute that needs to be calculated from other attributes.
 As example, this method is e.g. used in [FormComponent](form-components.md) to clear form errors if the form was not yet submitted.
 
 Attributes:
-    `before_component_method` is `True` when the hook is called before the component methods, and `False` afterwords.
+    `component_method_finished` is `False` when the hook is called before the component method has finished, and `True` afterwords.
 
 ```python
 class SignupForm(FormComponent):
     ...
-    def calculate_attrs(self, before_component_method):
+    def calculate_attrs(self, component_method_finished):
         # people that pay more than 20 bucks per month may be anonymous.
-        self._form.fields["name"].required = self.pay_sum_per_month >= 20
+        if component_method_finished:  # only calculate once, when user methods are done
+            self._form.fields["name"].required = self.pay_sum_per_month >= 20
 ```
 
 

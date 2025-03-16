@@ -317,7 +317,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
             _request.tetra_components_used = set()
         _request.tetra_components_used.add(cls)
         component = cls(_request, *args, **kwargs)
-        component.recalculate_attrs(before_component_method=True)
+        component.recalculate_attrs(component_method_finished=False)
         return component.render()
 
     def _call_load(self, *args, **kwargs) -> None:
@@ -359,7 +359,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         return context
 
     def render(self) -> SafeString:
-        self.recalculate_attrs(before_component_method=False)
+        self.recalculate_attrs(component_method_finished=True)
         context = self.get_context_data()
 
         with context.render_context.push_state(self._template, isolated_context=True):
@@ -377,7 +377,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
 
         return mark_safe(html)
 
-    def recalculate_attrs(self, before_component_method: bool):
+    def recalculate_attrs(self, component_method_finished: bool):
         """Code that should be run before and after user interactions with attributes.
 
         You can add code here that e.g. updates some attributes "in the last moment"
@@ -388,9 +388,9 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         The method is called before and after the component methods are executed.
 
         Attributes:
-            before_component_method (bool): Whether the recalculation was triggered
-                before or after (right before rendering) user interactions. You can
-                react on it differently.
+            component_method_finished (bool): Whether the recalculation was triggered
+                before or after (right before rendering) custom component methods are
+                executed. You can react on it differently.
         """
 
 
@@ -611,7 +611,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             setattr(component, key, value)
         component._leaded_from_state = True
         component._leaded_from_state_data = data["data"]
-        component.recalculate_attrs(before_component_method=True)
+        component.recalculate_attrs(component_method_finished=False)
         return component
 
     @classmethod
@@ -931,13 +931,14 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
                 f"Error in {self.__class__.__name__}: The 'form_class' attribute is not set."
             )
 
-    def recalculate_attrs(self, before_component_method: bool):
-        if before_component_method:
-            self._form = self.get_form()
-        else:
+    def recalculate_attrs(self, component_method_finished: bool):
+        if component_method_finished:
             # Don't show form errors if form is not submitted yet
             if not self.form_submitted:
                 self._form.errors.clear()
+        else:
+            self._form = self.get_form()
+
 
     def get_context_data(self, **kwargs) -> RequestContext:
         if "form" not in kwargs:
