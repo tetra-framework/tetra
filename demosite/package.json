@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "esbuild": "^0.14.54"
+    "esbuild": "~=0.25"
   },
   "directories": {
     "doc": "docs"

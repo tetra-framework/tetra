@@ -1,14 +1,14 @@
 {
   "name": "tetra-tests",
   "private": true,
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "esbuild": "^0.14.54"
+    "esbuild": "~=0.25"
   },
   "author": "Christian González <christian.gonzalez@nerdocs.at>",
   "license": "MIT"
