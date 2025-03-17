@@ -939,7 +939,6 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         else:
             self._form = self.get_form()
 
-
     def get_context_data(self, **kwargs) -> RequestContext:
         if "form" not in kwargs:
             kwargs["form"] = self._form

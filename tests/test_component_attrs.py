@@ -1,4 +1,3 @@
-
 from tests.conftest import extract_component
 from tests.main.helpers import render_component_tag
 
