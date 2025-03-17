@@ -147,7 +147,15 @@ successful/unsuccessful form submission.
 <button type="submit" @click.prevent="submit()">Check</button>
 ```
 
-Here, `@click.prevent` is used to prevent the Browser submitting the form the usual way.
+Here, `@click.prevent` is used to prevent the Browser submitting the form the usual way. If you don't place the button 
+in a form, you don't have to use `.prevent`.
+
+A helpful hint is to deactivate the button right after clicking it, to prevent users from doubleclicking the button: 
+disable it right after the click. You can use Alpine.js' `$el` propertyw for that, before calling `submit()`:
+
+```html
+<button type="submit" @click="$el.disabled = true; submit()">Check</button>
+```
 
 
 ### Resetting a form
