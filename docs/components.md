@@ -193,6 +193,7 @@ You can use the [Python Inline Source Syntax Highlighting](https://marketplace.v
 class MyComponent(Component):
     ...
     template: django_html = """
+    <!-- MyComponent -->
     <div {% ... attrs %}>
       <h1>My component</h1>
       <p>{{ message }}</p>

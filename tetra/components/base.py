@@ -771,7 +771,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         html = super().render()
         if set_thread_local:
             del thread_local._tetra_render_data
-        tag_name = re.match(r"^\s*<\w+", html)
+        tag_name = re.match(r"^\s*(<!--.*-->)?\s*<\w+", html)
         if not tag_name:
             raise ComponentError(
                 f"Error in {self.__class__.__name__}: The component's template is "
