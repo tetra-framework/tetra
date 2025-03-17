@@ -1,6 +1,6 @@
 Title: Component Inheritance
 
-# Component Inheritance
+# Component inheritance - abstract components
 
 Components basically are inheritable, to create components that bundle common features, which can be reused and extended by more specialized ones. But: **You cannot inherit from already registered components.**
 
@@ -8,23 +8,22 @@ As components are registered automatically by putting them into a library module
 
 This works with both `BasicComponent` and `Component`.
 
-``` python
+```python
 # no registering here!
-class CardBase(BasicComponent):
-
+class BaseCard(BasicComponent):
     __abstract__ = True
-
     template = "<div></div>"
 
-class Card(CardBase):
-    
-    __abstract__ = True
 
+# no registering here!
+class Card(BaseCard):
+    __abstract__ = True
     template: django_html = """
     <div class="card mycard">
       {% block default %}{% endblock %]}
     </div>
     """
+
 
 # This component is registered:
 class GreenCard(Card):
@@ -34,3 +33,5 @@ class GreenCard(Card):
     }
     """
 ```
+
+You can even define more than one directory style components in one file, as long as only *one* of them is actually registered, the others must be abstract. 
