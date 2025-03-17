@@ -181,7 +181,7 @@ When using directory-style components, you can load templates from separate file
 
 ### Generic template hints
 
-Components must have a single top level HTML root node.
+Components must have a single top level HTML root node (you may optionally place an HTML comment in front of it.)
 
 HTML attributes passed to the component `@` tag are available as `attrs` in the context, this can be unpacked with the [attribute `...` tag](attribute-tag.md).
 
