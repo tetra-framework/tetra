@@ -7,7 +7,7 @@ from tetra import Library
 from tetra.components import FormComponent
 
 
-class TestForm1(Form):
+class SimpleTestForm1(Form):
     # a form with many different field types
     name = forms.CharField(max_length=100)
     email = forms.EmailField()
@@ -18,7 +18,7 @@ class TestForm1(Form):
 
 
 class Form1Component(FormComponent):
-    form_class = TestForm1
+    form_class = SimpleTestForm1
     template = """<div id="component"></div>"""
 
 
