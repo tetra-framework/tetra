@@ -350,7 +350,10 @@ def encode_component(component) -> str:
         context.pop(key, None)
     for key in dir(component):
         # Remove vars from context that are filled from the component
-        if not (key.startswith("_") or isclassmethod(getattr(component, key))):
+        if not (
+            key.startswith("_")
+            or isclassmethod(getattr(component.__class__, key, None))
+        ):
             context.pop(key, None)
     component._context = context
     # logger.debug(

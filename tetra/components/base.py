@@ -217,6 +217,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         *args,
         **kwargs,
     ) -> None:
+        super().__init__()  # call init without kwargs.
         self.request = _request
         self.attrs = _attrs
         self._context = _context
@@ -342,7 +343,10 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
 
     def _add_self_attrs_to_context(self, context) -> None:
         for key in dir(self):
-            if not (key.startswith("_") or isclassmethod(getattr(self, key))):
+            if not (
+                key.startswith("_") or isclassmethod(getattr(self.__class__, key, None))
+            ):
+                # if not (key.startswith("_") or isclassmethod(getattr(self, key))):
                 context[key] = getattr(self, key)
 
     def get_context_data(self, **kwargs) -> RequestContext:
