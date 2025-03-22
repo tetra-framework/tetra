@@ -94,9 +94,9 @@ const Tetra = {
         const endpoint = this.__serverMethods.find(item => item.name === '_upload_temp_file').endpoint;
         const args = [event.target.name, event.target.files[0].name];
         Tetra.callServerMethodWithFile(this, method, endpoint, file, args).then((result) => {
-            //TODO: Determine if we need to do anything with the resulting filename
-            //event.target.dataset.tetraTempFileName = result;
-            //this._updateData(result);
+          //TODO: Determine if we need to do anything with the resulting filename
+          //event.target.dataset.tetraTempFileName = result;
+          //this._updateData(result);
         });
 
       },
@@ -160,23 +160,23 @@ const Tetra = {
 
   makeAlpineComponent(componentName, script, serverMethods, serverProperties) {
     Alpine.data(
-      componentName, 
-      (initialDataJson) => {
-        const {init, destroy, ...script_rest} = script;
-        const initialData = Tetra.jsonDecode(initialDataJson);
-        const data = {
-          componentName,
-          __initInner: init,
-          __destroyInner: destroy,
-          __serverMethods: serverMethods,
-          __serverProperties: serverProperties,
-          ...(initialData || {}),
-          ...script_rest,
-          ...Tetra.makeServerMethods(serverMethods),
-          ...Tetra.alpineComponentMixins(),
+        componentName,
+        (initialDataJson) => {
+          const {init, destroy, ...script_rest} = script;
+          const initialData = Tetra.jsonDecode(initialDataJson);
+          const data = {
+            componentName,
+            __initInner: init,
+            __destroyInner: destroy,
+            __serverMethods: serverMethods,
+            __serverProperties: serverProperties,
+            ...(initialData || {}),
+            ...script_rest,
+            ...Tetra.makeServerMethods(serverMethods),
+            ...Tetra.alpineComponentMixins(),
+          }
+          return data
         }
-        return data
-      }
     )
   },
 
@@ -309,7 +309,7 @@ const Tetra = {
         __type: 'set',
         value: Array.from(value)
       };
-    } 
+    }
     return value;
   },
 
