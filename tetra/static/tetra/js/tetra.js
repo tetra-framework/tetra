@@ -11,6 +11,7 @@
     },
     alpineComponentMixins() {
       return {
+        // Alpine.js lifecycle:
         init() {
           this.$dispatch("tetra:child-component-init", { component: this });
           this.__initServerWatchers();
@@ -24,6 +25,7 @@
             this.__destroyInner();
           }
         },
+        // Tetra built ins:
         _updateHtml(html) {
           Alpine.morph(this.$root, html, {
             updating(el, toEl, childrenOnly, skip) {
@@ -89,6 +91,7 @@
           Tetra.callServerMethodWithFile(this, method, endpoint, file, args).then((result) => {
           });
         },
+        // Tetra private:
         __initServerWatchers() {
           this.__serverMethods.forEach((item) => {
             if (item.watch) {
@@ -243,6 +246,8 @@
       const response = await fetch(methodEndpoint, {
         method: "POST",
         headers: {
+          "T-Request": "true",
+          "T-Current-URL": document.location.href,
           "Content-Type": "application/json",
           "X-CSRFToken": window.__tetra_csrfToken
         },
@@ -260,6 +265,9 @@
       const response = await fetch(methodEndpoint, {
         method: "POST",
         headers: {
+          "T-Request": "true",
+          "T-Current-URL": document.location.href,
+          //'Content-Type': 'application/json',
           "X-CSRFToken": window.__tetra_csrfToken
         },
         mode: "same-origin",
@@ -303,32 +311,27 @@
         var context = this, args = arguments;
         var later = function() {
           timeout = null;
-          if (!immediate)
-            func.apply(context, args);
+          if (!immediate) func.apply(context, args);
         };
         var callNow = immediate && !timeout;
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
-        if (callNow)
-          func.apply(context, args);
+        if (callNow) func.apply(context, args);
       };
     },
     throttle(func, wait, options) {
       var timeout, context, args, result;
       var previous = 0;
-      if (!options)
-        options = {};
+      if (!options) options = {};
       var later = function() {
         previous = options.leading === false ? 0 : now();
         timeout = null;
         result = func.apply(context, args);
-        if (!timeout)
-          context = args = null;
+        if (!timeout) context = args = null;
       };
       var throttled = function() {
-        var _now = new Date().getTime();
-        if (!previous && options.leading === false)
-          previous = _now;
+        var _now = (/* @__PURE__ */ new Date()).getTime();
+        if (!previous && options.leading === false) previous = _now;
         var remaining = wait - (_now - previous);
         context = this;
         args = arguments;
@@ -339,8 +342,7 @@
           }
           previous = _now;
           result = func.apply(context, args);
-          if (!timeout)
-            context = args = null;
+          if (!timeout) context = args = null;
         } else if (!timeout && options.trailing !== false) {
           timeout = setTimeout(later, remaining);
         }
