@@ -28,6 +28,7 @@ nav:
     - components.md
     - basic-components.md
     - component-inheritance.md
+    - request.md
   - Template:
     - component-tag.md
     - attribute-tag.md

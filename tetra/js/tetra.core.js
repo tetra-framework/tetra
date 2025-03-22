@@ -265,6 +265,8 @@ const Tetra = {
     const response = await fetch(methodEndpoint, {
       method: 'POST',
       headers: {
+        'T-Request': "true",
+        'T-Current-URL': document.location.href,
         'Content-Type': 'application/json',
         'X-CSRFToken': window.__tetra_csrfToken,
       },
@@ -285,6 +287,8 @@ const Tetra = {
     const response = await fetch(methodEndpoint, {
       method: 'POST',
       headers: {
+        'T-Request': "true",
+        'T-Current-URL': document.location.href,
         //'Content-Type': 'application/json',
         'X-CSRFToken': window.__tetra_csrfToken,
       },

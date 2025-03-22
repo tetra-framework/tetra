@@ -26,6 +26,8 @@ title: Changelog
 - `reset()` method for FormComponent
 - `push_url()` and `replace_url()` component methods for manipulating the URL in the address bar
 - `recalculate_attrs()` method for calculated updates to attributes before and after component methods
+- make TetraMiddleware async capable
+- `request.tetra` helper for *current_url*, *current_abs_path* and *url_query_params*, like in HTMX
 
 ### Removed
 - **BREAKING CHANGE** `ready()` method is removed and functionally replaced with `recalculate_attrs()`
