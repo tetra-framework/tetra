@@ -89,3 +89,11 @@ class SimpleComponentWithExtraContextAll(BasicComponent):
     template: django_html = """
     <div id="component">{% block default %}{% endblock %}</div>
     """
+
+
+# --------------------------------------------------
+
+
+class SimpleComponentWithAttributeStr(BasicComponent):
+    foo: str = ""
+    template: django_html = "<div id='component'>str: {{ foo }}</div>"

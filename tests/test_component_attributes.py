@@ -11,7 +11,7 @@ def test_simple_component_attribute_str(request_with_session):
     content = render_component_tag(
         request_with_session, "{% @ main.default.SimpleComponentWithAttributeStr / %}"
     )
-    assert extract_component(content, innerHTML=True) == """str: foo"""
+    assert extract_component(content, innerHTML=True) == "str: foo"
 
 
 @pytest.mark.django_db
