@@ -13,11 +13,11 @@ class TetraMiddlewareException(Exception):
     pass
 
 
-def inline_script_tag(source):
+def inline_script_tag(source) -> str:
     return f"<script>{source}</script>"
 
 
-def inline_styles_tag(source):
+def inline_styles_tag(source) -> str:
     return f"<styles>{source}</styles>"
 
 
@@ -76,7 +76,7 @@ class TetraMiddleware:
             )
             response.content = content
 
-    def check_content_type(self, response):
+    def check_content_type(self, response) -> bool:
         if (
             "Content-Type" not in response.headers
             or "text/html" not in response.headers["Content-Type"]
