@@ -42,6 +42,7 @@ from django.urls import reverse
 from django.template.loaders.filesystem import Loader as FileSystemLoader
 
 from ..exceptions import ComponentError
+from ..middleware import TetraHttpRequest
 from ..utils import (
     camel_case_to_underscore,
     to_json,
@@ -210,7 +211,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
 
     def __init__(
         self,
-        _request,
+        _request: TetraHttpRequest,
         _attrs: dict = None,
         _context: dict | RequestContext = None,
         _blocks=None,

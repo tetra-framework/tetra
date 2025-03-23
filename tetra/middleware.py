@@ -13,6 +13,17 @@ class TetraMiddlewareException(Exception):
     pass
 
 
+class TetraHttpRequest(HttpRequest):
+    """This is just a dummy HttpRequest subclass that has a tetra attribute.
+
+    This mainly exists so that the `request` attribute of components contains a
+    `tetra` attribute, so IDEs can improve autocompletion. In fact, the `request`
+    attribute is a WsgiRequest or `AsgiRequest` object.
+    """
+
+    tetra: "TetraDetails"
+
+
 def inline_script_tag(source) -> str:
     return f"<script>{source}</script>"
 
