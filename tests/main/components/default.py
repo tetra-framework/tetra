@@ -95,5 +95,40 @@ class SimpleComponentWithExtraContextAll(BasicComponent):
 
 
 class SimpleComponentWithAttributeStr(BasicComponent):
-    foo: str = ""
-    template: django_html = "<div id='component'>str: {{ foo }}</div>"
+    my_str: str = "foo"
+    template: django_html = "<div id='component'>str: {{ my_str }}</div>"
+
+
+class SimpleComponentWithAttributeInt(BasicComponent):
+    my_int: int = 23
+    template: django_html = "<div id='component'>int: {{ my_int }}</div>"
+
+
+class SimpleComponentWithAttributeFloat(BasicComponent):
+    my_float: float = 2.32
+    template: django_html = "<div id='component'>float: {{ my_float }}</div>"
+
+
+class SimpleComponentWithAttributeList(BasicComponent):
+    my_list: list = [1, 2, 3]
+    template: django_html = "<div id='component'>list: {{ my_list }}</div>"
+
+
+class SimpleComponentWithAttributeDict(BasicComponent):
+    my_dict: dict = {"key": "value"}
+    template: django_html = "<div id='component'>dict: {{ my_dict }}</div>"
+
+
+class SimpleComponentWithAttributeSet(BasicComponent):
+    my_set: set = {1, 2, 3}
+    template: django_html = "<div id='component'>set: {{ my_set }}</div>"
+
+
+class SimpleComponentWithAttributeFrozenSet(BasicComponent):
+    my_set: frozenset = frozenset({1, 2, 3})
+    template: django_html = "<div id='component'>frozenset: {{ my_set }}</div>"
+
+
+class SimpleComponentWithAttributeBool(BasicComponent):
+    my_bool: bool = False
+    template: django_html = "<div id='component'>bool: {{ my_bool }}</div>"
