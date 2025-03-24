@@ -1,4 +1,4 @@
-from tetra import Component---
+---
 title: Data life cycle
 ---
 
