@@ -416,7 +416,34 @@ class PublicMeta(type):
 
 
 class Public(metaclass=PublicMeta):
-    def __init__(self, obj=None, update=True) -> None:
+    def __init__(self, obj: Any = None, update: bool = True) -> None:
+        """
+        Decorate a method or attribute with a public decorator.
+
+        This decorator can be used to create methods or attributes that behave like
+        public methods or properties. It can be used to add event listeners, watch
+        attributes, debounce and throttle functions, and other functionality.
+
+        Example usage:
+        class MyComponent(Component):
+            my_attribute = public("initial value")
+
+            @public
+            def my_method(self):
+                ...
+
+            @public
+            @watch("my_attribute")
+            def my_attribute_changed(self, new_value, old_value, attr):
+                print(f"My attribute changed from {old_value} to {new_value}")
+
+        my_component = MyComponent()
+        my_component.my_method()  # Output: My method called
+
+        Attributes:
+            obj (Any): The object to decorate (method or attribute).
+            update (bool): whether update() should be called at the end of the method.
+        """
         self._update = update
         self._watch = []
         self._debounce = None
