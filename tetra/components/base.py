@@ -453,9 +453,9 @@ class Public(metaclass=PublicMeta):
         elif self._update and isinstance(obj, FunctionType):
 
             @wraps(obj)
-            def fn(self, *args, **kwargs):
-                ret = obj(self, *args, **kwargs)
-                self.update()
+            def fn(instance: "Component", *args, **kwargs):
+                ret = obj(instance, *args, **kwargs)
+                instance.update()
                 return ret
 
             self.obj = fn
