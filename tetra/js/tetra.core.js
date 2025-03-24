@@ -226,6 +226,10 @@ const Tetra = {
 
   async handleServerMethodResponse(response, component) {
     if (response.status === 200) {
+      if (response.headers.get('T-Response') !== "true") {
+        console.error("Response is not a Tetra response. Please check the server implementation.");
+        return
+      }
       const respData = Tetra.jsonDecode(await response.text());
       if (respData.success) {
         let loadingResources = [];

@@ -891,6 +891,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
                 "callbacks": callbacks,
             },
             encoder=TetraJSONEncoder,
+            headers={"T-Response": "true"},
         )
 
     @public
