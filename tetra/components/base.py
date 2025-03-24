@@ -218,6 +218,10 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         *args,
         **kwargs,
     ) -> None:
+        """Initializes the component with the provided attributes and context.
+
+        It calls load() with the optional args/kwargs."""
+
         super().__init__()  # call init without kwargs.
         self.request = _request
         self.attrs = _attrs
