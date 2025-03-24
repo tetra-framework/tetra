@@ -1,5 +1,5 @@
 ---
-title: Data life cycle
+title: Component life cycle
 ---
 
 # Attribute data life cycle
@@ -49,3 +49,28 @@ The final step involves updating attributes using *data* passed from the client-
  * The **data** refers to dynamic values, such as a component input tag's value, which may have changed during the last interaction cycle.
 
 
+# Events on the client side
+
+On the client, there are certain javascript events fired when certain things happen. You can react on that using Alpine's `x-on` or by using custom Javascript code.
+
+All events have the actual component as `component` payload attached.
+
+## Events
+
+### `tetra:component-updated`
+This event is fired after a component has called a public method and the new HTML is completely morphed into the DOM.
+It is also fired after a component has been replaced.
+
+```html
+<div x-on:tetra:component-updated="message='component was updated'">
+  <span x-text="message">Original text</span>
+</div>
+```
+
+### `tetra:component-data-updated`
+
+Same goes for data updates - the event is fired after a data update without HTML changes was finished.
+
+### `tetra:component-before-remove`
+
+Right before a component is removed using `self.client._removeComponent()` this event is triggered.

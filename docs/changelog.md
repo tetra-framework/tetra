@@ -28,6 +28,7 @@ title: Changelog
 - `recalculate_attrs()` method for calculated updates to attributes before and after component methods
 - make TetraMiddleware async capable
 - `request.tetra` helper for *current_url*, *current_abs_path* and *url_query_params*, like in HTMX
+- add life cycle Js events when updating/removing etc. components
 
 ### Removed
 - **BREAKING CHANGE** `ready()` method is removed and functionally replaced with `recalculate_attrs()`

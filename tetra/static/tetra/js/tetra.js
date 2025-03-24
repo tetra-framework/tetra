@@ -48,11 +48,13 @@
             },
             lookahead: true
           });
+          this.$dispatch("tetra:component-updated", { component: this });
         },
         _updateData(data) {
           for (const key in data) {
             this[key] = data[key];
           }
+          this.$dispatch("tetra:component-data-updated", { component: this });
         },
         _setValueByName(name, value) {
           let inputs = document.getElementsByName(name);
@@ -61,11 +63,14 @@
           }
         },
         _removeComponent() {
+          this.$dispatch("tetra:component-before-remove", { component: this });
           this.$root.remove();
         },
         _replaceComponent(html) {
+          this.$dispatch("tetra:component-before-remove", { component: this });
           this.$root.insertAdjacentHTML("afterend", html);
           this.$root.remove();
+          this.$dispatch("tetra:component-updated", { component: this });
         },
         _redirect(url) {
           document.location = url;

@@ -41,7 +41,7 @@ Arguments are passed to the `load` method from the Tetra [component "`@`" templa
 
 Note: Django Models and Querysets are saved as references to your database, not the current 'snapshots', see [state optimisations](state-security.md#state-optimisations).
 
-If you want to know more how the flow of the attribute data works, see [data life cycle][data-life-cycle.md].
+If you want to know more how the flow of the attribute data works, see [component life cycle][component-life-cycle.md].
 
 ``` python
 class MyComponent(Component):
