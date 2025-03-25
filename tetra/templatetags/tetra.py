@@ -443,11 +443,12 @@ class AttrsNode(template.Node):
 def do_block(parser, token):
     """
     Define a block that can be overridden by child templates.
-    Based on the native Django tag but adds a extra attribute (expose_as) to the BlockNode
-    indicating if it is posible to overide in an extending template and under what name.
+    Based on the native Django tag but adds an extra attribute (expose_as) to the
+    BlockNode indicating if it is posible to overide in an extending template and
+    under what name.
     Syntax to expose a block under its own name
     {% block block_name expose %}
-    Syntax to expose a block under a diffrent name:
+    Syntax to expose a block under a different name:
     {% block block_name expose as exposed_block_name %}
     """
     # token.split_contents() isn't useful here because this tag doesn't accept
