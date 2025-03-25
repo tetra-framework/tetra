@@ -406,6 +406,14 @@ class MyComponent(Component):
     """
 ```
 
+You can use all event modifiers [supported by Alpine](https://alpinejs.dev/directives/on#the-event-object), or even subscribe to "global" events by using Alpine's `.window` or `.document` modifiers:
+
+``` html
+<div {% ... attrs %}
+    @keyup.shift.enter.window="shiftenter_pressed_anywhere($event)"
+>
+```
+
 ### `_removeComponent()`
 
 the `_removeComponent` method removed the component from the DOM and destroys it. This is useful when deleting an item on the server and wanting to remove the corresponding component in the browser:
