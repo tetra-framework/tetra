@@ -79,7 +79,7 @@ class MyComponent(Component):
 
 Your components `load` methods can accept any number of optional positional and keyword arguments by using `*args` and `**kwargs`.
 
-## Passing Attributes
+## Passing HTML Attributes
 
 It is common to want to set HTML attributes on the root element of your component - this can be done with the `attrs:` label, followed by a space-separated list of `key=value` pairs, with the "key" being the name of the attribute. The value can be a context variable that will be resolved when rendering.
 
