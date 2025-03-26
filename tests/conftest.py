@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from django.apps import apps
 from django.conf import settings
 from django.contrib.sessions.backends.cache import SessionStore
@@ -95,3 +95,9 @@ def extract_component(html: str | bytes, innerHTML=True) -> str:
         return el.decode_contents().replace("\n", "")
     else:
         return str(el).replace("\n", "")
+
+
+def extract_component_tag(html: str | bytes) -> Tag:
+    """Helper to extract the `div#component` content from the given HTML as
+    BeautifulSoup parsed entity."""
+    return BeautifulSoup(html, features="html.parser").html.body.find(id="component")
