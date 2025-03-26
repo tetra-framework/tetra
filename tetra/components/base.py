@@ -211,7 +211,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
 
     def __init__(
         self,
-        _request: TetraHttpRequest,
+        _request: TetraHttpRequest | HttpRequest,
         _attrs: dict = None,
         _context: dict | RequestContext = None,
         _blocks=None,
