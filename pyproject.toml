@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0.0", "wheel"]
+requires = ["setuptools>=77.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -10,13 +10,15 @@ authors = [
     { name = "Sam Willis", email="sam.willis@gmail.com"},
     { name = "Christian González", email = "christian.gonzalez@nerdocs.at" }
 ]
-license = {file = "LICENSE"}
+license = "MIT"
+license-files = [
+    "LICENSE"
+]
 readme = "README.md"
 keywords = ["python", "django", "framework", "components"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
