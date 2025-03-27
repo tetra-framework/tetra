@@ -2,8 +2,9 @@
 .DS_Store
 Thumbs.db
 
-# TETRA:
+# Tetra
 __tetracache__/
+/**/static/*/tetra/**
 
 # PYTHON:
 # Byte-compiled / optimized / DLL files

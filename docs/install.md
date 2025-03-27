@@ -100,3 +100,13 @@ You can also manually run the component build process with:
 ```
 $ python manage.py tetrabuild
 ```
+
+## .gitignore
+
+While you might want to use a common [Django .gitignore file like from gitignore.io](https://www.toptal.com/developers/gitignore/api/django), you should add this to not accidentally check in cache files into your VCS:
+
+```
+# Tetra
+__tetracache__/
+/**/static/*/tetra/**
+```
