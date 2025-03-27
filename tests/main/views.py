@@ -9,3 +9,11 @@ def simple_basic_component_with_css(request):
             request, "{% @ main.default.SimpleBasicComponentWithCss / %}"
         )
     )
+
+
+def component_with_return_value(request):
+    return HttpResponse(
+        render_component_tag(
+            request, "{% @ main.default.ComponentWithMethodReturnValue / %}"
+        )
+    )
