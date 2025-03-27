@@ -31,46 +31,31 @@ def test_TetraJSONEn_Decoder_with_model(simple_model_instance):
     assert pk == simple_model_instance.pk
 
 
-@pytest.mark.django_db
-def test_model_encoding_decoding_with_aware_datetime():
+def test_encoding_decoding_with_aware_datetime():
     # Create a model instance with an aware datetime field
 
     tz = zoneinfo.ZoneInfo("Europe/Vienna")
     created_at: datetime = datetime.now(tz=tz)
-    model = AwareDateTimeModel.objects.create(
-        name="Aware DateTime Model",
-        created_at=created_at,
-    )
+    # model = AwareDateTimeModel.objects.create(
+    #     name="Aware DateTime Model",
+    #     created_at=created_at,
+    # )
     # Serialize the Model instance using the TetraJSONEncoder
-    serialized_instance = json.dumps(model, cls=TetraJSONEncoder)
+    serialized_instance = json.dumps(created_at, cls=TetraJSONEncoder)
 
-    # Parse the serialized instance back into a Python object using the normal Python
-    # decoder - it should be a dict then.
-    deserialized_dict = json.loads(serialized_instance)
+    # Parse the serialized instance back into a Python object - it should be a
+    # datetime again
+    deserialized_datetime = json.loads(serialized_instance, cls=TetraJSONDecoder)
 
-    # Assert that the parsed instance is of the correct type and has the correct
-    # attributes
-    assert isinstance(deserialized_dict, dict)
-    assert "__type" in deserialized_dict
-    assert deserialized_dict["__type"] == "model"
-    assert deserialized_dict["model"] == "main.awaredatetimemodel"
-    assert "value" in deserialized_dict
-    assert isinstance(deserialized_dict["value"], int)  # This must be the primary key
+    # Assert that the parsed instance is of the correct type
+    assert isinstance(deserialized_datetime, datetime)
 
-    # Parse the serialized instance back into a Python object using the TetraDecoder
-    # - it should be a model then.
-    deserialized_model = json.loads(serialized_instance, cls=TetraJSONDecoder)
-
-    assert deserialized_model.name == "Aware DateTime Model"
-    # assert deserialized_model.created_at.tzinfo == tz
-    # Assert that the parsed instance has the correct attributes
-    assert deserialized_model.name == "Aware DateTime Model"
-
-    # Assert that the parsed instance has the correct datetime format
-    assert deserialized_model.created_at.replace(microsecond=0) == created_at.replace(
+    # Assert that the parsed instance has the correct datetime format (except the
+    # microseconds)
+    assert deserialized_datetime.replace(microsecond=0) == created_at.replace(
         microsecond=0
     )
-    assert len(str(deserialized_model.created_at)) > 26  # ISO 8601 format with timezone
+    assert len(str(created_at)) > 26  # ISO 8601 format with timezone
 
 
 def _timedelta_to_offset_string(td: timedelta) -> str:

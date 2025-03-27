@@ -1,5 +1,7 @@
-from tetra.component_register import libraries
-from tests.conftest import extract_component
+from sourcetypes import django_html
+
+from tetra import Library, BasicComponent
+from tests.conftest import extract_component_tag
 from tests.main.helpers import render_component_tag
 
 

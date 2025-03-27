@@ -15,10 +15,10 @@ def test_public_decorator_is_replaced_with_actual_method_or_attribute(request):
     assert isinstance(c.do_something, MethodType)
 
 
-def test_public_subscribe_renders_attrs(request):
+def test_public_subscribe_renders_attrs(request_with_session):
     """Checks if a @public.subscribe decorator renders the attr correctly."""
     content = render_component_tag(
-        request, "{% @ main.default.ComponentWithPublicSubscribe / %}"
+        request_with_session, "{% @ main.default.ComponentWithPublicSubscribe / %}"
     )
     component = extract_component_tag(content)
     assert component.has_attr("x-on:keyup.enter")
