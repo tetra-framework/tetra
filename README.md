@@ -48,7 +48,7 @@ pip install tetra
 
   - Components with overridable blocks
 
-    Component can have multiple {% block(s) %} which can be overridden when used.
+    Components can have multiple {% block(s) %} which can be overridden when used.
 
   - JS/CSS builds using [esbuild](https://esbuild.github.io)
 
