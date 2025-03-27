@@ -26,11 +26,11 @@ title: Changelog
 - `reset()` method for FormComponent
 - `push_url()` and `replace_url()` component methods for manipulating the URL in the address bar
 - `recalculate_attrs()` method for calculated updates to attributes before and after component methods
-- make TetraMiddleware async capable
 - `request.tetra` helper for *current_url*, *current_abs_path* and *url_query_params*, like in HTMX
 - add life cycle Js events when updating/removing etc. components
 - add a T-Response header that only is available in Tetra responses.
 - Integration of Django messages into Tetra, using T-Messages response header
+- `<!-- HTML comments -->` at begin of components are possible now
 
 ### Removed
 - **BREAKING CHANGE** `ready()` method is removed and functionally replaced with `recalculate_attrs()`
@@ -38,8 +38,7 @@ title: Changelog
 ### Changed
 - **BREAKING CHANGE**: registering libraries is completely different. Libraries are directories and automatically found. The library automatically is the containing module name now. Explicit "default = Library()" ist disregarded.
 - Components should be referenced using PascalCase in templates now
-- Components
-- Replace **context with __all__ when passing all context in template tags
+- Component tags: replace `**context` with `__all__` when passing all context in template tags
 - More verbose error when template is not enclosed in HTML tags
 - Improved component import error handling
 - Improved demo site
