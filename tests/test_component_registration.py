@@ -1,4 +1,3 @@
-from conftest import current_app
 from tetra import Library, BasicComponent
 
 # FIXME "main" is hardcoded here - how can we reuse the fixture as it cannot be called
