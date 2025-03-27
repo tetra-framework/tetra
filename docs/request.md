@@ -36,7 +36,7 @@ Similarly, you sometimes need the path of the current page. `request.tetra.curre
 
 When you pass GET params to your main URL in the browser, your tetra components can access these via `url_query_params`.
 
-E.g. when your page is 'https://example.com/foo/bar/?tab=main'
+E.g. when your page URL is `https://example.com/foo/bar/?tab=main`
 
 ```python
 >>> self.request.tetra.url_query_params.get("tab")

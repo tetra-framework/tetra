@@ -211,7 +211,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
 
     def __init__(
         self,
-        _request: TetraHttpRequest,
+        _request: TetraHttpRequest | HttpRequest,
         _attrs: dict = None,
         _context: dict | RequestContext = None,
         _blocks=None,
@@ -451,9 +451,10 @@ class Public(metaclass=PublicMeta):
         self._throttle = None
         self._throttle_trailing = None
         self._throttle_leading = None
+        self._event_subscriptions = []
         self.__call__(obj)
 
-    def __call__(self, obj) -> Self:
+    def __call__(self, obj: Any) -> Self:
         if isinstance(obj, Public):
             # Public decorator applied multiple times - combine them
             self._update = obj._update if obj._update else self._update
@@ -475,6 +476,11 @@ class Public(metaclass=PublicMeta):
                 if obj._throttle_leading
                 else self._throttle_leading
             )
+            self._event_subscriptions = (
+                obj._event_subscriptions
+                if obj._event_subscriptions
+                else self._event_subscriptions
+            )
             self.obj = obj.obj if obj.obj else self.obj
 
         elif self._update and isinstance(obj, FunctionType):
@@ -486,6 +492,9 @@ class Public(metaclass=PublicMeta):
                 return ret
 
             self.obj = fn
+            # if we recorded that the method should subscribe to an event, mark it as such
+            if self._event_subscriptions:
+                self.obj._event_subscription = self._event_subscriptions
         else:
             self.obj = obj
         return self
@@ -515,6 +524,15 @@ class Public(metaclass=PublicMeta):
         self._throttle_leading = leading
         return self
 
+    def do_subscribe(self, event) -> Self:
+        """Marks the method to subscribe to one or more Javascript event."""
+        # we can't access the class whose method we are decorating directly,
+        # so we store the event name as an attribute on the method, so the
+        # Component class itself can check (in its MetaClass or later
+        # __init_subclass__) which methods have a subscription.
+        self._event_subscriptions.append(event)
+        return self
+
 
 public = Public
 
@@ -538,10 +556,17 @@ class ComponentMetaClass(BasicComponentMetaClass):
                 if hasattr(base, "_public_properties")
             )
         )
+        event_subscriptions: dict[str, str] = {}
         for attr_name, attr_value in attrs.items():
+
             if isinstance(attr_value, Public):
+                # if there is public decorated attribute/method, replace it with the
+                # attribute/method itself, as we don't need the decorator anymore.
+
                 attrs[attr_name] = attr_value.obj
+
                 if isinstance(attrs[attr_name], FunctionType):
+                    # decorated object is a method
                     pub_met = {"name": attr_name}
                     if attr_value._watch:
                         pub_met["watch"] = attr_value._watch
@@ -552,12 +577,16 @@ class ComponentMetaClass(BasicComponentMetaClass):
                         pub_met["throttle"] = attr_value._throttle
                         pub_met["throttle_trailing"] = attr_value._throttle_trailing
                         pub_met["throttle_leading"] = attr_value._throttle_leading
+                    for event in attr_value._event_subscriptions:
+                        # save {event_name:method_name} for each event
+                        event_subscriptions.update({event: attr_value.obj.__name__})
                     public_methods.append(pub_met)
                 else:
                     public_properties.append(attr_name)
         newcls = super().__new__(mcls, name, bases, attrs)
         newcls._public_methods = public_methods
         newcls._public_properties = public_properties
+        newcls._event_subscriptions = event_subscriptions
         return newcls
 
 
@@ -572,6 +601,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         "_excluded_load_props_from_saved_state",
         "_leaded_from_state",
         "_leaded_from_state_data",
+        "_event_subscriptions",
         "__abstract__",
     ]
     _excluded_load_props_from_saved_state = []

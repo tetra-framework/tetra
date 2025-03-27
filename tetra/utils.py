@@ -6,6 +6,9 @@ import logging
 from typing import Any
 
 from dateutil import parser as datetime_parser
+
+from django.contrib.messages.storage.base import Message
+from django.core.exceptions import ImproperlyConfigured
 from django.core.files.uploadedfile import UploadedFile
 from django.core.files.uploadhandler import FileUploadHandler
 from django.db import models
@@ -198,6 +201,27 @@ class TetraJSONEncoder(json.JSONEncoder):
         #     return {"__type": "generic", "value": obj.to_json()}
         elif isinstance(obj, TetraTemporaryUploadedFile):
             return obj.name
+        elif isinstance(obj, Message):
+            try:
+                # there has to be an uid - else TetraMiddleware is missing
+                uid = obj.uid
+            except AttributeError:
+                raise ImproperlyConfigured(
+                    "Message contains no (money patched) `uid` "
+                    "attribute. Make sure you have "
+                    "TetraMiddleware installed in yoru "
+                    "settings.MIDDLEWARE"
+                )
+            return {
+                "__type": "message",
+                "message": obj.message,
+                "level": obj.level,
+                "level_tag": obj.level_tag,
+                "tags": obj.tags,
+                "extra_tags": obj.extra_tags,
+                "uid": uid,
+                "dismissible": "dismissible" in obj.extra_tags.split(" "),
+            }
         else:
             # as last resort, try to serialize into str
             try:
@@ -231,6 +255,14 @@ class TetraJSONDecoder(json.JSONDecoder):
                 temp_name=obj["value"]["temp_path"],
                 charset=settings.DEFAULT_CHARSET,
             )
+        elif _type == "message":
+            message = Message(
+                message=obj["message"],
+                level=obj["level"],
+                extra_tags=obj["extra_tags"],
+            )
+            message.uid = obj["uid"] if "uid" in obj else None
+            return message
         raise json.JSONDecodeError(f"Cannot decode '{_type}' object from JSON.", obj, 0)
 
 

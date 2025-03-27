@@ -214,6 +214,12 @@
           console.error("Response is not a Tetra response. Please check the server implementation.");
           return;
         }
+        const messages = Tetra.jsonDecode(response.headers.get("T-Messages"));
+        if (messages) {
+          messages.forEach((message, index) => {
+            component.$dispatch("tetra:newmessage", message);
+          });
+        }
         const respData = Tetra.jsonDecode(await response.text());
         if (respData.success) {
           let loadingResources = [];

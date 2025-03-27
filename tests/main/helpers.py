@@ -1,4 +1,4 @@
-from django.contrib.sessions.backends.cache import SessionStore
+from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest
 from django.template import Template, Context, RequestContext
 
@@ -14,6 +14,8 @@ def render_component_tag(request: HttpRequest, component_string, context=None):
         context: The context the template is rendered with. This is the outer context
             of the component
     """
+    request.session.session_key = "foo_bar_baz"  # noqa
+    request.user = AnonymousUser()
     ctx = RequestContext(request)
     if context:
         ctx.update(context)

@@ -413,6 +413,12 @@ class AttrsNode(template.Node):
                 for key, value in arg.items():
                     resolved_value = value.resolve(context)
                     yield key, resolved_value
+        # add subscribed events as Alpine x-on attr
+
+        c = self.origin.component
+        if hasattr(c, "_event_subscriptions"):
+            for event_name, method_name in c._event_subscriptions.items():
+                yield f"x-on:{event_name}", f"{method_name}($event.detail)"
 
     def render(self, context):
         attrs = {}
