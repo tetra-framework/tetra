@@ -12,7 +12,7 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.2] - unreleased
+## [0.2.0] - unreleased
 ### Added
 - DynamicFormMixin for dynamically updatable FormComponents
 - Improved demo site
