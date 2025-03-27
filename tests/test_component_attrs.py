@@ -1,4 +1,4 @@
-from conftest import extract_component_tag
+from utils import extract_component_tag
 from tests.main.helpers import render_component_tag
 
 

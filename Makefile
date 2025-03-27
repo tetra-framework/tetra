@@ -1,21 +1,28 @@
 
-test:
-	pytest
+venv:
+	# Create venv if it doesn't exist
+	test -d .venv || python3 -m venv .venv
+
+npm: venv
+	cd tests && test -d node_modules || npm install
+
+_activate:
+	. .venv/bin/activate
+
+test: venv _activate npm
+	cd tests && python -m pytest
 
 #coverage:
 #	coverage run -m pytest
 
-check:
+check: venv _activate
 	ruff check .
 
-doc:
-	cd docs
-	mkdocs build -d build/doc/
+doc: venv _activate
+	mkdocs build -d docs/build/doc/
 
-doc-dev:
-	cd docs
+doc-dev: venv _activate
 	mkdocs serve
 
-build:
+build: venv _activate npm
 	python -m build
-

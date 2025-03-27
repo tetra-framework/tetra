@@ -11,4 +11,5 @@ urlpatterns = [
         simple_basic_component_with_css,
         name="simple_basic_component_with_css",
     ),
+    path("main/", include("tests.main.urls")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

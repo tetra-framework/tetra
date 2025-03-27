@@ -1,9 +1,8 @@
 from sourcetypes import django_html
 
 from tetra import Library, BasicComponent
-from tests.conftest import extract_component_tag
 from tests.main.helpers import render_component_tag
-
+from utils import extract_component_tag
 
 attrs = Library("attrs", "main")
 

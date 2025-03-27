@@ -43,7 +43,8 @@ dev = [
     "python-dateutil>=2.8.2",
     "beautifulsoup4",
     "tetra[demo]", # include all the demo packages too
-    "tetra[doc]"
+    "tetra[doc]",
+    "selenium"
 ]
 demo = [
     "PyYAML>=6.0",
@@ -70,4 +71,8 @@ version = {attr = "tetra.__version__"}
 exclude = ["docs", "tests", "demosite"]
 
 [tool.pytest.ini_options]
+minversion = "6.0"
 addopts = "--nomigrations"
+testpaths =[
+    "tests"
+]

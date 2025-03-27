@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.template.exceptions import TemplateSyntaxError
 
 from main.components.default import SimpleBasicComponent
-from tests.conftest import extract_component, extract_component_tag
+from tests.utils import extract_component_tag
 from tests.main.helpers import render_component_tag
 import pytest
 

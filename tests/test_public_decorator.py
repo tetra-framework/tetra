@@ -1,7 +1,6 @@
 from types import FunctionType, MethodType
 
-
-from conftest import extract_component_tag
+from utils import extract_component_tag
 from main.components.default import ComponentWithPublic
 from tests.main.helpers import render_component_tag
 
