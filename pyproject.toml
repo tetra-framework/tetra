@@ -37,7 +37,9 @@ Repository = "https://github.com/tetra-framework/tetra"
 [project.optional-dependencies]
 dev = [
     "build",
-    "twine",
+    "twine>=6.1",
+    "packaging>=24.2",
+    "pkginfo>=1.12.1.2",
     "pytest",
     "pytest-django",
     "pre-commit",

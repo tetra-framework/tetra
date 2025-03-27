@@ -26,3 +26,10 @@ doc-dev: venv _activate
 
 build: venv _activate npm
 	python -m build
+
+# https://packaging.python.org/en/latest/tutorials/packaging-projects/#uploading-your-project-to-pypi
+publish-test: build
+	python -m twine upload --repository testpypi dist/*
+
+publish-prod: build
+	python -m twine upload --repository pypi dist/*
