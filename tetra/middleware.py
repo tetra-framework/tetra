@@ -1,12 +1,14 @@
-from typing import Callable, Awaitable
+import json
+import uuid
 from urllib.parse import urlsplit, urlunsplit
 
-from django.http import HttpRequest, HttpResponseBase, QueryDict
+from django.contrib.messages import get_messages
+from django.contrib.messages.storage.base import Message
+from django.http import HttpRequest, QueryDict
 from django.middleware.csrf import get_token
 from django.utils.functional import cached_property
 
-from .utils import render_scripts, render_styles
-from asgiref.sync import iscoroutinefunction, markcoroutinefunction
+from .utils import render_scripts, render_styles, TetraJSONEncoder
 
 
 class TetraMiddlewareException(Exception):
@@ -30,96 +32,6 @@ def inline_script_tag(source) -> str:
 
 def inline_styles_tag(source) -> str:
     return f"<styles>{source}</styles>"
-
-
-class TetraMiddleware:
-    """Middleware that modifies the request with helpers."""
-
-    # Some code is borrowed from adamchainz' django-htmx
-    async_capable = True
-    sync_capable = False
-
-    def __init__(
-        self,
-        get_response: (
-            Callable[[HttpRequest], HttpResponseBase]
-            | Callable[[HttpRequest], Awaitable[HttpResponseBase]]
-        ),
-    ) -> None:
-        self.get_response = get_response
-        if iscoroutinefunction(self.get_response):
-            markcoroutinefunction(self)
-        self.async_mode = iscoroutinefunction(self.get_response)
-
-        if self.async_mode:
-            # Mark the class as async-capable, but do the actual switch
-            # inside __call__ to avoid swapping out dunder methods
-            markcoroutinefunction(self)
-
-    def replace_tetra_components_used(self, request, response, csrf_token):
-        if hasattr(request, "tetra_components_used") and request.tetra_components_used:
-            if not hasattr(request, "tetra_scripts_placeholder_string"):
-                raise TetraMiddlewareException(
-                    "The {% tetra_scripts %} tag is required to be placed in the "
-                    "page's <head> tag when using Tetra components."
-                )
-            if not hasattr(request, "tetra_styles_placeholder_string"):
-                raise TetraMiddlewareException(
-                    "The {% tetra_styles %} tag is required to be placed in the page's "
-                    "<head> tag when using Tetra components."
-                )
-            if request.tetra_scripts_placeholder_string not in response.content:
-                raise TetraMiddlewareException(
-                    "Placeholder from {% tetra_scripts %} not found."
-                )
-            if request.tetra_styles_placeholder_string not in response.content:
-                raise TetraMiddlewareException(
-                    "Placeholder from {% tetra_styles %} not found."
-                )
-
-            content = response.content
-            content = content.replace(
-                request.tetra_scripts_placeholder_string,
-                render_scripts(request, csrf_token).encode(),
-            )
-            content = content.replace(
-                request.tetra_styles_placeholder_string, render_styles(request).encode()
-            )
-            response.content = content
-
-    def check_content_type(self, response) -> bool:
-        if (
-            "Content-Type" not in response.headers
-            or "text/html" not in response.headers["Content-Type"]
-        ):
-            return False
-        if int(response.status_code) >= 500:
-            return False
-        return True
-
-    def __call__(self, request):
-        if self.async_mode:
-            return self.__acall__(request)
-
-        csrf_token = get_token(request)
-        response = self.get_response(request)
-        request.tetra = TetraDetails(request)
-        if not self.check_content_type(response):
-            return response
-
-        self.replace_tetra_components_used(request, response, csrf_token)
-        return response
-
-    async def __acall__(self, request) -> HttpResponseBase:
-        request.tetra = TetraDetails(request)
-        response = await self.get_response(request)
-        csrf_token = get_token(request)
-        if not self.check_content_type(response):
-            return response
-
-        self.replace_tetra_components_used(request, response, csrf_token)
-
-        return response
 
 
 class TetraDetails:
@@ -166,3 +78,67 @@ class TetraDetails:
         ):
             return QueryDict(split.query)
         return QueryDict()
+
+
+class TetraMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        csrf_token = get_token(request)
+        response = self.get_response(request)
+        request.tetra = TetraDetails(request)
+
+        messages: list[Message] = []
+        for message in get_messages(request):
+            # FIXME: maybe use a more efficient data structure for large number of
+            #  messages
+
+            # monkey patch an uid into the Message class to ensure it has a unique ID
+            # if it doesn't have one already
+            if not hasattr(message, "uid"):
+                message.uid = str(uuid.uuid4())
+            messages.append(message)
+        if messages:
+            # Put the messages list into the T-Messages header
+            response.headers["T-Messages"] = json.dumps(messages, cls=TetraJSONEncoder)
+
+        if (
+            "Content-Type" not in response.headers
+            or "text/html" not in response.headers["Content-Type"]
+        ):
+            return response
+        if int(response.status_code) >= 500:
+            return response
+
+        if hasattr(request, "tetra_components_used") and request.tetra_components_used:
+            if not hasattr(request, "tetra_scripts_placeholder_string"):
+                raise TetraMiddlewareException(
+                    "The {% tetra_scripts %} tag is required to be placed in the "
+                    "page's <head> tag when using Tetra components."
+                )
+            if not hasattr(request, "tetra_styles_placeholder_string"):
+                raise TetraMiddlewareException(
+                    "The {% tetra_styles %} tag is required to be placed in the page's "
+                    "<head> tag when using Tetra components."
+                )
+            if request.tetra_scripts_placeholder_string not in response.content:
+                raise TetraMiddlewareException(
+                    "Placeholder from {% tetra_scripts %} not found."
+                )
+            if request.tetra_styles_placeholder_string not in response.content:
+                raise TetraMiddlewareException(
+                    "Placeholder from {% tetra_styles %} not found."
+                )
+
+            content = response.content
+            content = content.replace(
+                request.tetra_scripts_placeholder_string,
+                render_scripts(request, csrf_token).encode(),
+            )
+            content = content.replace(
+                request.tetra_styles_placeholder_string, render_styles(request).encode()
+            )
+            response.content = content
+
+        return response
