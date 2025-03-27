@@ -1,9 +1,10 @@
-from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest
-from django.template import Template, Context, RequestContext
+from django.template import Template, RequestContext
 
 
-def render_component_tag(request: HttpRequest, component_string, context=None):
+def render_component_tag(
+    request_with_session: HttpRequest, component_string, context=None
+):
     """Helper function to return a full html document with loaded Tetra stuff,
     and the component_string as body content.
 
@@ -14,12 +15,10 @@ def render_component_tag(request: HttpRequest, component_string, context=None):
         context: The context the template is rendered with. This is the outer context
             of the component
     """
-    request.session.session_key = "foo_bar_baz"  # noqa
-    request.user = AnonymousUser()
-    ctx = RequestContext(request)
+    ctx = RequestContext(request_with_session)
     if context:
         ctx.update(context)
-    ctx.request = request
+    ctx.request = request_with_session
     return Template(
         "{% load tetra %}<!doctype html>"
         "<html><head>"

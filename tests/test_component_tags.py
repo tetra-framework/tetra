@@ -1,9 +1,11 @@
+import re
+
 from bs4 import BeautifulSoup
 from django.urls import reverse
 from django.template.exceptions import TemplateSyntaxError
 
 from main.components.default import SimpleBasicComponent
-from tests.conftest import extract_component
+from tests.conftest import extract_component, extract_component_tag
 from tests.main.helpers import render_component_tag
 import pytest
 
@@ -15,7 +17,7 @@ def test_basic_component(request):
     content = render_component_tag(
         request, "{% @ main.default.SimpleBasicComponent / %}"
     )
-    assert extract_component(content) == "foo"
+    assert extract_component_tag(content).text == "foo"
 
 
 # def test_basic_component_as_default(request):
@@ -30,7 +32,7 @@ def test_basic_component_with_end_tag(request):
     content = render_component_tag(
         request, "{% @ main.default.SimpleBasicComponent %}{% /@ %}"
     )
-    assert extract_component(content) == "foo"
+    assert extract_component_tag(content).text == "foo"
 
 
 def test_basic_component_with_end_tag_and_name(request):
@@ -39,7 +41,7 @@ def test_basic_component_with_end_tag_and_name(request):
         request,
         "{% @ main.default.SimpleBasicComponent %}{% /@ SimpleBasicComponent %}",
     )
-    assert extract_component(content) == "foo"
+    assert extract_component_tag(content).text == "foo"
 
 
 def test_basic_component_with_missing_end_tag(request):
@@ -51,18 +53,18 @@ def test_basic_component_with_missing_end_tag(request):
         )
 
 
-def test_css_component(client):
+def test_component_css_link_generation(client):
     """Tests a component with CSS file"""
     response = client.get(reverse("simple_basic_component_with_css"))
     assert response.status_code == 200
     soup = BeautifulSoup(response.content, "html.parser")
     # it should be the only link in the header... TODO: make that more fool-proof
     link = soup.head.link["href"]
-    assert "main_default" in link
     assert link is not None
-    response = client.get(link)
-    # FIXME: does not work yet. staticfiles problem? Should run in DEBUG mode without
-    #  problem...
+    assert re.match(r"/static/main/tetra/default/main_default-[A-Z0-9]+.css", link)
+    # TODO we can't test the actual file content of the CSS file here, as static files
+    #  seem not to  be available in testing  - have to figure out how
+    # response = client.get(static(link))
     # assert response.status_code == 200
     # assert b".text-red { color: red; }" in response.content
 
@@ -77,7 +79,7 @@ def test_basic_dynamic_component(request):
         "{% @ =dynamic_component /%}",
         {"dynamic_component": SimpleBasicComponent},
     )
-    assert extract_component(content) == "foo"
+    assert extract_component_tag(content).text == "foo"
 
 
 def test_basic_dynamic_non_existing_component(request):

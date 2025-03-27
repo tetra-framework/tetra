@@ -1,7 +1,5 @@
-from tests.conftest import extract_component
+from tests.conftest import extract_component, extract_component_tag
 from tests.main.helpers import render_component_tag
-from tetra import BasicComponent
-from sourcetypes import django_html
 
 
 def test_use_extra_context_not_scoped(request):
@@ -13,7 +11,7 @@ def test_use_extra_context_not_scoped(request):
         "{% /@ %}",
         context={"foo": "bar"},  # global, outer context
     )
-    assert extract_component(content) == ""
+    assert extract_component_tag(content).text == ""
 
 
 def test_use_extra_context(request):
@@ -26,7 +24,7 @@ def test_use_extra_context(request):
         "{% /@ %}",
         context={"foo": "bar"},  # global, outer context
     )
-    assert extract_component(content) == "bar"
+    assert extract_component_tag(content).text == "bar"
 
 
 def test_use_extra_context_empty(request):
@@ -39,7 +37,7 @@ def test_use_extra_context_empty(request):
         "{% /@ %}",  # FIXME:KeyError(key)
         # context={"foo": "bar"},  # global, outer context
     )
-    assert extract_component(content) == ""
+    assert extract_component_tag(content).text == ""
 
 
 def test_use_extra_context_all_empty(request):
@@ -52,7 +50,7 @@ def test_use_extra_context_all_empty(request):
         "{% /@ %}",
         # context={"foo": "bar"},  # global, outer context
     )
-    assert extract_component(content) == ""
+    assert extract_component_tag(content).text == ""
 
 
 def test_use_extra_context_all(request):
@@ -64,7 +62,7 @@ def test_use_extra_context_all(request):
         "{% /@ %}",
         context={"foo": "bar"},  # global, outer context
     )
-    assert extract_component(content) == "bar"
+    assert extract_component_tag(content).text == "bar"
 
 
 # -------- using template attrs --------
@@ -79,7 +77,7 @@ def test_use_context_attr(request):
         "{{foo}}"
         "{% /@ %}",
     )
-    assert extract_component(content) == "bar"
+    assert extract_component_tag(content).text == "bar"
 
 
 def test_use_context_attr_all(request):
@@ -92,7 +90,7 @@ def test_use_context_attr_all(request):
         "{% /@ %}",
         context={"foo": "bar"},  # global, outer context
     )
-    assert extract_component(content) == "bar"
+    assert extract_component_tag(content).text == "bar"
 
 
 def test_extra_context(request):
@@ -104,7 +102,7 @@ def test_extra_context(request):
         "{% /@ %}",
         context={"foo": "bar"},  # global, outer context, included in __all__
     )
-    assert extract_component(content) == "bar"
+    assert extract_component_tag(content).text == "bar"
 
 
 def test_context_attr_overrides_extra_context(request):
@@ -116,4 +114,4 @@ def test_context_attr_overrides_extra_context(request):
         "{{foo}}"
         "{% /@ %}",
     )
-    assert extract_component(content) == "nobaz"
+    assert extract_component_tag(content).text == "nobaz"

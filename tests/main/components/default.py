@@ -26,38 +26,24 @@ class SimpleComponentWithNamedBlockWithContent(BasicComponent):
 
 
 class SimpleComponentWithConditionalBlock(BasicComponent):
-    template: django_html = """
-<div id="component">
-{% if blocks.foo %}BEFORE{% block foo %}content{% endblock %}AFTER{% endif %}always
-</div>
-"""
+    template: django_html = (
+        """<div id="component">{% if blocks.foo %}BEFORE{% block foo %}content{% endblock %}AFTER{% endif %}always</div>"""
+    )
 
 
 class SimpleComponentWithConditionalBlockAndAdditionalContent(BasicComponent):
-    template: django_html = """
-<div id="component">
-BE
-{% if blocks.foo %}
-FORE
-{% block foo %}{% endblock %}
-AF
-{% endif %}
-TER
-</div>
-"""
+    template: django_html = (
+        """<div id="component">BE{% if blocks.foo %}FORE{% block foo %}{% endblock %}AF{% endif %}TER</div>"""
+    )
 
 
 class SimpleComponentWithConditionalBlockAndAdditionalHtmlContent(BasicComponent):
     template: django_html = """
-<div id="component">
-<div>
+<div id="component"><div>
 {% if blocks.foo %}
-<span>
-{% block foo %}{% endblock %}
-</span>
+<span>{% block foo %}{% endblock %}</span>
 {% endif %}
-</div>
-</div>
+</div></div>
 """
 
 
@@ -92,11 +78,6 @@ class SimpleComponentWithExtraContextAll(BasicComponent):
 
 
 # --------------------------------------------------
-
-
-class SimpleComponentWithAttributeStr(BasicComponent):
-    my_str: str = "foo"
-    template: django_html = "<div id='component'>str: {{ my_str }}</div>"
 
 
 class SimpleComponentWithAttributeInt(BasicComponent):

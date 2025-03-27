@@ -20,11 +20,26 @@ def setup_django_environment():
 
 @pytest.fixture
 def request_with_session():
-    """Fixture to provide an HttpRequest with a session."""
+    """Fixture to provide an Http GET Request with a session."""
     from django.contrib.auth.models import AnonymousUser
 
     factory = RequestFactory()
     req = factory.get("/")  # Create a request object
+
+    req.session = SessionStore()
+    req.session.create()
+    req.user = AnonymousUser()
+
+    return req
+
+
+@pytest.fixture
+def post_request_with_session():
+    """Fixture to provide an Http POST Request with a session."""
+    from django.contrib.auth.models import AnonymousUser
+
+    factory = RequestFactory()
+    req = factory.post("/")  # Create a request object
 
     req.session = SessionStore()
     req.session.create()

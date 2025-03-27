@@ -1,4 +1,4 @@
-from tests.conftest import extract_component
+from tests.conftest import extract_component, extract_component_tag
 from tests.main.helpers import render_component_tag
 
 
@@ -8,7 +8,7 @@ def test_component_with_default_block(request):
         request,
         "{% @ main.default.SimpleComponentWithDefaultBlock %}content{% /@ %}",
     )
-    assert extract_component(content) == "content"
+    assert extract_component_tag(content).text == "content"
 
 
 def test_component_with_named_block(request):
@@ -17,7 +17,7 @@ def test_component_with_named_block(request):
         request,
         "{% @ main.default.simple_component_with_named_block %}{% /@ %}",
     )
-    assert extract_component(content) == ""
+    assert extract_component_tag(content).text == ""
 
 
 def test_component_with_named_block_and_content(request):
@@ -28,7 +28,7 @@ def test_component_with_named_block_and_content(request):
         "{% block foo %}foo{% endblock %}"
         "{% /@ %}",
     )
-    assert extract_component(content) == "foo"
+    assert extract_component_tag(content).text == "foo"
 
 
 def test_component_with_named_block_and_default_content(request):
@@ -37,7 +37,7 @@ def test_component_with_named_block_and_default_content(request):
         request,
         "{% @ main.default.SimpleComponentWithNamedBlockWithContent %}" "{% /@ %}",
     )
-    assert extract_component(content) == "foo"
+    assert extract_component_tag(content).text == "foo"
 
 
 def test_component_with_notexisting_block_and_content(request):
@@ -48,7 +48,7 @@ def test_component_with_notexisting_block_and_content(request):
         "{% block notexisting %}foo{% endblock %}"
         "{% /@ %}",
     )
-    assert extract_component(content) == ""
+    assert extract_component_tag(content).text == ""
 
 
 def test_component_with_named_block_empty(request):
@@ -59,7 +59,7 @@ def test_component_with_named_block_empty(request):
         "{% block foo %}{% endblock %}"
         "{% /@ %}",
     )
-    assert extract_component(content) == ""
+    assert extract_component_tag(content).text == ""
 
 
 # FIXME: this test does not work correctly
@@ -86,7 +86,7 @@ def test_component_with_2_blocks_unfilled(request):
         "{% block foo %}{% endblock %}"
         "{% /@ %}",
     )
-    assert extract_component(content) == "default"
+    assert extract_component_tag(content).text == "default"
 
 
 def test_component_with_2_blocks_partly_filled(request):
@@ -97,7 +97,7 @@ def test_component_with_2_blocks_partly_filled(request):
         "{% block foo %}bar{% endblock %}"
         "{% /@ %}",
     )
-    assert extract_component(content) == "defaultbar"
+    assert extract_component_tag(content).text == "defaultbar"
 
 
 def test_component_with_block_and_default_content_overridden(request):
@@ -108,7 +108,7 @@ def test_component_with_block_and_default_content_overridden(request):
         "{% block foo %}overridden{% endblock %}"
         "{% /@ %}",
     )
-    assert extract_component(content) == "overridden"
+    assert extract_component_tag(content).text == "overridden"
 
 
 def test_component_with_conditional_block_empty(request):
@@ -118,7 +118,7 @@ def test_component_with_conditional_block_empty(request):
     content = render_component_tag(
         request, "{% @ main.default.SimpleComponentWithConditionalBlock / %}"
     )
-    assert extract_component(content) == "always"
+    assert extract_component_tag(content).text == "always"
 
 
 def test_component_with_conditional_block_filled_empty(request):
@@ -131,7 +131,7 @@ def test_component_with_conditional_block_filled_empty(request):
         "{% block foo %}{% endblock %}"
         "{% /@ %}",
     )
-    assert extract_component(content) == "BEFOREAFTERalways"
+    assert extract_component_tag(content).decode_contents() == "BEFOREAFTERalways"
 
 
 def test_component_with_conditional_block_filled(request):
@@ -143,7 +143,7 @@ def test_component_with_conditional_block_filled(request):
         "{% block foo %}foo{% endblock %}"
         "{% /@ %}",
     )
-    assert extract_component(content) == "BEFOREfooAFTERalways"
+    assert extract_component_tag(content).decode_contents() == "BEFOREfooAFTERalways"
 
 
 def test_component_with_conditional_addcontent_block_filled(request):
@@ -155,7 +155,7 @@ def test_component_with_conditional_addcontent_block_filled(request):
         "{% block foo %}foo{% endblock %}"
         "{% /@ %}",
     )
-    assert extract_component(content) == "BEFOREfooAFTER"
+    assert extract_component_tag(content).decode_contents() == "BEFOREfooAFTER"
 
 
 def test_component_with_conditional_addcontent_block_filled_and_html_tags(request):
@@ -163,9 +163,12 @@ def test_component_with_conditional_addcontent_block_filled_and_html_tags(reques
     content = render_component_tag(
         request,
         """
-{% @ main.default.simple_component_with_conditional_block_and_additional_html_content %}
-{% block foo %}foo{% endblock %}
+{% @ main.default.SimpleComponentWithConditionalBlockAndAdditionalHtmlContent %}
+{% block foo %}bar{% endblock %}
 {% /@ %}
 """,
     )
-    assert extract_component(content) == "<div><span>foo</span></div>"
+    assert (
+        extract_component_tag(content).decode_contents().replace("\n", "")
+        == "<div><span>bar</span></div>"
+    )

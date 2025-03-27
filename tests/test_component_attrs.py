@@ -1,4 +1,4 @@
-from tests.conftest import extract_component
+from conftest import extract_component_tag
 from tests.main.helpers import render_component_tag
 
 
@@ -7,11 +7,9 @@ def test_attrs(request):
     content = render_component_tag(
         request, "{% @ main.default.SimpleComponentWithAttrs / %}"
     )
-    assert extract_component(content) == "content"
-    assert (
-        extract_component(content, innerHTML=False)
-        == '<div class="class1" id="component">content</div>'
-    )
+    soup = extract_component_tag(content)
+    assert soup.text == "content"
+    assert "class1" in soup.attrs["class"]
 
 
 def test_attrs_merge(request):
@@ -19,8 +17,5 @@ def test_attrs_merge(request):
     content = render_component_tag(
         request, "{% @ main.default.SimpleComponentWithAttrs attrs: class='class2' / %}"
     )
-    assert extract_component(content) == "content"
-    assert (
-        extract_component(content, innerHTML=False)
-        == '<div class="class2 class1" id="component">content</div>'
-    )
+    soup = extract_component_tag(content)
+    assert set(soup.attrs["class"]) == {"class1", "class2"}

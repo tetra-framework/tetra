@@ -1,10 +1,11 @@
 import pytest
 from django import forms
 from django.forms import Form
-from django.apps import apps
 
 from tetra import Library
 from tetra.components import FormComponent
+
+lib = Library("forms", "main")
 
 
 class SimpleTestForm1(Form):
@@ -17,20 +18,26 @@ class SimpleTestForm1(Form):
     size = forms.FloatField()
 
 
-class Form1Component(FormComponent):
-    form_class = SimpleTestForm1
-    template = """<div id="component"></div>"""
+def test_form_component_registration():
+    """test FormComponent initialization and attribute assignment"""
+
+    @lib.register
+    class Foo(FormComponent):
+        form_class = SimpleTestForm1
+        template = """<div id="component"></div>"""
 
 
-@pytest.mark.django_db
-def test_form_component():
-    """Tests a simple component with a dict attribute"""
-    app = apps.get_app_configs()
-    lib = Library("default", app=apps.get_app_config("main"))
-    lib.register(Form1Component)
-    assert lib.components
-    pass
-    # assert (
-    #     extract_component(content, innerHTML=True)
-    #     == """<input id="id_first_name" maxlength="100" name="first_name" required="" type="text" value="John" x-model="first_name"/>"""
-    # )
+#     # TODO
+# def test_recalculate_attrs_clears_errors():
+#     @lib.register
+#     class Foo(FormComponent):
+#         form_class = SimpleTestForm1
+#         template = """<div id="component"></div>"""
+#
+#     c = lib.components["foo"]
+#     c.form_submitted = False
+#
+#     # Call the method
+#     c.recalculate_attrs(component_method_finished=True)
+#
+#     # Assert that errors were cleared

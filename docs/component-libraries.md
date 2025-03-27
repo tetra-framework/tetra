@@ -2,7 +2,7 @@
 title: Libraries
 ---
 
-# Component Libraries
+# Libraries
 
 Every Tetra component belongs to a component library. Basically, libraries are the modules within `<myapp>.components` (or, alternatively, `<myapp>.tetra_components`) where components are found automatically:
 
@@ -88,3 +88,33 @@ myapp
 
 !!! note
     If you use a **directory style component**, make sure you define only ONE component class per module (e.g. in `components/default/my_calendar.py`). If you use the library module directly to create components (`components/default.py`), you can certainly put multiple components in there.
+
+## Manually declared libraries
+
+It is not necessary to follow the directory structure. You can also declare a Library anywhere in your code, and register components to it. The `Library` class takes the *name of the library* and the *AppConfig (or app label)* as parameters. You can declare the libraries more then once, everything with the same name will be merged together.
+
+!!! note
+    Library names must be globally unique. Declaring Libraries with the same name in different apps is forbidden.
+
+```python
+from tetra import Library
+
+widgets = Library("widgets", "ui")
+# this is the same library!
+widgets_too = Library("widgets", "ui")
+```
+
+When a Library is declared, you can register Components to it by using the `@<library>.register` decorator:
+
+```python
+@widgets.register
+class Button(BasicComponent):
+    ...
+```
+
+As a decorator can be used as a function, you can even register components in code:
+
+```python
+lib = Library("mylib", "myapp")
+lib.register(MyComponentClass)
+```
