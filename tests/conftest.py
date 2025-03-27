@@ -35,7 +35,7 @@ def request_with_session():
 
 @pytest.fixture
 def post_request_with_session():
-    """Fixture to provide an Http POST Request with a session."""
+    """Fixture to provide a Http POST Request with a session."""
     from django.contrib.auth.models import AnonymousUser
 
     factory = RequestFactory()
