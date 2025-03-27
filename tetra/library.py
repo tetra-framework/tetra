@@ -22,9 +22,14 @@ class Library:
     registry = defaultdict(dict)
 
     @staticmethod
-    def __new__(cls, name: str, app: AppConfig | str, path: str = "") -> Self:
+    def __new__(
+        cls, name: str = None, app: AppConfig | str = None, path: str = ""
+    ) -> Self:
         """Returns a new instance of Library, or the existing instance, if a library
         with the same app/name already exists."""
+
+        if not name or not app:
+            raise ValueError("Library 'name' and 'app' parameters are required.")
         if type(app) is str:
             app = apps.get_app_config(app)
         if app.label not in cls.registry or name not in cls.registry[app.label]:
