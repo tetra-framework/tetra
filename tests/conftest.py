@@ -6,6 +6,8 @@ from django.conf import settings
 from django.contrib.sessions.backends.cache import SessionStore
 from django.core.management import call_command
 from django.test import RequestFactory
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
 BASE_DIR = Path(__file__).resolve().parent
 
