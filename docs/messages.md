@@ -1,4 +1,4 @@
-from tetra import ComponentTitle: Messaging integration
+Title: Messaging integration
 
 # Message framework integration
 
