@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
-from ...component_register import libraries
+
+from ... import Library
 from ...build import build
 
 
@@ -16,6 +17,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         libs_to_build = []
         app_libraries = options["app_libraries"]
+        libraries = Library.registry
         if app_libraries:
             for app_library in app_libraries:
                 if "." in app_library:

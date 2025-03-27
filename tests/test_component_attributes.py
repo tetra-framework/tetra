@@ -25,7 +25,7 @@ def test_simple_component_attribute_int(request_with_session):
     )
     assert extract_component(content, innerHTML=True) == "int: 23"
     # get handler for the component class
-    component = libraries["main"]["default"].components.get(
+    component = Library.registry["main"]["default"].components.get(
         "simple_component_with_attribute_int"
     )
     assert component.my_int == 23

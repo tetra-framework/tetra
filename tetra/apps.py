@@ -2,23 +2,25 @@ from glob import glob
 from django.apps import AppConfig
 from pathlib import Path
 import os
+
+from . import Library
 from .templates import monkey_patch_template
 from django.utils.autoreload import autoreload_started
-from .component_register import libraries
 
 monkey_patch_template()
 
 
 def watch_extra_files(sender, *args, **kwargs):
     watch = sender.extra_files.add
-    for app_name, library in libraries.items():
+    for app_name, library in Library.registry.items():
         for lib_name, library_info in library.items():
             if library_info:
                 # watch for html, js, and css files
                 watch_list = glob(f"{library_info.path}/**/*.*", recursive=True)
                 for file in watch_list:
-                    if os.path.exists(file) and file.endswith(('.html', '.css', '.js')):
+                    if os.path.exists(file) and file.endswith((".html", ".css", ".js")):
                         watch(Path(file))
+
 
 class TetraConfig(AppConfig):
     name = "tetra"

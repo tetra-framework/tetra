@@ -1,5 +1,6 @@
 import itertools
-from .component_register import libraries
+
+from tetra import Library
 
 
 def build(libs_to_build):
@@ -11,6 +12,6 @@ def build(libs_to_build):
 
 def runserver_build():
     libs_to_build = list(
-        itertools.chain.from_iterable(d.values() for d in libraries.values())
+        itertools.chain.from_iterable(d.values() for d in Library.registry.values())
     )
     build(libs_to_build)

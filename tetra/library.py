@@ -3,6 +3,8 @@ import os
 import shutil
 import subprocess
 import json
+from collections import defaultdict
+from typing import Self
 
 from django.apps import AppConfig, apps
 from django.conf import settings
@@ -16,28 +18,26 @@ from .utils import camel_case_to_underscore
 logger = logging.getLogger(__name__)
 
 
-class LibraryMetaClass(type):
-    # makes sure that library names are unique per app
-    _instances = {}
+class Library:
+    registry = defaultdict(dict)
 
-    def __call__(cls, name, app, *args, **kwargs):
-        # if Library is called with an app label instead of an AppConfig, correct that
+    @staticmethod
+    def __new__(cls, name: str, app: AppConfig | str, path: str = "") -> Self:
+        """Returns a new instance of Library, or the existing instance, if a library
+        with the same app/name already exists."""
         if type(app) is str:
             app = apps.get_app_config(app)
-        key = (name, app.label)
-        if key not in cls._instances:
-            cls._instances[key] = super().__call__(name, app, *args, **kwargs)
-        return cls._instances[key]
+        if app.label not in cls.registry or name not in cls.registry[app.label]:
+            instance = super().__new__(cls)
+            cls.registry[app.label][name] = instance
+        else:
+            instance = cls.registry[app.label][name]
+        return instance
 
+    def __init__(self, name: str, app: AppConfig | str, path: str = ""):
+        if type(app) is str:
+            app = apps.get_app_config(app)
 
-class Library(metaclass=LibraryMetaClass):
-
-    def __init__(
-        self,
-        name: str,
-        app: AppConfig,
-        path: str = "",
-    ):
         # Initialize only if this is a new instance
         if not hasattr(self, "components"):
             self.components = {}

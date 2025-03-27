@@ -20,7 +20,6 @@ from .utils import (
 
 logger = logging.getLogger(__name__)
 
-libraries = defaultdict(dict)
 find_libraries_done = False
 
 # TODO: put that in a more global scope
@@ -29,7 +28,6 @@ components_module_names = ["components", "tetra_components"]
 
 def find_component_libraries():
     """Finds libraries in component modules of all installed django apps."""
-    global libraries
     global find_libraries_done
     if find_libraries_done:
         return
@@ -51,12 +49,8 @@ def find_component_libraries():
                 for module_finder, library_name, ispkg in pkgutil.iter_modules(
                     components_module.__path__
                 ):
-                    # check if library name is already registered, else register it.
-                    library = libraries[app_config.label].get(library_name)
-                    if not library:
-                        library = Library(name=library_name, app=app_config)
-                        # save library in a dictionary for later usage.
-                        libraries[app_config.label][library_name] = library
+                    # if library name is already registered, get the instance, else register it.
+                    library = Library(name=library_name, app=app_config)
 
                     # if submodule is a package, treat it as library package
                     try:
@@ -200,7 +194,7 @@ def resolve_component(context, name: str) -> Component:
         if len(name_parts) == 3:
             # Full component name, easy!
             try:
-                return libraries[name_parts[0]][name_parts[1]].components[
+                return Library.registry[name_parts[0]][name_parts[1]].components[
                     camel_case_to_underscore(name_parts[2])
                 ]
             except KeyError:
@@ -244,7 +238,7 @@ def resolve_component(context, name: str) -> Component:
         if current_app and len(name_parts) == 1:
             # Try in current apps default library
             try:
-                return libraries[current_app.label]["default"].components[
+                return Library.registry[current_app.label]["default"].components[
                     camel_case_to_underscore(name_parts[0])
                 ]
             except KeyError:
@@ -253,7 +247,7 @@ def resolve_component(context, name: str) -> Component:
         if current_app and len(name_parts) == 2:
             # try other library name in current_app
             try:
-                return libraries[current_app.label][name_parts[0]].components[
+                return Library.registry[current_app.label][name_parts[0]].components[
                     camel_case_to_underscore(name_parts[1])
                 ]
             except KeyError:
@@ -262,7 +256,7 @@ def resolve_component(context, name: str) -> Component:
         if len(name_parts) == 2:
             # try other part1.default.part2
             try:
-                return libraries[name_parts[0]]["default"].components[
+                return Library.registry[name_parts[0]]["default"].components[
                     camel_case_to_underscore(name_parts[1])
                 ]
             except KeyError:
@@ -271,7 +265,7 @@ def resolve_component(context, name: str) -> Component:
     # if no method lead to finding a component successfully, give the user a hint
     # which components are available.
     components = []
-    for app_name, lib in libraries.items():
+    for app_name, lib in Library.registry.items():
         if lib:
             for lib_name, library in lib.items():
                 if library.components:

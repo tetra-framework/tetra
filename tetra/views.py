@@ -4,7 +4,7 @@ import logging
 from django.http import HttpResponseNotFound, HttpResponseBadRequest, HttpResponse
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
-from .component_register import libraries
+from . import Library
 from .utils import from_json, PersistentTemporaryFileUploadHandler
 
 
@@ -26,7 +26,7 @@ def _component_method(
     if not request.method == "POST":
         return HttpResponseBadRequest()
     try:
-        Component = libraries[app_name][library_name].components[component_name]
+        Component = Library.registry[app_name][library_name].components[component_name]
     except KeyError:
         return HttpResponseNotFound()
 
