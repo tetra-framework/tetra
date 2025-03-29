@@ -12,7 +12,10 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0] - unreleased
+## [0.2.1] - 2025-03-29
+- fix a small bug that could early-delete temporary uploaded files  
+
+## [0.2.0] - 2025-03-27
 ### Added
 - DynamicFormMixin for dynamically updatable FormComponents
 - Improved demo site
