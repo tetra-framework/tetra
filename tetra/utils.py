@@ -103,7 +103,7 @@ class TetraTemporaryUploadedFile(UploadedFile):
             temp_file = tempfile.NamedTemporaryFile(
                 suffix=".upload" + ext,
                 dir=os.path.join(settings.MEDIA_ROOT, settings.TETRA_TEMP_UPLOAD_PATH),
-                delete_on_close=False,
+                delete=False,
             )
         super().__init__(
             temp_file, name, content_type, size, charset, content_type_extra
