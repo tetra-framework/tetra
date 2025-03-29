@@ -25,11 +25,13 @@ doc-dev: venv _activate
 	mkdocs serve
 
 build: venv _activate npm
+	# remove dist/ if it exists
+	rm -rf dist/
 	python -m build
 
 # https://packaging.python.org/en/latest/tutorials/packaging-projects/#uploading-your-project-to-pypi
-publish-test: build
+publish-test:
 	python -m twine upload --repository testpypi dist/*
 
-publish-prod: build
+publish-prod:
 	python -m twine upload --repository pypi dist/*
