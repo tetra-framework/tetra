@@ -86,8 +86,8 @@ class TetraMiddleware:
 
     def __call__(self, request):
         csrf_token = get_token(request)
-        response = self.get_response(request)
         request.tetra = TetraDetails(request)
+        response = self.get_response(request)
 
         messages: list[Message] = []
         for message in get_messages(request):
