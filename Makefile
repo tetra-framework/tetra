@@ -1,13 +1,13 @@
 
 venv:
 	# Create venv if it doesn't exist
-	test -d .venv || python3 -m venv .venv
-
-npm: venv
-	cd tests && test -d node_modules || npm install
+	test -d .venv || /usr/bin/env python3 -m venv .venv
 
 _activate:
 	. .venv/bin/activate
+
+npm:
+	cd tests && test -d node_modules || npm install
 
 test: venv _activate npm
 	cd tests && python -m pytest
