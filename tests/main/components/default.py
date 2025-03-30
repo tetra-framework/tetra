@@ -1,4 +1,4 @@
-from tetra import BasicComponent
+from tetra import BasicComponent, public, Component
 from sourcetypes import django_html, css
 
 
@@ -113,3 +113,22 @@ class SimpleComponentWithAttributeFrozenSet(BasicComponent):
 class SimpleComponentWithAttributeBool(BasicComponent):
     my_bool: bool = False
     template: django_html = "<div id='component'>bool: {{ my_bool }}</div>"
+
+
+class ComponentWithPublic(Component):
+    msg = public("Message")
+
+    @public
+    def do_something(self) -> str:
+        pass
+
+    template: django_html = "<div id='component'>{{ message }}</div>"
+
+
+class ComponentWithPublicSubscribe(Component):
+
+    @public.subscribe("keyup.enter")
+    def do_something(self) -> str:
+        pass
+
+    template: django_html = "<div id='component' {% ... attrs %}></div>"
