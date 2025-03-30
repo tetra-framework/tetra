@@ -33,11 +33,11 @@ All components belong to a component library, which in turn belong to a "Django 
 
   - `ComponentName`
 
-    When you only specify the component name, Tetra attempts to resolve the component in the current app's `default` library.
+    When you specify only the component name, Tetra attempts to resolve the component **in the current app's `default` library**.
 
   - `library.ComponentName`
 
-    You can specify which library the component is in within the current app.
+    **Within the current app**, you can specify the component just by the library it is in and its name.
 
   - `app.ComponentName`
 
@@ -45,9 +45,10 @@ All components belong to a component library, which in turn belong to a "Django 
 
   - `app.library.ComponentName`
 
-    Finally, you can fully specify the component path.
+    With the full component name, you can specify the exact component.
 
-Resolution is attempted in the order above.
+When 2 parts are given (`library.ComponentName` or `app.ComponentName`), resolution is attempted in the order above.
+
 
 ## Dynamically resolved component names
 

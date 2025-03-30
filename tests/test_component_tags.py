@@ -20,11 +20,31 @@ def test_basic_component(request):
     assert extract_component_tag(content).text == "foo"
 
 
-# def test_basic_component_as_default(request):
-#     """Tests a simple component that implicitly is found in the default library"""
-#     # FIXME: this does not work, as tetra does not fund the current app while in testing
-#     content = render_component_tag(request, "{% @ main.simple_basic_component / %}")
-#     assert extract_component(content) == "foo"
+def test_basic_component_as_default(request):
+    """Tests a simple component that implicitly is found in the default library"""
+    content = render_component_tag(request, "{% @ main.SimpleBasicComponent / %}")
+    assert extract_component_tag(content).text == "foo"
+
+
+def test_basic_component_with_library(request):
+    with pytest.raises(ComponentNotFound) as exc_info:
+        """Tests a simple component that is can't be found in the current_app.default
+        library."""
+        content = render_component_tag(
+            request, "{% @ default.SimpleBasicComponent / %}"
+        )
+    assert (
+        "but there is no component 'SimpleBasicComponent' in the 'default' library of "
+        "the 'default' app"
+    ) in str(exc_info.value)
+
+
+def test_basic_component_with_app_and_library(request):
+    with pytest.raises(ComponentNotFound) as exc_info:
+        content = render_component_tag(request, "{% @ SimpleBasicComponent / %}")
+    assert (
+        "Unable to ascertain current app. Component name 'SimpleBasicComponent' must be in "
+    ) in str(exc_info.value)
 
 
 def test_basic_component_with_end_tag(request):
