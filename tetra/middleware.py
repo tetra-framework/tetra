@@ -9,6 +9,7 @@ from django.middleware.csrf import get_token
 from django.utils.functional import cached_property
 
 from .utils import render_scripts, render_styles, TetraJSONEncoder
+from asgiref.sync import iscoroutinefunction, markcoroutinefunction
 
 
 class TetraMiddlewareException(Exception):
@@ -81,15 +82,20 @@ class TetraDetails:
 
 
 class TetraMiddleware:
+    async_capable = True
+    sync_capable = False
+
     def __init__(self, get_response):
         self.get_response = get_response
+        if iscoroutinefunction(self.get_response):
+            markcoroutinefunction(self)
 
-    def __call__(self, request):
+    async def __call__(self, request):
         csrf_token = get_token(request)
         request.tetra = TetraDetails(request)
-        response = self.get_response(request)
-
+        response = await self.get_response(request)
         messages: list[Message] = []
+
         for message in get_messages(request):
             # FIXME: maybe use a more efficient data structure for large number of
             #  messages
