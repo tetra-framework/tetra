@@ -209,7 +209,7 @@ class TetraJSONEncoder(json.JSONEncoder):
                 raise ImproperlyConfigured(
                     "Message contains no (money patched) `uid` "
                     "attribute. Make sure you have "
-                    "TetraMiddleware installed in yoru "
+                    "TetraMiddleware installed in your "
                     "settings.MIDDLEWARE"
                 )
             return {
