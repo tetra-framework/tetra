@@ -98,7 +98,7 @@ class TetraTemporaryUploadedFile(UploadedFile):
                 logger.warning(e)
                 temp_name = None
 
-        if not temp_name:
+        else:
             # create a temporary file that is NOT deleted after closing.
             temp_file = tempfile.NamedTemporaryFile(
                 suffix=".upload" + ext,
