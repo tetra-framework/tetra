@@ -36,7 +36,7 @@ def _component_method(
         )
         return HttpResponseNotFound()
 
-    # check if request is form data
+    # check if request includes multipart/form-data files
     if request.content_type == "multipart/form-data":
         try:
             data = from_json(request.POST["state"])
