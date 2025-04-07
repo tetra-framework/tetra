@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     # automatically recompile your JS & CSS during development.
     "tetra",
     # "daphne",
+    ...
     "django.contrib.staticfiles",
     ...
 ]
