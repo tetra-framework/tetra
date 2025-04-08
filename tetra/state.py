@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from django.conf import settings
 from django.db.models.query import QuerySet
 from django.db.models import Model
+from django.http import HttpRequest
 from django.template import RequestContext, engines
 from django.template.base import Origin
 from django.template.loader_tags import BlockNode
@@ -139,6 +140,7 @@ class PicklePersistentTemporaryUploadedFile(Pickler):
     @staticmethod
     def unpickle(bs: bytes) -> Any:
         data = pickle.loads(bs)
+        print("unpickle:", data["temp_path"])
         return TetraTemporaryUploadedFile(
             name=data["name"],
             size=data["size"],
@@ -291,7 +293,7 @@ def unpickle_state(data) -> Any | None:
     return StateUnpickler(BytesIO(data)).load()
 
 
-def _get_fernet_for_request(request):
+def _get_fernet_for_request(request: HttpRequest) -> Fernet:
     if hasattr(request, "_tetra_state_fernet") and request._tetra_state_fernet:
         return request._tetra_state_fernet
     if not request.session.session_key:
@@ -359,14 +361,14 @@ def encode_component(component) -> str:
     # logger.debug(
     #     f"State before encoding: {component._data()}",
     # )
-    pickled_component = pickle_state(component)
+    pickled_state = pickle_state(component)
     component._context = original_context
 
-    state_token = fernet.encrypt(gzip.compress(pickled_component)).decode()
+    state_token = fernet.encrypt(gzip.compress(pickled_state)).decode()
     return state_token
 
 
-def decode_component(state_token, request) -> "Component":
+def decode_component(state_token: str, request: HttpRequest) -> "Component":
     fernet = _get_fernet_for_request(request)
     component: Component = unpickle_state(
         gzip.decompress(fernet.decrypt(state_token.encode()))

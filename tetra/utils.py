@@ -270,7 +270,7 @@ def to_json(obj: Any) -> str:
     return json.dumps(obj, cls=TetraJSONEncoder)
 
 
-def from_json(s: str) -> dict:
+def from_json(s: str) -> ComponentData:
     return json.loads(s, cls=TetraJSONDecoder)
 
 

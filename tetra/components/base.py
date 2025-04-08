@@ -50,6 +50,7 @@ from ..utils import (
     isclassmethod,
     TetraTemporaryUploadedFile,
 )
+from ..types import ComponentData
 from ..state import encode_component, decode_component
 from ..templates import InlineOrigin, InlineTemplate
 
@@ -213,7 +214,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         self,
         _request: TetraHttpRequest | HttpRequest,
         _attrs: dict = None,
-        _context: dict | RequestContext = None,
+        _context: dict | RequestContext | None = None,
         _blocks=None,
         *args,
         **kwargs,
@@ -617,7 +618,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     @classmethod
     def from_state(
         cls,
-        data: dict,
+        data: ComponentData,
         request: HttpRequest,
         key: str = None,
         _attrs=None,
@@ -659,19 +660,21 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         component._recall_load()
 
         for key, value in data["data"].items():
-            attr_type = (
+            # try to get attribute type (from the class annotations created when the component
+            # was declarated)
+            AttributeType = (
                 component.__annotations__[key]
                 if (key in component.__annotations__)
                 else type(key)
             )
             # if client data type is a model, try to see the value in the
             # recovered data as Model.pk and get the model again.
-            if issubclass(attr_type, Model) and attr_type is not type(value):
+            if issubclass(AttributeType, Model) and AttributeType is not type(value):
                 if value:
                     # TODO: optimization: before hitting the DB another time (the
                     #  unpickling already did this), we could check if the pk
                     #  changed? If not, just keep the object.
-                    value = attr_type.objects.get(pk=value)
+                    value = AttributeType.objects.get(pk=value)
                 else:
                     value = None  # or attr_type.objects.none()
             setattr(component, key, value)
@@ -1033,12 +1036,16 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         """Connects the form's fields to the Tetra backend using x-model attributes."""
         for field_name, field in form.fields.items():
             if isinstance(field, FileField):
-                form.fields[field_name].widget.attrs.update({"@change": "_uploadFile"})
+                form.fields[field_name].widget.attrs.update(
+                    {"@change": f"{field_name}=Object.values($event.target.files)"}
+                )
+
                 if hasattr(field, "temp_file"):
                     # TODO: Check if we need to send back the temp file name and which attribute to use, might not be necessary
                     form.fields[field_name].widget.attrs.update(
                         {"data-tetra-temp-file": field.temp_file}
                     )
+                # form.fields[field_name].initial = getattr(self, field_name)
             else:
                 if prefix is None:
                     prefix = ""
@@ -1106,13 +1113,25 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         The component will validate the data against the form, and if the form is valid,
         it will call form_valid(), else form_invalid().
         """
+        # cache_key = "tetra_uploaded_files"
 
         # we should not render form errors
         self.form_submitted = True
 
         if self._form.is_valid():
+            # cache.delete("tetra_uploaded_files")
             self.form_valid(self._form)
         else:
+            # for file_field_name, field in self._form.base_fields.items():
+            #     if isinstance(field, FileField):
+            #         if file_field_name in self.request.FILES:
+            #             cache.set(
+            #                 cache_key, self.request.FILES[file_field_name], timeout=300
+            #             )
+            #         else:
+            #             cached_file = cache.get(cache_key)
+            #             if cached_file:
+            #                 self._form.files[file_field_name] = cached_file
             self.form_errors = self._form.errors.get_json_data(escape_html=True)
             # set the possibly cleaned values back to the component's attributes
             for attr, value in self._form.cleaned_data.items():
@@ -1132,7 +1151,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
             raise ValueError(f"Form field '{form_field}' is not a FileField")
         # TODO: further Validate inputs
         # TODO: Add error checking, double check saving file unconditionally
-
+        print("_upload_temp_file:", original_name, file.name)
         # keep track of the uploaded file
         self._form_temp_files[form_field] = file
         setattr(self, form_field, file)
@@ -1166,12 +1185,12 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     def _set_attrs_from_form_class_initial(self):
         """Get 'initial' values from the form class and set them to the component's
         attributes."""
-        for field_name, field in self.form_class.base_fields.items():
-            setattr(self, field_name, field.initial)
-            if self.client and isinstance(field, FileField):
-                # we additionally have to set the initial value of FileFields to an empty string
-                # as the browser doesn't set the input field
-                self.client._setValueByName(field_name, "")
+        # for field_name, field in self.form_class.base_fields.items():
+        #     setattr(self, field_name, field.initial)
+        #     if self.client and isinstance(field, FileField):
+        #         # we additionally have to set the initial value of FileFields to an empty string
+        #         # as the browser doesn't set the input field
+        #         self.client._setValueByName(field_name, "")
 
     @public
     def reset(self):
