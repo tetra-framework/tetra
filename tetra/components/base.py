@@ -609,6 +609,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     _loaded_children_state = None
     _load_args = []
     _load_kwargs = {}
+    _leaded_from_state_data: ComponentData | None = None
     key = public(None)
 
     def __init__(self, _request, key=None, *args, **kwargs) -> None:
