@@ -22,7 +22,7 @@ doc: venv _activate
 	mkdocs build -d docs/build/doc/
 
 doc-dev: venv _activate
-	mkdocs serve
+	mkdocs serve -a localhost:8002
 
 build: venv _activate npm
 	# remove dist/ if it exists
