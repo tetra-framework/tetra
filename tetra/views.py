@@ -58,7 +58,7 @@ def _component_method(
         and "args" in component_state
         and isinstance(component_state["args"], list)
     ):
-        raise TypeError("Invalid Args value.")
+        raise TypeError("Invalid component state args.")
 
     if not hasattr(request, "tetra_components_used"):
         request.tetra_components_used = set()
