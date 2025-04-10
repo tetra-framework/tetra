@@ -1478,5 +1478,5 @@ class DynamicFormMixin:
 
 
 # this is just experimental
-class WizardFormComponent(FormComponent):
-    __abstract__ = True
+# class WizardFormComponent(FormComponent):
+#     __abstract__ = True
