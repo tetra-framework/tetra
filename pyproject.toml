@@ -65,6 +65,8 @@ doc = [
     "pymdown-extensions",
     "pygments",
     "mkdocstrings[python]",
+    "mkdocs-mermaid2-plugin",
+    "mkdocs-panzoom-plugin"
 ]
 
 

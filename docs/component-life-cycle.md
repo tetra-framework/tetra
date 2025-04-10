@@ -74,3 +74,65 @@ Same goes for data updates - the event is fired after a data update without HTML
 ### `tetra:component-before-remove`
 
 Right before a component is removed using `self.client._removeComponent()` this event is triggered.
+
+# Sequence diagram
+
+What happens when a public method is called? This sequence diagram shows everything.
+```mermaid
+sequenceDiagram
+  box Client
+  participant Client  
+  end
+
+  box Server
+  participant Server  
+  participant component_method  
+  participant Component  
+  participant TetraJSONEncoder  
+  participant TetraJSONDecoder  
+  participant decode_component  
+  participant StateUnpickler 
+  end
+
+  Client->> Server: POST request to /component_method/
+  Server ->> component_method: Call component_method() view
+  component_method ->> component_method: Set PersistentTemporaryFileUploadHandler
+  component_method ->> component_method: Validate request method (==POST?)
+  component_method ->> component_method: Retrieve Component class from Library list
+  component_method ->> component_method: Validate method name is public
+  component_method ->> TetraJSONDecoder: Decode request.POST data (from_json)
+  TetraJSONDecoder -->> component_method: Return decoded data
+  component_method ->> component_method: Add Component class to set of used components in this request
+  component_method ->> Component: Request new component instance (using Component.from_state)
+  Component ->> Component: Validate ComponentState data structure
+
+  Component ->> decode_component: decode_component(ComponentState["state"], request)
+  decode_component ->> decode_component: get fernet for request
+  decode_component ->> decode_component: decrypt encoded state_token using fernet
+  decode_component ->> decode_component: decompress decrypted data with gzip
+  decode_component ->> StateUnpickler: unpickle component data state
+  StateUnpickler -->> decode_component: component
+  decode_component -->> Component: component
+
+  Component ->> Component: Set component request, key, attrs, context, blocks
+  Component ->> Component: recall load() with initial params
+  Component ->> Component: set component attributes from client data
+  Component ->> Component: client data contains a Model PK? -> replace it with Model instance from DB
+  Component ->> Component: hook: recalculate_attrs(component_method_finished=False)
+  Component -->> component_method: Return initialized component instance
+
+
+  component_method ->> component_method: Attach uploaded files (from request.FILES) to component
+  component_method ->> Component: Call Component's _call_public_method
+  Component ->> Component: Execute public method
+
+  Component ->> TetraJSONEncoder: Encode result data to JSON
+  TetraJSONEncoder -->> Component: Return JSON-encoded data
+
+  Note over Component: JSON response
+  Component -->> component_method: Return encoded result
+  component_method -->> Server: Return JsonResponse
+  Server -->>Client: Send response
+
+
+```

@@ -1,5 +1,10 @@
 site_name: Tetra framework
 site_url: https://tetraframework.readthedocs.org
+
+plugins:
+  - mermaid2
+  - panzoom
+
 theme:
   name: material
   logo: img/favicon-white.png
@@ -18,8 +23,12 @@ markdown_extensions:
   - admonition
   - pymdownx.highlight:
       anchor_linenums: true
-  - pymdownx.superfences
-
+  - pymdownx.superfences:
+      # make exceptions to highlighting of code:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
 nav:
   - index.md
   - install.md
@@ -31,6 +40,7 @@ nav:
     - component-inheritance.md
     - request.md
     - messages.md
+    - component-life-cycle.md
   - Template:
     - component-tag.md
     - attribute-tag.md
