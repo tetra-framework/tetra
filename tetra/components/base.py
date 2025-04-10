@@ -692,9 +692,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
                         component.__annotations__.get(key, NoneType), UploadedFile
                     ):
                         setattr(component, key, file)
-                        component_state["data"][key] = file
-                        # save file in a separate dict so we can get a list of files
-                        # easier
+                        # save file in a separate dict so we can access it easier
                         component._temp_files[key] = file
 
                     else:

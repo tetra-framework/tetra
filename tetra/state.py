@@ -140,7 +140,6 @@ class PicklePersistentTemporaryUploadedFile(Pickler):
     @staticmethod
     def unpickle(bs: bytes) -> Any:
         data = pickle.loads(bs)
-        print("unpickle:", data["temp_path"])
         return TetraTemporaryUploadedFile(
             name=data["name"],
             size=data["size"],
@@ -187,41 +186,6 @@ class PickleBlockNode(Pickler):
             raise TypeError("Unpicked data for template block incorrect.")
 
 
-# @register_pickler(Form, b"Form")
-# class PickleForm(Pickler):
-#     """This is just a stub pickler that always returns empty bytes when ṕickling
-#     a form."""
-#
-#     def pickle(form: Form) -> bytes | None:
-#         return b""
-#
-#     def unpickle(bs: bytes) -> Form | None:
-#         return None
-#
-#
-# @register_pickler(widgets.Widget, b"Widget")
-# class PickleWidget(Pickler):
-#     @staticmethod
-#     def pickle(widget: widgets.Widget) -> bytes | None:
-#         print("PICKLE WIDGET!")
-#         return pickle.dumps(
-#             {
-#                 "class": widget.__class__.__name__,
-#                 "module": widget.__class__.__module__,
-#                 "attrs": getattr(widget, "attrs", {}),
-#             }
-#         )
-#
-#     @staticmethod
-#     def unpickle(bs: bytes) -> Any:
-#         data = pickle.loads(bs)
-#         module = importlib.import_module(data["module"])
-#         widget_class = getattr(module, data["class"])
-#         widget = widget_class()
-#         widget.attrs = data["attrs"]
-#         return widget
-#
-#
 skip_check = {
     str,
     bytes,
