@@ -170,7 +170,7 @@ class TetraJSONEncoder(json.JSONEncoder):
     Based on DjangoJSONEncoder.
 
     Encodes all kind of objects into JSON which will then be used in the client side
-    Javascript code.
+    Javascript code. It is NOT used for the encrypted state.
     """
 
     def default(self, obj: Any) -> str | dict | int | list:
@@ -241,8 +241,9 @@ class TetraJSONEncoder(json.JSONEncoder):
 
 
 class TetraJSONDecoder(json.JSONDecoder):
-    """Decoder that decodes JSON from client side Javascript code into Python
-    objects."""
+    """Decoder that decodes JSON from client side Javascript code into Python objects.
+
+    This is NOT used for the encrypted state, just for the JSON data."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(object_hook=self.object_hook, *args, **kwargs)

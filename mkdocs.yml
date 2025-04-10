@@ -27,6 +27,7 @@ nav:
     - component-libraries.md
     - components.md
     - basic-components.md
+    - form-components.md
     - component-inheritance.md
     - request.md
     - messages.md

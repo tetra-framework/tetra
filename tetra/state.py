@@ -333,6 +333,7 @@ keys_to_remove_from_context = [
 
 
 def encode_component(component) -> str:
+    """Serializes a component with its server state into a pickled state token."""
     fernet = _get_fernet_for_request(component.request)
 
     # TODO: this should be in component.__getstate__
@@ -369,6 +370,7 @@ def encode_component(component) -> str:
 
 
 def decode_component(state_token: str, request: HttpRequest) -> "Component":
+    """Deserializes a pickled state token into a component, resuming its state."""
     fernet = _get_fernet_for_request(request)
     component: Component = unpickle_state(
         gzip.decompress(fernet.decrypt(state_token.encode()))
