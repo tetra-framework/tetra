@@ -20,13 +20,15 @@ def call_component_method(
     **kwargs,
 ):
     factory = RequestFactory(content_type="application/json")
-    data = {
+    component_state = {
         "csrfmiddlewaretoken": "fake-token",
         "args": [],
-        "state": "",  # FIXME: test does not work with invalid crypt state
+        "encrypted": "",  # FIXME: test does not work with invalid encrypted state
         "data": {"data": ""},
     }
-    req = factory.post("/", json.dumps(data), content_type="application/json")
+    req = factory.post(
+        "/", json.dumps(component_state), content_type="application/json"
+    )
 
     req.session = SessionStore()
     req.session.create()

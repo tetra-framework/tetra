@@ -178,7 +178,7 @@
         data[key] = component[key];
       });
       const r = {
-        state: component.__state,
+        encrypted: component.__state,
         data,
         children: []
       };
@@ -255,28 +255,34 @@
         throw new Error(`Server responded with an error ${response.status} (${response.statusText})`);
       }
     },
+    // async callServerMethod(component, methodName, methodEndpoint, args) {
+    //   // TODO: error handling
+    //   let body = Tetra.getStateWithChildren(component);
+    //   body.args = args;
+    //   const response = await fetch(methodEndpoint, {
+    //     method: 'POST',
+    //     headers: {
+    //       'T-Request': "true",
+    //       'T-Current-URL': document.location.href,
+    //       'Content-Type': 'application/json',
+    //       'X-CSRFToken': window.__tetra_csrfToken,
+    //     },
+    //     mode: 'same-origin',
+    //     body: Tetra.jsonEncode(body),
+    //   });
+    //   return await this.handleServerMethodResponse(response, component);
+    // },
     async callServerMethod(component, methodName, methodEndpoint, args) {
-      let body = Tetra.getStateWithChildren(component);
-      body.args = args;
-      const response = await fetch(methodEndpoint, {
-        method: "POST",
-        headers: {
-          "T-Request": "true",
-          "T-Current-URL": document.location.href,
-          "Content-Type": "application/json",
-          "X-CSRFToken": window.__tetra_csrfToken
-        },
-        mode: "same-origin",
-        body: Tetra.jsonEncode(body)
-      });
-      return await this.handleServerMethodResponse(response, component);
-    },
-    async callServerMethodWithFile(component, methodName, methodEndpoint, file, args) {
-      let state = Tetra.getStateWithChildren(component);
-      state.args = args;
+      let component_state = Tetra.getStateWithChildren(component);
+      component_state.args = args ? args : [];
       let formData = new FormData();
-      formData.append("file", file);
-      formData.append("state", Tetra.jsonEncode(state));
+      for (const [key, value] of Object.entries(component_state.data)) {
+        if ((value == null ? void 0 : value[0]) instanceof File) {
+          formData.append(key, value instanceof File ? value : value[0]);
+          component_state.data[key] = null;
+        }
+      }
+      formData.append("component_state", Tetra.jsonEncode(component_state));
       const response = await fetch(methodEndpoint, {
         method: "POST",
         headers: {

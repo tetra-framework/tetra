@@ -3,7 +3,7 @@ import importlib
 import os
 from copy import copy
 from typing import Optional, Self, Any
-from types import FunctionType
+from types import FunctionType, NoneType
 from enum import Enum
 import inspect
 import re
@@ -14,6 +14,7 @@ from threading import local
 
 from django import forms
 from django.core.exceptions import ImproperlyConfigured
+from django.core.files.uploadedfile import UploadedFile
 from django.db import models
 from django.db.models import Model
 from django.db.models.base import ModelBase
@@ -604,12 +605,15 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         "_leaded_from_state_data",
         "_event_subscriptions",
         "__abstract__",
+        "_temp_files",
     ]
     _excluded_load_props_from_saved_state = []
     _loaded_children_state = None
     _load_args = []
     _load_kwargs = {}
     _leaded_from_state_data: ComponentData | None = None
+    # _temp_files is an internal dict to track which data attributes are files.
+    _temp_files: dict[str, UploadedFile] = {}
     key = public(None)
 
     def __init__(self, _request, key=None, *args, **kwargs) -> None:
@@ -619,7 +623,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     @classmethod
     def from_state(
         cls,
-        data: ComponentData,
+        component_state: ComponentData,
         request: HttpRequest,
         key: str = None,
         _attrs=None,
@@ -630,15 +634,15 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     ) -> Any:
         """Creates and initializes a component instance from its serialized state."""
         if not (
-            isinstance(data, dict)
-            and "state" in data
-            and isinstance(data["state"], str)
-            and "data" in data
-            and isinstance(data["data"], dict)
+            isinstance(component_state, dict)
+            and "encrypted" in component_state
+            and isinstance(component_state["encrypted"], str)
+            and "data" in component_state
+            and isinstance(component_state["data"], dict)
         ):
-            raise TypeError("Invalid State value.")
+            raise TypeError("Invalid component state.")
 
-        component = decode_component(data["state"], request)
+        component = decode_component(component_state["encrypted"], request)
         if not isinstance(component, cls):
             raise TypeError(
                 f"Component '{component.__class__.__name__}' of invalid "
@@ -660,17 +664,15 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             component._load_kwargs = kwargs
         component._recall_load()
 
-        for key, value in data["data"].items():
-            # try to get attribute type (from the class annotations created when the component
-            # was declarated)
-            AttributeType = (
-                component.__annotations__[key]
-                if (key in component.__annotations__)
-                else type(key)
-            )
+        # get data from client and populate component attributes with it
+        for key, value in component_state["data"].items():
+            # try to get attribute type (from the class annotations created when the
+            # component was declared)
+            AttributeType = component.__annotations__.get(key, NoneType)
+
             # if client data type is a model, try to see the value in the
             # recovered data as Model.pk and get the model again.
-            if issubclass(AttributeType, Model) and AttributeType is not type(value):
+            if AttributeType and issubclass(AttributeType, Model):
                 if value:
                     # TODO: optimization: before hitting the DB another time (the
                     #  unpickling already did this), we could check if the pk
@@ -678,9 +680,32 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
                     value = AttributeType.objects.get(pk=value)
                 else:
                     value = None  # or attr_type.objects.none()
+            elif issubclass(AttributeType, UploadedFile):
+                # if there are newly uploaded files (in any public method call),
+                # add them to the component. HTML uploads only are possible *once*,
+                # as in the following GET requests the browser removes the file from
+                # input field tags, so the temporary files must be kept.
+                # Only set attr if it's an UploadedFile to avoid overwriting non-file fields
+                file = request.FILES.get(key, None)
+                if file:
+                    if issubclass(
+                        component.__annotations__.get(key, NoneType), UploadedFile
+                    ):
+                        setattr(component, key, file)
+                        component_state["data"][key] = file
+                        # save file in a separate dict so we can get a list of files
+                        # easier
+                        component._temp_files[key] = file
+
+                    else:
+                        logger.warning(
+                            f"Setting a file to {component}.{key} is prohibited."
+                        )
+                continue
+
             setattr(component, key, value)
         component._leaded_from_state = True
-        component._leaded_from_state_data = data["data"]
+        component._leaded_from_state_data = component_state["data"]
         component.recalculate_attrs(component_method_finished=False)
         return component
 
@@ -954,6 +979,8 @@ class FormComponentMetaClass(ComponentMetaClass):
                 initial = field.to_python(field.initial or "")
                 if isinstance(field, ModelChoiceField):
                     python_type = field.queryset.model
+                elif isinstance(field, FileField):
+                    python_type = UploadedFile
                 else:
                     python_type = type(initial)
 
@@ -985,11 +1012,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     _form: Form = None
     _validate_called: bool = False
 
-    # _form_temp_files is an internal storage for temporary uploaded files' handles.
-    # it is saved with the state, so it can survive page requests. FIXME! not true!
-    _form_temp_files: dict[str, TetraTemporaryUploadedFile] = {}
     _excluded_props_from_saved_state = Component._excluded_props_from_saved_state + [
-        "_form_temp_files",
         "_form",
         "_validate_called",
         "form_errors",
@@ -1018,12 +1041,15 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     def get_form_kwargs(self):
         """Return the keyword arguments for instantiating the form."""
         kwargs = {
-            # "initial": self.get_initial(),  # TODO
-            # "prefix": self.get_prefix(), # TODO
+            # "initial": self.get_form_initial(), # TODO?
+            # "prefix": self.get_prefix(), # TODO?
             "data": self._data(),
-            "files": self._form_temp_files,
+            "files": self._temp_files,
         }
         return kwargs
+
+    # def get_form_initial(self):
+    #     return {}
 
     def get_form(self):
         """Returns a new form instance, initialized with data from the component
@@ -1139,23 +1165,24 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
                 setattr(self, attr, value)
             self.form_invalid(self._form)
 
-    @public
-    def _upload_temp_file(
-        self, form_field: str, original_name, file: TetraTemporaryUploadedFile
-    ) -> None:
-        """Uploads a file to the server temporarily."""
-        if not file:
-            raise ValueError("File must be provided.")  # TODO: Add validation
-        if form_field not in self._form.fields or not isinstance(
-            self._form.fields[form_field], FileField
-        ):
-            raise ValueError(f"Form field '{form_field}' is not a FileField")
-        # TODO: further Validate inputs
-        # TODO: Add error checking, double check saving file unconditionally
-        print("_upload_temp_file:", original_name, file.name)
-        # keep track of the uploaded file
-        self._form_temp_files[form_field] = file
-        setattr(self, form_field, file)
+    # TODO: cleanup
+    # @public
+    # def _upload_temp_file(
+    #     self, form_field: str, original_name, file: TetraTemporaryUploadedFile
+    # ) -> None:
+    #     """Uploads a file to the server temporarily."""
+    #     if not file:
+    #         raise ValueError("File must be provided.")  # TODO: Add validation
+    #     if form_field not in self._form.fields or not isinstance(
+    #         self._form.fields[form_field], FileField
+    #     ):
+    #         raise ValueError(f"Form field '{form_field}' is not a FileField")
+    #     # TODO: further Validate inputs
+    #     # TODO: Add error checking, double check saving file unconditionally
+    #     print("_upload_temp_file:", original_name, file.name)
+    #     # keep track of the uploaded file
+    #     self._temp_files[form_field] = file
+    #     setattr(self, form_field, file)
 
     def _reset(self):
         """Internally resets all form fields to their defaults set in load(). This
@@ -1165,8 +1192,8 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
 
         # first, clear all temporary files saved in the component
         try:
-            for file_name, file in self._form_temp_files.items():
-                self._form_temp_files.pop(file_name)
+            for file_name, file in self._temp_files.items():
+                self._temp_files.pop(file_name)
                 os.remove(file.name)
         except FileNotFoundError:
             # ignore any errors during file removal, file might be already deleted.

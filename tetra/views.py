@@ -37,26 +37,26 @@ def _component_method(
         )
         return HttpResponseNotFound()
 
-    # check if request includes multipart/form-data files
-    if request.content_type == "multipart/form-data":
-        try:
-            data = from_json(request.POST["state"])
-            if "args" not in data:
-                data["args"] = []
-            data["args"].extend(request.FILES.values())
-        except json.decoder.JSONDecodeError as e:
-            logger.error(e)
+    try:
+        # check if request includes multipart/form-data files
+        if request.content_type == "multipart/form-data":
+            component_state = from_json(request.POST["component_state"])
+            # data["args"].extend(request.FILES.values())
+        elif request.content_type == "application/json" and request.body:
+            # if request is application-data/json, we need to decode it ourselves
+            component_state = from_json(request.body.decode())
+        else:
+            logger.error("Unsupported content type: %s", request.content_type)
             return HttpResponseBadRequest()
-    else:
-        try:
-            data = from_json(request.body.decode())
 
-        except json.decoder.JSONDecodeError as e:
-            logger.error(e)
-            return HttpResponseBadRequest()
+    except json.decoder.JSONDecodeError as e:
+        logger.error(e)
+        return HttpResponseBadRequest()
 
     if not (
-        isinstance(data, dict) and "args" in data and isinstance(data["args"], list)
+        isinstance(component_state, dict)
+        and "args" in component_state
+        and isinstance(component_state["args"], list)
     ):
         raise TypeError("Invalid Args value.")
 
@@ -64,10 +64,11 @@ def _component_method(
         request.tetra_components_used = set()
     request.tetra_components_used.add(Component)
 
-    component = Component.from_state(data, request)
+    component = Component.from_state(component_state, request)
+
     logger.debug(
         f"Calling component method {component.__class__.__name__}.{method_name}()"
     )
     return component._call_public_method(
-        request, method_name, data["children"], *data["args"]
+        request, method_name, component_state["children"], *component_state["args"]
     )

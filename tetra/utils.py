@@ -17,6 +17,8 @@ from django.template.loader import render_to_string
 from django.utils.timezone import is_aware
 from django.conf import settings
 
+from tetra.types import ComponentData
+
 # list of hardcoded modules that are not searched for components
 # this is necessary as some 3rd party modules contain a "components" package with
 # other forms of their components. Even tetra.components is meant to be not a
@@ -70,7 +72,7 @@ class TetraTemporaryUploadedFile(UploadedFile):
 
     # Django's original InMemoryUploadedFile does not support temporary file paths,
     # and TemporaryUploadedFile uses a really temporary file path that is deleted when
-    # the page is closed. So we need a file that stays where it is until it is
+    # after the request is gc'ed. So we need a file that stays where it is until it is
     # deleted manually or saved to its destination.
 
     def __init__(
@@ -79,8 +81,8 @@ class TetraTemporaryUploadedFile(UploadedFile):
         content_type: str,
         size: int,
         charset,
-        temp_name=None,
         content_type_extra=None,
+        temp_name=None,
     ):
         _, ext = os.path.splitext(name)
         if temp_name:
@@ -96,7 +98,7 @@ class TetraTemporaryUploadedFile(UploadedFile):
             except FileNotFoundError as e:
                 # if the file does not exist, we just use a new temporary file
                 logger.warning(e)
-                temp_name = None
+                temp_file = None
 
         else:
             # create a temporary file that is NOT deleted after closing.
@@ -105,8 +107,14 @@ class TetraTemporaryUploadedFile(UploadedFile):
                 dir=os.path.join(settings.MEDIA_ROOT, settings.TETRA_TEMP_UPLOAD_PATH),
                 delete=False,
             )
+
         super().__init__(
-            temp_file, name, content_type, size, charset, content_type_extra
+            file=temp_file,
+            name=name,
+            content_type=content_type,
+            size=size,
+            charset=charset,
+            content_type_extra=content_type_extra,
         )
 
     def temporary_file_path(self):
@@ -249,10 +257,10 @@ class TetraJSONDecoder(json.JSONDecoder):
             return set(obj["value"])
         elif _type == "file":
             return TetraTemporaryUploadedFile(
-                name=obj["value"]["name"],
-                size=obj["value"]["size"],
-                content_type=obj["value"]["content_type"],
-                temp_name=obj["value"]["temp_path"],
+                name=obj["name"],
+                size=obj["size"],
+                content_type=obj["content_type"],
+                # temp_name=obj["temp_path"],
                 charset=settings.DEFAULT_CHARSET,
             )
         elif _type == "message":
