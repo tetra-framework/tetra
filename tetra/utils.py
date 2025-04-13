@@ -215,7 +215,7 @@ class TetraJSONEncoder(json.JSONEncoder):
                 uid = obj.uid
             except AttributeError:
                 raise ImproperlyConfigured(
-                    "Message contains no (money patched) `uid` "
+                    "Message contains no `uid` "
                     "attribute. Make sure you have "
                     "TetraMiddleware installed in your "
                     "settings.MIDDLEWARE"
