@@ -197,10 +197,12 @@ class BasicComponentMetaClass(type):
         return newcls
 
 
-class RenderData(Enum):
-    INIT = 0
-    MAINTAIN = 1
-    UPDATE = 2
+class RenderDataMode(Enum):
+    """The mode how to render the component's data."""
+
+    INIT = 0  # initialize data. There was no component state before
+    MAINTAIN = 1  # keep component data
+    UPDATE = 2  # update component data with new data from server
 
 
 class BasicComponent(metaclass=BasicComponentMetaClass):
@@ -209,7 +211,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
     _name = None
     _library = None
     _app = None
-    _leaded_from_state = False
+    _is_resumed_from_state = False
 
     def __init__(
         self,
@@ -601,8 +603,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         "_callback_queue",
         "_loaded_children_state",
         "_excluded_load_props_from_saved_state",
-        "_leaded_from_state",
-        "_leaded_from_state_data",
+        "_is_resumed_from_state",
+        "_resumed_from_state_data",
         "_event_subscriptions",
         "__abstract__",
         "_temp_files",
@@ -611,7 +613,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     _loaded_children_state = None
     _load_args = []
     _load_kwargs = {}
-    _leaded_from_state_data: ComponentData | None = None
+    _resumed_from_state_data: ComponentData | None = None
     # _temp_files is an internal dict to track which data attributes are files.
     _temp_files: dict[str, UploadedFile] = {}
     key = public(None)
@@ -702,8 +704,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
                 continue
 
             setattr(component, key, value)
-        component._leaded_from_state = True
-        component._leaded_from_state_data = component_state["data"]
+        component._is_resumed_from_state = True
+        component._resumed_from_state_data = component_state["data"]
         component.recalculate_attrs(component_method_finished=False)
         return component
 
@@ -853,17 +855,27 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         else:
             context["_loaded_children_state"] = None
 
-    def render(self, data=RenderData.INIT) -> SafeString:
-        """Renders the component's HTML."""
-        if hasattr(thread_local, "_tetra_render_data"):
-            data = thread_local._tetra_render_data
+    def render(self, mode=RenderDataMode.INIT) -> SafeString:
+        """Renders the component's HTML.
+
+
+        It makes the following decisions based on the given mode:
+        - If mode is RenderDataMode.INIT (the default), just renders the component's
+            data into `x-data`. The client will use it as Alpine data.
+        - If mode is RenderDataMode.MAINTAIN, it instructs the client to just copy the
+            original `x-data` to the updated component element, so no data changes.
+        - If mode is RenderDataMode.UPDATE, the client will be instructed to replace
+            the existing `x-data` with new data from the server state
+        """
+        if hasattr(thread_local, "_tetra_render_mode"):
+            mode = thread_local._tetra_render_mode
             set_thread_local = False
         else:
-            thread_local._tetra_render_data = data
+            thread_local._tetra_render_mode = mode
             set_thread_local = True
         html = super().render()
         if set_thread_local:
-            del thread_local._tetra_render_data
+            del thread_local._tetra_render_mode
         tag_name = re.match(r"^\s*(<!--.*-->)?\s*<\w+", html)
         if not tag_name:
             raise ComponentError(
@@ -878,13 +890,13 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         ]
         if self.key:
             extra_tags.append(f'key="{self.key}"')
-        if data == RenderData.UPDATE and self._leaded_from_state:
+        if mode == RenderDataMode.UPDATE and self._is_resumed_from_state:
             data_json = escape(to_json(self._render_data()))
-            old_data_json = escape(to_json(self._leaded_from_state_data))
+            old_data_json = escape(to_json(self._resumed_from_state_data))
             extra_tags.append('x-data=""')
             extra_tags.append(f'x-data-update="{data_json}"')
             extra_tags.append(f'x-data-update-old="{old_data_json}"')
-        elif data == RenderData.MAINTAIN:
+        elif mode == RenderDataMode.MAINTAIN:
             extra_tags.append('x-data=""')
             extra_tags.append("x-data-maintain")
         else:
@@ -897,12 +909,13 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         """Updates the component's HTML.
 
         If `include_state` is True, it includes the component's state in the HTML.
-        Otherwise, it only includes the component's attributes.
+        Otherwise, it only includes the component's attributes and instructs the
+        client to not change the client side data.
         """
         if include_state:
-            self.client._updateHtml(self.render(data=RenderData.UPDATE))
+            self.client._updateHtml(self.render(mode=RenderDataMode.UPDATE))
         else:
-            self.client._updateHtml(self.render(data=RenderData.MAINTAIN))
+            self.client._updateHtml(self.render(mode=RenderDataMode.MAINTAIN))
 
     def update_data(self) -> None:
         """Updates the component's state with the latest data from the server."""
@@ -956,7 +969,6 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         """Re-render and return
         This is just a noop as the @public decorator implements this functionality
         """
-        pass
 
 
 class FormComponentMetaClass(ComponentMetaClass):
