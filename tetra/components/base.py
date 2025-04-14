@@ -1205,8 +1205,9 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
 
         # first, clear all temporary files saved in the component
         try:
-            for file_name, file in self._temp_files.items():
-                self._temp_files.pop(file_name)
+            for attr_name, file in self._temp_files.items():
+                self._temp_files.pop(attr_name)
+                self.client._setValueByName(attr_name, "")
                 os.remove(file.name)
         except FileNotFoundError:
             # ignore any errors during file removal, file might be already deleted.
