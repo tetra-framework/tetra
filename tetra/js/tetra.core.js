@@ -261,58 +261,44 @@ const Tetra = {
       throw new Error(`Server responded with an error ${response.status} (${response.statusText})`);
     }
   },
-  // async callServerMethod(component, methodName, methodEndpoint, args) {
-  //   // TODO: error handling
-  //   let body = Tetra.getStateWithChildren(component);
-  //   body.args = args;
-  //   const response = await fetch(methodEndpoint, {
-  //     method: 'POST',
-  //     headers: {
-  //       'T-Request': "true",
-  //       'T-Current-URL': document.location.href,
-  //       'Content-Type': 'application/json',
-  //       'X-CSRFToken': window.__tetra_csrfToken,
-  //     },
-  //     mode: 'same-origin',
-  //     body: Tetra.jsonEncode(body),
-  //   });
-  //   return await this.handleServerMethodResponse(response, component);
-  // },
 
   async callServerMethod(component, methodName, methodEndpoint, args) {
     let component_state = Tetra.getStateWithChildren(component);
     component_state.args = args? args : [];
-    let formData = new FormData();
-    for(const [key, value] of Object.entries(component_state.data)){
-      // TODO: handle multi-file uploads
-      // TODO: if no files are present, don't use FormData/ multipart/form-data, but a application/json
-      if (value instanceof File) {
-        // A file is not uploaded anyway, as the browser automatically deletes the data if submitted within a JSON.
-        // On the server, only an empty {} will arrive, so we can set it to {} anyway.
-        component_state.data[key] = {};
-        // Files must be submitted using FormData!
-        formData.append(key, value);
-
-        // TODO: prevent uploading of files that are already uploaded.
-        // add all files from the input field to the form data.
-        // overwrite the component with a string representation of the file name
-        // component_state.data[key] = component_state.data[key][0].name;
-      }
-    }
-    formData.append('component_state', Tetra.jsonEncode(component_state));
-    // formData.append('args', Tetra.jsonEncode(args));
-
-    const response = await fetch(methodEndpoint, {
+    let payload = {
       method: 'POST',
       headers: {
         'T-Request': "true",
         'T-Current-URL': document.location.href,
-        //'Content-Type': 'application/json',
         'X-CSRFToken': window.__tetra_csrfToken,
       },
       mode: 'same-origin',
-      body: formData,
-    });
+    }
+
+    let formData = new FormData();
+    let hasFiles = false;
+    for(const [key, value] of Object.entries(component_state.data)){
+      // TODO: handle multi-file uploads
+      if (value instanceof File) {
+        hasFiles = true;
+        // A file is not uploaded anyway, as the browser automatically deletes the data if submitted within a JSON.
+        // On the server, only an empty {} will arrive, so we can set it to {} anyway.
+        component_state.data[key] = {};
+        formData.append(key, value);
+        // TODO: prevent re-uploading of files that are already uploaded.
+      }
+    }
+
+    // check if FormData has *any* entry - and if not, send JSON request
+    if (hasFiles) {
+      formData.append('component_state', Tetra.jsonEncode(component_state));
+      payload.body = formData;
+    } else {
+      payload.body = Tetra.jsonEncode(component_state)
+      payload.headers['Content-Type'] = 'application/json'
+    }
+
+    const response = await fetch(methodEndpoint, payload);
     return await this.handleServerMethodResponse(response, component);
   },
 
