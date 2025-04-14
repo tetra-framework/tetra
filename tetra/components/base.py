@@ -674,36 +674,39 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
             # if client data type is a model, try to see the value in the
             # recovered data as Model.pk and get the model again.
-            if AttributeType and issubclass(AttributeType, Model):
+            if issubclass(AttributeType, Model):
                 if value:
-                    # TODO: optimization: before hitting the DB another time (the
-                    #  unpickling already did this), we could check if the pk
-                    #  changed? If not, just keep the object.
+                    # FIXME: this could possibly be used as attack vector. Any number
+                    #  could be submitted here, so all model entries can be
+                    #  retrieved, even if e.g. not in queryset of this field.
                     value = AttributeType.objects.get(pk=value)
                 else:
                     value = None  # or attr_type.objects.none()
             elif issubclass(AttributeType, UploadedFile):
+                if value:
+                    logger.error(
+                        "When uploading a file JSON file field must be empty, "
+                        f"not '{value}'. "
+                        "The file is sent using FormData."
+                    )
+                    continue
+
                 # if there are newly uploaded files (in any public method call),
                 # add them to the component. HTML uploads only are possible *once*,
                 # as in the following GET requests the browser removes the file from
                 # input field tags, so the temporary files must be kept.
                 # Only set attr if it's an UploadedFile to avoid overwriting non-file fields
-                file = request.FILES.get(key, None)
-                if file:
-                    if issubclass(
-                        component.__annotations__.get(key, NoneType), UploadedFile
-                    ):
-                        setattr(component, key, file)
-                        # save file in a separate dict so we can access it easier
-                        component._temp_files[key] = file
+                value = request.FILES.get(key, None)
+                if not value:
+                    # if there is no valid file in the request, it means the file was
+                    # not correctly uploaded or removed from the input field, so just skip it
+                    continue
 
-                    else:
-                        logger.warning(
-                            f"Setting a file to {component}.{key} is prohibited."
-                        )
-                continue
+                # save file in a separate dict so we can access it easier
+                component._temp_files[key] = value
 
             setattr(component, key, value)
+
         component._is_resumed_from_state = True
         component._resumed_from_state_data = component_state["data"]
         component.recalculate_attrs(component_method_finished=False)
@@ -1074,7 +1077,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         for field_name, field in form.fields.items():
             if isinstance(field, FileField):
                 form.fields[field_name].widget.attrs.update(
-                    {"@change": f"{field_name}=Object.values($event.target.files)"}
+                    {"@change": f"{field_name}=$event.target.files?.[0];"}
                 )
 
                 if hasattr(field, "temp_file"):

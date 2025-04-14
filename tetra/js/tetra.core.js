@@ -92,19 +92,6 @@ const Tetra = {
           window.history.pushState(null, '', url);
         }
       },
-      _uploadFile(event) {
-        // TODO: Consider how multiple files can be handled
-        const file = event.target.files[0];
-        const method = '_upload_temp_file';
-        const endpoint = this.__serverMethods.find(item => item.name === '_upload_temp_file').endpoint;
-        const args = [event.target.name, event.target.files[0].name];
-        Tetra.callServerMethodWithFile(this, method, endpoint, file, args).then((result) => {
-          //TODO: Determine if we need to do anything with the resulting filename
-          //event.target.dataset.tetraTempFileName = result;
-          //this._updateData(result);
-        });
-
-      },
       // Tetra private:
       __initServerWatchers() {
         this.__serverMethods.forEach(item => {
@@ -298,12 +285,13 @@ const Tetra = {
     let formData = new FormData();
     for(const [key, value] of Object.entries(component_state.data)){
       // TODO: handle multi-file uploads
-      if (value?.[0] instanceof File) {
-        formData.append(key, value instanceof File ? value : value[0]);
-
-        // set the filename in the data array to null, as files are sent via FormData.files directly
-        // the key is then set on the server from request.FILES
-        component_state.data[key] = null;
+      // TODO: if no files are present, don't use FormData/ multipart/form-data, but a application/json
+      if (value instanceof File) {
+        // A file is not uploaded anyway, as the browser automatically deletes the data if submitted within a JSON.
+        // On the server, only an empty {} will arrive, so we can set it to {} anyway.
+        component_state.data[key] = {};
+        // Files must be submitted using FormData!
+        formData.append(key, value);
 
         // TODO: prevent uploading of files that are already uploaded.
         // add all files from the input field to the form data.

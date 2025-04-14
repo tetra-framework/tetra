@@ -3,6 +3,7 @@ import datetime
 import os
 import tempfile
 import logging
+from pathlib import Path
 from typing import Any
 
 from dateutil import parser as datetime_parser
@@ -12,6 +13,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.core.files.uploadedfile import UploadedFile
 from django.core.files.uploadhandler import FileUploadHandler
 from django.db import models
+from django.db.models.fields.files import FieldFile
 from django.utils.text import re_camel_case
 from django.template.loader import render_to_string
 from django.utils.timezone import is_aware
@@ -68,11 +70,17 @@ class TetraTemporaryUploadedFile(UploadedFile):
     """
     A file uploaded to a "persistent" temporary location, to be persisted
     across page refreshes.
+
+    Attributes:
+        name: The name of the file.
+        size: The size of the file in bytes.
+        content_type: The content type of the file.
+        temp_name: The path to the temporary file. If given, that file is reused.
     """
 
     # Django's original InMemoryUploadedFile does not support temporary file paths,
-    # and TemporaryUploadedFile uses a really temporary file path that is deleted when
-    # after the request is gc'ed. So we need a file that stays where it is until it is
+    # and TemporaryUploadedFile uses a really temporary file that is deleted when
+    # the request is gc'ed. So we need a file that stays where it is until it is
     # deleted manually or saved to its destination.
 
     def __init__(
@@ -85,6 +93,7 @@ class TetraTemporaryUploadedFile(UploadedFile):
         temp_name=None,
     ):
         _, ext = os.path.splitext(name)
+        temp_file = None
         if temp_name:
             try:
                 temp_file = open(
@@ -98,13 +107,12 @@ class TetraTemporaryUploadedFile(UploadedFile):
             except FileNotFoundError as e:
                 # if the file does not exist, we just use a new temporary file
                 logger.warning(e)
-                temp_file = None
 
-        else:
+        if not temp_file:
             # create a temporary file that is NOT deleted after closing.
             temp_file = tempfile.NamedTemporaryFile(
                 suffix=".upload" + ext,
-                dir=os.path.join(settings.MEDIA_ROOT, settings.TETRA_TEMP_UPLOAD_PATH),
+                dir=Path(settings.MEDIA_ROOT) / settings.TETRA_TEMP_UPLOAD_PATH,
                 delete=False,
             )
 
@@ -134,8 +142,13 @@ class PersistentTemporaryFileUploadHandler(FileUploadHandler):
     temporary file, which can be
     saved to its destination when a form is submitted finally.
 
-    Modified after Django's TemporaryFileUploadHandler
+    Modified after Django's TemporaryFileUploadHandler, but uses a
+    TetraTemporaryUploadedFile instead of TemporaryUploadedFile
     """
+
+    def __init__(self, request=None):
+        super().__init__(request)
+        self.file = None
 
     def new_file(self, *args, **kwargs):
         """
@@ -149,7 +162,7 @@ class PersistentTemporaryFileUploadHandler(FileUploadHandler):
     def receive_data_chunk(self, raw_data, start):
         self.file.write(raw_data)
 
-    def file_complete(self, file_size):
+    def file_complete(self, file_size: int) -> TetraTemporaryUploadedFile:
         self.file.seek(0)
         self.file.size = file_size
         return self.file
@@ -173,7 +186,7 @@ class TetraJSONEncoder(json.JSONEncoder):
     Javascript code. It is NOT used for the encrypted state.
     """
 
-    def default(self, obj: Any) -> str | dict | int | list:
+    def default(self, obj: Any) -> str | dict | int | list | None:
         # See "Date Time String Format" in the ECMA-262 specification.
         # https://262.ecma-international.org/#sec-date-time-string-format
         if isinstance(obj, datetime.datetime):
@@ -207,8 +220,20 @@ class TetraJSONEncoder(json.JSONEncoder):
         # # FIXME: to_json does not work properly
         # elif hasattr(obj, "to_json"):
         #     return {"__type": "generic", "value": obj.to_json()}
-        elif isinstance(obj, TetraTemporaryUploadedFile):
-            return obj.name
+        elif isinstance(obj, (FieldFile, TetraTemporaryUploadedFile)):
+            # This is just for initial page loads, where FileFields are initialized with
+            # empty FieldFile objects.
+            if obj.name is None:
+                return None
+            # if a file is attached, it must have been uploaded using a component
+            # method. In this case, it certainly is a TetraTemporaryUploadedFile
+            return {
+                "__type": "file",
+                "name": obj.name,
+                "size": obj.size,
+                "content_type": obj.content_type,
+                "temp_path": obj.temporary_file_path(),
+            }
         elif isinstance(obj, Message):
             try:
                 # there has to be an uid - else TetraMiddleware is missing
@@ -232,6 +257,13 @@ class TetraJSONEncoder(json.JSONEncoder):
             }
         else:
             # as last resort, try to serialize into str
+            # this is a way of supporting unknown types (like PhoneNumber,
+            # etc.) which doesn't make sense to hardcode all here.
+            # But if a str can be created from it, we can send it at least to the
+            # client, and hope that when we retrieve the data again and transform it
+            # back to a field, the field can handle a str.
+            # This is a bit hacky for unknown types.
+            # If you have problems with this, please let me know.
             try:
                 return str(obj)
             except (TypeError, ValueError):
@@ -261,7 +293,7 @@ class TetraJSONDecoder(json.JSONDecoder):
                 name=obj["name"],
                 size=obj["size"],
                 content_type=obj["content_type"],
-                # temp_name=obj["temp_path"],
+                temp_name=obj["temp_path"],
                 charset=settings.DEFAULT_CHARSET,
             )
         elif _type == "message":

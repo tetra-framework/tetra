@@ -88,14 +88,6 @@
             window.history.pushState(null, "", url);
           }
         },
-        _uploadFile(event) {
-          const file = event.target.files[0];
-          const method = "_upload_temp_file";
-          const endpoint = this.__serverMethods.find((item) => item.name === "_upload_temp_file").endpoint;
-          const args = [event.target.name, event.target.files[0].name];
-          Tetra.callServerMethodWithFile(this, method, endpoint, file, args).then((result) => {
-          });
-        },
         // Tetra private:
         __initServerWatchers() {
           this.__serverMethods.forEach((item) => {
@@ -277,9 +269,9 @@
       component_state.args = args ? args : [];
       let formData = new FormData();
       for (const [key, value] of Object.entries(component_state.data)) {
-        if ((value == null ? void 0 : value[0]) instanceof File) {
-          formData.append(key, value instanceof File ? value : value[0]);
-          component_state.data[key] = null;
+        if (value instanceof File) {
+          component_state.data[key] = {};
+          formData.append(key, value);
         }
       }
       formData.append("component_state", Tetra.jsonEncode(component_state));
