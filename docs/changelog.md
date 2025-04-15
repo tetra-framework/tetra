@@ -12,6 +12,16 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - unreleased
+### Added
+- beforeRequest, afterRequest events
+
+### Changed
+- **BREAKING CHANGE** rename all `tetra:*` events to camelCase: `componentUpdated`, `componentBeforeRemove` etc.
+
+### Fixed
+- fix file uploads for FormComponent (using multipart/form-data)
+
 ## [0.2.1] - 2025-03-29
 - fix a small bug that could early-delete temporary uploaded files  
 

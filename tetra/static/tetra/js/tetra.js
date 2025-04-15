@@ -13,14 +13,14 @@
       return {
         // Alpine.js lifecycle:
         init() {
-          this.$dispatch("tetra:child-component-init", { component: this });
+          this.$dispatch("tetra:childComponentInit", { component: this });
           this.__initServerWatchers();
           if (this.__initInner) {
             this.__initInner();
           }
         },
         destroy() {
-          this.$dispatch("tetra:child-component-destroy", { component: this });
+          this.$dispatch("tetra:childComponentDestroy", { component: this });
           if (this.__destroyInner) {
             this.__destroyInner();
           }
@@ -48,13 +48,13 @@
             },
             lookahead: true
           });
-          this.$dispatch("tetra:component-updated", { component: this });
+          this.$dispatch("tetra:componentUpdated", { component: this });
         },
         _updateData(data) {
           for (const key in data) {
             this[key] = data[key];
           }
-          this.$dispatch("tetra:component-data-updated", { component: this });
+          this.$dispatch("tetra:componentDataUpdated", { component: this });
         },
         _setValueByName(name, value) {
           let inputs = document.getElementsByName(name);
@@ -63,14 +63,14 @@
           }
         },
         _removeComponent() {
-          this.$dispatch("tetra:component-before-remove", { component: this });
+          this.$dispatch("tetra:componentBeforeRemove", { component: this });
           this.$root.remove();
         },
         _replaceComponent(html) {
-          this.$dispatch("tetra:component-before-remove", { component: this });
+          this.$dispatch("tetra:componentBeforeRemove", { component: this });
           this.$root.insertAdjacentHTML("afterend", html);
           this.$root.remove();
-          this.$dispatch("tetra:component-updated", { component: this });
+          this.$dispatch("tetra:componentUpdated", { component: this });
         },
         _redirect(url) {
           document.location = url;
@@ -102,7 +102,7 @@
         },
         __childComponents: {},
         __rootBind: {
-          ["@tetra:child-component-init"](event) {
+          ["@tetra:childComponentInit"](event) {
             event.stopPropagation();
             const comp = event.detail.component;
             if (comp.key === this.key) {
@@ -113,7 +113,7 @@
             }
             comp._parent = this;
           },
-          ["@tetra:child-component-destroy"](event) {
+          ["@tetra:childComponentDestroy"](event) {
             event.stopPropagation();
             const comp = event.detail.component;
             if (comp.key === this.key) {
@@ -209,7 +209,7 @@
         const messages = Tetra.jsonDecode(response.headers.get("T-Messages"));
         if (messages) {
           messages.forEach((message, index) => {
-            component.$dispatch("tetra:newmessage", message);
+            component.$dispatch("tetra:newMessage", message);
           });
         }
         const respData = Tetra.jsonDecode(await response.text());
@@ -275,7 +275,9 @@
         payload.body = Tetra.jsonEncode(component_state);
         payload.headers["Content-Type"] = "application/json";
       }
+      component.$dispatch("tetra:beforeRequest", { component: this });
       const response = await fetch(methodEndpoint, payload);
+      component.$dispatch("tetra:afterRequest", { component: this });
       return await this.handleServerMethodResponse(response, component);
     },
     jsonReplacer(key, value) {
