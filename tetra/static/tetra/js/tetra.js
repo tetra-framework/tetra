@@ -18,6 +18,20 @@
           if (this.__initInner) {
             this.__initInner();
           }
+          document.addEventListener("tetra:beforeRequest", (event) => {
+            event.target.classList.add("tetra-request");
+            const css_selector = event.target.getAttribute("tx-indicator");
+            if (css_selector) {
+              this.$el.querySelectorAll(css_selector).forEach((el) => el.classList.add("tetra-request"));
+            }
+          });
+          document.addEventListener("tetra:afterRequest", (event) => {
+            event.target.classList.remove("tetra-request");
+            const css_selector = event.target.getAttribute("tx-indicator");
+            if (css_selector) {
+              this.$el.querySelectorAll(css_selector).forEach((el) => el.classList.remove("tetra-request"));
+            }
+          });
         },
         destroy() {
           this.$dispatch("tetra:childComponentDestroy", { component: this });

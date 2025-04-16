@@ -15,6 +15,7 @@ title: Changelog
 ## [0.3.0] - unreleased
 ### Added
 - beforeRequest, afterRequest events
+- add support for loading indicators (=spinners)
 
 ### Changed
 - **BREAKING CHANGE** rename all `tetra:*` events to camelCase: `componentUpdated`, `componentBeforeRemove` etc.
