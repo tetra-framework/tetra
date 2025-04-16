@@ -20,7 +20,7 @@ Within a Tetra component's method call, Django's `request.url` holds the interna
 
 ```python
 >>> self.request.tetra.current_url
->>> 'https://example.com/foo/bar'
+'https://example.com/foo/bar'
 ```
 
 #### current_abs_path
@@ -29,7 +29,7 @@ Similarly, you sometimes need the path of the current page. `request.tetra.curre
 
 ```python
 >>> self.request.tetra.current_abs_path
->>> '/foo/bar'
+'/foo/bar'
 ```
 
 #### url_query_params
@@ -40,7 +40,7 @@ E.g. when your page URL is `https://example.com/foo/bar/?tab=main`
 
 ```python
 >>> self.request.tetra.url_query_params.get("tab")
->>> 'main'
+'main'
 ```
 
 So you can e.g. display different things depending on which GET params are given, or keep a certain state (e.g. open tab) when the "tab" param is set.
