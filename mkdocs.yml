@@ -42,6 +42,7 @@ nav:
     - messages.md
     - component-life-cycle.md
     - events.md
+    - helpers.md
   - Template:
     - component-tag.md
     - attribute-tag.md
