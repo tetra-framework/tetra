@@ -4,7 +4,7 @@
 Tetra offers some helpers that solve common problems.
 
 
-# Loading indicators / spinners
+## Loading indicators / spinners
 
 When clicks are answered with loading times from below 100ms, users perceive this as "instantly". With every +100ms added, the system feels more "laggy". But the most frustrating experience we all know is: clicking on a button that starts a longer loading procedure, and there is no indicator of "busyness" at all, so you don't know if the system is doing something, crashed, or you just did not "click hard enough". So users tend to click again, eventually causing to start the procedure again.
 
