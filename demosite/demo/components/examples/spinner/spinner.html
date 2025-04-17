@@ -1,0 +1,23 @@
+<div {% ... attrs %}>
+  <!-- spinner within button -->
+  <p>
+    <button class="btn btn-primary" type="button"
+            @click="long_lasting_process()"
+            tx-indicator="#my-loading-indicator1"
+    >
+      <span id="my-loading-indicator1" class="spinner-border spinner-border-sm"></span>
+      Load data
+    </button>
+  </p>
+
+  <!-- external spinner -->
+  <p class="d-flex align-items-center">
+    <button class="btn btn-primary" type="button"
+            @click="long_lasting_process()"
+            tx-indicator="#my-loading-indicator2"
+    >
+      Load data
+    </button>
+    <span id="my-loading-indicator2" class="ms-1 spinner-border"></span>
+  </p>
+</div>
