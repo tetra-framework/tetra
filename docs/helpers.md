@@ -35,7 +35,7 @@ As you might see, `.spinner-border` is displayed permanently, which is not what 
 }
 .tetra-request.spinner-border,
 .tetra-request .spinner-border {
-    display: inline;
+    display: inline-block;
 }
 ```
 
