@@ -22,7 +22,6 @@ const Tetra = {
 
         // if this component issues a beforeRequest event, set .tetra-request to .busy-indicator element
         document.addEventListener("tetra:beforeRequest", (event) => {
-          event.target.classList.add("tetra-request");
           // find any element with a "tx-indicator" attribute within this element
           const css_selector = event.target.getAttribute('tx-indicator')
           if(css_selector){
@@ -30,7 +29,6 @@ const Tetra = {
           }
         })
         document.addEventListener("tetra:afterRequest", (event) => {
-          event.target.classList.remove("tetra-request");
           const css_selector = event.target.getAttribute('tx-indicator')
           if(css_selector){
             this.$el.querySelectorAll(css_selector).forEach(el => el.classList.remove("tetra-request"));
