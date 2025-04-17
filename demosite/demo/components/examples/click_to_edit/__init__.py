@@ -17,6 +17,10 @@ class ClickToEdit(Component):
         self.edit_mode = False
 
     @public
-    def discard(self):
+    def cancel(self):
         self.name = self.old_name
         self.edit_mode = False
+
+    @public
+    def reset(self):
+        self.name = self.old_name
