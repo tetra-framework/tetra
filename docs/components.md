@@ -187,6 +187,18 @@ class MyComponent(Component):
         self.a_value = f"Your message is: {message}"
 ```
 
+
+### Return values of public methods
+
+Values returned from the method will be transparently passed to the JavaScript caller. This is especially helpful if you are using Alpine.js data on the client:
+
+```django
+<div x-data="{ open: False }">
+  <button @click="open = check_if_open()">Check</button>
+  <div x-show="open">...</div>
+</div>
+```
+
 ## Templates
 
 ### Template types
