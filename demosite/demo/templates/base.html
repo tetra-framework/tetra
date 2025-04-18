@@ -22,31 +22,31 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/languages/css.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/languages/javascript.min.js"></script>
   <script>
-      document.addEventListener('DOMContentLoaded', (event) => {
-          let enclave_languages = [
-              {type: 'django_html', 'language': 'django'},
-              {type: 'html', 'language': 'html'},
-              {type: 'css', 'language': 'css'},
-              {type: 'javascript', 'language': 'javascript'},
-          ];
-          document.querySelectorAll('pre code').forEach((el) => {
-              hljs.highlightElement(el);
-          });
-          document.querySelectorAll('.language-python .hljs-string').forEach((el) => {
-              if (el.innerText.startsWith('"""') && el.innerText.endsWith('"""')) {
-                  enclave_languages.some((lang) => {
-                      if (el.previousSibling.textContent.endsWith(lang.type+" = ")) {
-                          let code = el.innerText.slice(3, -3);
-                          el.innerHTML = '"""<span class="enclave language-'+lang.language+'"></span>"""';
-                          let enclave = el.querySelector('.enclave');
-                          enclave.innerHTML = code.replace(/</g, "&lt;");
-                          hljs.highlightElement(enclave);
-                          return true;
-                      }
-                  })
-              }
-          });
+    document.addEventListener('DOMContentLoaded', (event) => {
+      let enclave_languages = [
+        {type: 'django_html', 'language': 'django'},
+        {type: 'html', 'language': 'html'},
+        {type: 'css', 'language': 'css'},
+        {type: 'javascript', 'language': 'javascript'},
+      ];
+      document.querySelectorAll('pre code').forEach((el) => {
+        hljs.highlightElement(el);
       });
+      document.querySelectorAll('.language-python .hljs-string').forEach((el) => {
+        if (el.innerText.startsWith('"""') && el.innerText.endsWith('"""')) {
+          enclave_languages.some((lang) => {
+            if (el.previousSibling.textContent.endsWith(lang.type+" = ")) {
+              let code = el.innerText.slice(3, -3);
+              el.innerHTML = '"""<span class="enclave language-'+lang.language+'"></span>"""';
+              let enclave = el.querySelector('.enclave');
+              enclave.innerHTML = code.replace(/</g, "&lt;");
+              hljs.highlightElement(enclave);
+              return true;
+            }
+          })
+        }
+      });
+    });
   </script>
 
   <style>

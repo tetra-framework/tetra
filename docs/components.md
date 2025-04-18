@@ -113,15 +113,15 @@ class MyComponent(Component):
     def message_change(self, value, old_value, attr):
         self.a_value = f"Your message is: {message}"
 ```
-When the `.watch` decorator is applied, the method receives 3 parameters:
+When the `.watch` decorator is applied, the method receives three parameters:
 
-* *value*: The current value of the attribute
-* *old_value*: The old value of the attribute before the change. You can make comparisons here.
-* *attr*: The name of the attribute. This is needed, if the method is watching more than one attributes.
+* `value`: The current value of the attribute
+* `old_value`: The old value of the attribute before the change. You can make comparisons here.
+* `attr`: The name of the attribute. This is needed if the method is watching more than one attribute.
 
 ### .subscribe
 
-Add this if the method should be subscribed to a Javascript event which is fired in the component (or one of its children, and bubbles up).
+Add this if the method should be subscribed to a JavaScript event which is fired in the component (or one of its children and bubbles up).
 
 ```python
 class MyComponent(Component):

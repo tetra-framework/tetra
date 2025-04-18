@@ -23,7 +23,6 @@ class ComponentWithMethodReturnValue(Component):
 
 
 @pytest.mark.django_db
-# FIXME: return values are difficult to test...
 def test_basic_component_return(post_request_with_session, driver, live_server):
     """Tests a simple component with / end"""
     driver.get(live_server.url + reverse("component_with_return_value"))
@@ -31,4 +30,3 @@ def test_basic_component_return(post_request_with_session, driver, live_server):
     assert driver.find_element(By.ID, "result").text == ""
     button.click()
     assert driver.find_element(By.ID, "result").text == "Hello, World!"
-    pass
