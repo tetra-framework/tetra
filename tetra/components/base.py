@@ -636,14 +636,18 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         **kwargs,
     ) -> Any:
         """Creates and initializes a component instance from its serialized state."""
-        if not (
-            isinstance(component_state, dict)
-            and "encrypted" in component_state
-            and isinstance(component_state["encrypted"], str)
-            and "data" in component_state
-            and isinstance(component_state["data"], dict)
-        ):
-            raise TypeError("Invalid component state.")
+        if not isinstance(component_state, dict):
+            raise TypeError("Encrypted state has wrong type")
+        if "encrypted" not in component_state:
+            raise AttributeError("No 'encrypted' attribute in component_state")
+        if not isinstance(component_state["encrypted"], str):
+            raise TypeError(
+                f"Encrypted state has wrong type: {type(component_state['encrypted'])}"
+            )
+        if "data" not in component_state:
+            raise AttributeError("No 'data' attribute in encrypted state")
+        if not isinstance(component_state["data"], dict):
+            raise TypeError("Invalid component state 'data' type.")
 
         component = decode_component(component_state["encrypted"], request)
         if not isinstance(component, cls):
