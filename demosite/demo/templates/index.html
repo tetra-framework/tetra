@@ -162,22 +162,25 @@
     Both frontend and backend components can subscribe to JavaScript events, enabling seamless event-driven programming across the full stack.
     {% /@ %}
     {% @ col title='File upload/downloads' %}
-      Whenever a form contains a FileField, Tetra makes sure tha uploading process works smooth, even with page reloads.
+      Whenever a form contains a FileField, Tetra makes sure the uploading process works smooth, even with page reloads.
     {% /@ %}
     {% @ col title='Integration with Django Messages' %}
       Django's messaging framework is deeply integrated into Tetra: Whenever a new message occurs, it is transformed into a JavaScript object and sent as an event that can be subscribed to by any component.
     {% /@ %}
+    {% @ col title='Loading indicators' %}
+      While an AJAX request is in flight, you can show a loading indicator, globally, per component, or per call.
+    {% /@ %}
   </div>
 
   <h4 class="text-center display-7 my-5" id="features">
-  Much more is planned, including:
+  More features are planned, including:
   </h4>
   <p id="plans" class="text-center max-width mt-3">
     •&nbsp;ModelComponent for bootstrapping standard CRUD interactions. &nbsp;
     •&nbsp;Python type annotations &nbsp;
     •&nbsp;Integration with Django Validators &nbsp;
-    •&nbsp;Alpine.js directives for component state (loading, offline  etc.) &nbsp;
-    •&nbsp;Routing and query strings for "whole page" components. &nbsp;
+    •&nbsp;Alpine.js directives for component state (<s>loading ✅</s>, offline  etc.) &nbsp;
+    •&nbsp;Routing <s>and query strings ✅</s> for "whole page" components. &nbsp;
     •&nbsp;Page title and metadata in header. &nbsp;
     •&nbsp;Pagination and Infinity Scroll components. &nbsp;
     •&nbsp;PostCSS/SASS/etc. support. &nbsp;
