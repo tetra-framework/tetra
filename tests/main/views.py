@@ -17,3 +17,9 @@ def component_with_return_value(request):
             request, "{% @ main.default.ComponentWithMethodReturnValue / %}"
         )
     )
+
+
+def download_component(request):
+    return HttpResponse(
+        render_component_tag(request, "{% @ main.ui.DownloadComponent / %}")
+    )

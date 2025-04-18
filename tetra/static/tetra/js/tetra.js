@@ -19,14 +19,12 @@
             this.__initInner();
           }
           document.addEventListener("tetra:beforeRequest", (event) => {
-            event.target.classList.add("tetra-request");
             const css_selector = event.target.getAttribute("tx-indicator");
             if (css_selector) {
               this.$el.querySelectorAll(css_selector).forEach((el) => el.classList.add("tetra-request"));
             }
           });
           document.addEventListener("tetra:afterRequest", (event) => {
-            event.target.classList.remove("tetra-request");
             const css_selector = event.target.getAttribute("tx-indicator");
             if (css_selector) {
               this.$el.querySelectorAll(css_selector).forEach((el) => el.classList.remove("tetra-request"));
@@ -214,17 +212,41 @@
         document.head.appendChild(link);
       });
     },
+    getFilenameFromContentDisposition(contentDisposition) {
+      if (!contentDisposition) return null;
+      let matches = /filename\*=([^']*)'([^']*)'([^;]*)/i.exec(contentDisposition);
+      if (matches) {
+        try {
+          return decodeURIComponent(matches[3]);
+        } catch (e) {
+          console.warn("Error decoding filename:", e);
+        }
+      }
+      matches = /filename=["']?([^"';\n]*)["']?/i.exec(contentDisposition);
+      if (matches) {
+        return matches[1];
+      }
+      return null;
+    },
     async handleServerMethodResponse(response, component) {
       if (response.status === 200) {
         if (response.headers.get("T-Response") !== "true") {
-          console.error("Response is not a Tetra response. Please check the server implementation.");
-          return;
+          throw new Error("Response is not a Tetra response. Please check the server implementation.");
         }
         const messages = Tetra.jsonDecode(response.headers.get("T-Messages"));
         if (messages) {
           messages.forEach((message, index) => {
             component.$dispatch("tetra:newMessage", message);
           });
+        }
+        const cd = response.headers.get("Content-Disposition");
+        if (cd == null ? void 0 : cd.startsWith("attachment")) {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(await response.blob());
+          a.download = this.getFilenameFromContentDisposition(cd);
+          a.click();
+          a.remove();
+          return;
         }
         const respData = Tetra.jsonDecode(await response.text());
         if (respData.success) {

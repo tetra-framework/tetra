@@ -38,7 +38,7 @@ from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockContext, BlockNo
 from django.utils.safestring import mark_safe, SafeString
 from django.utils.html import escapejs, escape
 from django.utils.functional import SimpleLazyObject
-from django.http import JsonResponse, HttpRequest
+from django.http import JsonResponse, HttpRequest, FileResponse
 from django.urls import reverse
 from django.template.loaders.filesystem import Loader as FileSystemLoader
 
@@ -487,12 +487,13 @@ class Public(metaclass=PublicMeta):
             )
             self.obj = obj.obj if obj.obj else self.obj
 
-        elif self._update and isinstance(obj, FunctionType):
+        elif isinstance(obj, FunctionType):
 
             @wraps(obj)
             def fn(instance: "Component", *args, **kwargs):
-                ret = obj(instance, *args, **kwargs)
-                instance.update()
+                ret: JsonResponse | FileResponse = obj(instance, *args, **kwargs)
+                if self._update:
+                    instance.update()
                 return ret
 
             self.obj = fn
@@ -945,7 +946,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     def _call_public_method(
         self, request, method_name, children_state, *args
-    ) -> JsonResponse:
+    ) -> JsonResponse | FileResponse:
         self._loaded_children_state = children_state
         self._callback_queue = CallbackList()
         result = getattr(self, method_name)(*args)
@@ -954,18 +955,24 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         libs = list(
             set(component._library for component in request.tetra_components_used)
         )
-        # TODO: error handling
-        return JsonResponse(
-            {
-                "styles": [lib.styles_url for lib in libs],
-                "js": [lib.js_url for lib in libs],
-                "success": True,
-                "result": result,
-                "callbacks": callbacks,
-            },
-            encoder=TetraJSONEncoder,
-            headers={"T-Response": "true"},
-        )
+
+        # if the response is a FileResponse, we directly return the result.
+        if isinstance(result, FileResponse):
+            result.headers["T-Response"] = "true"
+            return result
+        else:
+            # TODO: error handling
+            return JsonResponse(
+                {
+                    "styles": [lib.styles_url for lib in libs],
+                    "js": [lib.js_url for lib in libs],
+                    "success": True,
+                    "result": result,
+                    "callbacks": callbacks,
+                },
+                encoder=TetraJSONEncoder,
+                headers={"T-Response": "true"},
+            )
 
     @public
     def _refresh(self) -> None:

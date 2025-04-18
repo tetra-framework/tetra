@@ -226,6 +226,26 @@ const Tetra = {
       document.head.appendChild(link);
     });
   },
+  getFilenameFromContentDisposition(contentDisposition) {
+      if (!contentDisposition) return null;
+
+      // First, try to get the filename* parameter (RFC 5987)
+      let matches = /filename\*=([^']*)'([^']*)'([^;]*)/i.exec(contentDisposition);
+      if (matches) {
+          // Decode the UTF-8 encoded filename
+          try {
+              return decodeURIComponent(matches[3]);
+          } catch (e) {
+              console.warn('Error decoding filename:', e);
+          }
+      }
+      // Try to get the regular filename parameter
+      matches = /filename=["']?([^"';\n]*)["']?/i.exec(contentDisposition);
+      if (matches) {
+          return matches[1];
+      }
+      return null;
+  },
 
   async handleServerMethodResponse(response, component) {
     if (response.status === 200) {
@@ -238,6 +258,16 @@ const Tetra = {
         messages.forEach((message, index) => {
           component.$dispatch('tetra:newMessage', message)
         })
+      }
+      const cd = response.headers.get('Content-Disposition')
+      if (cd?.startsWith("attachment")) {
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(await response.blob())
+        a.download = this.getFilenameFromContentDisposition(cd)
+        a.click()
+        a.remove()
+        return;
+
       }
       const respData = Tetra.jsonDecode(await response.text());
       if (respData.success) {
