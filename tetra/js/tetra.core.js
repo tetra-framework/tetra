@@ -230,8 +230,7 @@ const Tetra = {
   async handleServerMethodResponse(response, component) {
     if (response.status === 200) {
       if (response.headers.get('T-Response') !== "true") {
-        console.error("Response is not a Tetra response. Please check the server implementation.");
-        return
+        throw new Error("Response is not a Tetra response. Please check the server implementation.")
       }
       // handle Django messages and emit "tetra:newMessage" for each one, so components can react on that individually
       const messages = Tetra.jsonDecode(response.headers.get('T-Messages'));
