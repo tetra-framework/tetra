@@ -12,10 +12,11 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] - unreleased
+## [0.3.0] - 2025-04-18
 ### Added
 - beforeRequest, afterRequest events
 - add support for loading indicators (=spinners)
+- add support for file downloads in component methods
 
 ### Changed
 - **BREAKING CHANGE** rename all `tetra:*` events to camelCase: `componentUpdated`, `componentBeforeRemove` etc.
