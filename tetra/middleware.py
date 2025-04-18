@@ -4,7 +4,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 from django.contrib.messages import get_messages
 from django.contrib.messages.storage.base import Message
-from django.http import HttpRequest, QueryDict
+from django.http import HttpRequest, QueryDict, JsonResponse, FileResponse
 from django.middleware.csrf import get_token
 from django.utils.functional import cached_property
 
@@ -95,6 +95,9 @@ class TetraMiddleware:
         request.tetra = TetraDetails(request)
         response = await self.get_response(request)
         messages: list[Message] = []
+
+        if isinstance(response, FileResponse):
+            return response
 
         for message in get_messages(request):
             # FIXME: maybe use a more efficient data structure for large number of
