@@ -136,11 +136,11 @@ class MyComponent(Component):
 
 ```
 
-Tetra automatically adds `x-on:<event>=<yourmethod>($event.detail)` to the root element's attrs, **just make sure that your component template uses the `{% ... attrs %}` tag there**.
+Tetra automatically adds `@<event>=<yourmethod>($event.detail)` to the root element's attrs.
 
 You can even attach the event listener globally by using `.window` or `.document`, see [Alpine.js docs](https://alpinejs.dev/directives/on#window).
 
-The method always receives the *event detail* as single parameter. 
+The method always receives the *event detail* as a single parameter. 
 
 
 ### .debounce

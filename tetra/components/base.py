@@ -498,9 +498,6 @@ class Public(metaclass=PublicMeta):
                 return ret
 
             self.obj = fn
-            # if we recorded that the method should subscribe to an event, mark it as such
-            if self._event_subscriptions:
-                self.obj._event_subscription = self._event_subscriptions
         else:
             # `public` is wrapping a variable (str, int, etc)
             self.obj = obj
@@ -521,12 +518,14 @@ class Public(metaclass=PublicMeta):
             raise AttributeError(f"Public decorator has no method {name}.")
 
     def do_watch(self, *args) -> Self:
+        if not args:
+            raise ValueError(".watch decorator requires at least one argument.")
         for arg in args:
             if isinstance(arg, str):
                 self._watch.append(arg)
             else:
                 self._watch.extend(arg)
-        return self
+        return self  # noqa
 
     def do_debounce(self, timeout, immediate=False) -> Self:
         self._debounce = timeout
@@ -540,11 +539,7 @@ class Public(metaclass=PublicMeta):
         return self
 
     def do_subscribe(self, event) -> Self:
-        """Marks the method to subscribe to one or more Javascript event."""
-        # we can't access the class whose method we are decorating directly,
-        # so we store the event name as an attribute on the method, so the
-        # Component class itself can check (in its MetaClass or later
-        # __init_subclass__) which methods have a subscription.
+        """Keeps track of the event for a dynamic event subscription of the component."""
         self._event_subscriptions.append(event)
         return self
 
@@ -555,23 +550,32 @@ public = Public
 tracing_component_load = WeakKeyDictionary()
 
 
+def param_names_exist(func, *args):
+    params = inspect.signature(func).parameters
+    for arg in args:
+        if arg not in params.keys() or args.index(arg) != list(params.keys()).index(
+            arg
+        ):
+            return False
+    return True
+
+
 class ComponentMetaClass(BasicComponentMetaClass):
     def __new__(mcls, name, bases, attrs):
-        public_methods = list(
+        public_methods: list[dict[str, Any]] = list(
             itertools.chain.from_iterable(
                 base._public_methods
                 for base in bases
                 if hasattr(base, "_public_methods")
             )
         )
-        public_properties = list(
+        public_properties: list[str] = list(
             itertools.chain.from_iterable(
                 base._public_properties
                 for base in bases
                 if hasattr(base, "_public_properties")
             )
         )
-        event_subscriptions: dict[str, str] = {}
         for attr_name, attr_value in attrs.items():
 
             if isinstance(attr_value, Public):
@@ -581,9 +585,16 @@ class ComponentMetaClass(BasicComponentMetaClass):
                 attrs[attr_name] = attr_value.obj
 
                 if isinstance(attrs[attr_name], FunctionType):
-                    # decorated object is a method
+                    # the decorated object is a method
+                    fn = attrs[attr_name]
                     pub_met = {"name": attr_name}
                     if attr_value._watch:
+                        if not param_names_exist(fn, "value", "old_value", "attr"):
+                            raise ValueError(
+                                f"The .watch method `"
+                                f"{attr_name}` must have 'value', 'old_value' and "
+                                "'attr' as arguments."
+                            )
                         pub_met["watch"] = attr_value._watch
                     if attr_value._debounce:
                         pub_met["debounce"] = attr_value._debounce
@@ -592,16 +603,22 @@ class ComponentMetaClass(BasicComponentMetaClass):
                         pub_met["throttle"] = attr_value._throttle
                         pub_met["throttle_trailing"] = attr_value._throttle_trailing
                         pub_met["throttle_leading"] = attr_value._throttle_leading
-                    for event in attr_value._event_subscriptions:
-                        # save {event_name:method_name} for each event
-                        event_subscriptions.update({event: attr_value.obj.__name__})
+                    if attr_value._event_subscriptions:
+                        params = inspect.signature(fn).parameters
+                        if params and len(params) != 2:
+                            raise ValueError(
+                                f"Even subscriber method '{attr_name}' has wrong "
+                                f"number of arguments. Expected 2 (self, "
+                                f"event_detail), but got {len(params)}."
+                            )
+
+                        pub_met["subscriptions"] = attr_value._event_subscriptions
                     public_methods.append(pub_met)
                 else:
                     public_properties.append(attr_name)
         newcls = super().__new__(mcls, name, bases, attrs)
         newcls._public_methods = public_methods
         newcls._public_properties = public_properties
-        newcls._event_subscriptions = event_subscriptions
         return newcls
 
 
@@ -912,6 +929,14 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         else:
             data_json = escapejs(to_json(self._render_data()))
             extra_tags.append(f"x-data=\"{self.full_component_name()}('{data_json}')\"")
+
+        for method_data in self._public_methods:
+            if "subscriptions" in method_data:
+                for event in method_data["subscriptions"]:
+                    extra_tags.append(
+                        f'@{event}="{method_data["name"]}($event.detail)"'
+                    )
+
         html = f'{html[:tag_name_end]} {" ".join(extra_tags)} {html[tag_name_end:]}'
         return mark_safe(html)
 

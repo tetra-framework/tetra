@@ -123,12 +123,3 @@ class ComponentWithPublic(Component):
         pass
 
     template: django_html = "<div id='component'>{{ message }}</div>"
-
-
-class ComponentWithPublicSubscribe(Component):
-
-    @public.subscribe("keyup.enter")
-    def do_something(self) -> str:
-        pass
-
-    template: django_html = "<div id='component' {% ... attrs %}></div>"
