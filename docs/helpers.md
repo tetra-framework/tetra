@@ -39,7 +39,7 @@ As you might see, `.spinner-border` is displayed permanently, which is not what 
 }
 ```
 
-There is nothing that holds you from doing "fancier" transitions than `display: inline`...:
+There is nothing that holds you from doing "fancier" transitions than `display: inline`:
 
 ```css
 .spinner-border {
