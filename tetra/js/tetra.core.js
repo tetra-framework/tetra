@@ -18,18 +18,23 @@ const Tetra = {
         if (this.__initInner) {
           this.__initInner();
         }
-        // if this component issues a before-request event, set .tetra-request to .busy-indicator element
+        // if this component issues a before-request event, set .tetra-request to it
         document.addEventListener("tetra:before-request", (event) => {
-          // find any element with a "tx-indicator" attribute within this element
+          // try to find any element with a "tx-indicator" attribute within this element
           const css_selector = event.target.getAttribute('tx-indicator')
           if(css_selector){
+            // if there is a tx-indicator pointing to an element, use that element as loading indicator
             this.$el.querySelectorAll(css_selector).forEach(el => el.classList.add("tetra-request"));
+          } else {
+            event.target.classList.add("tetra-request");
           }
         })
         document.addEventListener("tetra:after-request", (event) => {
           const css_selector = event.target.getAttribute('tx-indicator')
           if(css_selector){
             this.$el.querySelectorAll(css_selector).forEach(el => el.classList.remove("tetra-request"));
+          } else {
+            event.target.classList.remove("tetra-request");
           }
         })
       },

@@ -22,12 +22,16 @@
             const css_selector = event.target.getAttribute("tx-indicator");
             if (css_selector) {
               this.$el.querySelectorAll(css_selector).forEach((el) => el.classList.add("tetra-request"));
+            } else {
+              event.target.classList.add("tetra-request");
             }
           });
           document.addEventListener("tetra:after-request", (event) => {
             const css_selector = event.target.getAttribute("tx-indicator");
             if (css_selector) {
               this.$el.querySelectorAll(css_selector).forEach((el) => el.classList.remove("tetra-request"));
+            } else {
+              event.target.classList.remove("tetra-request");
             }
           });
         },
