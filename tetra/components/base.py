@@ -488,6 +488,7 @@ class Public(metaclass=PublicMeta):
             self.obj = obj.obj if obj.obj else self.obj
 
         elif isinstance(obj, FunctionType):
+            # `public` decorator applied to a method
 
             @wraps(obj)
             def fn(instance: "Component", *args, **kwargs):
@@ -501,6 +502,7 @@ class Public(metaclass=PublicMeta):
             if self._event_subscriptions:
                 self.obj._event_subscription = self._event_subscriptions
         else:
+            # `public` is wrapping a variable (str, int, etc)
             self.obj = obj
         return self
 
