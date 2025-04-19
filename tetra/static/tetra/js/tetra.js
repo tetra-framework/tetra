@@ -13,18 +13,18 @@
       return {
         // Alpine.js lifecycle:
         init() {
-          this.$dispatch("tetra:childComponentInit", { component: this });
+          this.$dispatch("tetra:child-component-init", { component: this });
           this.__initServerWatchers();
           if (this.__initInner) {
             this.__initInner();
           }
-          document.addEventListener("tetra:beforeRequest", (event) => {
+          document.addEventListener("tetra:before-request", (event) => {
             const css_selector = event.target.getAttribute("tx-indicator");
             if (css_selector) {
               this.$el.querySelectorAll(css_selector).forEach((el) => el.classList.add("tetra-request"));
             }
           });
-          document.addEventListener("tetra:afterRequest", (event) => {
+          document.addEventListener("tetra:after-request", (event) => {
             const css_selector = event.target.getAttribute("tx-indicator");
             if (css_selector) {
               this.$el.querySelectorAll(css_selector).forEach((el) => el.classList.remove("tetra-request"));
@@ -32,7 +32,7 @@
           });
         },
         destroy() {
-          this.$dispatch("tetra:childComponentDestroy", { component: this });
+          this.$dispatch("tetra:child-component-destroy", { component: this });
           if (this.__destroyInner) {
             this.__destroyInner();
           }
@@ -60,13 +60,13 @@
             },
             lookahead: true
           });
-          this.$dispatch("tetra:componentUpdated", { component: this });
+          this.$dispatch("tetra:component-updated", { component: this });
         },
         _updateData(data) {
           for (const key in data) {
             this[key] = data[key];
           }
-          this.$dispatch("tetra:componentDataUpdated", { component: this });
+          this.$dispatch("tetra:component-data-updated", { component: this });
         },
         _setValueByName(name, value) {
           let inputs = document.getElementsByName(name);
@@ -75,14 +75,14 @@
           }
         },
         _removeComponent() {
-          this.$dispatch("tetra:componentBeforeRemove", { component: this });
+          this.$dispatch("tetra:component-before-remove", { component: this });
           this.$root.remove();
         },
         _replaceComponent(html) {
-          this.$dispatch("tetra:componentBeforeRemove", { component: this });
+          this.$dispatch("tetra:component-before-remove", { component: this });
           this.$root.insertAdjacentHTML("afterend", html);
           this.$root.remove();
-          this.$dispatch("tetra:componentUpdated", { component: this });
+          this.$dispatch("tetra:component-updated", { component: this });
         },
         _redirect(url) {
           document.location = url;
@@ -114,7 +114,7 @@
         },
         __childComponents: {},
         __rootBind: {
-          ["@tetra:childComponentInit"](event) {
+          ["@tetra:child-component-init"](event) {
             event.stopPropagation();
             const comp = event.detail.component;
             if (comp.key === this.key) {
@@ -125,7 +125,7 @@
             }
             comp._parent = this;
           },
-          ["@tetra:childComponentDestroy"](event) {
+          ["@tetra:child-component-destroy"](event) {
             event.stopPropagation();
             const comp = event.detail.component;
             if (comp.key === this.key) {
@@ -236,7 +236,7 @@
         const messages = Tetra.jsonDecode(response.headers.get("T-Messages"));
         if (messages) {
           messages.forEach((message, index) => {
-            component.$dispatch("tetra:newMessage", message);
+            component.$dispatch("tetra:new-message", message);
           });
         }
         const cd = response.headers.get("Content-Disposition");
@@ -311,9 +311,9 @@
         payload.body = Tetra.jsonEncode(component_state);
         payload.headers["Content-Type"] = "application/json";
       }
-      component.$dispatch("tetra:beforeRequest", { component: this });
+      component.$dispatch("tetra:before-request", { component: this });
       const response = await fetch(methodEndpoint, payload);
-      component.$dispatch("tetra:afterRequest", { component: this });
+      component.$dispatch("tetra:after-request", { component: this });
       return await this.handleServerMethodResponse(response, component);
     },
     jsonReplacer(key, value) {

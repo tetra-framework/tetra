@@ -13,22 +13,20 @@ const Tetra = {
     return {
       // Alpine.js lifecycle:
       init() {
-        this.$dispatch('tetra:childComponentInit', {component:  this});
+        this.$dispatch('tetra:child-component-init', {component:  this});
         this.__initServerWatchers();
         if (this.__initInner) {
           this.__initInner();
         }
-
-
-        // if this component issues a beforeRequest event, set .tetra-request to .busy-indicator element
-        document.addEventListener("tetra:beforeRequest", (event) => {
+        // if this component issues a before-request event, set .tetra-request to .busy-indicator element
+        document.addEventListener("tetra:before-request", (event) => {
           // find any element with a "tx-indicator" attribute within this element
           const css_selector = event.target.getAttribute('tx-indicator')
           if(css_selector){
             this.$el.querySelectorAll(css_selector).forEach(el => el.classList.add("tetra-request"));
           }
         })
-        document.addEventListener("tetra:afterRequest", (event) => {
+        document.addEventListener("tetra:after-request", (event) => {
           const css_selector = event.target.getAttribute('tx-indicator')
           if(css_selector){
             this.$el.querySelectorAll(css_selector).forEach(el => el.classList.remove("tetra-request"));
@@ -36,7 +34,7 @@ const Tetra = {
         })
       },
       destroy() {
-        this.$dispatch('tetra:childComponentDestroy', {component:  this});
+        this.$dispatch('tetra:child-component-destroy', {component:  this});
         if (this.__destroyInner) {
           this.__destroyInner();
         }
@@ -66,13 +64,13 @@ const Tetra = {
           },
           lookahead: true
         });
-        this.$dispatch('tetra:componentUpdated', { component: this });
+        this.$dispatch('tetra:component-updated', { component: this });
       },
       _updateData(data) {
         for (const key in data) {
           this[key] = data[key];
         }
-        this.$dispatch('tetra:componentDataUpdated', { component: this });
+        this.$dispatch('tetra:component-data-updated', { component: this });
       },
       _setValueByName(name, value){
         // sets value to the input field with the given name
@@ -83,14 +81,14 @@ const Tetra = {
         }
       },
       _removeComponent() {
-        this.$dispatch('tetra:componentBeforeRemove', { component: this });
+        this.$dispatch('tetra:component-before-remove', { component: this });
         this.$root.remove();
       },
       _replaceComponent(html) {
-        this.$dispatch('tetra:componentBeforeRemove', { component: this });
+        this.$dispatch('tetra:component-before-remove', { component: this });
         this.$root.insertAdjacentHTML('afterend', html);
         this.$root.remove();
-        this.$dispatch('tetra:componentUpdated', { component: this });
+        this.$dispatch('tetra:component-updated', { component: this });
       },
       _redirect(url) {
         document.location = url;
@@ -122,7 +120,7 @@ const Tetra = {
       },
       __childComponents: {},
       __rootBind: {
-        ['@tetra:childComponentInit'](event) {
+        ['@tetra:child-component-init'](event) {
           event.stopPropagation();
           const comp = event.detail.component;
           if (comp.key === this.key) {
@@ -133,7 +131,7 @@ const Tetra = {
           }
           comp._parent = this;
         },
-        ['@tetra:childComponentDestroy'](event) {
+        ['@tetra:child-component-destroy'](event) {
           event.stopPropagation();
           const comp = event.detail.component;
           if (comp.key === this.key) {
@@ -252,11 +250,11 @@ const Tetra = {
       if (response.headers.get('T-Response') !== "true") {
         throw new Error("Response is not a Tetra response. Please check the server implementation.")
       }
-      // handle Django messages and emit "tetra:newMessage" for each one, so components can react on that individually
+      // handle Django messages and emit "tetra:new-message" for each one, so components can react on that individually
       const messages = Tetra.jsonDecode(response.headers.get('T-Messages'));
       if (messages) {
         messages.forEach((message, index) => {
-          component.$dispatch('tetra:newMessage', message)
+          component.$dispatch('tetra:new-message', message)
         })
       }
       const cd = response.headers.get('Content-Disposition')
@@ -342,9 +340,9 @@ const Tetra = {
       payload.body = Tetra.jsonEncode(component_state)
       payload.headers['Content-Type'] = 'application/json'
     }
-    component.$dispatch('tetra:beforeRequest', {component: this});
+    component.$dispatch('tetra:before-request', {component: this});
     const response = await fetch(methodEndpoint, payload);
-    component.$dispatch('tetra:afterRequest', {component: this})
+    component.$dispatch('tetra:after-request', {component: this})
     return await this.handleServerMethodResponse(response, component);
   },
 

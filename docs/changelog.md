@@ -12,6 +12,9 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2025-04-19
+- **BREAKING CHANGE** rename all `tetra:*` events to kebab-case: `before-request`, `after-request`, `component-updated`, `component-before-remove` etc. This was necessary because camelCase Events cannot be used properly in `x-on:` attributes - HTMX attributes are forced to lowercase, which breaks the event capture.
+
 ## [0.3.0] - 2025-04-18
 ### Added
 - beforeRequest, afterRequest events

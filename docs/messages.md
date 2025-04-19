@@ -7,27 +7,29 @@ Tetra integrates deeply Django's messaging framework. A traditional Django appro
 
 In a component based layout as Tetra describes, where individual components independently make AJAX calls and update themselves, it is not as easy. You may have one component that gets the messages, but it is not notified about that when another component calls a method. Then, all messages would be stuck in the wrong response/component, so this doesn't help. Even when notifying the "messages" component so that it could get the new messages, would help, it would even make things worse, as there would be race conditions when 2 components update, and the messages component updates itself too twice, overwriting the first message with the proceeding one.
 
-## Tetra Messages - brought by events
-So, the messaging must be kept independently on the client. Tetra tries to solve this by providing new messages, whenever they occur, with any call of any component, through a middleware. `TetraMiddleware` and Tetra's client Javascript part process all messages and convert them into Javascript objects that are then sent individually via a fired event: `tetra:newMessage`.
+## Tetra Messages — brought by events
+So, the messaging must be kept independently on the client. Tetra tries to solve this by providing new messages, whenever they occur, with any call of any component, through the middleware. `TetraMiddleware` and Tetra's client JavaScript part process all messages and convert them into JavaScript objects that are then sent individually via a fired event: `tetra:new-message`.
 
 You can react on it in any component, using client side/Alpine.js or server side code:
 
 ```django
-<div x-data="{bell: false}" @tetra:newMessage="bell=true">
+<div x-data="{bell: false}" @tetra:new-message="bell=true">
   <i class="bi bi-bell" x-show="bell"></i>
  </div>
 ```
 This shows a Bootstrap bell icon whenever a new message has arrived, instantly. You can also call a function, the message itself is added as the "details" attribute of the event.
 
 ```django
-<div @tetra:newMessage="show_message($event.details)"></div>
+<div @tetra:new-message="show_message($event.details)"></div>
 ```
 
 Since Tetra provides a [@public.subscribe modifier](components.md#subscribe), you can even react on the server on that:
 ```python
+from django.contrib.messages import Message
+
 class MyComponent(Component):
     
-    @public.subscribe("tetra:newMessage"):
+    @public.subscribe("tetra:new-message")
     def message_added(self, message:Message):
         ...
 ```
