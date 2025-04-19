@@ -746,14 +746,6 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             method_data["endpoint"] = (cls._component_url(method["name"]),)
             component_server_methods.append(method_data)
 
-        component_server_methods.append(
-            {
-                # TODO: security & efficiency: only append _upload_temp_file if
-                #  necessary, e.g. file field present.
-                "name": "_upload_temp_file",
-                "endpoint": cls._component_url("_upload_temp_file"),
-            }
-        )
         if not component_var:
             component_var = cls.script if cls.has_script() else "{}"
         return render_to_string(
@@ -1188,25 +1180,6 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
             for attr, value in self._form.cleaned_data.items():
                 setattr(self, attr, value)
             self.form_invalid(self._form)
-
-    # TODO: cleanup
-    # @public
-    # def _upload_temp_file(
-    #     self, form_field: str, original_name, file: TetraTemporaryUploadedFile
-    # ) -> None:
-    #     """Uploads a file to the server temporarily."""
-    #     if not file:
-    #         raise ValueError("File must be provided.")  # TODO: Add validation
-    #     if form_field not in self._form.fields or not isinstance(
-    #         self._form.fields[form_field], FileField
-    #     ):
-    #         raise ValueError(f"Form field '{form_field}' is not a FileField")
-    #     # TODO: further Validate inputs
-    #     # TODO: Add error checking, double check saving file unconditionally
-    #     print("_upload_temp_file:", original_name, file.name)
-    #     # keep track of the uploaded file
-    #     self._temp_files[form_field] = file
-    #     setattr(self, form_field, file)
 
     def _reset(self):
         """Internally resets all form fields to their defaults set in load(). This
