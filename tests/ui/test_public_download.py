@@ -1,7 +1,7 @@
 import os
 import time
 import pytest
-from django.http import HttpResponse
+from django.http import FileResponse
 from django.urls import reverse
 from selenium.webdriver.common.by import By
 
@@ -12,9 +12,11 @@ foo = Library("ui", "main")
 
 @foo.register
 class DownloadComponent(Component):
-    @public.download(content_type="text/plain", filename="foo.txt")
+    @public
     def download_default(self):
-        return HttpResponse("Hello, World!")
+        return FileResponse(
+            "Hello, World!", content_type="text/plain", filename="foo.txt"
+        )
 
     # language=html
     template = """
