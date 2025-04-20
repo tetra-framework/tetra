@@ -49,7 +49,8 @@ from ..utils import (
     to_json,
     TetraJSONEncoder,
     isclassmethod,
-    TetraTemporaryUploadedFile,
+    param_names_exist,
+    param_count,
 )
 from ..types import ComponentData
 from ..state import encode_component, decode_component
@@ -550,16 +551,6 @@ public = Public
 tracing_component_load = WeakKeyDictionary()
 
 
-def param_names_exist(func, *args):
-    params = inspect.signature(func).parameters
-    for arg in args:
-        if arg not in params.keys() or args.index(arg) != list(params.keys()).index(
-            arg
-        ):
-            return False
-    return True
-
-
 class ComponentMetaClass(BasicComponentMetaClass):
     def __new__(mcls, name, bases, attrs):
         public_methods: list[dict[str, Any]] = list(
@@ -591,9 +582,8 @@ class ComponentMetaClass(BasicComponentMetaClass):
                     if attr_value._watch:
                         if not param_names_exist(fn, "value", "old_value", "attr"):
                             raise ValueError(
-                                f"The .watch method `"
-                                f"{attr_name}` must have 'value', 'old_value' and "
-                                "'attr' as arguments."
+                                f"The .watch method `{attr_name}` must have 'value', "
+                                f"'old_value' and 'attr' as arguments."
                             )
                         pub_met["watch"] = attr_value._watch
                     if attr_value._debounce:
@@ -604,15 +594,14 @@ class ComponentMetaClass(BasicComponentMetaClass):
                         pub_met["throttle_trailing"] = attr_value._throttle_trailing
                         pub_met["throttle_leading"] = attr_value._throttle_leading
                     if attr_value._event_subscriptions:
-                        params = inspect.signature(fn).parameters
-                        if params and len(params) != 2:
+                        pcount = param_count(fn)
+                        if pcount != 1:
                             raise ValueError(
-                                f"Even subscriber method '{attr_name}' has wrong "
+                                f"Event subscriber method '{attr_name}' has wrong "
                                 f"number of arguments. Expected 2 (self, "
-                                f"event_detail), but got {len(params)}."
+                                f"event_detail), but got {pcount}."
                             )
-
-                        pub_met["subscriptions"] = attr_value._event_subscriptions
+                        pub_met["event_subscriptions"] = attr_value._event_subscriptions
                     public_methods.append(pub_met)
                 else:
                     public_properties.append(attr_name)
@@ -931,8 +920,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             extra_tags.append(f"x-data=\"{self.full_component_name()}('{data_json}')\"")
 
         for method_data in self._public_methods:
-            if "subscriptions" in method_data:
-                for event in method_data["subscriptions"]:
+            if "event_subscriptions" in method_data:
+                for event in method_data["event_subscriptions"]:
                     extra_tags.append(
                         f'@{event}="{method_data["name"]}($event.detail)"'
                     )

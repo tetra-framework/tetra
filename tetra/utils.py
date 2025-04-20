@@ -1,3 +1,4 @@
+import inspect
 import json
 import datetime
 import os
@@ -333,3 +334,28 @@ def is_abstract(component) -> bool:
     return "__abstract__" in component.__dict__ and getattr(
         component, "__abstract__", False
     )
+
+
+def param_names_exist(method, *args):
+    """Checks if the given parameters of the method exist.
+
+    Example:
+        param_name_exist(my_method, "name", "age")
+    """
+    params = list(inspect.signature(method).parameters.keys())
+    if params:
+        params = params[1:]  # remove "self"
+    for arg in args:
+        if arg not in params or args.index(arg) != list(params).index(arg):
+            return False
+    return True
+
+
+def param_count(method) -> int:
+    """Returns the number of parameters, exclusive 'self'."""
+    params = list(inspect.signature(method).parameters.keys())
+    if params:
+        params = params[1:]  # remove "self"
+        return len(params)
+    else:
+        return 0
