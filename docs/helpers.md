@@ -27,7 +27,7 @@ Here is an example that works with Bootstrap 5 CSS (`.spinner-border`):
     display: none;
 }
 .tetra-request.spinner-border,
-.tetra-request .spinner-border {
+.tetra-request + .spinner-border {
     display: inline-block;
 }
 ```
@@ -41,6 +41,11 @@ Now place a "spinner" into your button:
 ```
 
 This is all you need to get a simple loading indicator working, for within an element.
+
+!!! note
+    Have a look at the adjacent sibling combinator (+) for the activated spinner. This CSS ruls make sure you can put your spinner **inside** the element that does the AJAX call, or place it next to it.
+    
+    Beware that if you just use `.tetra-request .spinner-border` you select all child elements below too - so if the `tetra-request` event fires in any parent component, **all** spinners of all its childs will be visible, which is mostly not what you'll want. So write your CSS wisely.
 
 ### `tx-indicator` attribute
 
