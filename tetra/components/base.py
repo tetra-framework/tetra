@@ -392,7 +392,8 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         return mark_safe(html)
 
     def recalculate_attrs(self, component_method_finished: bool):
-        """Code that should be run before and after user interactions with attributes.
+        """Hook for code that should be run before and after user interactions with
+        attributes.
 
         You can add code here that e.g. updates some attributes "in the last moment"
         before rendering, like "dirty" flags that are set when any of the attributes
