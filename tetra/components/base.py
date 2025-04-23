@@ -961,6 +961,16 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         """Pushes a new URL to the browser's history."""
         self.client._pushUrl(url)
 
+    def update_search_param(self, param: str, value: str | int = None):
+        """Updates a URL query parameter. Leaves alone tho other params, if any.
+
+        Args:
+            param: The name of the URL search parameter to be updated.
+            value: The new value for the parameter. Defaults to None, which means that
+                the parameter is deleted from the URL.
+        """
+        self.client._updateSearchParam(param, value)
+
     def replace_url(self, url: str) -> None:
         """Replaces the current URL with a new one."""
         self.client._pushUrl(url, replace=True)

@@ -111,6 +111,15 @@ const Tetra = {
           window.history.pushState(null, '', url);
         }
       },
+      _updateSearchParam(param, value) {
+        const url = new URL(window.location);
+        if (value) {
+          url.searchParams.set(param, value);
+        } else {
+          url.searchParams.delete(param);
+        }
+        window.history.pushState(null, "", url.toString());
+      },
       // Tetra private:
       __initServerWatchers() {
         this.__serverMethods.forEach(item => {
