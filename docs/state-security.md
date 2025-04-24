@@ -14,9 +14,9 @@ It is essential that the Django `SECRET_KEY` is kept secure. It should never be 
 
 As this encrypted server state was generated after the component had been passed its arguments, and after any view based authentication, it holds onto that authentication when resumed later. It is, in effect, an authentication token allowing the user to continue from that state at a later point in time. It is also possible to do further authentication within the `load()` method, or any other public method.
 
-## State optimisations
+## State optimizations
 
-A number of optimisations have been made to ensure that the Pickled state is efficient and doesn't become stale. These include:
+A number of optimizations have been made to ensure that the Pickled state is efficient and doesn't become stale. These include:
 
 - Models are saved as just a reference to the model type and the primary key. They are then retrieved from the database when unpickling. This ensures that they always present the latest data to your public methods.
 
