@@ -539,7 +539,7 @@ Replaces the current browser URL with the new one. This method does not add the 
 
 ### `update_search_param(param, value)`
 
-Updates the current search parameters of the url with new values. If your URL looks like this: `example.com/foo?tab=main` you can call `update_search_param("q", "23")` which changes the URL immediately to `example.com/foo?tab=main&q=23`.
+Updates the current search parameters of the url with a new value. If your URL looks like this: `example.com/foo?tab=main` you can call `update_search_param("q", "23")` which changes the URL immediately to `example.com/foo?tab=main&q=23`.
 Another `update_search_param("tab", "orders")` -> `example.com/foo?tab=orders&q=23`.
 A `update_search_param("tab")` deletes the `tab` parameter.
 
