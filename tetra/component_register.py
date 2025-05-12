@@ -83,6 +83,7 @@ def find_component_libraries():
                             == library_module_name
                             and not is_abstract(member)
                         ):
+                            member._is_directory_component = False
                             library.register(member, camel_case_to_underscore(name))
 
                     # if library is a package, search for component packages within
@@ -122,6 +123,7 @@ def find_component_libraries():
                                             f"in '{component_module.__name__}' in app '{app_config.label}'."
                                             f"This is not supported"
                                         )
+                                    member._is_directory_component = True
                                     library.register(
                                         member, camel_case_to_underscore(name)
                                     )

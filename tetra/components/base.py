@@ -213,6 +213,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
     _library = None
     _app = None
     _is_resumed_from_state = False
+    _is_directory_component: bool = False
 
     def __init__(
         self,
@@ -262,7 +263,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
 
     @classmethod
     def _get_component_file_path_with_extension(cls, extension):
-        if hasattr(cls, "template") and cls.template:
+        if cls._is_directory_component is not True:
             # assume this is an inline component, no css/js files available
             return ""
         module = importlib.import_module(cls.__module__)
@@ -626,6 +627,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         "_event_subscriptions",
         "__abstract__",
         "_temp_files",
+        "_is_directory_component",
     ]
     _excluded_load_props_from_saved_state = []
     _loaded_children_state = None
@@ -736,8 +738,9 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     @classmethod
     def has_script(cls) -> bool:
-        """Returns True if the component has a javascript script, else False."""
-        # check if the script is defined in the class otherwise check if there is a file in the component directory
+        """Returns True if the component has a javascript script part, else False."""
+        # First check if the script is defined in the class, otherwise check if there
+        # is a file in the component directory
         if bool(hasattr(cls, "script") and cls.script):
             return True
         else:
@@ -777,6 +780,13 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     @classmethod
     def make_script_file(cls) -> tuple[str, bool]:
+        """This method generates a JavaScript script for the component.
+
+        Returns:
+            A tuple with the filename of the javascript script and a boolean value
+                which is True if the JavaScript was found inline in the component code,
+                False if there was an external .js file.
+        """
         if bool(hasattr(cls, "script") and cls.script):
             filename, comp_start_line, source_len = cls.get_source_location()
             with open(filename, "r") as f:

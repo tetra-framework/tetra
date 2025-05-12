@@ -172,12 +172,13 @@ class Library:
                         filename = (
                             f"{os.path.basename(py_filename)}__{component_name}.js"
                         )
+                        component_path = os.path.join(py_dir, filename)
+                        with open(component_path, "w") as f:
+                            f.write(script)
+                        files_to_remove.append(component_path)
                     else:
                         filename = f"{component_name}.js"
-                    component_path = os.path.join(py_dir, filename)
-                    files_to_remove.append(component_path)
-                    with open(component_path, "w") as f:
-                        f.write(script)
+                        component_path = os.path.join(py_dir, filename)
                     rel_path = os.path.relpath(component_path, file_cache_path)
                     if os.name == "nt":
                         rel_path = rel_path.replace(os.sep, "/")
