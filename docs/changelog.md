@@ -12,6 +12,15 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - unreleased
+### Changed
+- rename `request.tetra.current_url_abs_path` to `current_url_full_path` to better adhere to naming standards. `current_url_abs_path` is deprecated.
+
+### Added
+- `request.tetra.current_url_path` that holds the path without query params
+- a `tetra` template variable that holds the TetraDetails of a request, or possible equivalents of the current main request.
+- Client URL pushes are now anticipated and reflected on the server before rendering the component on updates
+
 ## [0.3.1] - 2025-04-19
 - **BREAKING CHANGE** rename all `tetra:*` events to kebab-case: `before-request`, `after-request`, `component-updated`, `component-before-remove` etc. This was necessary because camelCase Events cannot be used properly in `x-on:` attributes - HTMX attributes are forced to lowercase, which breaks the event capture.
 

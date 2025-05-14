@@ -12,26 +12,26 @@ import pytest
 from tetra.exceptions import ComponentNotFound
 
 
-def test_basic_component(request):
+def test_basic_component(tetra_request):
     """Tests a simple component with / end"""
     content = render_component_tag(
-        request, "{% @ main.default.SimpleBasicComponent / %}"
+        tetra_request, "{% @ main.default.SimpleBasicComponent / %}"
     )
     assert extract_component_tag(content).text == "foo"
 
 
-def test_basic_component_as_default(request):
+def test_basic_component_as_default(tetra_request):
     """Tests a simple component that implicitly is found in the default library"""
-    content = render_component_tag(request, "{% @ main.SimpleBasicComponent / %}")
+    content = render_component_tag(tetra_request, "{% @ main.SimpleBasicComponent / %}")
     assert extract_component_tag(content).text == "foo"
 
 
-def test_basic_component_with_library(request):
+def test_basic_component_with_library(tetra_request):
     with pytest.raises(ComponentNotFound) as exc_info:
         """Tests a simple component that is can't be found in the current_app.default
         library."""
         content = render_component_tag(
-            request, "{% @ default.SimpleBasicComponent / %}"
+            tetra_request, "{% @ default.SimpleBasicComponent / %}"
         )
     assert (
         "but there is no component 'SimpleBasicComponent' in the 'default' library of "
@@ -39,36 +39,36 @@ def test_basic_component_with_library(request):
     ) in str(exc_info.value)
 
 
-def test_basic_component_with_app_and_library(request):
+def test_basic_component_with_app_and_library(tetra_request):
     with pytest.raises(ComponentNotFound) as exc_info:
-        content = render_component_tag(request, "{% @ SimpleBasicComponent / %}")
+        content = render_component_tag(tetra_request, "{% @ SimpleBasicComponent / %}")
     assert (
         "Unable to ascertain current app. Component name 'SimpleBasicComponent' must be in "
     ) in str(exc_info.value)
 
 
-def test_basic_component_with_end_tag(request):
+def test_basic_component_with_end_tag(tetra_request):
     """Tests a simple component with  /@ end tag"""
     content = render_component_tag(
-        request, "{% @ main.default.SimpleBasicComponent %}{% /@ %}"
+        tetra_request, "{% @ main.default.SimpleBasicComponent %}{% /@ %}"
     )
     assert extract_component_tag(content).text == "foo"
 
 
-def test_basic_component_with_end_tag_and_name(request):
+def test_basic_component_with_end_tag_and_name(tetra_request):
     """Tests a simple component with `/@ <name>` end tag"""
     content = render_component_tag(
-        request,
+        tetra_request,
         "{% @ main.default.SimpleBasicComponent %}{% /@ SimpleBasicComponent %}",
     )
     assert extract_component_tag(content).text == "foo"
 
 
-def test_basic_component_with_missing_end_tag(request):
+def test_basic_component_with_missing_end_tag(tetra_request):
     """Tests a simple component without end tag - must produce TemplateSyntaxError"""
     with pytest.raises(TemplateSyntaxError):
         render_component_tag(
-            request,
+            tetra_request,
             "{% @ main.default.SimpleBasicComponent %}",
         )
 
@@ -92,20 +92,20 @@ def test_component_css_link_generation(client):
 # ---------- Dynamic components ------------
 
 
-def test_basic_dynamic_component(request):
+def test_basic_dynamic_component(tetra_request):
     """Tests a simple dynamic component"""
     content = render_component_tag(
-        request,
+        tetra_request,
         "{% @ =dynamic_component /%}",
         {"dynamic_component": SimpleBasicComponent},
     )
     assert extract_component_tag(content).text == "foo"
 
 
-def test_basic_dynamic_non_existing_component(request):
+def test_basic_dynamic_non_existing_component(tetra_request):
     """Tests a simple non-existing component - must produce ComponentNotFound"""
     with pytest.raises(ComponentNotFound):
         render_component_tag(
-            request,
+            tetra_request,
             "{% @ =foo.bar.NotExistingComponent /%}",
         )

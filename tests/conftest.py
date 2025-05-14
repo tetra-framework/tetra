@@ -9,6 +9,8 @@ from django.test import RequestFactory
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
+from tetra.middleware import TetraDetails
+
 BASE_DIR = Path(__file__).resolve().parent
 
 
@@ -17,6 +19,14 @@ def setup_django_environment():
     # Call your `tetrabuild` command before running tests - to make sure the Js
     # scripts and CSS files are built.
     call_command("tetrabuild")
+
+
+@pytest.fixture
+def tetra_request():
+    factory = RequestFactory()
+    req = factory.get("/")
+    req.tetra = TetraDetails(req)
+    return req
 
 
 @pytest.fixture
@@ -30,6 +40,7 @@ def request_with_session():
     req.session = SessionStore()
     req.session.create()
     req.user = AnonymousUser()
+    req.tetra = TetraDetails(req)
 
     return req
 

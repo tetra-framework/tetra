@@ -2,6 +2,8 @@ import logging
 import warnings
 
 from django import template
+from django.http import HttpRequest
+from django.template import RequestContext
 from django.template.loader_tags import BlockNode, BLOCK_CONTEXT_KEY
 from django.utils.safestring import mark_safe, SafeString
 from uuid import uuid4
@@ -258,7 +260,7 @@ class ComponentNode(template.Node):
                 (n.name, n) for n in self.nodelist.get_nodes_by_type(BlockNode)
             )
 
-    def render(self, context) -> SafeString:
+    def render(self, context: RequestContext) -> SafeString:
         """
         :param context: The template context in which the component is being rendered.
             It must include the "request" attribute.
@@ -290,7 +292,7 @@ class ComponentNode(template.Node):
             Component = resolve_component(context, self.component_name)
 
         try:
-            request = context.request
+            request: HttpRequest = context.request
         except AttributeError:
             raise ComponentError(
                 'Tetra Components require "request" in the template context.'
@@ -321,6 +323,23 @@ class ComponentNode(template.Node):
                     )
             if ctx:
                 resolved_context.update(ctx)
+
+        # add "tetra" helper object to the context
+        resolved_context["tetra"] = {
+            "current_url": (
+                request.tetra.current_url
+                if request.tetra
+                else request.build_absolute_uri()
+            ),
+            "current_url_path": (
+                request.tetra.current_url_path if request.tetra else request.path
+            ),
+            "current_url_full_path": (
+                request.tetra.current_url_full_path
+                if request.tetra
+                else request.get_full_path()
+            ),
+        }
 
         if self.context_args != ALL_CONTEXT:
             # update context with the explicitly given params. This may not

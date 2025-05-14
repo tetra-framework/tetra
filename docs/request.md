@@ -29,22 +29,32 @@ class MyComponent(Component):
 
 #### current_url
 
-Within a Tetra component's method call, Django's `request.url` holds the internal *url of the component method*, which is often not what you want: sometimes you want the URL of the whole page. The `request.tetra.current_url` provides the real url of the browser window, so you can parse it. 
+Within a Tetra component's method call, Django's `request.build_absolute_uri()` holds the internal *URL of the component method* 
+(the AJAX URL), which is often not what you want: sometimes you want the URL of the main page. The `request.tetra.current_url` provides the real url of the browser window:. 
 
 ```python
->>> self.request.url
+>>> self.request.build_absolute_uri()
 'https://example.com/__tetra__/mycomponent/default/foo_method'
 >>> self.request.tetra.current_url
-'https://example.com/foo/bar'
+'https://example.com/foo/bar?q=qux'
 ```
 
-#### current_abs_path
+#### current_url_path
 
-Similarly, you sometimes need the path of the current page. `request.tetra.current_abs_path` holds the cleaned path.
+Returns the main request's URL's path (without parameters)
 
 ```python
->>> self.request.tetra.current_abs_path
+>>> self.request.tetra.current_url_path
 '/foo/bar'
+```
+
+#### current_url_full_path
+
+Similarly, you sometimes need the path of the current page. `request.tetra.current_url_full_path` holds the cleaned path.
+
+```python
+>>> self.request.tetra.current_url_full_path
+'/foo/bar?q=qux'
 ```
 
 #### url_query_params

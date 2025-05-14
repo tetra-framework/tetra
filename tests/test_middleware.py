@@ -31,33 +31,35 @@ def test_tetra_details_current_url(request_factory):
     assert tetra_details.current_url == "https://testserver/test"
 
 
-def test_tetra_details_current_url_abs_path_none_when_schemes_dont_match(
+def test_tetra_details_current_url_full_path_none_when_schemes_dont_match(
     request_factory,
 ):
-    """Should return None for current_url_abs_path when schemes don't match"""
+    """Should return None for current_url_full_path when schemes don't match"""
     request = request_factory.get(
         "/foo/bar/", HTTP_T_CURRENT_URL="https://testserver/test"
     )
     tetra_details = TetraDetails(request)
-    assert tetra_details.current_url_abs_path is None
+    assert tetra_details.current_url_full_path is None
 
 
-def test_tetra_details_current_url_abs_path_none_when_hosts_dont_match(request_factory):
-    """Should return None for current_url_abs_path when hosts don't match"""
+def test_tetra_details_current_url_full_path_none_when_hosts_dont_match(
+    request_factory,
+):
+    """Should return None for current_url_full_path when hosts don't match"""
     request = request_factory.get(
         "/foor/bar/", HTTP_T_CURRENT_URL="http://different-host.com/test"
     )
     tetra_details = TetraDetails(request)
-    assert tetra_details.current_url_abs_path is None
+    assert tetra_details.current_url_full_path is None
 
 
-def test_tetra_details_current_url_abs_path_when_schemes_and_hosts_match(
+def test_tetra_details_current_url_full_path_when_schemes_and_hosts_match(
     request_factory,
 ):
     """Should return the correct absolute path when schemes and hosts match"""
     request = request_factory.get("/", HTTP_T_CURRENT_URL="http://testserver/test/path")
     tetra_details = TetraDetails(request)
-    assert tetra_details.current_url_abs_path == "/test/path"
+    assert tetra_details.current_url_full_path == "/test/path"
 
 
 def test_tetra_details_current_url_query_empty(request_factory):
@@ -86,3 +88,49 @@ def test_tetra_details_current_url_query_with_parameters(request_factory):
     )
     tetra_details = TetraDetails(request)
     assert tetra_details.url_query_params == QueryDict("foo=bar&baz=qux")
+
+
+# changing the url
+
+
+def test_set_url(request_factory):
+    request = request_factory.get(
+        "/foo/bar/",
+        HTTP_T_CURRENT_URL="http://testserver/test/?foo=bar&baz=qux",
+    )
+    tetra_details = TetraDetails(request)
+    tetra_details.set_url("http://example.com/foo/baz/")
+    assert tetra_details.current_url == "http://example.com/foo/baz/"
+
+
+def test_change_path(request_factory):
+    request = request_factory.get(
+        "/foo/bar/",
+        HTTP_T_CURRENT_URL="http://testserver/test/?foo=bar&baz=qux",
+    )
+    tetra_details = TetraDetails(request)
+    tetra_details.set_url_path("/foo/baz/")
+    assert tetra_details.current_url == "http://testserver/foo/baz/?foo=bar&baz=qux"
+
+
+def test_change_query(request_factory):
+    request = request_factory.get(
+        "/foo/bar/",
+        HTTP_T_CURRENT_URL="http://testserver/test/?foo=bar&baz=qux",
+    )
+    tetra_details = TetraDetails(request)
+    tetra_details.set_url_query_param("foo", "new")
+    assert tetra_details.current_url == "http://testserver/test/?foo=new&baz=qux"
+
+
+def test_add_query(request_factory):
+    request = request_factory.get(
+        "/foo/bar/",
+        HTTP_T_CURRENT_URL="http://testserver/test/?foo=bar&baz=qux",
+    )
+    tetra_details = TetraDetails(request)
+    tetra_details.set_url_query_param("another", "qui")
+    assert (
+        tetra_details.current_url
+        == "http://testserver/test/?foo=bar&baz=qux&another=qui"
+    )

@@ -967,9 +967,10 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         """
         self.client._replaceComponent(self.render())
 
-    def push_url(self, url: str) -> None:
-        """Pushes a new URL to the browser's history."""
-        self.client._pushUrl(url)
+    def push_url(self, path: str) -> None:
+        """Pushes a new URL path to the browser's history."""
+        self.client._pushUrl(path)
+        self.request.tetra.set_url_path(path)
 
     def update_search_param(self, param: str, value: str | int = None):
         """Updates a URL query parameter. Leaves alone tho other params, if any.
@@ -980,10 +981,12 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
                 the parameter is deleted from the URL.
         """
         self.client._updateSearchParam(param, value)
+        self.request.tetra.set_url_query_param(param, value)
 
     def replace_url(self, url: str) -> None:
         """Replaces the current URL with a new one."""
         self.client._pushUrl(url, replace=True)
+        self.request.tetra.set_url(url)
 
     def _call_public_method(
         self, request, method_name, children_state, *args

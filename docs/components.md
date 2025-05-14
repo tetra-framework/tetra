@@ -254,6 +254,36 @@ bypass wrapping elements when a block was not used:
 {% endif %}
 ```
 
+### The `tetra` context variable
+
+Within a component template, you have access to a variable named `tetra` which provides basically the same functionality as the [`request.tetra`](request.md#requesttetra) object: a consistent interface for accessing current request information, regardless of whether the request is a Tetra request or a standard Django request. It allows Tetra components to be aware of the current "main" request context, no matter if the component was rendered "as tag" in a full page refresh, or updated via AJAX.
+
+`tetra` provides a dictionary, containing:
+- `current_url`: The full browser URL of the current "main" request
+- `current_url_path`: The path component of the current URL in the browser
+- `current_url_full_path`: The full path, including query parameters
+
+Use these variables in any Tetra component template:
+
+```django
+<a href="books/{{ id }}?next={{ tetra.current_full_path|urlencode }}">{{ book_title }}</a>
+```
+
+rendered on `/books?author=me` will render to:
+
+```html
+<a href="books/1?next=/books%3Fauthor%3Dme"></a>
+```
+
+This is particularly useful for:
+- Building dynamic navigation, where "back" links should redirect to correct overviews
+- Constructing URLs in components that reference the current page
+- Debugging and logging purposes
+
+!!! note
+    Make sure that the URLs are "urlencoded" if they are meant to be appended to other URLs as parameters.
+
+
 ## Extra context
 
 By default, outer template context is not passed down to the component's template when rendering; this is to optimise the size of the saved component state.
@@ -533,9 +563,13 @@ such as cursor location in text inputs will be lost.
 
 Pushes a given URL to the URL bar of your browser. This adds the URL to the browser history, so "back buttons" would work.
 
+Mind the note for URL changes below!
+
 ### `replace_url(url)`
 
 Replaces the current browser URL with the new one. This method does not add the URL to the browser history, it just replaces it. 
+
+Mind the note for URL changes below!
 
 ### `update_search_param(param, value)`
 
@@ -543,6 +577,10 @@ Updates the current search parameters of the url with a new value. If your URL l
 Another `update_search_param("tab", "orders")` -> `example.com/foo?tab=orders&q=23`.
 A `update_search_param("tab")` deletes the `tab` parameter.
 
+!!! note
+    If you use the methods above to change URLs in the browser, Tetra is smart enough to recognize the URL has changed, before it reaches the client, so component rendering within the current request can already use the new URL in `request.tetra.current_url[[_full]_path]`.
+    Don't use `self.client._pushUrl()` etc. directly., as the URL update happens in the browser, and the component rendering before uses the old URL then.
+    
 ### `calculate_attrs(component_method_finished: bool)`
 
 This hook is called when the component is fully loaded, just 

@@ -1,5 +1,6 @@
 import json
 import uuid
+import warnings
 from urllib.parse import urlsplit, urlunsplit
 
 from django.contrib.messages import get_messages
@@ -36,9 +37,12 @@ def inline_styles_tag(source) -> str:
 
 
 class TetraDetails:
+    _url: str = ""
+
     # Based on HtmxDetails from htmx-django by adamchainz
     def __init__(self, request: HttpRequest) -> None:
         self.request = request
+        self._url = self._get_header_value("T-Current-URL")
 
     def _get_header_value(self, name: str) -> str | None:
         value = self.request.headers.get(name) or None
@@ -53,11 +57,30 @@ class TetraDetails:
 
     @cached_property
     def current_url(self) -> str | None:
-        return self._get_header_value("T-Current-URL")
+        return self._url
+
+    # @cached_property
+    # def new_url(self) -> str | None:
+    #     return self._new_url if self._new_url else self.current_url
 
     @cached_property
     def current_url_abs_path(self) -> str | None:
-        url = self.current_url
+        warnings.warn(
+            "TetraDetails.current_url_abs_path is deprecated. Use TetraDetails.current_url_full_path instead.",
+            DeprecationWarning,
+        )
+        return self.current_url_full_path
+
+    @cached_property
+    def current_url_full_path(self) -> str | None:
+        """Returns the full path (including params) of the current URL in the
+        browser.
+
+        Example:
+            When the browser URL is "https://example.com/foo/bar?baz=qux",
+            current_url_path returns "/foo/bar?baz=qux".
+        """
+        url = self._url
         if url is not None:
             split = urlsplit(url)
             if (
@@ -71,14 +94,66 @@ class TetraDetails:
         return url
 
     @cached_property
+    def current_url_path(self) -> str:
+        """Returns the path part of the current URL in the browser, without params.
+
+        Example:
+            When the browser URL is "https://example.com/foo/bar?baz=qux",
+            current_url_path returns "/foo/bar".
+        """
+        value = self._url
+        if value is not None:
+            # get the path component from the URL
+            return urlsplit(value).path or ""
+        return ""
+
+    @cached_property
     def url_query_params(self) -> QueryDict:
-        split = urlsplit(self.current_url)
+        """Returns the query parameters of the current URL in the browser, as a QueryDict.
+
+        Example:
+            When the browser URL is "https://example.com/foo/bar?baz=qux",
+            url_query_params returns QueryDict({'baz': ['qux']}), so you can easily
+            access the query parameters using `url_query_params['baz']`.
+        """
+        split = urlsplit(self._url)
         if (
             split.scheme == self.request.scheme
             and split.netloc == self.request.get_host()
         ):
             return QueryDict(split.query)
         return QueryDict()
+
+    def set_url_path(self, path: str) -> None:
+        """Replace path part of new URL with given path."""
+        split = urlsplit(self._url)
+        if (
+            split.scheme == self.request.scheme
+            and split.netloc == self.request.get_host()
+        ):
+            self._url = str(urlunsplit(split._replace(path=path)))
+
+    def set_url(self, url: str) -> None:
+        """Set new internal URL.
+
+        This is needed if the browser URL will change during the request, and this
+        should be reflected in the request.tetra object.
+        """
+        self._url = url
+
+    def set_url_query_param(self, param, value):
+        """Set/replace a query parameter of the current URL in the browser,
+        as a QueryDict.
+        """
+        split = urlsplit(self._url)
+        if (
+            split.scheme == self.request.scheme
+            and split.netloc == self.request.get_host()
+        ):
+            query_dict = QueryDict(split.query, mutable=True)
+            query_dict[param] = value
+            # replace the params in the split url
+            self._url = str(urlunsplit(split._replace(query=query_dict.urlencode())))
 
 
 class TetraMiddleware:
