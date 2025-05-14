@@ -19,6 +19,9 @@ $ pip install tetra
 
 Modify your Django `settings.py`:
 
+* Add `tetra` to your INSTALLED_APPS (if you use `daphne` or `django.contrib.staticfiles`, tetra must occur before it)
+* add `tetra.middleware.TetraMiddleware` to your middlewares
+
 ``` python
 INSTALLED_APPS = [
     ...
