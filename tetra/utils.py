@@ -237,36 +237,19 @@ class TetraJSONEncoder(json.JSONEncoder):
             # if a file is attached, it must have been uploaded using a component
             # method. In this case, it certainly is a TetraTemporaryUploadedFile
 
-            try:
-                name = obj.name
-            except AttributeError:
-                # this is a FieldFile, which has no name attribute
-                name = None
-
-            try:
-                size = obj.size
-            except AttributeError:
-                # this is a FieldFile, which has no size attribute
-                size = None
-
-            try:
-                content_type = obj.content_type
-            except AttributeError:
-                # this is a FieldFile, which has no content_type attribute
-                content_type = None
-
-            try:
-                temp_path = obj.temporary_file_path()
-            except AttributeError:
-                # this is a FieldFile, which has no temporary_file_path attribute
-                temp_path = None
-
             return {
                 "__type": "file",
-                "name": name,
-                "size": size,
-                "content_type": content_type,
-                "temp_path": temp_path,
+                "name": obj.name,
+                "size": obj.size,
+                "content_type": (
+                    obj.content_type if hasattr(obj, "content_type") else None
+                ),
+                "temp_path": (
+                    obj.temporary_file_path()
+                    if hasattr(obj, "temporary_file_path")
+                    and callable(obj.temporary_file_path)
+                    else None
+                ),
             }
         elif isinstance(obj, Message):
             try:
