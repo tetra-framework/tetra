@@ -1,24 +1,23 @@
+import datetime
 import inspect
 import json
-import datetime
+import logging
 import os
 import tempfile
-import logging
 from pathlib import Path
 from typing import Any
 
 from dateutil import parser as datetime_parser
-
+from django.conf import settings
 from django.contrib.messages.storage.base import Message
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.uploadedfile import UploadedFile
 from django.core.files.uploadhandler import FileUploadHandler
 from django.db import models
 from django.db.models.fields.files import FieldFile
-from django.utils.text import re_camel_case
 from django.template.loader import render_to_string
+from django.utils.text import re_camel_case
 from django.utils.timezone import is_aware
-from django.conf import settings
 
 from tetra.types import ComponentData
 
@@ -222,18 +221,35 @@ class TetraJSONEncoder(json.JSONEncoder):
         # elif hasattr(obj, "to_json"):
         #     return {"__type": "generic", "value": obj.to_json()}
         elif isinstance(obj, (FieldFile, TetraTemporaryUploadedFile)):
+            # this case rases various errors, so a good options should
+            # be to use a try/except for each property and check if there
+            # is a file associated with the object
+
+            # Check if there is a file associated with the object
+            if not obj:
+                return None
+
             # This is just for initial page loads, where FileFields are initialized with
             # empty FieldFile objects.
-            if obj.name is None:
+            # name can be '' resulting in an error
+            if obj.name is None or obj.name == "":
                 return None
             # if a file is attached, it must have been uploaded using a component
             # method. In this case, it certainly is a TetraTemporaryUploadedFile
+
             return {
                 "__type": "file",
                 "name": obj.name,
                 "size": obj.size,
-                "content_type": obj.content_type,
-                "temp_path": obj.temporary_file_path(),
+                "content_type": (
+                    obj.content_type if hasattr(obj, "content_type") else None
+                ),
+                "temp_path": (
+                    obj.temporary_file_path()
+                    if hasattr(obj, "temporary_file_path")
+                    and callable(obj.temporary_file_path)
+                    else None
+                ),
             }
         elif isinstance(obj, Message):
             try:
