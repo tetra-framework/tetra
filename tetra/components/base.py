@@ -885,7 +885,6 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     def render(self, mode=RenderDataMode.INIT) -> SafeString:
         """Renders the component's HTML.
 
-
         It makes the following decisions based on the given mode:
         - If mode is RenderDataMode.INIT (the default), just renders the component's
             data into `x-data`. The client will use it as Alpine data.
