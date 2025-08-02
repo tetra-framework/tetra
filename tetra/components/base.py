@@ -241,7 +241,8 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
 
     @classmethod
     def get_source_location(cls) -> tuple[str, int, int]:
-        """Returns the filename line number, and line count of the component's source code."""
+        """Returns the filename, line number, and line count of the component's
+        source code."""
         filename = inspect.getsourcefile(cls)
         lines, start = inspect.getsourcelines(cls)
         return filename, start, len(lines)
