@@ -296,6 +296,8 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
 
     @classmethod
     def has_styles(cls) -> bool:
+        """Returns True if the component has a css style defined in the class or a file
+        in the component directory."""
         if bool(hasattr(cls, "style") and cls.style):
             return True
         else:
@@ -311,7 +313,14 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
 
     @classmethod
     def make_styles_file(cls) -> tuple[str, bool]:
-        # check if we have a style defined in the class otherwise check if there is a file in the component directory
+        """Returns the filename and whether the style was found in the component's source code.
+
+        Returns:
+            filename: str
+            found: bool
+        """
+        # check if we have a style defined in the class, otherwise check if there is
+        # a file in the component directory
         if bool(hasattr(cls, "style") and cls.style):
             filename, comp_start_line, source_len = cls.get_source_location()
             with open(filename, "r") as f:
