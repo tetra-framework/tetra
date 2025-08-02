@@ -276,16 +276,16 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
     @classmethod
     def _read_component_file_with_extension(cls, extension):
         file_path = cls._get_component_file_path_with_extension(extension)
-        if os.path.exists(file_path):
-            try:
-                with open(file_path, "r") as f:
-                    return f.read()
-            except Exception as e:
-                # handle al other errors as well: IOError, UnicodeDecodeError, OSError
-                # FileNotFoundError is already handled by exists() above
-                logger.critical(f"Error reading component file '{file_path}': {e}")
-                return ""
-        else:
+        if not os.path.exists(file_path):
+            return ""
+
+        try:
+            with open(file_path, "r") as f:
+                return f.read()
+        except Exception as e:
+            # handle al other errors as well: IOError, UnicodeDecodeError, OSError
+            # FileNotFoundError is already handled by exists() above
+            logger.critical(f"Error reading component file '{file_path}': {e}")
             return ""
 
     @classmethod
