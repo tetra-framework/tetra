@@ -1,7 +1,7 @@
 from tetra import Component, public
 
 
-class ToDoItem(Component):
+class TodoItem(Component):
     title = public("")
     done = public(False)
 

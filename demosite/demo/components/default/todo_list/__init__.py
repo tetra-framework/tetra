@@ -2,7 +2,7 @@ from demo.models import ToDo
 from tetra import Component, public
 
 
-class ToDoList(Component):
+class TodoList(Component):
     title = public("")
 
     def load(self, *args, **kwargs):

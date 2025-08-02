@@ -2,7 +2,7 @@ from sourcetypes import javascript, css, django_html
 from tetra import Component, public
 from .models import ToDo
 
-class ToDoList(Component):
+class TodoList(Component):
     title = public("")
 
     def load(self):
@@ -29,13 +29,13 @@ class ToDoList(Component):
         </div>
         <div class="list-group">
             {% for todo in todos %}
-                {% @ ToDoItem todo=todo key=todo.id / %}
+                {% @ TodoItem todo=todo key=todo.id / %}
             {% endfor %}
         </div>
     </div>
     """
 
-class ToDoItem(Component):
+class TodoItem(Component):
     title = public("")
     done = public(False)
     todo: ToDo = None

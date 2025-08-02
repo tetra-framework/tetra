@@ -53,16 +53,16 @@ from tetra import Component, public, Library
 from .models import ToDo
 ```
 
-### `ToDoList` Component
+### `TodoList` Component
 
-Next, we create a `ToDoList` component by subclassing `Component`.
+Next, we create a `TodoList` component by subclassing `Component`.
 
 We also create a "public attribute" named `title`; the value of this is available to both your server side code / template *and* to your front end JavaScript / Alpine.js.
 
 There is also a `load` method - this is called both when initially rendering the component, and when the component is "resumed" from its saved state. (More on this later)
 
 ``` python
-class ToDoList(Component):
+class TodoList(Component):
     title = public("")
 
     def load(self, *args, **kwargs):
@@ -94,7 +94,7 @@ Then there is the template; this uses the standard Django template language. You
         </div>
         <div class="list-group">
             {% for todo in todos %}
-                {% @ ToDoItem todo=todo key=todo.id / %}
+                {% @ TodoItem todo=todo key=todo.id / %}
             {% endfor %}
         </div>
     </div>
@@ -108,13 +108,13 @@ Then there is the template; this uses the standard Django template language. You
 - We use the Tetra `@` component template tag to display the `to_do_item` component. We pass it a `todo` model instance as an argument, and a `key` argument set to the `todo.id`. It is  important to "key" components in loops so that when morphing the DOM they are correctly identified and updated.
 - The `@` can optionally take nested block content. However, in this example this is not necessary, and therefore we "close" the tag with a forward slash `/` much like with xml tags. Without explicitly closing the tag the template parser will expect a `{% /@ %}` closing tag.
 
-### `ToDoItem` Component
+### `TodoItem` Component
 
 
-Next, we create a `ToDoItem` component. As we have previously seen, there are public attributes to hold the `title` and `done` status of the item. The load method takes a `ToDo` model instance (passed to it in the template above), then saves it as a private attribute on the component, and finally sets the `title` and `done` public attributes.
+Next, we create a `TodoItem` component. As we have previously seen, there are public attributes to hold the `title` and `done` status of the item. The load method takes a `ToDo` model instance (passed to it in the template above), then saves it as a private attribute on the component, and finally sets the `title` and `done` public attributes.
 
 ``` python
-class ToDoItem(Component):
+class TodoItem(Component):
     title = public("")
     done = public(False)
 
@@ -214,13 +214,13 @@ Next, we define some CSS styles for the component as the multiline Python string
 
 ### Including the "to do" list in a page
 
-Finally, we include our `ToDoList` component into a pages template using the `@` component tag.
+Finally, we include our `TodoList` component into a pages template using the `@` component tag.
 As we are doing this outside of a Tetra component we need to explicitly load the Tetra template tags with `{% load tetra %}`.
 
 ``` django
 {# index.html #}
 <h4>Your todo list:</h4>
-{% @ ToDoList / %}
+{% @ TodoList / %}
 ```
 
  To get started, follow the [install instructions](install.md).
