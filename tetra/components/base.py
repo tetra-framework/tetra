@@ -280,7 +280,10 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
             try:
                 with open(file_path, "r") as f:
                     return f.read()
-            except FileNotFoundError:
+            except Exception as e:
+                # handle al other errors as well: IOError, UnicodeDecodeError, OSError
+                # FileNotFoundError is already handled by exists() above
+                logger.critical(f"Error reading component file '{file_path}': {e}")
                 return ""
         else:
             return ""
