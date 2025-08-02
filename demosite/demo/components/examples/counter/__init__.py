@@ -7,3 +7,7 @@ class Counter(Component):
     @public
     def increment(self):
         self.count += 1
+
+    @public
+    def decrement(self):
+        self.count -= 1

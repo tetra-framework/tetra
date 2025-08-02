@@ -13,5 +13,9 @@ class Counter(Component):
     def increment(self):
         self.count += 1
 
+    @public
+    def decrement(self):
+        self.count -= 1
+
     def sum(self):
         return self.count + self.current_sum
