@@ -169,17 +169,16 @@ class Library:
                     py_filename, _, _ = component.get_source_location()
                     py_dir = os.path.dirname(py_filename)
                     if is_inline:
-                        filename = (
-                            f"{os.path.basename(py_filename)}__{component_name}.js"
+                        filename = os.path.join(
+                            file_cache_path,
+                            f"{os.path.basename(py_filename)}__{component_name}.js",
                         )
-                        component_path = os.path.join(py_dir, filename)
-                        with open(component_path, "w") as f:
+                        with open(filename, "w") as f:
                             f.write(script)
-                        files_to_remove.append(component_path)
+                        files_to_remove.append(filename)
                     else:
-                        filename = f"{component_name}.js"
-                        component_path = os.path.join(py_dir, filename)
-                    rel_path = os.path.relpath(component_path, file_cache_path)
+                        filename = os.path.join(py_dir, f"{component_name}.js")
+                    rel_path = os.path.relpath(filename, file_cache_path)
                     if os.name == "nt":
                         rel_path = rel_path.replace(os.sep, "/")
                     main_imports.append(f'import {component_name} from "{rel_path}";')
@@ -230,16 +229,18 @@ class Library:
                     py_filename, _, _ = component.get_source_location()
                     py_dir = os.path.dirname(py_filename)
                     if is_inline:
-                        filename = (
-                            f"{os.path.basename(py_filename)}__{component_name}.css"
+                        filename = os.path.join(
+                            file_cache_path,
+                            f"{os.path.basename(py_filename)}__{component_name}.css",
                         )
+                        with open(filename, "w") as f:
+                            f.write(styles)
+                        files_to_remove.append(filename)
                     else:
-                        filename = f"{component_name}.css"
-                    component_path = os.path.join(py_dir, filename)
-                    files_to_remove.append(component_path)
-                    with open(component_path, "w") as f:
+                        filename = os.path.join(py_dir, f"{component_name}.css")
+                    with open(filename, "w") as f:
                         f.write(styles)
-                    rel_path = os.path.relpath(component_path, file_cache_path)
+                    rel_path = os.path.relpath(filename, file_cache_path)
                     if os.name == "nt":
                         rel_path = rel_path.replace(os.sep, "/")
                     main_imports.append(f"@import '{rel_path}';")
