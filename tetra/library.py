@@ -138,28 +138,28 @@ class Library:
     def build(self):
         # TODO: check if source has changed and only build if it has
         print(f"# Building {self.display_name}")
-        file_cache_path = os.path.join(
+        library_cache_path = os.path.join(
             self.app.path, settings.TETRA_FILE_CACHE_DIR_NAME, self.name
         )
         file_out_path = os.path.join(
             self.app.path, "static", self.app.label, "tetra", self.name
         )
-        if os.path.exists(file_cache_path):
-            shutil.rmtree(file_cache_path)
-        os.makedirs(file_cache_path)
+        if os.path.exists(library_cache_path):
+            shutil.rmtree(library_cache_path)
+        os.makedirs(library_cache_path)
         if os.path.exists(file_out_path):
             shutil.rmtree(file_out_path)
         os.makedirs(file_out_path)
-        self.build_js(file_cache_path, file_out_path)
-        self.build_styles(file_cache_path, file_out_path)
+        self.build_js(library_cache_path, file_out_path)
+        self.build_styles(library_cache_path, file_out_path)
 
-    def build_js(self, file_cache_path, file_out_path):
+    def build_js(self, library_cache_path, file_out_path):
         main_imports = []
         main_scripts = []
         files_to_remove = []
-        main_path = os.path.join(file_cache_path, self.js_filename)
+        main_path = os.path.join(library_cache_path, self.js_filename)
         meta_filename = f"{self.js_filename}__meta.json"
-        meta_path = os.path.join(file_cache_path, meta_filename)
+        meta_path = os.path.join(library_cache_path, meta_filename)
 
         try:
             for component_name, component in self.components.items():
@@ -170,7 +170,7 @@ class Library:
                     py_dir = os.path.dirname(py_filename)
                     if is_inline:
                         filename = os.path.join(
-                            file_cache_path,
+                            library_cache_path,
                             f"{os.path.basename(py_filename)}__{component_name}.js",
                         )
                         with open(filename, "w") as f:
@@ -178,7 +178,7 @@ class Library:
                         files_to_remove.append(filename)
                     else:
                         filename = os.path.join(py_dir, f"{component_name}.js")
-                    rel_path = os.path.relpath(filename, file_cache_path)
+                    rel_path = os.path.relpath(filename, library_cache_path)
                     if os.name == "nt":
                         rel_path = rel_path.replace(os.sep, "/")
                     main_imports.append(f'import {component_name} from "{rel_path}";')
@@ -214,12 +214,12 @@ class Library:
         with open(f"{self.js_path}.filename", "w") as f:
             f.write(os.path.basename(out_path))
 
-    def build_styles(self, file_cache_path, file_out_path):
+    def build_styles(self, library_cache_path, file_out_path):
         main_imports = []
         files_to_remove = []
-        main_path = os.path.join(file_cache_path, self.styles_filename)
+        main_path = os.path.join(library_cache_path, self.styles_filename)
         meta_filename = f"{self.styles_filename}__meta.json"
-        meta_path = os.path.join(file_cache_path, meta_filename)
+        meta_path = os.path.join(library_cache_path, meta_filename)
 
         try:
             for component_name, component in self.components.items():
@@ -230,7 +230,7 @@ class Library:
                     py_dir = os.path.dirname(py_filename)
                     if is_inline:
                         filename = os.path.join(
-                            file_cache_path,
+                            library_cache_path,
                             f"{os.path.basename(py_filename)}__{component_name}.css",
                         )
                         with open(filename, "w") as f:
@@ -240,7 +240,7 @@ class Library:
                         filename = os.path.join(py_dir, f"{component_name}.css")
                     with open(filename, "w") as f:
                         f.write(styles)
-                    rel_path = os.path.relpath(filename, file_cache_path)
+                    rel_path = os.path.relpath(filename, library_cache_path)
                     if os.name == "nt":
                         rel_path = rel_path.replace(os.sep, "/")
                     main_imports.append(f"@import '{rel_path}';")
