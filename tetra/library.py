@@ -64,14 +64,17 @@ class Library:
 
     @property
     def js_filename(self):
+        """Returns the filename of the compiled app/library-wide JavaScript file."""
         return f"{self.app.label}_{self.name}.js"
 
     @property
     def styles_filename(self):
+        """Returns the filename of the compiled app/library-wide CSS file."""
         return f"{self.app.label}_{self.name}.css"
 
     @property
     def js_path(self):
+        """Returns the path to the compiled app/library-wide JavaScript file."""
         return os.path.join(
             self.app.path,
             "static",
@@ -94,12 +97,14 @@ class Library:
 
     @cached_property
     def js_url(self):
+        """Returns the static URL of the library's compiled JavaScript file."""
         with open(f"{self.js_path}.filename") as f:
             js_filename = f.read()
         return static(os.path.join(self.app.label, "tetra", self.name, js_filename))
 
     @cached_property
     def styles_url(self):
+        """Returns the static URL of the library's compiled CSS file."""
         with open(f"{self.styles_path}.filename") as f:
             styles_filename = f.read()
         return static(os.path.join(self.app.label, "tetra", self.name, styles_filename))

@@ -12,7 +12,7 @@ Once ready, install Tetra from PyPi:
 $ pip install tetra
 ```
 
-!!! note
+!!! warning
     As Tetra is still being developed it has only been tested with Python 3.9-3.12, we intend to support all officially supported Python versions at the time of v1.0.0.
 
 ## Initial configuration

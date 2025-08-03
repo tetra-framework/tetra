@@ -19,6 +19,7 @@ title: Changelog
 - **BREAKING CHANGE** disable `{% <app>.<library>.<component_name> /%}` reference. Only allow `{% [<library_name>.]<component_name> / %}`
 - **BREAKING CHANGE** rename `@v` tag to `livevar`
 - **BREAKING CHANGE** `block` inside components renamed to `slot`
+- refactoring of internal Component and Library methods 
 
 ### Added
 - `request.tetra.current_url_path` that holds the path without query params

@@ -17,6 +17,7 @@ class InfoCard(Component):
         print("User clicked on OK, username:", self.name)
         self.content = f"Hi { self.name }! No further news."
 
+    # language=html
     template: django_html = """
     <div class="card text-white bg-secondary mb-3" style="max-width: 18rem;">
       <div class="card-header d-flex justify-content-between">
