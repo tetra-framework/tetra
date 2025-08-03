@@ -14,8 +14,9 @@ pip install tetra
 
 ## Short Overview
 
-For the impatient: here's a short example that shows what Tetra does:
-<video src="https://github.com/tetra-framework/tetra/raw/refs/heads/main/demosite/demo/static/recordings/screen_recording_20250803_151915.mov" width=302/>
+For the impatient: here's a short example video that shows what Tetra does:
+
+https://github.com/user-attachments/assets/3b4b9035-3e57-45b4-9080-057b84cfbe48
 
 This is done using simple and concise code:
 
