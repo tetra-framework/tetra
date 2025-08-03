@@ -274,8 +274,6 @@ class Library:
                         # files_to_remove.append(filename)
                     else:
                         filename = os.path.join(py_dir, f"{component_name}.css")
-                    with open(filename, "w") as f:
-                        f.write(styles)
                     rel_path = os.path.relpath(filename, library_cache_path)
                     if os.name == "nt":
                         rel_path = rel_path.replace(os.sep, "/")
