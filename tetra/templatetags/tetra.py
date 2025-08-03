@@ -1,15 +1,15 @@
 import logging
 import warnings
+import re
+import copy
 
+from uuid import uuid4
+from threading import local
 from django import template
 from django.http import HttpRequest
 from django.template import RequestContext, TemplateSyntaxError
 from django.template.loader_tags import BlockNode, BLOCK_CONTEXT_KEY
 from django.utils.safestring import mark_safe, SafeString
-from uuid import uuid4
-import re
-import copy
-from threading import local
 
 from ..exceptions import ComponentError, ComponentNotFound
 from ..component_register import resolve_component
@@ -72,7 +72,7 @@ def token_attr(bit, parser):
 def do_component(parser, token):
     split_contents = token.split_contents()
     if len(split_contents) < 2:
-        raise template.TemplateSyntaxError("Component tag requires a component name")
+        raise TemplateSyntaxError("Component tag requires a component name")
     component_name = split_contents[1]
     bits = split_contents[2:]
 
@@ -110,7 +110,7 @@ def do_component(parser, token):
             param, value = kwarg.popitem()
             if param in kwargs:
                 # The keyword argument has already been supplied once
-                raise template.TemplateSyntaxError(
+                raise TemplateSyntaxError(
                     f"Component '{component_name}' received multiple values for "
                     f"keyword argument '{param}'"
                 )
@@ -119,7 +119,7 @@ def do_component(parser, token):
                 kwargs[str(param)] = value
         else:
             if kwargs:
-                raise template.TemplateSyntaxError(
+                raise TemplateSyntaxError(
                     f"Component '{component_name}' received some positional "
                     "argument(s) after some keyword argument(s)"
                 )
@@ -135,14 +135,14 @@ def do_component(parser, token):
             attr, value = kwarg.popitem()
             attrs[str(attr)] = value
         else:
-            raise template.TemplateSyntaxError(
+            raise TemplateSyntaxError(
                 f"Component '{component_name}' attrs must be prefixed by a attr name."
             )
 
     # Context bits:
     if "__all__" in bits_grouped["context:"]:
         if len(bits_grouped["context:"]) > 1:
-            raise template.TemplateSyntaxError(
+            raise TemplateSyntaxError(
                 f"__all__ and multiple context arguments are mutually exclusive in "
                 f"Component '{component_name}'."
             )
@@ -150,7 +150,7 @@ def do_component(parser, token):
     elif "**context" in bits_grouped["context:"]:
         # TODO: remove in 1.0
         if len(bits_grouped["context:"]) > 1:
-            raise template.TemplateSyntaxError(
+            raise TemplateSyntaxError(
                 f"Component '{component_name}' has multiple context arguments as well a "
                 "**context for all context."
             )
@@ -170,7 +170,7 @@ def do_component(parser, token):
                 param, value = kwarg.popitem()
                 if param in context_args:
                     # The context argument has already been supplied once
-                    raise template.TemplateSyntaxError(
+                    raise TemplateSyntaxError(
                         f"Component '{component_name}' received multiple values for "
                         f"context argument '{param}'"
                     )
@@ -401,7 +401,7 @@ class ComponentNode(template.Node):
 def do_attr_tag(parser, token):
     split_contents = token.split_contents()
     if len(split_contents) < 2:
-        raise template.TemplateSyntaxError("Attr tag requires at least one argument")
+        raise TemplateSyntaxError("Attr tag requires at least one argument")
     bits = split_contents[1:]
 
     # Args bits:
@@ -481,15 +481,13 @@ def do_block(parser, token):
     # variable as arguments.
     bits = token.contents.split()
     if len(bits) not in (2, 3, 5):
-        raise template.TemplateSyntaxError(
-            "'%s' tag takes one, two or four arguments" % bits[0]
-        )
+        raise TemplateSyntaxError("'%s' tag takes one, two or four arguments" % bits[0])
     if len(bits) > 2 and bits[2] != "expose":
-        raise template.TemplateSyntaxError(
+        raise TemplateSyntaxError(
             "'%s' tag second argument can only be 'expose' if given" % bits[0]
         )
     if len(bits) == 5 and bits[3] != "as":
-        raise template.TemplateSyntaxError(
+        raise TemplateSyntaxError(
             "'%s' tag third argument can only be 'as' if given" % bits[0]
         )
 
@@ -506,7 +504,7 @@ def do_block(parser, token):
     # check for duplication.
     try:
         if block_name in parser.__loaded_blocks:
-            raise template.TemplateSyntaxError(
+            raise TemplateSyntaxError(
                 "'%s' tag with name '%s' appears more than once" % (bits[0], block_name)
             )
         parser.__loaded_blocks.append(block_name)
