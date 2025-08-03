@@ -573,7 +573,10 @@ class LiveVariableNode(template.Node):
         return f"<LiveVariableNode: {self.var_name}>"
 
     def render(self, context):
-        return mark_safe(f"<{self.tag} x-text='{self.var_name}'></{self.tag}>")
+        return mark_safe(
+            f"<{self.tag} x-text='{self.var_name}' "
+            f"x-show='{self.var_name}'></{self.tag}>"
+        )
 
 
 @register.filter(name="if")
