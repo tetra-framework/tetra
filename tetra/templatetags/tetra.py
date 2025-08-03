@@ -223,8 +223,8 @@ class ComponentNode(template.Node):
         self.attrs = attrs
         self.context_args = context_args
         self.nodelist = nodelist
-        self.blocks = None
-        self.prepare_blocks(origin=origin)
+        self.slots = None
+        self.prepare_slots(origin=origin)
 
     def __repr__(self):
         return f"<ComponentNode: {self.component_name}>"
@@ -238,26 +238,26 @@ class ComponentNode(template.Node):
         else:
             return super().get_nodes_by_type(nodetype)
 
-    def prepare_blocks(self, origin=None):
+    def prepare_slots(self, origin=None):
         if not self.nodelist:
             return
-        default_block = False
+        default_slot = False
 
         for node in self.nodelist:
             if isinstance(node, template.base.TextNode) and re.match(r"^\s*$", node.s):
                 continue
             if not isinstance(node, BlockNode):
-                default_block = True
+                default_slot = True
                 break
 
-        if default_block:
-            block = BlockNode("default", self.nodelist)
-            block.origin = origin
-            self.blocks = {"default": block}
-            self.nodelist = template.base.NodeList([block])
+        if default_slot:
+            slot = BlockNode("default", self.nodelist)
+            slot.origin = origin
+            self.slots = {"default": slot}
+            self.nodelist = template.base.NodeList([slot])
             self.nodelist.contains_nontext = True
         else:
-            self.blocks = dict(
+            self.slots = dict(
                 (n.name, n) for n in self.nodelist.get_nodes_by_type(BlockNode)
             )
 
@@ -349,21 +349,21 @@ class ComponentNode(template.Node):
                 {k: v.resolve(context) for k, v in self.context_args.items()}
             )
 
-        # add "blocks" dict to context, to easily filter out if each block is available
-        if self.blocks:
-            resolved_context["blocks"] = {}
-            for block in self.blocks:
-                resolved_context["blocks"][block] = True
+        # add "slots" dict to context, to easily filter out if each block is available
+        if self.slots:
+            resolved_context["slots"] = {}
+            for slot in self.slots:
+                resolved_context["slots"][slot] = True
 
-        blocks = copy.copy(self.blocks)
-        if blocks and BLOCK_CONTEXT_KEY in context.render_context:
+        slots = copy.copy(self.slots)
+        if slots and BLOCK_CONTEXT_KEY in context.render_context:
             old_block_context = context.render_context[BLOCK_CONTEXT_KEY]
-            for block_name, block in blocks.items():
+            for slot_name, block in slots.items():
                 expose_as = getattr(block, "expose_as", None)
                 if expose_as:
                     new_block = old_block_context.get_block(expose_as)
                     if new_block:
-                        blocks[block_name] = new_block
+                        slots[slot_name] = new_block
 
         children_state = context.get("_loaded_children_state", None)
         if "key" not in resolved_kwargs:
@@ -381,7 +381,7 @@ class ComponentNode(template.Node):
                 **resolved_kwargs,
                 _attrs=resolved_attrs,
                 _context=resolved_context,
-                _blocks=blocks,
+                _blocks=slots,
             )
             if "children" in component_state:
                 component._loaded_children_state = component_state["children"]
@@ -393,7 +393,7 @@ class ComponentNode(template.Node):
                 **resolved_kwargs,
                 _attrs=resolved_attrs,
                 _context=resolved_context,
-                _blocks=blocks,
+                _blocks=slots,
             )
 
 
