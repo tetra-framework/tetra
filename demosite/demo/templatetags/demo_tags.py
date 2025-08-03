@@ -31,6 +31,7 @@ def include_source(file_name, start=None, end=None) -> SafeString:
             pass
     if error:
         raise error
+    return mark_safe("")
 
 
 @register.simple_tag
