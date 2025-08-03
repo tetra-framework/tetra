@@ -187,25 +187,25 @@ class Library:
         self.build_js(library_cache_path, file_out_path)
         self.build_styles(library_cache_path, file_out_path)
 
-    def build_js(self, library_cache_path, file_out_path):
+    def build_js(self, library_cache_path, target_path):
         main_imports = []
         main_scripts = []
         files_to_remove = []
-        main_path = os.path.join(library_cache_path, self.js_filename)
+        out_file_path = os.path.join(library_cache_path, self.js_filename)
         meta_filename = f"{self.js_filename}__meta.json"
-        meta_path = os.path.join(library_cache_path, meta_filename)
+        meta_file_path = os.path.join(library_cache_path, meta_filename)
 
         try:
-            for component_name, component in self.components.items():
+            for component_name, component_cls in self.components.items():
                 print(f" - {component_name}")
-                if component.has_script():
-                    script, is_inline = component.make_script_file()
-                    py_filename, _, _ = component.get_source_location()
+                if component_cls.has_script():
+                    script = component_cls.extract_script()
+                    py_filename, _, _ = component_cls.get_source_location()
                     py_dir = os.path.dirname(py_filename)
-                    if is_inline:
+                    if component_cls._is_script_inline():
                         filename = os.path.join(
                             library_cache_path,
-                            f"{os.path.basename(py_filename)}__{component_name}.js",
+                            f"{os.path.basename(py_filename)}__{component_name}.tmp.js",
                         )
                         with open(filename, "w") as f:
                             f.write(script)
@@ -216,19 +216,19 @@ class Library:
                     if os.name == "nt":
                         rel_path = rel_path.replace(os.sep, "/")
                     main_imports.append(f'import {component_name} from "{rel_path}";')
-                    main_scripts.append(component.make_script(component_name))
+                    main_scripts.append(component_cls.render_script(component_name))
                 else:
-                    main_scripts.append(component.make_script())
+                    main_scripts.append(component_cls.render_script())
 
-            with open(main_path, "w") as f:
+            with open(out_file_path, "w") as f:
                 f.write("\n".join(main_imports))
                 f.write("\n\n")
                 f.write("\n".join(main_scripts))
 
             esbuild_ret = subprocess.run(
-                [settings.TETRA_ESBUILD_PATH, main_path]
+                [settings.TETRA_ESBUILD_PATH, out_file_path]
                 + settings.TETRA_ESBUILD_JS_ARGS
-                + [f"--outdir={file_out_path}", f"--metafile={meta_path}"]
+                + [f"--outdir={target_path}", f"--metafile={meta_file_path}"]
             )
 
             if esbuild_ret.returncode != 0:
@@ -238,7 +238,7 @@ class Library:
             for path in files_to_remove:
                 os.remove(path)
 
-        with open(meta_path) as f:
+        with open(meta_file_path) as f:
             meta = json.load(f)
         for path, data in meta["outputs"].items():
             if data.get("entryPoint", None):
@@ -248,24 +248,25 @@ class Library:
         with open(f"{self.js_path}.filename", "w") as f:
             f.write(os.path.basename(out_path))
 
-    def build_styles(self, library_cache_path, file_out_path):
+    def build_styles(self, library_cache_path, target_path):
         main_imports = []
         files_to_remove = []
-        main_path = os.path.join(library_cache_path, self.styles_filename)
+        out_file_path = os.path.join(library_cache_path, self.styles_filename)
         meta_filename = f"{self.styles_filename}__meta.json"
-        meta_path = os.path.join(library_cache_path, meta_filename)
+        meta_file_path = os.path.join(library_cache_path, meta_filename)
 
         try:
-            for component_name, component in self.components.items():
-                if component.has_styles():
+            for component_name, component_cls in self.components.items():
+                if component_cls.has_styles():
                     print(f" - {component_name}")
-                    styles, is_inline = component.make_styles_file()
-                    py_filename, _, _ = component.get_source_location()
+                    styles = component_cls.extract_styles()
+                    py_filename, _, _ = component_cls.get_source_location()
                     py_dir = os.path.dirname(py_filename)
-                    if is_inline:
+                    if component_cls._is_styles_inline():
                         filename = os.path.join(
                             library_cache_path,
-                            f"{os.path.basename(py_filename)}__{component_name}.css",
+                            f"{os.path.basename(py_filename)}__"
+                            f"{component_name}.tmp.css",
                         )
                         with open(filename, "w") as f:
                             f.write(styles)
@@ -279,21 +280,21 @@ class Library:
                         rel_path = rel_path.replace(os.sep, "/")
                     main_imports.append(f"@import '{rel_path}';")
 
-            with open(main_path, "w") as f:
+            with open(out_file_path, "w") as f:
                 f.write("\n".join(main_imports))
 
             esbuild_ret = subprocess.run(
-                [settings.TETRA_ESBUILD_PATH, main_path]
+                [settings.TETRA_ESBUILD_PATH, out_file_path]
                 + settings.TETRA_ESBUILD_CSS_ARGS
                 + [
-                    f"--outdir={file_out_path}",
+                    f"--outdir={target_path}",
                     # These three lines below are a work around so that urls to images
                     # update correctly.
                     "--metafile=meta.json",
                     f"--outbase={self.app.path}",
-                    f"--asset-names={os.path.relpath(self.app.path, file_out_path)}/[dir]/[name]",
+                    f"--asset-names={os.path.relpath(self.app.path, target_path)}/[dir]/[name]",
                     "--allow-overwrite",
-                    f"--metafile={meta_path}",
+                    f"--metafile={meta_file_path}",
                 ]
             )
 
@@ -304,7 +305,7 @@ class Library:
             for path in files_to_remove:
                 os.remove(path)
 
-        with open(meta_path) as f:
+        with open(meta_file_path) as f:
             meta = json.load(f)
         for path, data in meta["outputs"].items():
             if data.get("entryPoint", None):

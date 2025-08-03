@@ -293,7 +293,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         return False
 
     @classmethod
-    def make_script(cls, component_var=None) -> str:
+    def render_script(cls, component_var=None) -> str:
         """In BasicComponent, always returns an empty string."""
         return ""
 
@@ -301,21 +301,17 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
     def has_styles(cls) -> bool:
         """Returns True if the component has a css style defined in the class or a file
         in the component directory."""
-        if bool(hasattr(cls, "style") and cls.style):
+        if cls.style:
             return True
         else:
             return os.path.exists(cls._get_component_file_path_with_extension("css"))
 
     @classmethod
-    def make_styles(cls) -> str:
-        # check if the style is defined in the class otherwise check if there is a file in the component directory
-        if bool(hasattr(cls, "style") and cls.style):
-            return cls.style
-        else:
-            return cls._read_component_file_with_extension("css")
+    def _is_styles_inline(cls) -> bool:
+        return bool(hasattr(cls, "style") and cls.style)
 
     @classmethod
-    def make_styles_file(cls) -> tuple[str, bool]:
+    def extract_styles(cls) -> str:
         """Returns the filename and whether the style was found in the component's source code.
 
         Returns:
@@ -324,17 +320,26 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         """
         # check if we have a style defined in the class, otherwise check if there is
         # a file in the component directory
-        if bool(hasattr(cls, "style") and cls.style):
-            filename, comp_start_line, source_len = cls.get_source_location()
-            with open(filename, "r") as f:
+        if cls._is_styles_inline():
+            source_filename, comp_start_line, source_len = cls.get_source_location()
+            with open(source_filename, "r") as f:
                 py_source = f.read()
             comp_start_offset = len("\n".join(py_source.split("\n")[:comp_start_line]))
             start = py_source.index(cls.style, comp_start_offset)
             before = py_source[:start]
             before = re.sub(r"\S", " ", before)
-            return f"{before}{cls.style}", True
+            return f"{before}{cls.style}"
         else:
-            return cls._read_component_file_with_extension("css"), False
+            return cls._read_component_file_with_extension("css")
+
+    @classmethod
+    def render_styles(cls) -> str:
+        """Returns the CSS styles defined in the class inline, or from a component's
+        CSS file."""
+
+        # for CSS, this is nothing else than returning the styles as string.
+        # there is no additional logic here.
+        return cls.extract_styles()
 
     @classmethod
     def as_tag(cls, _request, *args, **kwargs) -> SafeString:
@@ -750,16 +755,6 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         return component
 
     @classmethod
-    def has_script(cls) -> bool:
-        """Returns True if the component has a javascript script part, else False."""
-        # First check if the script is defined in the class, otherwise check if there
-        # is a file in the component directory
-        if bool(hasattr(cls, "script") and cls.script):
-            return True
-        else:
-            return os.path.exists(cls._get_component_file_path_with_extension("js"))
-
-    @classmethod
     def _component_url(cls, method_name) -> str:
         return reverse(
             "tetra_public_component_method",
@@ -767,11 +762,59 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         )
 
     @classmethod
-    def make_script(cls, component_var=None) -> str:
-        """This method generates a JavaScript script for the component.
-        It includes the component's methods, attributes, and server-side methods.
+    def has_script(cls) -> bool:
+        """Returns True if the component has a javascript script part, else False."""
+
+        # First check if the script is defined in the class, otherwise check if there
+        # is a file in the component directory
+        if cls.script:
+            return True
+        else:
+            return os.path.exists(cls._get_component_file_path_with_extension("js"))
+
+    @classmethod
+    def _is_script_inline(cls) -> bool:
+        """Returns True if the component has a JavaScript script,
+        and this script is declared inline.
+
+        If the component has a script file AND an inline script, the inline script
+        takes precedence, and True is returned."""
+        return bool(hasattr(cls, "script") and cls.script)
+
+    @classmethod
+    def extract_script(cls) -> str:
+        """This method extracts the component's JavaScript, from wherever it finds
+        it, and returns it.
+
+        Returns:
+            A tuple with the filename of the javascript script and a boolean value
+                which is True if the JavaScript was found inline in the component code,
+                False if there was an external .js file.
+        """
+        if cls._is_script_inline():
+            source_filename, comp_start_line, source_len = cls.get_source_location()
+            with open(source_filename, "r") as f:
+                py_source = f.read()
+            comp_start_offset = len("\n".join(py_source.split("\n")[:comp_start_line]))
+            start = py_source.index(cls.script, comp_start_offset)
+            before = py_source[:start]
+            before = re.sub(r"\S", " ", before)
+            return f"{before}{cls.script}"
+        else:
+            # Find script in the component's directory
+            return cls._read_component_file_with_extension("js")
+
+    @classmethod
+    def render_script(cls, component_var=None) -> str:
+        """This method dynamically generates the complete JavaScript module for the
+        component.
+
+        It consists of the component's methods, attributes, and server-side methods,
+        including custom JavaScript code from the script property or a .js file in
+        the component's directory.
+
         This script can be imported dynamically via Alpine.init() and used to update
-        the component's state
+        the component's state.
         """
         component_server_methods = []
         for method in cls._public_methods:
@@ -780,7 +823,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             component_server_methods.append(method_data)
 
         if not component_var:
-            component_var = cls.script if cls.has_script() else "{}"
+            component_var = cls.extract_script() if cls.has_script() else "{}"
         return render_to_string(
             "script.js",
             {
@@ -790,28 +833,6 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
                 "component_server_properties": to_json(cls._public_properties),
             },
         )
-
-    @classmethod
-    def make_script_file(cls) -> tuple[str, bool]:
-        """This method generates a JavaScript script for the component.
-
-        Returns:
-            A tuple with the filename of the javascript script and a boolean value
-                which is True if the JavaScript was found inline in the component code,
-                False if there was an external .js file.
-        """
-        if bool(hasattr(cls, "script") and cls.script):
-            filename, comp_start_line, source_len = cls.get_source_location()
-            with open(filename, "r") as f:
-                py_source = f.read()
-            comp_start_offset = len("\n".join(py_source.split("\n")[:comp_start_line]))
-            start = py_source.index(cls.script, comp_start_offset)
-            before = py_source[:start]
-            before = re.sub(r"\S", " ", before)
-            return f"{before}{cls.script}", True
-        else:
-            # Find script in the component's directory
-            return cls._read_component_file_with_extension("js"), False
 
     def _call_load(self, *args, **kwargs) -> None:
         """Load the component's state and attributes.
