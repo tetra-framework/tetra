@@ -4,6 +4,7 @@ site_url: https://tetraframework.readthedocs.org
 plugins:
   - mermaid2
   - panzoom
+  - search
 
 theme:
   name: material
