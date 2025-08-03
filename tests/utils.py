@@ -50,4 +50,4 @@ def call_component_method(
     req.session.create()
     req.user = AnonymousUser()
     req.csrf_processing_done = True
-    return _component_method(req, app_name, library_name, component_name, method)
+    return _component_method(req, library_name, component_name, method)

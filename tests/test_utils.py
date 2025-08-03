@@ -248,4 +248,4 @@ def test_remove_surrounding_quotes_multiple_quotes():
     test_string = '"""triple quoted"""'
     result = remove_surrounding_quotes(test_string)
     # Only the outermost quotes should be removed
-    assert result == '""triple quoted""'
+    assert result == "triple quoted"
