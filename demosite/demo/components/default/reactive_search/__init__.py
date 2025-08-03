@@ -12,7 +12,8 @@ class ReactiveSearch(Component):
     def watch_query(self, value, old_value, attr):
         if self.query:
             self.results = itertools.islice(
-                (movie for movie in movies if self.query.lower() in movie.lower()), 20
+                (movie for movie in movies if self.query.lower() in movie.lower()),
+                20,
             )
         else:
             self.results = []

@@ -1,0 +1,7 @@
+{% load demo_tags %}
+<div {% ... attrs %}>
+  {% if title %}
+  <div class="pt-2 ps-3 border-top border-secondary text-white-50 bg-dark small"><b>{{ title }}</b></div>
+  {% endif %}
+  <pre class="m-0"><code class="p-2 ps-3 language-{{ language }} small">{% include_source file_name %}</code></pre>
+</div>

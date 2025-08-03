@@ -1,2 +1,0 @@
-<h4>Your todo list:</h4>
-{% TodoList / %}

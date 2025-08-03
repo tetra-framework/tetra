@@ -10,10 +10,10 @@ The component itself only provides a `count` attribute, and a public `increment(
 
  'nuff said, show me the code.
 
-{% md_include_component_source "demo.examples.Counter" %}
+{% md_include_component_source "examples.Counter" %}
 
 Rendering is straightforward.
 
-{% md_include_component_template "demo.examples.Counter" %}
+{% md_include_component_template "examples.Counter" %}
 
 Note below in the demo how fast Tetra rendering is. Component updates almost feel as fast as native Javascript.

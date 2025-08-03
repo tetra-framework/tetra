@@ -20,7 +20,7 @@
     <div class="col-lg-7 mx-auto">
       <p class="lead mb-4">
         Tetra is a new <mark>full stack component framework</mark> for Django, bridging the gap between your server logic and front end presentation.
-        It uses a <mark>public shared state</mark> and a <mark>resumable server state</mark> to enable <mark>inplace reactive updates</mark>. It also encapsulates your Python, HTML, JavaScript and CSS into one file for <mark>close proximity of related concerns</mark>.
+        It uses a <mark>public shared state</mark> and a <mark>resumable server state</mark> to enable <mark>inplace reactive updates</mark>. It also encapsulates your Python, HTML, JavaScript and CSS into one file for <mark>proximity of related concerns</mark>.
       </p>
       <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
         <a href="#features" class="btn btn-light btn-lg px-4">
@@ -41,143 +41,140 @@
     </div>
   </div>
 
-  <h4 id="examples" class="text-center display-7 my-5">See how easy it is to build a <mark>todo list</mark>:</h4>
+  {% ShowCase %}
+  {% slot title %}See how easy it is to build a <mark>todo list{% endslot %}
+  {% slot code %}
+    {% CodeBlock  file_name="todo_list/__init__.py" language="python" title="Python code" / %}
+    {% CodeBlock file_name="todo_item/__init__.py" language="python" / %}
 
-  <div class="container shadow-sm rounded-3 overflow-hidden">
-    <div class="row align-items-md-stretch">
-      <div class="col-md-6 text-white p-0 d-flex flex-column code-block">
-        <div class="pt-2 ps-3 text-muted small"><b>components.py</b></div>
-        <pre class="m-0"><code class="p-2 ps-3 language-python small">{% include_source "todo_components.txt" %}</code></pre>
-        <div class="pt-2 ps-3 border-top border-secondary text-muted small"><b>models.py</b></div>
-        <pre class="m-0"><code class="p-2 ps-3 language-python small">{% include_source "todo_models.txt" %}</code></pre>
-        <div class="pt-2 ps-3 border-top border-secondary text-muted small"><b>index.html</b></div>
-        <pre class="m-0"><code class="p-2 ps-3 language-django small">{% include_source "todo_index.txt" %}</code></pre>
-      </div>
-      <div class="col-md-6  bg-white">
-        <div class="h-100 p-4">
-          <h4>Your todo list:</h4>
+    {% CodeBlock title="Template for todo_list" file_name="todo_list/todo_list.html" language="django" / %}
+    {% CodeBlock title="Template for todo_item" file_name="todo_item/todo_item.html" language="django" / %}
 
-          {% TodoList / %}
+    {% CodeBlock title="todo_item css" file_name="todo_item/todo_item.css" language="css" / %}
+    {% CodeBlock title="todo_item Javascript" file_name="todo_item/todo_item.js" language="javascript" / %}
 
-        </div>
-      </div>
-    </div>
-  </div>
+    {% CodeBlock title="models.py" file_name="todo_models.py" language="python" / %}
+  {% endslot %}
+  {% slot description %}
+    {% TodoList / %}
+  {% endslot %}
+  {% /ShowCase %}
 
-  <h4 class="text-center display-7 my-5">Or a reactive server rendered search component:</h4>
 
-  <div class="container shadow-sm rounded-3 overflow-hidden">
-    <div class="row align-items-md-stretch">
-      <div class="col-md-6 text-white p-0 d-flex flex-column code-block">
-        <div class="pt-2 ps-3 text-muted small"><b>components.py</b></div>
-        <pre class="m-0"><code class="p-2 ps-3 language-python small">{% include_source "reactive_components.txt" %}</code></pre>
-      </div>
-      <div class="col-md-6  bg-white">
-        <div class="h-100 p-4">
+  {% ShowCase %}
+  {% slot title %}Or a reactive server rendered search component:{% endslot %}
+  {% slot code %}
+    {% CodeBlock title="reactive_search/__init__.py" file_name="reactive_search.py" language="python" / %}
+    {% CodeBlock title="reactive_search/reactive_search.html" file_name="reactive_search.html" language="django" / %}
+  {% endslot %}
+  {% slot description %}
+    {% ReactiveSearch / %}
+  {% endslot %}
+  {% /ShowCase %}
 
-          {% ReactiveSearch / %}
 
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <h4 class="text-center display-7 my-5">Or a counter, but with multiple nested instances.</h4>
+  {% ShowCase %}
+  {% slot title %}Or a counter, but with multiple nested instances.{% endslot %}
+  {% slot code %}
+    {% CodeBlock title="components.py" file_name="counter.py" language="python" / %}
+    {% CodeBlock title="index.html" file_name="counter.index.html" language="django" / %}
+  {% endslot %}
+  {% slot description %}
+    {% include "counter.index.html" %}
+  {% endslot %}
+  {% /ShowCase %}
 
-  <div class="container shadow-sm rounded-3 overflow-hidden">
-    <div class="row align-items-md-stretch">
-      <div class="col-md-6 text-white p-0 d-flex flex-column code-block">
-        <div class="pt-2 ps-3 text-muted small"><b>components.py</b></div>
-        <pre class="m-0"><code class="p-2 ps-3 language-python small">{% include_source "counter_components.txt" %}</code></pre>
-        <div class="pt-2 ps-3 border-top border-secondary text-muted small"><b>index.html</b></div>
-        <pre class="m-0"><code class="p-2 ps-3 language-django small">{% include_source "counter_index.txt" %}</code></pre>
-      </div>
-      <div class="col-md-6  bg-white">
-        <div class="h-100 p-4">
+  {% ShowCase %}
+  {% slot title %}Or a simple card, with dynamic content.{% endslot %}
+  {% slot code %}
+    {% CodeBlock title="info_card/__init__.py" file_name="info_card.py" language="python" / %}
+    {% CodeBlock title="index.html" file_name="info_card.index.html" language="django" / %}
+  {% endslot %}
+  {% slot description %}
+    {% InfoCard / %}
+  {% endslot %}
+  {% /ShowCase %}
 
-          {% Counter key="counter-1" %}
-            {% Counter key="counter-2" current_sum=sum %}
-              {% Counter key="counter-3" current_sum=sum / %}
-            {% /Counter %}
-          {% /Counter %}
 
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <h4 class="text-center display-7 my-5">Or a simple card, with dynamic content.</h4>
-
-  {% InfoCard / %}
 
   <h4 class="text-center display-7 my-5" id="features">What does Tetra do?</h4>
 
   <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4">
     {% Col %}
-      {% slot title %}
-        <a href="http://djangoproject.com">Django</a> on the  backend, <a href="https://alpinejs.dev">Alpine.js</a> in the browser
-      {% endslot %}
-      {% slot default %}
-        Tetra combines the power of Django with Alpine.js to make development easier and  quicker.
-      {% endslot %}
+    {% slot title %}
+      <a href="http://djangoproject.com">Django</a> on the  backend, <a href="https://alpinejs.dev">Alpine.js</a> in the browser
+    {% endslot %}
+    {% slot default %}
+      Tetra combines the power of Django with Alpine.js to make development easier and  quicker.
+    {% endslot %}
     {% /Col %}
     {% Col title="Component encapsulation" %}
-      Each component combines its Python, HTML, CSS and JavaScript in one place for close proximity of related code.
+    Each component combines its Python, HTML, CSS and JavaScript in one place for close proximity of related code.
+    {% /Col %}
+    {% Col title="Async HTTP calls" %}
+    Server calls are asynchronous, ensuring the frontend remains responsive. Multiple, fast clicks on the same button
+    are not dropped between HTTP calls.
     {% /Col %}
     {% Col title="Resumable server state" %}
-      The components' full server state is saved between public method calls. This state is <a href="https://tetra.readthedocs.io/en/latest/state-security/">encrypted for security</a>.
+    The components' full server state is saved between public method calls. This state is <a href="https://tetra.readthedocs.io/en/latest/state-security/">encrypted for security</a>.
     {% /Col %}
     {% Col title="Public server methods" %}
-      Methods can be made public, allowing you to easily call them from JS on the front end, resuming the component's state.
+    Methods can be made public, allowing you to easily call them from JS on the front end, resuming the component's state.
     {% /Col %}
     {% Col title="Shared public state" %}
-      Attributes can be decorated to indicate they should be available in the browser as Alpine.js data objects.
+    Attributes can be decorated to indicate they should be available in the browser as Alpine.js data objects.
     {% /Col %}
     {% Col title='Server "watcher" methods' %}
-      Public methods can be instructed to watch a public attribute, enabling reactive re-rendering on the server.
+    Public methods can be instructed to watch a public attribute, enabling reactive re-rendering on the server.
     {% /Col %}
     {% Col title='Inplace updating from the server' %}
-      Server methods can update the rendered component in place. Powered by the Alpine.js morph plugin.
+    Server methods can update the rendered component in place. Powered by the Alpine.js morph plugin.
     {% /Col %}
     {% Col title='Component library packaging' %}
-      Every component belongs to a "library"; their JS & CSS is packed together for quicker browser downloads.
+    Every component belongs to a "library"; their JS & CSS is packed together for quicker browser downloads.
     {% /Col %}
     {% Col title='Components with overridable blocks' %}
-      Components can have multiple <code>{% verbatim %}{%&nbsp;block(s)&nbsp;%}{% endverbatim  %}</code> which can be overridden when used.
+    Components can have multiple <code>{% verbatim %}{%&nbsp;block(s)&nbsp;%}{% endverbatim  %}</code> which can be overridden when used.
     {% /Col %}
     {% Col title='Inplace updating from the server' %}
-      {% slot title %}
-        JS/CSS builds using <a href="https://esbuild.github.io">esbuild</a>
-      {% endslot %}
-      {% slot default %}
-        Both for development (built into <code>runserver</code>) and production your JS & CSS is built with esbuild.
-      {% endslot %}
+    {% slot title %}
+      JS/CSS builds using <a href="https://esbuild.github.io">esbuild</a>
+    {% endslot %}
+    {% slot default %}
+      Both for development (built into <code>runserver</code>) and production your JS & CSS is built with esbuild.
+    {% endslot %}
     {% /Col %}
     {% Col title='Source Maps' %}
-      Source maps are generated during development so that you can track down errors to the original Python files.
+    Source maps are generated during development so that you can track down errors to the original Python files.
     {% /Col %}
     {% Col title='Syntax highlighting with type annotations' %}
-      Tetra uses type annotations to syntax highlight your JS, CSS & HTML in your Python files with a <a href="https://github.com/samwillis/python-inline-source/tree/main/vscode-python-inline-source">VS Code plugin</a>
+    Tetra uses type annotations to syntax highlight your JS, CSS & HTML in your Python files with a <a href="https://github.com/samwillis/python-inline-source/tree/main/vscode-python-inline-source">VS Code plugin</a>
     {% /Col %}
     {% Col title='Form components' %}
-      A simple replacement for Django's FormView, but due to Tetra's dynamic nature, e.g. a field can change its value or disappear depending on other fields' values.
+    A simple replacement for Django's FormView, but due to Tetra's dynamic nature, e.g. a field can change its value or
+    disappear depending on other fields' values.
     {% /Col %}
     {% Col title='Event subscriptions' %}
-    Both frontend and backend components can subscribe to JavaScript events, enabling seamless event-driven programming across the full stack.
+    Both frontend and backend components can subscribe to JavaScript events, enabling seamless event-driven programming
+    across the full stack.
     {% /Col %}
     {% Col title='File upload/downloads' %}
-      Whenever a form contains a FileField, Tetra makes sure the uploading process works smooth, even with page reloads.
+    Whenever a form contains a FileField, Tetra makes sure the uploading process works smooth, even with page reloads.
     {% /Col %}
     {% Col title='Integration with Django Messages' %}
-      Django's messaging framework is deeply integrated into Tetra: Whenever a new message occurs, it is transformed into a JavaScript object and sent as an event that can be subscribed to by any component.
+    Django's messaging framework is deeply integrated into Tetra: Whenever a new message occurs, it is transformed
+    into a JavaScript object and sent as an event that can be subscribed to by any component.
     {% /Col %}
     {% Col title='Loading indicators' %}
-      While an AJAX request is in flight, you can show a loading indicator, globally, per component, or per call.
+    While an AJAX request is in flight, you can show a loading indicator, globally, per component, or per call.
     {% /Col %}
+
   </div>
 
   <h4 class="text-center display-7 my-5" id="features">
-  More features are planned, including:
+    More features are planned, including:
   </h4>
   <p id="plans" class="text-center max-width mt-3">
     •&nbsp;ModelComponent for bootstrapping standard CRUD interactions. &nbsp;

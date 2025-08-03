@@ -1,0 +1,1 @@
+../components/default/info_card/__init__.py

@@ -1,0 +1,21 @@
+<div {% ... attrs %} >
+
+  <h4 class="text-center display-7 my-5">{% slot title %}{% endslot %}</h4>
+
+  <div class="container shadow-sm rounded-3 overflow-hidden">
+    <div class="row align-items-md-stretch">
+      <div class="col-md-6 text-white p-0 d-flex flex-column code-block overflow-scroll" style="max-height: 600px">
+
+        {% slot code %}{% endslot %}
+        
+      </div>
+      <div class="col-md-6  bg-white">
+        <div class="h-100 p-4">
+
+          {% slot description %}{% endslot %}
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
