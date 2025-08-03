@@ -190,7 +190,7 @@ class Library:
     def build_js(self, library_cache_path, target_path):
         main_imports = []
         main_scripts = []
-        files_to_remove = []
+        # files_to_remove = []
         out_file_path = os.path.join(library_cache_path, self.js_filename)
         meta_filename = f"{self.js_filename}__meta.json"
         meta_file_path = os.path.join(library_cache_path, meta_filename)
@@ -209,7 +209,7 @@ class Library:
                         )
                         with open(filename, "w") as f:
                             f.write(script)
-                        files_to_remove.append(filename)
+                        # files_to_remove.append(filename)
                     else:
                         filename = os.path.join(py_dir, f"{component_name}.js")
                     rel_path = os.path.relpath(filename, library_cache_path)
@@ -235,8 +235,9 @@ class Library:
                 print("ERROR BUILDING JS:", self.display_name)
                 return
         finally:
-            for path in files_to_remove:
-                os.remove(path)
+            # for path in files_to_remove:
+            #     os.remove(path)
+            pass
 
         with open(meta_file_path) as f:
             meta = json.load(f)
@@ -270,7 +271,7 @@ class Library:
                         )
                         with open(filename, "w") as f:
                             f.write(styles)
-                        files_to_remove.append(filename)
+                        # files_to_remove.append(filename)
                     else:
                         filename = os.path.join(py_dir, f"{component_name}.css")
                     with open(filename, "w") as f:
