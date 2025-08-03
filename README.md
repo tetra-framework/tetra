@@ -15,8 +15,7 @@ pip install tetra
 ## Short Overview
 
 For the impatient: here's a short example that shows what Tetra does:
-
-<video autoplay src='demosite/demo/static/recordings/screen_recording_20250803_151915.webm' width=302/>
+<video src="https://github.com/tetra-framework/tetra/raw/refs/heads/main/demosite/demo/static/recordings/screen_recording_20250803_151915.mov" width=302/>
 
 This is done using simple and concise code:
 
