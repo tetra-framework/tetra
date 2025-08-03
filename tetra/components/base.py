@@ -308,7 +308,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
 
     @classmethod
     def _is_styles_inline(cls) -> bool:
-        return bool(hasattr(cls, "style") and cls.style)
+        return bool(cls.style)
 
     @classmethod
     def extract_styles(cls) -> str:
@@ -779,7 +779,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
         If the component has a script file AND an inline script, the inline script
         takes precedence, and True is returned."""
-        return bool(hasattr(cls, "script") and cls.script)
+        return bool(cls.script)
 
     @classmethod
     def extract_script(cls) -> str:
