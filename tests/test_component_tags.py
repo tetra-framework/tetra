@@ -118,7 +118,7 @@ def test_livevar_tag(request_with_session):
         "{% LiveVarComponent /%}",
     )
     assert str(extract_component_tag(content).contents[0]) == (
-        '<span x-text="name"></span>'
+        '<span x-show="name" x-text="name"></span>'
     )
 
 
@@ -137,5 +137,5 @@ def test_livevar_tag_with_custom_tag(request_with_session):
         "{% LiveVarComponentWithCustomTag /%}",
     )
     assert str(extract_component_tag(content).contents[0]) == (
-        '<bluff x-text="name"></bluff>'
+        '<bluff x-show="name" x-text="name"></bluff>'
     )
