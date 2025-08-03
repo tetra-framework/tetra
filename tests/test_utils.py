@@ -11,6 +11,7 @@ from tetra.utils import (
     isclassmethod,
     underscore_to_pascal_case,
     camel_case_to_underscore,
+    remove_surrounding_quotes,
 )
 
 
@@ -163,3 +164,88 @@ def test_underscore_to_pascal_case():
     assert underscore_to_pascal_case("example_with_123") == "ExampleWith123"
     # already PascalCase
     assert underscore_to_pascal_case("PascalCase") == "PascalCase"
+
+
+def test_remove_surrounding_quotes_double_quotes():
+    """Should remove surrounding double quotes from a string"""
+    test_string = '"test string"'
+    result = remove_surrounding_quotes(test_string)
+    assert result == "test string"
+
+
+def test_remove_surrounding_quotes_single_quotes():
+    """Should remove surrounding single quotes from a string"""
+    test_string = "'test string'"
+    result = remove_surrounding_quotes(test_string)
+    assert result == "test string"
+
+
+def test_remove_surrounding_quotes_no_quotes():
+    """Should not modify a string without surrounding quotes"""
+    test_string = "test string"
+    result = remove_surrounding_quotes(test_string)
+    assert result == "test string"
+
+
+def test_remove_surrounding_quotes_single_character():
+    """Should handle a string with just one character (a quote)"""
+    test_string = '"'
+    result = remove_surrounding_quotes(test_string)
+    # A single quote character should remain unchanged
+    assert result == '"'
+
+
+def test_remove_surrounding_quotes_first_character_quote():
+    """Should handle a string where only the first character is a quote"""
+    test_string = '"test string'
+    result = remove_surrounding_quotes(test_string)
+    # String should remain unchanged since quotes aren't surrounding
+    assert result == '"test string'
+
+
+def test_remove_surrounding_quotes_last_character_quote():
+    """Should handle a string where only the last character is a quote"""
+    test_string = "test string'"
+    result = remove_surrounding_quotes(test_string)
+    # String should remain unchanged since quotes aren't surrounding
+    assert result == "test string'"
+
+
+def test_remove_surrounding_quotes_different_quote_types():
+    """Should handle a string with different quote types at beginning and end"""
+    test_string = "\"test string'"
+    result = remove_surrounding_quotes(test_string)
+    # String should remain unchanged since quotes don't match
+    assert result == "\"test string'"
+
+
+def test_remove_surrounding_quotes_empty_string():
+    """Should handle an empty string without raising an IndexError"""
+    test_string = ""
+    result = remove_surrounding_quotes(test_string)
+    # Empty string should remain unchanged
+    assert result == ""
+
+
+def test_remove_surrounding_quotes_whitespace_string():
+    """Should handle an empty string without raising an IndexError"""
+    test_string = " "
+    result = remove_surrounding_quotes(test_string)
+    # Empty whitespace string should remain unchanged
+    assert result == " "
+
+
+def test_remove_surrounding_quotes_quotes_in_middle():
+    """Should properly handle strings that have quotes in the middle but not at the edges"""
+    test_string = 'text "quoted" text'
+    result = remove_surrounding_quotes(test_string)
+    # String should remain unchanged since quotes are only in the middle
+    assert result == 'text "quoted" text'
+
+
+def test_remove_surrounding_quotes_multiple_quotes():
+    """Should handle a string that consists of multiple quotes"""
+    test_string = '"""triple quoted"""'
+    result = remove_surrounding_quotes(test_string)
+    # Only the outermost quotes should be removed
+    assert result == '""triple quoted""'
