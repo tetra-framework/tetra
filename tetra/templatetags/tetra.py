@@ -188,7 +188,7 @@ def do_component(parser, token):
         # so that we can reuse block names inside each individual use tag
         current_loaded_blocks = getattr(parser, "__loaded_blocks", None)
         parser.__loaded_blocks = []
-        nodelist = parser.parse(("/@",))
+        nodelist = parser.parse((f"/{component_name}",))
         if current_loaded_blocks is not None:
             parser.__loaded_blocks = (
                 current_loaded_blocks  # Return original __loaded_blocks

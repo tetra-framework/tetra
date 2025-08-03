@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 import json
+import warnings
 from collections import defaultdict
 from typing import Self
 
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class Library:
+    # a dictionary to store all Library instances: [app][library][components]
     registry = defaultdict(dict)
 
     @staticmethod
@@ -104,7 +106,8 @@ class Library:
 
     def register(self, component: BasicComponentMetaClass = None, name=None):
         if not name:
-            name = camel_case_to_underscore(component.__name__)
+            name = component.__name__
+        underscore_name = camel_case_to_underscore(name)
 
         def dec(cls: BasicComponentMetaClass):
             if hasattr(cls, "_library") and cls._library:
@@ -122,11 +125,42 @@ class Library:
                     )
                     return cls
             component._library = self
-            component._name = name
-            self.components[name] = component
+            component._name = underscore_name
+            self.components[underscore_name] = component
             return cls
 
+        def component_tag_compile_function(parser, token):
+            # Modify token to include the "component" prefix
+            tag = token.contents.split()[0]
+            if tag == "@":
+                warnings.warn(
+                    "Use 'component' instead of '@' for component tags.",
+                    DeprecationWarning,
+                )
+            # TODO: check if component with this name exists!
+            if tag != "component":
+                token.contents = (
+                    f"component {tag} {' '.join(token.contents.split()[1:])}"
+                )
+            return do_component(parser, token)
+
         if component:
+            # Dynamically register a template tag with ComponentName and
+            # library.ComponentName
+
+            # Set the name and other attributes
+            component_tag_compile_function.__name__ = name
+            from .templatetags.tetra import do_component, register as tetra_register
+
+            # Register the tag with Django's template system
+            tetra_register.tag(
+                name=name, compile_function=component_tag_compile_function
+            )
+            tetra_register.tag(
+                name=f"{self.name}.{name}",
+                compile_function=component_tag_compile_function,
+            )
+
             return dec(component)
         else:
             return dec

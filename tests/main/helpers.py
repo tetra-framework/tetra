@@ -11,7 +11,7 @@ def render_component_tag(
     Attributes:
         request: The request object.
         component_string: The string to be rendered - usually something like
-            '{% @ my_component / %}'.
+            '{% MyComponent / %}'.
         context: The context the template is rendered with. This is the outer context
             of the component
     """

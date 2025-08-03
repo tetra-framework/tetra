@@ -55,7 +55,7 @@ Have a look at the [events][events.md].
 
 # Sequence diagram
 
-What happens when a public method is called? This sequence diagram shows everything.
+For the technically interested: What happens when a public method is called? This sequence diagram shows everything.
 ```mermaid
 sequenceDiagram
   box Client

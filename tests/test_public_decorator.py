@@ -45,7 +45,7 @@ class ComponentWithPublicSubscribe(Component):
 def test_public_subscribe_renders_attrs(request_with_session):
     """Checks if a @public.subscribe decorator renders the attr correctly."""
     content = render_component_tag(
-        request_with_session, "{% @ main.default.ComponentWithPublicSubscribe / %}"
+        request_with_session, "{% ComponentWithPublicSubscribe / %}"
     )
     component = extract_component_tag(content)
     assert component.has_attr("@keyup.enter")

@@ -1,16 +1,18 @@
 ---
-title: helper filters & tags
+title: Helper filters & tags
 ---
 
 # `if` and `else` Template Filters
 
-The `if` and `else` template filters are provided to enable conditional attribute values with the [`...` attribute template tag](attribute-tag.md):
+The `if` and `else` template filters are provided to enable conditional attribute values with the [`...` attribute template tag](attribute-tag.md) within a component's template, where they are automatically available:
 
 ``` django
 <div {% ... class="class1"|if:variable_name|else:"class2" %}>
+   component content
+</div>
 ```
 
-The `if` and `else` template filters are automatically available in your components' templates, in other templates be sure to `{% load tetra %}`.
+If you want to use `if` and `else` in other Django templates, be sure to `{% load tetra %}`.
 
 ## `if` Filter
 

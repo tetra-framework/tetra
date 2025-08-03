@@ -94,7 +94,7 @@ Then there is the template; this uses the standard Django template language. You
         </div>
         <div class="list-group">
             {% for todo in todos %}
-                {% @ TodoItem todo=todo key=todo.id / %}
+                {% TodoItem todo=todo key=todo.id / %}
             {% endfor %}
         </div>
     </div>
@@ -106,7 +106,7 @@ Then there is the template; this uses the standard Django template language. You
 - Another `@click` event listener is attached to the button, also calling our `add_todo` public method.
 - A standard Django template `for` loop iterates through any 'to do' items loaded to the private `todos` attribute (see our `load` method above).
 - We use the Tetra `@` component template tag to display the `to_do_item` component. We pass it a `todo` model instance as an argument, and a `key` argument set to the `todo.id`. It is  important to "key" components in loops so that when morphing the DOM they are correctly identified and updated.
-- The `@` can optionally take nested block content. However, in this example this is not necessary, and therefore we "close" the tag with a forward slash `/` much like with xml tags. Without explicitly closing the tag the template parser will expect a `{% /@ %}` closing tag.
+- The `@` can optionally take nested block content. However, in this example this is not necessary, and therefore we "close" the tag with a forward slash `/` much like with xml tags. Without explicitly closing the tag the template parser will expect a `{% /<ComponentName> %}` closing tag.
 
 ### `TodoItem` Component
 
@@ -214,13 +214,13 @@ Next, we define some CSS styles for the component as the multiline Python string
 
 ### Including the "to do" list in a page
 
-Finally, we include our `TodoList` component into a pages template using the `@` component tag.
+Finally, we include our `TodoList` component into a pages template using the component tag.
 As we are doing this outside of a Tetra component we need to explicitly load the Tetra template tags with `{% load tetra %}`.
 
 ``` django
 {# index.html #}
 <h4>Your todo list:</h4>
-{% @ TodoList / %}
+{% TodoList / %}
 ```
 
  To get started, follow the [install instructions](install.md).

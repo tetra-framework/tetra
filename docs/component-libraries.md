@@ -30,13 +30,13 @@ class FooComponent(Component):
 # create a new library named "default" for the "main" app
 default = Library(name="default", app=apps.get_app_config("main"))
 
-# register the FooComponent to the default library
+# register the FooComponent manually to the default library
 default.register(FooComponent)
 
 # if you create a library twice, or you use a library that was already created automatically by
 # creating a "default" folder in your `<myapp>.components` directory, that library is reused.
+# Here, default is the same object as default_double:
 default_double = Library("default", "main")
-assert default_double is default
 ```
 
 #### Directory style components
@@ -91,10 +91,7 @@ myapp
 
 ## Manually declared libraries
 
-It is not necessary to follow the directory structure. You can also declare a Library anywhere in your code, and register components to it. The `Library` class takes the *name of the library* and the *AppConfig (or app label)* as parameters. You can declare the libraries more then once, everything with the same name will be merged together.
-
-!!! note
-    Library names must be globally unique. Declaring Libraries with the same name in different apps is forbidden.
+It is not necessary to follow the directory structure. You can also declare a Library anywhere in your code, and register components to it. The `Library` class takes the *name of the library* and the *AppConfig (or app label)* as parameters. You can declare the libraries more than once, everything with the same name/app will be merged together.
 
 ```python
 from tetra import Library

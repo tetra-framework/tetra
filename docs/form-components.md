@@ -108,7 +108,7 @@ If you want to use frontend variables, you can use the `livevar` tag helper. In 
 
 ```django
 <input type="text" x-model="first_name">
-<div>{% livevar "first_name" %} is a good name!</div>
+<div>{% livevar first_name %} is a good name!</div>
 ```
 
 

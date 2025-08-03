@@ -3,7 +3,7 @@
 ```mermaid
 flowchart TD
  subgraph initial_page_load["Initial Page load"]
-        as_tag["{% @ ... %} tag creates Component"]
+        as_tag["{% component ... %} tag creates Component"]
         create_component["Initialize new component"]
         component_render["Render component"]
         render_data["render data + state as JSON"]

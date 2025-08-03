@@ -379,6 +379,6 @@ def param_count(method) -> int:
 
 def remove_surrounding_quotes(string: str) -> str:
     """Removes surrounding single/double quotes from a string."""
-    if string != "" and string[0] == string[-1] and string[0] in ('"', "'"):
+    while len(string) > 2 and string[0] == string[-1] and string[0] in ('"', "'"):
         string = string[1:-1]
     return string

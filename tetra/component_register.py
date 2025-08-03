@@ -84,7 +84,7 @@ def find_component_libraries():
                             and not is_abstract(member)
                         ):
                             member._is_directory_component = False
-                            library.register(member, camel_case_to_underscore(name))
+                            library.register(member, name)
 
                     # if library is a package, search for component packages within
                     # library
@@ -124,9 +124,7 @@ def find_component_libraries():
                                             f"This is not supported"
                                         )
                                     member._is_directory_component = True
-                                    library.register(
-                                        member, camel_case_to_underscore(name)
-                                    )
+                                    library.register(member, name)
 
                     # else:
                     #     # TODO: library is a file, register all components in it
@@ -165,8 +163,6 @@ def resolve_component(context, name: str) -> Component:
         Returns:
             The resolved component instance.
     """
-    template = context.template if context else None
-    current_app = None
     dynamic = False
     name_parts = name.split(".")
     error_message = ""
@@ -194,105 +190,28 @@ def resolve_component(context, name: str) -> Component:
             return value
     else:
         try:
-            if len(name_parts) == 3:
-                # Full component name, easy!
-                try:
-                    return Library.registry[name_parts[0]][name_parts[1]].components[
-                        camel_case_to_underscore(name_parts[2])
-                    ]
-                except KeyError:
-                    raise ComponentNotFound(f'Component "{name}" not found.')
-
-            if len(name_parts) > 3:
+            if len(name_parts) > 2:
                 raise ComponentNotFound(
                     f'Component name "{name}" invalid, should be in form '
-                    '"[app_name.][library_name.]ComponentName".'
+                    '"[library_name.]ComponentName".'
                 )
+            if len(name_parts) == 1:
+                name_parts = ("default", name_parts[0])
 
-            # if component is called with 2 parts, we either need a current_app context to
-            # find the component, or the first part is the app name, and we assume
-            # "default" as library.
-
-            # first, try to determine the  current app
-            if (
-                isinstance(template, InlineTemplate)
-                and template.origin
-                and hasattr(template.origin, "component")
-            ):
-                #  It's a template on a component
-                module = inspect.getmodule(template.origin.component)
-                module_name = module.__name__
-                for app_conf in apps.get_app_configs():
-                    if module_name.startswith(app_conf.module.__name__):
-                        current_app = app_conf
-
-            elif (
-                isinstance(template, Template)
-                and template.origin
-                and template.origin.name
-            ):
-                # It's a normal template from a file
-                file_name = template.origin.name
-                for app_conf in apps.get_app_configs():
-                    if file_name.startswith(app_conf.path):
-                        current_app = app_conf
-
-            if current_app:
-                if len(name_parts) == 1:
-                    # Try in current app's default library
-                    try:
-                        return Library.registry[current_app.label][
-                            "default"
-                        ].components[camel_case_to_underscore(name_parts[0])]
-                    except KeyError:
-                        raise ComponentNotFound(
-                            f"Component '{name}' not found in `default` library of "
-                            f"current app '{current_app}'."
-                        )
-
-                elif len(name_parts) == 2:
-                    # try given library name in <current_app>.<part0>.ComponentName
-                    try:
-                        return Library.registry[current_app.label][
-                            name_parts[0]
-                        ].components[camel_case_to_underscore(name_parts[1])]
-                    except KeyError:
-                        pass
-                    # if library.Component is not found, try to assume
-                    # <part0>.default.ComponentName.
-                    try:
-                        return Library.registry[name_parts[0]]["default"].components[
+            # Full component name, easy: <library>.<component>!
+            for app_name in Library.registry:
+                try:
+                    if name_parts[0] in Library.registry[app_name]:
+                        # return the first matching library that contains the component
+                        return Library.registry[app_name][name_parts[0]].components[
                             camel_case_to_underscore(name_parts[1])
                         ]
-                    except KeyError:
-                        raise ComponentNotFound(
-                            f"Component name '{name}' not found as "
-                            f"'{current_app}.default.{name}' nor as"
-                            f"'{name_parts[0]}.default.ComponentName'."
-                        )
+                except KeyError:
+                    continue
             else:
-                # no current app defined/found
-
-                if len(name_parts) == 2:
-                    # assume that <app>.default.ComponentName is meant.
-                    try:
-                        return Library.registry[name_parts[0]]["default"].components[
-                            camel_case_to_underscore(name_parts[1])
-                        ]
-                    except KeyError:
-                        raise ComponentNotFound(
-                            f"Current app can't be retrieved automatically, "
-                            f"so '{name_parts[0]}' is assumed as app name, "
-                            f"but there is no component '{name_parts[1]}' in the "
-                            f"'default' library of the '{name_parts[0]}' app."
-                        )
-                else:
-                    raise ComponentNotFound(
-                        f"Unable to ascertain current app. "
-                        f"Component name '{name}' must be "
-                        "in form '<app_name>.ComponentName' or "
-                        "'<app_name>.<library_name>.ComponentName'."
-                    )
+                raise ComponentNotFound(
+                    f"Component '{name_parts[1]}' not found in library '{name_parts[0]}'."
+                )
 
         except ComponentNotFound as e:
             error_message = str(e)
@@ -305,11 +224,12 @@ def resolve_component(context, name: str) -> Component:
             for lib_name, library in lib.items():
                 if library.components:
                     for component_name in library.components:
+                        ln = f"{lib_name}." if lib_name != "default" else ""
                         components.append(
-                            f"{app_name}.{lib_name}.{underscore_to_pascal_case(component_name)}"
+                            f"{ln}{underscore_to_pascal_case(component_name)}"
                         )
     if not error_message:
         error_message = f'Component "{name}" not found.'
-    error_message += f" Available components are: {components}"
+    error_message += f"\nAvailable components are: {components}"
 
     raise ComponentNotFound(error_message)

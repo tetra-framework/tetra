@@ -13,45 +13,31 @@ from tetra import Component, Library
 from tetra.exceptions import ComponentNotFound
 
 
-def test_basic_component(tetra_request):
+def test_basic_component_explicit_default(tetra_request):
     """Tests a simple component with / end"""
     content = render_component_tag(
-        tetra_request, "{% @ main.default.SimpleBasicComponent / %}"
+        tetra_request, "{% default.SimpleBasicComponent / %}"
     )
     assert extract_component_tag(content).text == "foo"
 
 
 def test_basic_component_as_default(tetra_request):
     """Tests a simple component that implicitly is found in the default library"""
-    content = render_component_tag(tetra_request, "{% @ main.SimpleBasicComponent / %}")
+    content = render_component_tag(tetra_request, "{% SimpleBasicComponent / %}")
     assert extract_component_tag(content).text == "foo"
 
 
-def test_basic_component_with_library(tetra_request):
-    with pytest.raises(ComponentNotFound) as exc_info:
+def test_basic_component_with_explicit_library_name(tetra_request):
+    with pytest.raises(TemplateSyntaxError) as exc_info:
         """Tests a simple component that is can't be found in the current_app.default
         library."""
-        content = render_component_tag(
-            tetra_request, "{% @ default.SimpleBasicComponent / %}"
-        )
-    assert (
-        "but there is no component 'SimpleBasicComponent' in the 'default' library of "
-        "the 'default' app"
-    ) in str(exc_info.value)
-
-
-def test_basic_component_with_app_and_library(tetra_request):
-    with pytest.raises(ComponentNotFound) as exc_info:
-        content = render_component_tag(tetra_request, "{% @ SimpleBasicComponent / %}")
-    assert (
-        "Unable to ascertain current app. Component name 'SimpleBasicComponent' must be in "
-    ) in str(exc_info.value)
+        content = render_component_tag(tetra_request, "{% default.FooBar / %}")
 
 
 def test_basic_component_with_end_tag(tetra_request):
     """Tests a simple component with  /@ end tag"""
     content = render_component_tag(
-        tetra_request, "{% @ main.default.SimpleBasicComponent %}{% /@ %}"
+        tetra_request, "{% SimpleBasicComponent %}{% /SimpleBasicComponent %}"
     )
     assert extract_component_tag(content).text == "foo"
 
@@ -60,7 +46,7 @@ def test_basic_component_with_end_tag_and_name(tetra_request):
     """Tests a simple component with `/@ <name>` end tag"""
     content = render_component_tag(
         tetra_request,
-        "{% @ main.default.SimpleBasicComponent %}{% /@ SimpleBasicComponent %}",
+        "{% SimpleBasicComponent %}{% /SimpleBasicComponent %}",
     )
     assert extract_component_tag(content).text == "foo"
 
@@ -70,7 +56,7 @@ def test_basic_component_with_missing_end_tag(tetra_request):
     with pytest.raises(TemplateSyntaxError):
         render_component_tag(
             tetra_request,
-            "{% @ main.default.SimpleBasicComponent %}",
+            "{% SimpleBasicComponent %}",
         )
 
 
@@ -97,7 +83,7 @@ def test_basic_dynamic_component(tetra_request):
     """Tests a simple dynamic component"""
     content = render_component_tag(
         tetra_request,
-        "{% @ =dynamic_component /%}",
+        "{% component =dynamic_component /%}",
         {"dynamic_component": SimpleBasicComponent},
     )
     assert extract_component_tag(content).text == "foo"
@@ -108,7 +94,7 @@ def test_basic_dynamic_non_existing_component(tetra_request):
     with pytest.raises(ComponentNotFound):
         render_component_tag(
             tetra_request,
-            "{% @ =foo.bar.NotExistingComponent /%}",
+            "{% component =foo.bar.NotExistingComponent /%}",
         )
 
 

@@ -28,7 +28,6 @@ def extract_component_tag(html: str | bytes) -> Tag:
 
 
 def call_component_method(
-    app_name,
     library_name,
     component_name,
     method,

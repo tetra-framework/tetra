@@ -33,11 +33,11 @@ class MyComponent(Component):
         pass
 ```
 
-## Load method
+## The `load()` method
 
-The `load` method is run both when the component initiates, *and* after it is resumed from its saved state, e.g. after a [@public method](#public-methods) has finished. Any attributes that are set by the load method are *not* saved with the state. This is to reduce the size of the state and ensure that the state is not stale when resumed.
+The `load` method is run both when the component initiates, *and* after it is resumed from its saved state, e.g. after a [@public method](#public-methods) has finished. **Any attributes that are set within the load method are *not* saved with the state.** This is to reduce the size of the state and ensure that the state is not stale when resumed.
 
-Arguments are passed to the `load` method from the Tetra [component "`@`" template tag](component-tag.md). Arguments are saved with the state so that when the component is resumed the `load` method will receive the same values.
+Arguments are passed to the `load` method from the Tetra ["component" template tag](component-tag.md). Arguments are saved with the state so that when the component is resumed the `load` method will receive the same values.
 
 Note: Django Models and Querysets are saved as references to your database, not the current 'snapshots', see [state optimisations](state-security.md#state-optimisations).
 
@@ -219,7 +219,7 @@ When using directory-style components, you can load templates from separate file
 
 Components must have a single top level HTML root node (you may optionally place an HTML comment in front of it.)
 
-HTML attributes passed to the component `@` tag are available as `attrs` in the context, this can be unpacked with the [attribute `...` tag](attribute-tag.md).
+HTML attributes passed to the `component` tag are available as `attrs` in the context, this can be unpacked with the [attribute `...` tag](attribute-tag.md).
 
 The template can contain replaceable `{% block(s) %}`, the `default` block is the target block if no block is specified when including a component in a page with inner content. This is similar to "slots" in other component frameworks. See [passing blocks](component-tag.md#passing-blocks) for more details.
 

@@ -57,7 +57,7 @@
         <div class="h-100 p-4">
           <h4>Your todo list:</h4>
 
-          {% @ demo.TodoList / %}
+          {% TodoList / %}
 
         </div>
       </div>
@@ -75,7 +75,7 @@
       <div class="col-md-6  bg-white">
         <div class="h-100 p-4">
 
-          {% @ demo.ReactiveSearch / %}
+          {% ReactiveSearch / %}
 
         </div>
       </div>
@@ -95,11 +95,11 @@
       <div class="col-md-6  bg-white">
         <div class="h-100 p-4">
 
-          {% @ demo.Counter key="counter-1" %}
-            {% @ demo.Counter key="counter-2" current_sum=sum %}
-              {% @ demo.Counter key="counter-3" current_sum=sum / %}
-            {% /@ %}
-          {% /@ %}
+          {% Counter key="counter-1" %}
+            {% Counter key="counter-2" current_sum=sum %}
+              {% Counter key="counter-3" current_sum=sum / %}
+            {% /Counter %}
+          {% /Counter %}
 
         </div>
       </div>
@@ -109,67 +109,67 @@
   <h4 class="text-center display-7 my-5" id="features">What does Tetra do?</h4>
 
   <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4">
-    {% @ col %}
+    {% Col %}
       {% block title %}
         <a href="http://djangoproject.com">Django</a> on the  backend, <a href="https://alpinejs.dev">Alpine.js</a> in the browser
       {% endblock %}
       {% block default %}
         Tetra combines the power of Django with Alpine.js to make development easier and  quicker.
       {% endblock %}
-    {% /@ %}
-    {% @ col title="Component encapsulation" %}
+    {% /Col %}
+    {% Col title="Component encapsulation" %}
       Each component combines its Python, HTML, CSS and JavaScript in one place for close proximity of related code.
-    {% /@ %}
-    {% @ col title="Resumable server state" %}
+    {% /Col %}
+    {% Col title="Resumable server state" %}
       The components' full server state is saved between public method calls. This state is <a href="https://tetra.readthedocs.io/en/latest/state-security/">encrypted for security</a>.
-    {% /@ %}
-    {% @ col title="Public server methods" %}
+    {% /Col %}
+    {% Col title="Public server methods" %}
       Methods can be made public, allowing you to easily call them from JS on the front end, resuming the component's state.
-    {% /@ %}
-    {% @ col title="Shared public state" %}
+    {% /Col %}
+    {% Col title="Shared public state" %}
       Attributes can be decorated to indicate they should be available in the browser as Alpine.js data objects.
-    {% /@ %}
-    {% @ col title='Server "watcher" methods' %}
+    {% /Col %}
+    {% Col title='Server "watcher" methods' %}
       Public methods can be instructed to watch a public attribute, enabling reactive re-rendering on the server.
-    {% /@ %}
-    {% @ col title='Inplace updating from the server' %}
+    {% /Col %}
+    {% Col title='Inplace updating from the server' %}
       Server methods can update the rendered component in place. Powered by the Alpine.js morph plugin.
-    {% /@ %}
-    {% @ col title='Component library packaging' %}
+    {% /Col %}
+    {% Col title='Component library packaging' %}
       Every component belongs to a "library"; their JS & CSS is packed together for quicker browser downloads.
-    {% /@ %}
-    {% @ col title='Components with overridable blocks' %}
+    {% /Col %}
+    {% Col title='Components with overridable blocks' %}
       Components can have multiple <code>{% verbatim %}{%&nbsp;block(s)&nbsp;%}{% endverbatim  %}</code> which can be overridden when used.
-    {% /@ %}
-    {% @ col title='Inplace updating from the server' %}
+    {% /Col %}
+    {% Col title='Inplace updating from the server' %}
       {% block title %}
         JS/CSS builds using <a href="https://esbuild.github.io">esbuild</a>
       {% endblock %}
       {% block default %}
         Both for development (built into <code>runserver</code>) and production your JS & CSS is built with esbuild.
       {% endblock %}
-    {% /@ %}
-    {% @ col title='Source Maps' %}
+    {% /Col %}
+    {% Col title='Source Maps' %}
       Source maps are generated during development so that you can track down errors to the original Python files.
-    {% /@ %}
-    {% @ col title='Syntax highlighting with type annotations' %}
+    {% /Col %}
+    {% Col title='Syntax highlighting with type annotations' %}
       Tetra uses type annotations to syntax highlight your JS, CSS & HTML in your Python files with a <a href="https://github.com/samwillis/python-inline-source/tree/main/vscode-python-inline-source">VS Code plugin</a>
-    {% /@ %}
-    {% @ col title='Form components' %}
+    {% /Col %}
+    {% Col title='Form components' %}
       A simple replacement for Django's FormView, but due to Tetra's dynamic nature, e.g. a field can change its value or disappear depending on other fields' values.
-    {% /@ %}
-    {% @ col title='Event subscriptions' %}
+    {% /Col %}
+    {% Col title='Event subscriptions' %}
     Both frontend and backend components can subscribe to JavaScript events, enabling seamless event-driven programming across the full stack.
-    {% /@ %}
-    {% @ col title='File upload/downloads' %}
+    {% /Col %}
+    {% Col title='File upload/downloads' %}
       Whenever a form contains a FileField, Tetra makes sure the uploading process works smooth, even with page reloads.
-    {% /@ %}
-    {% @ col title='Integration with Django Messages' %}
+    {% /Col %}
+    {% Col title='Integration with Django Messages' %}
       Django's messaging framework is deeply integrated into Tetra: Whenever a new message occurs, it is transformed into a JavaScript object and sent as an event that can be subscribed to by any component.
-    {% /@ %}
-    {% @ col title='Loading indicators' %}
+    {% /Col %}
+    {% Col title='Loading indicators' %}
       While an AJAX request is in flight, you can show a loading indicator, globally, per component, or per call.
-    {% /@ %}
+    {% /Col %}
   </div>
 
   <h4 class="text-center display-7 my-5" id="features">

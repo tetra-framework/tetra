@@ -17,7 +17,7 @@ def test_simple_component_attribute_str(request_with_session):
     """Tests a simple component with a str attribute"""
     content = render_component_tag(
         request_with_session,
-        "{% @ main.attrs.SimpleComponentWithAttributeStr / %}",
+        "{% attrs.SimpleComponentWithAttributeStr / %}",
     )
     soup = extract_component_tag(content)
     assert soup.text == "str: foo"
@@ -31,7 +31,7 @@ def test_simple_component_attribute_int(request_with_session):
     """Tests a simple component with an int attribute"""
 
     content = render_component_tag(
-        request_with_session, "{% @ main.default.SimpleComponentWithAttributeInt / %}"
+        request_with_session, "{% SimpleComponentWithAttributeInt / %}"
     )
     soup = extract_component_tag(content)
 
@@ -47,7 +47,7 @@ def test_simple_component_attribute_float(request_with_session):
     """Tests a simple component with a float attribute"""
 
     content = render_component_tag(
-        request_with_session, "{% @ main.default.SimpleComponentWithAttributeFloat / %}"
+        request_with_session, "{% SimpleComponentWithAttributeFloat / %}"
     )
     assert extract_component_tag(content).text == "float: 2.32"
 
@@ -56,7 +56,7 @@ def test_simple_component_attribute_list(request_with_session):
     """Tests a simple component with a list attribute"""
 
     content = render_component_tag(
-        request_with_session, "{% @ main.default.SimpleComponentWithAttributeList / %}"
+        request_with_session, "{% SimpleComponentWithAttributeList / %}"
     )
     soup = extract_component_tag(content)
     assert soup.text == "list: [1, 2, 3]"
@@ -70,7 +70,7 @@ def test_simple_component_attribute_dict(request_with_session):
     """Tests a simple component with a dict attribute"""
 
     content = render_component_tag(
-        request_with_session, "{% @ main.default.SimpleComponentWithAttributeDict / %}"
+        request_with_session, "{% SimpleComponentWithAttributeDict / %}"
     )
     soup = extract_component_tag(content)
     assert soup.text == "dict: {'key': 'value'}"
@@ -84,7 +84,7 @@ def test_simple_component_attribute_set(request_with_session):
     """Tests a simple component with a set attribute"""
 
     content = render_component_tag(
-        request_with_session, "{% @ main.default.SimpleComponentWithAttributeSet / %}"
+        request_with_session, "{% SimpleComponentWithAttributeSet / %}"
     )
     soup = extract_component_tag(content)
     assert soup.text == "set: {1, 2, 3}"
@@ -99,7 +99,7 @@ def test_simple_component_attribute_frozenset(request_with_session):
 
     content = render_component_tag(
         request_with_session,
-        "{% @ main.default.SimpleComponentWithAttributeFrozenSet / %}",
+        "{% SimpleComponentWithAttributeFrozenSet / %}",
     )
     soup = extract_component_tag(content)
     assert soup.text == "frozenset: frozenset({1, 2, 3})"
@@ -110,7 +110,7 @@ def test_simple_component_attribute_bool(request_with_session):
 
     content = render_component_tag(
         request_with_session,
-        "{% @ main.default.SimpleComponentWithAttributeBool / %}",
+        "{% SimpleComponentWithAttributeBool / %}",
     )
     soup = extract_component_tag(content)
     assert soup.text == "bool: False"
