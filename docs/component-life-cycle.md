@@ -92,7 +92,7 @@ sequenceDiagram
   StateUnpickler -->> decode_component: component
   decode_component -->> Component: component
 
-  Component ->> Component: Set component request, key, attrs, context, blocks
+  Component ->> Component: Set component request, key, attrs, context, slot
   Component ->> Component: recall load() with initial params
   Component ->> Component: set component attributes from client data
   Component ->> Component: client data contains a Model PK? -> replace it with Model instance from DB

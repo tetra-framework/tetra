@@ -4,7 +4,7 @@ title: Basic Components
 
 # Basic Components
 
-`BasicComponent` are simple, reusable building blocks that can be used to stack together interfaces. They support django variables, context, and CSS styles. 
+`BasicComponent` are simple, reusable building bricks that can be used to stack together interfaces. They support django variables, context, and CSS styles. 
 
 They do *not* support JS, Alpine.js, or any public attributes or methods. Basic Components should be used for encapsulating reusable components that have no direct client side interaction and are useful for composing within other components.
 

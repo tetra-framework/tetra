@@ -106,16 +106,20 @@
     </div>
   </div>
 
+  <h4 class="text-center display-7 my-5">Or a simple card, with dynamic content.</h4>
+
+  {% InfoCard / %}
+
   <h4 class="text-center display-7 my-5" id="features">What does Tetra do?</h4>
 
   <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4">
     {% Col %}
-      {% block title %}
+      {% slot title %}
         <a href="http://djangoproject.com">Django</a> on the  backend, <a href="https://alpinejs.dev">Alpine.js</a> in the browser
-      {% endblock %}
-      {% block default %}
+      {% endslot %}
+      {% slot default %}
         Tetra combines the power of Django with Alpine.js to make development easier and  quicker.
-      {% endblock %}
+      {% endslot %}
     {% /Col %}
     {% Col title="Component encapsulation" %}
       Each component combines its Python, HTML, CSS and JavaScript in one place for close proximity of related code.
@@ -142,12 +146,12 @@
       Components can have multiple <code>{% verbatim %}{%&nbsp;block(s)&nbsp;%}{% endverbatim  %}</code> which can be overridden when used.
     {% /Col %}
     {% Col title='Inplace updating from the server' %}
-      {% block title %}
+      {% slot title %}
         JS/CSS builds using <a href="https://esbuild.github.io">esbuild</a>
-      {% endblock %}
-      {% block default %}
+      {% endslot %}
+      {% slot default %}
         Both for development (built into <code>runserver</code>) and production your JS & CSS is built with esbuild.
-      {% endblock %}
+      {% endslot %}
     {% /Col %}
     {% Col title='Source Maps' %}
       Source maps are generated during development so that you can track down errors to the original Python files.
@@ -199,4 +203,4 @@
     </a>
   </div>
 
-{% endblock content %}
+{% endblock %}

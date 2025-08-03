@@ -16,7 +16,7 @@ Tetra is a full stack component framework for [Django](https://docs.djangoprojec
   
     Frameworks such as Laravel Livewire and Phoenix Liveview, which heavily inspired Tetra, have shown that server side rendering with smart "morphing" of the DOM in the browser is an incredibly efficient way to build websites and apps.
 
-Tetra components encapsulate all aspects of their functionality into one definition in a single file. The server side Python/Django code, HTML template, front end JavaScript (using Alpine.js), and CSS styles are side by side.
+Tetra components encapsulate all aspects of their functionality into one definition in a single file/directory. The server side Python/Django code, HTML template, front end JavaScript (using Alpine.js), and CSS styles are side by side.
 
 Furthermore, components can expose attributes and methods as *public*, making them available to the front end Alpine.js JavaScript code.
 
@@ -27,7 +27,7 @@ Furthermore, components can expose attributes and methods as *public*, making th
 
 ## Walkthrough of a simple "To Do App"
 
-To introduce the main aspects of Tetra we will walkthrough the code implementing the [To Do App demo](https://tetraframework.com/#examples) on the homepage.
+To introduce the main aspects of Tetra we will walk through the code implementing the [To Do App demo](https://tetraframework.com/#examples) on the homepage.
 
 *If you haven't used Django before you should follow their [tutorial](https://docs.djangoproject.com/en/4.2/intro/tutorial01/) before coming back here.*
 
@@ -106,12 +106,12 @@ Then there is the template; this uses the standard Django template language. You
 - Another `@click` event listener is attached to the button, also calling our `add_todo` public method.
 - A standard Django template `for` loop iterates through any 'to do' items loaded to the private `todos` attribute (see our `load` method above).
 - We use the Tetra `@` component template tag to display the `to_do_item` component. We pass it a `todo` model instance as an argument, and a `key` argument set to the `todo.id`. It is  important to "key" components in loops so that when morphing the DOM they are correctly identified and updated.
-- The `@` can optionally take nested block content. However, in this example this is not necessary, and therefore we "close" the tag with a forward slash `/` much like with xml tags. Without explicitly closing the tag the template parser will expect a `{% /<ComponentName> %}` closing tag.
+- The `TodoItem` component tag can optionally take nested block content. However, in this example this is not necessary, and therefore we "close" the tag with a forward slash `/` much like with xml tags. Without explicitly closing the tag the template parser would expect a `{% /TodoItem %}` closing tag.
+
 
 ### `TodoItem` Component
 
-
-Next, we create a `TodoItem` component. As we have previously seen, there are public attributes to hold the `title` and `done` status of the item. The load method takes a `ToDo` model instance (passed to it in the template above), then saves it as a private attribute on the component, and finally sets the `title` and `done` public attributes.
+Next, we create a `TodoItem` component.
 
 ``` python
 class TodoItem(Component):
@@ -123,8 +123,9 @@ class TodoItem(Component):
         self.title = todo.title
         self.done = todo.done
 ```
+ As we have previously seen, there are public attributes to hold the `title` and `done` status of the item. The load method takes a `ToDo` model instance (passed to it in the template above), then saves it as a private attribute on the component, and finally sets the `title` and `done` public attributes.
 
-The public `save` method is set to `watch` the `title` and `done` public attributes with a `debounce` of 200ms. This instructs Alpine.js to call the server side `save` method automatically whenever the `title` and `done` attributes change. The debounce ensures that the save method isn't called on every keystroke whilst typing.
+
 
 ``` python
     @public.watch('title', 'done').debounce(200)
@@ -134,11 +135,9 @@ The public `save` method is set to `watch` the `title` and `done` public attribu
         self.todo.save()
 ```
 
-Next, there is a public `delete_item` method, which is simply calling the delete method on the Django model instance attached to the component. However, there are a couple of other things happening too:
+The public `save` method is set to `watch` the `title` and `done` public attributes with a `debounce` of 200ms. This instructs Alpine.js to call the server side `save` method automatically whenever the `title` and `done` attributes change. The `debounce(200)` ensures that the save method isn't called on every keystroke whilst typing.
 
-- We have set `update=False` when creating the public method. By default, public methods will re-render the component and send the new html to the browser. However, in this instance we don't need to do this, and have therefore disabled it.
-- We call `self.client._removeComponent()`
-- `self.client` is a "callback queue" that allows you to schedule callbacks of client JavaScript methods for when the client receives a response from the method. You can call any of your custom JavaScript methods via this API. The `self.client._removeComponent()` is a method available on all components, instructing the client to remove the component from the DOM - this is ideal for when deleting items.
+Next, there is a public `delete_item` method, which is simply calling the delete method on the Django model instance attached to the component.
 
 ``` python
     @public(update=False)
@@ -146,6 +145,13 @@ Next, there is a public `delete_item` method, which is simply calling the delete
         self.todo.delete()
         self.client._removeComponent()
 ```
+
+ However, there are a couple of other things happening in there too:
+
+- We have set `update=False` when creating the public method. By default, public methods will re-render the component and send the new html to the browser. However, in this instance we don't need to do this, and have therefore disabled it.
+- We call `self.client._removeComponent()`
+- `self.client` is a "callback queue" that allows you to schedule callbacks of client JavaScript methods for when the client receives a response from the method. You can call any of your custom JavaScript methods via this API. The `self.client._removeComponent()` is a method available on all components, instructing the client to remove the component from the DOM - this is ideal for when deleting items.
+
 
 This component template uses some concepts we saw on the previous component, attaching public attributes to inputs with the Alpine.js `x-model` directive and event listeners with the `@event` directives. In this case we are binding `@keydown.backspace` and `@keyup.backspace` on the text input to custom JavaScript methods which we are going to define later on.
 
@@ -212,7 +218,7 @@ Next, we define some CSS styles for the component as the multiline Python string
     """
 ```
 
-### Including the "to do" list in a page
+### Including the "todo" list in a page
 
 Finally, we include our `TodoList` component into a pages template using the component tag.
 As we are doing this outside of a Tetra component we need to explicitly load the Tetra template tags with `{% load tetra %}`.
@@ -228,4 +234,4 @@ As we are doing this outside of a Tetra component we need to explicitly load the
 !!! note
     Tetra is still early in its development, and we can make no promises about API stability at this stage.
 
-    The intention is to stabilise the API prior to a v1.0 release, as well as  implementing some additional functionality.
+    The intention is to stabilise the API prior to a v1.0 release, as well as implementing additional functionality step by step.

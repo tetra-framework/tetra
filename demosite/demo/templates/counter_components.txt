@@ -28,7 +28,7 @@ class Counter(Component):
                     @click="increment()">Increment</button>
         </p>
         <div>
-            {% block default %}{% endblock %}
+            {% slot default %}{% endslot %}
         </div>
     </div>
     """

@@ -476,15 +476,15 @@ class AttrsNode(template.Node):
         return " ".join(k if v is True else f'{k}="{v}"' for k, v in attrs.items())
 
 
-@register.tag("block")
-def do_block(parser, token):
+@register.tag("slot")
+def do_slot(parser, token):
     """
-    Define a block that can be overridden by child templates.
-    Based on the native Django tag but adds an extra attribute (expose_as) to the
-    BlockNode indicating if it is posible to overide in an extending template and
+    Define a slot that can be overridden by child templates.
+    Based on the native Django "block" tag but adds an extra attribute (expose_as) to the
+    BlockNode indicating if it is possible to override in an extending template and
     under what name.
-    Syntax to expose a block under its own name
-    {% block block_name expose %}
+    Syntax to expose a slot under its own name
+    {% slot block_name expose %}
     Syntax to expose a block under a different name:
     {% block block_name expose as exposed_block_name %}
     """
@@ -502,34 +502,34 @@ def do_block(parser, token):
             "'%s' tag third argument can only be 'as' if given" % bits[0]
         )
 
-    block_name = bits[1]
+    slot_name = bits[1]
 
     if len(bits) == 5:
         expose_as = bits[4]
     elif len(bits) == 3:
-        expose_as = block_name
+        expose_as = slot_name
     else:
         expose_as = None
 
     # Keep track of the names of BlockNodes found in this template, so we can
     # check for duplication.
     try:
-        if block_name in parser.__loaded_blocks:
+        if slot_name in parser.__loaded_blocks:
             raise TemplateSyntaxError(
-                "'%s' tag with name '%s' appears more than once" % (bits[0], block_name)
+                "'%s' tag with name '%s' appears more than once" % (bits[0], slot_name)
             )
-        parser.__loaded_blocks.append(block_name)
+        parser.__loaded_blocks.append(slot_name)
     except AttributeError:  # parser.__loaded_blocks isn't a list yet
-        parser.__loaded_blocks = [block_name]
-    nodelist = parser.parse(("endblock",))
+        parser.__loaded_blocks = [slot_name]
+    nodelist = parser.parse(("endslot",))
 
     # This check is kept for backwards-compatibility. See #3100.
-    endblock = parser.next_token()
-    acceptable_endblocks = ("endblock", "endblock %s" % block_name)
-    if endblock.contents not in acceptable_endblocks:
-        parser.invalid_block_tag(endblock, "endblock", acceptable_endblocks)
+    endslot = parser.next_token()
+    acceptable_endblocks = ("endslot", "endslot %s" % slot_name)
+    if endslot.contents not in acceptable_endblocks:
+        parser.invalid_block_tag(endslot, "endslot", acceptable_endblocks)
 
-    node = BlockNode(block_name, nodelist)
+    node = BlockNode(slot_name, nodelist)
     node.expose_as = expose_as
     node.origin = parser.origin  # Needed for persistent_id when pickeling
     return node

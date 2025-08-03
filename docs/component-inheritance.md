@@ -20,7 +20,7 @@ class Card(BaseCard):
     __abstract__ = True
     template: django_html = """
     <div class="card mycard">
-      {% block default %}{% endblock %]}
+      {% slot default %}{% endslot %]}
     </div>
     """
 

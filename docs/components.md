@@ -215,41 +215,50 @@ component are available in the context.
 
 When using directory-style components, you can load templates from separate files too. See [Directory style components](component-libraries.md#directory-style-components).
 
-### Generic template hints
+### Generic component template hints
 
-Components must have a single top level HTML root node (you may optionally place an HTML comment in front of it.)
+Components must have a single top level HTML root node (you may optionally place an HTML comment in front of it).
 
 HTML attributes passed to the `component` tag are available as `attrs` in the context, this can be unpacked with the [attribute `...` tag](attribute-tag.md).
 
-The template can contain replaceable `{% block(s) %}`, the `default` block is the target block if no block is specified when including a component in a page with inner content. This is similar to "slots" in other component frameworks. See [passing blocks](component-tag.md#passing-blocks) for more details.
+The template can contain overridable `{% slot(s) %}`, the `default` slot is the target slot if no slot is specified when including a component in a page with inner content. See [slots](slots.md) for more details.
 
-You can use the [Python Inline Source Syntax Highlighting](https://marketplace.visualstudio.com/items?itemName=samwillis.python-inline-source) VS Code extension to syntax highlight the inline HTML, CSS and JavaScript in your component files using type annotations.
+!!! note
+    * In VS Code, you can use the [Python Inline Source Syntax Highlighting](https://marketplace.visualstudio.com/items?itemName=samwillis.python-inline-source) VS Code extension to syntax highlight the inline HTML, CSS and JavaScript in your component files using type annotations.
+    * in PyCharm, use the `# language=html` comment before the template string. This at least enables the HTML highlighting. For Django, the implementation is still missing.
 
 ``` python
+from sourcetypes import django_html
+
 class MyComponent(Component):
     ...
+    # language=html
     template: django_html = """
     <!-- MyComponent -->
     <div {% ... attrs %}>
       <h1>My component</h1>
       <p>{{ message }}</p>
-      {% block default %}{% endblock %}
+      {% slot default %}{% endslot %}
     </div>
     """
 ```
 
-You can easily check if a block is "filled" with content by using `{% if blocks.<block name> %}`. With this, you can
-bypass wrapping elements when a block was not used:
+You can easily check if a slot is "filled" with content by using `{% if slots.<slot_name> %}`, to
+bypass wrapping elements when a slot was not used:
 
 ``` django
-{% if blocks.title or blocks.actions %}
+{% if slots.title or slots.actions %}
 <div class="card-header">
-  <h3 class="card-title">
-    {% block title %}{% endblock %}
-  </h3>
-  <div class="card-actions">
-    {% block actions %}{% endblock %}
-  </div>
+  {% if slots.title %}
+    <h3 class="card-title">
+      {% slot title %}{% endslot %}
+    </h3>
+  {% endif %}
+  {% if slots.actions %}
+    <div class="card-actions">
+      {% slot actions %}{% endslot %}
+    </div>
+  {% endif %}
 </div>
 {% endif %}
 ```

@@ -48,6 +48,7 @@ nav:
   - Template:
     - component-tag.md
     - attribute-tag.md
+    - slots.md
     - include-js-css.md
     - if-else-filters.md
     - state-security.md

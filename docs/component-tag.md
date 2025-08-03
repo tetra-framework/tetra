@@ -126,7 +126,7 @@ It is also possible to explicitly pass all template context to a component with 
 !!! warning
     This should be used sparingly as the whole template context will be saved with the component's saved (encrypted) state, and sent to the client, see [state security](state-security.md).
 
-In general, if the value is something that is needed for the component to function (and be available to methods or be "public") it should be generally passed as an *argument* [(see above)](#passing-attributes). Passing context is ideal for composing your components with inner content passed down from an outer template [(see passing blocks)](#passing-blocks).
+In general, if the value is something that is needed for the component to function (and be available to methods or be "public") it should be generally passed as an *argument* [(see above)](#passing-attributes). Passing context is ideal for composing your components with inner content passed down from an outer template (see [passing slots](slots.md)).
 
 When context is passed using the `_extra_context` class attribute, you can always override these variables in the component tag:
 
@@ -134,72 +134,4 @@ When context is passed using the `_extra_context` class attribute, you can alway
 {{ var }} {# this is "5" #}
 {% MyComponent context: var=3 / %} {# overrides global var with "3" #}
 ```
-
-## Passing Blocks
-
-It is possible to pass template `{% block %}`s to a component, overriding or inserting content into the component:
-
-``` django
-{% MyComponent %}
-  {% block title %}
-    Some content
-  {% endblock %}
-{% /MyComponent %}
-```
-
-> Other frameworks refer to these "blocks" as "slots", but as Tetra is built on Django we use the Django terminology.
-
-You can pass as many blocks to a component as you like:
-
-``` django
-{% MyComponent %}
-  {% block title %}
-    A title
-  {% endblock %}
-  {% block main %}
-    Some content
-  {% endblock %}
-{% /MyComponent %}
-```
-
-If you pass content to a component without a top-level block it infers that you are targeting the `default` block:
-
-``` django
-{% MyComponent %}
-  Some content
-{% /MyComponent %}
-```
-
-Is the equivalent of:
-
-``` django
-{% MyComponent %}
-  {% block default %}
-    Some content
-  {% endblock %}
-{% /MyComponent %}
-```
-
-By default, blocks within a component are not available to override in a template that `extends` a template using a component with passed blocks. This is so that you can use components multiple times on a page and not have block names conflict with each other.
-
-It is, however, possible to explicitly expose a block to the wider template so that it can be overridden with the `expose` flag:
-
-``` django
-{% MyComponent %}
-  {% block title expose %}
-    Some content
-  {% endblock %}
-{% /MyComponent %}
-```
-
-You can also specify under what name a block should be exposed with `expose as [name]`:
-
-``` django
-{% MyComponent %}
-  {% block title expose as header_title %}
-    Some content
-  {% endblock %}
-{% /MyComponent %}
-```
-
-See [component templates](components.md#templates) for details of how the component handles blocks in its templates.
+ 

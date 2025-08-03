@@ -12,36 +12,34 @@ class SimpleBasicComponentWithCSS(BasicComponent):
 
 
 class SimpleComponentWithDefaultBlock(BasicComponent):
-    template: django_html = (
-        "<div id='component'>{% block default %}{% endblock %}</div>"
-    )
+    template: django_html = "<div id='component'>{% slot default %}{% endslot %}</div>"
 
 
 class SimpleComponentWithNamedBlock(BasicComponent):
-    template: django_html = "<div id='component'>{% block foo %}{% endblock %}</div>"
+    template: django_html = "<div id='component'>{% slot foo %}{% endslot %}</div>"
 
 
 class SimpleComponentWithNamedBlockWithContent(BasicComponent):
-    template: django_html = "<div id='component'>{% block foo %}foo{% endblock %}</div>"
+    template: django_html = "<div id='component'>{% slot foo %}foo{% endslot %}</div>"
 
 
 class SimpleComponentWithConditionalBlock(BasicComponent):
     template: django_html = (
-        """<div id="component">{% if blocks.foo %}BEFORE{% block foo %}content{% endblock %}AFTER{% endif %}always</div>"""
+        """<div id="component">{% if slots.foo %}BEFORE{% slot foo %}content{% endslot %}AFTER{% endif %}always</div>"""
     )
 
 
 class SimpleComponentWithConditionalBlockAndAdditionalContent(BasicComponent):
     template: django_html = (
-        """<div id="component">BE{% if blocks.foo %}FORE{% block foo %}{% endblock %}AF{% endif %}TER</div>"""
+        """<div id="component">BE{% if slots.foo %}FORE{% slot foo %}{% endslot %}AF{% endif %}TER</div>"""
     )
 
 
 class SimpleComponentWithConditionalBlockAndAdditionalHtmlContent(BasicComponent):
     template: django_html = """
 <div id="component"><div>
-{% if blocks.foo %}
-<span>{% block foo %}{% endblock %}</span>
+{% if slots.foo %}
+<span>{% slot foo %}{% endslot %}</span>
 {% endif %}
 </div></div>
 """
@@ -49,7 +47,7 @@ class SimpleComponentWithConditionalBlockAndAdditionalHtmlContent(BasicComponent
 
 class SimpleComponentWith2Blocks(BasicComponent):
     template: django_html = """
-<div id="component">{% block default %}default{% endblock %}{% block foo %}foo{% endblock %}</div>
+<div id="component">{% slot default %}default{% endslot %}{% slot foo %}foo{% endslot %}</div>
 """
 
 
@@ -64,7 +62,7 @@ class SimpleComponentWithFooContext(BasicComponent):
 
     _extra_context = ["foo"]
     template: django_html = """
-    <div id="component">{% block default %}{% endblock %}</div>
+    <div id="component">{% slot default %}{% endslot %}</div>
     """
 
 
@@ -73,7 +71,7 @@ class SimpleComponentWithExtraContextAll(BasicComponent):
 
     _extra_context = ["__all__"]
     template: django_html = """
-    <div id="component">{% block default %}{% endblock %}</div>
+    <div id="component">{% slot default %}{% endslot %}</div>
     """
 
 

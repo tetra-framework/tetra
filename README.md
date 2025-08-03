@@ -116,8 +116,8 @@ Inplace updating from the server
 Component library packaging
 : Every component belongs to a "library"; their JS & CSS is packed together for quicker browser downloads.
 
-Components with overridable blocks
-: Components can have multiple {% block(s) %} which can be overridden when used.
+Components with overridable slots
+: Components can have multiple {% slot(s) %} which can be overridden when used.
 
 JS/CSS builds using [esbuild](https://esbuild.github.io)
 : Both for development (built into runserver) and production your JS & CSS is built with esbuild.
