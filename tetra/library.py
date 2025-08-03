@@ -215,6 +215,8 @@ class Library:
                     rel_path = os.path.relpath(filename, library_cache_path)
                     if os.name == "nt":
                         rel_path = rel_path.replace(os.sep, "/")
+                    if not rel_path.startswith("./") and not rel_path.startswith("../"):
+                        rel_path = "./" + rel_path
                     main_imports.append(f'import {component_name} from "{rel_path}";')
                     main_scripts.append(component_cls.render_script(component_name))
                 else:
