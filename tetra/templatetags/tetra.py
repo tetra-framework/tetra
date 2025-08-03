@@ -68,7 +68,7 @@ def token_attr(bit, parser):
     return {name: parser.compile_filter(value)}
 
 
-@register.tag(name="@")
+@register.tag(name="component")
 def do_component(parser, token):
     split_contents = token.split_contents()
     if len(split_contents) < 2:
@@ -395,6 +395,17 @@ class ComponentNode(template.Node):
                 _context=resolved_context,
                 _blocks=blocks,
             )
+
+
+@register.tag(name="@")
+# TODO: deprecated, remove in v0.5
+def do_component_deprecated(parser, token):
+    warnings.warn(
+        "The @ tag is deprecated. Use 'component' instead, or use the "
+        "component class name directly.",
+        DeprecationWarning,
+    )
+    return do_component(parser, token)
 
 
 @register.tag(name="...")
