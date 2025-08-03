@@ -3,7 +3,7 @@ import warnings
 
 from django import template
 from django.http import HttpRequest
-from django.template import RequestContext
+from django.template import RequestContext, TemplateSyntaxError
 from django.template.loader_tags import BlockNode, BLOCK_CONTEXT_KEY
 from django.utils.safestring import mark_safe, SafeString
 from uuid import uuid4
@@ -13,6 +13,7 @@ from threading import local
 
 from ..exceptions import ComponentError, ComponentNotFound
 from ..component_register import resolve_component
+from ..utils import remove_surrounding_quotes
 
 logger = logging.getLogger(__name__)
 
@@ -525,37 +526,45 @@ def do_block(parser, token):
     return node
 
 
-@register.tag(name="@v")
+@register.tag(name="livevar")
 def live_variable(parser, token) -> template.Node:
-    try:
-        # split_contents() knows not to split quoted strings.
-        tag_name, format_string = token.split_contents()
-    except ValueError:
-        raise template.TemplateSyntaxError(
-            "%r tag requires a single argument" % token.contents.split()[0]
-        )
-
+    """Renders a tag with dynamically filled/reactive HTML content from a
+    Tetra/Alpine.js variable."""
     split_contents = token.split_contents()
-    if len(split_contents) != 2:
-        raise template.TemplateSyntaxError(
-            "@v tag requires exactly one argument: the variable name"
+    if len(split_contents) > 3:
+        raise TemplateSyntaxError(
+            "livevar tag requires maximum two arguments: the variable name, "
+            "and optionally the HTML tag."
         )
-    # remove surrounding quotes, if any
-    if format_string[0] == format_string[-1] and format_string[0] in ('"', "'"):
-        format_string = format_string[1:-1]
+    if len(split_contents) == 3:
+        tag = split_contents[2]
+        if "=" not in tag:
+            raise TemplateSyntaxError(
+                f"livevar 'tag' argument expects a variable assignment "
+                f"(tag=<variable_name>), got '{tag}'"
+            )
+        _, tag = tag.split("=")
+        tag = remove_surrounding_quotes(tag)
+    else:
+        tag = "span"
 
-    return LiveVariableNode(format_string)
+    var_name = split_contents[1]
+
+    var_name = remove_surrounding_quotes(var_name)
+
+    return LiveVariableNode(var_name, tag)
 
 
 class LiveVariableNode(template.Node):
-    def __init__(self, var_name: str):
+    def __init__(self, var_name: str, tag: str):
         self.var_name = var_name
+        self.tag = tag
 
     def __repr__(self):
         return f"<LiveVariableNode: {self.var_name}>"
 
     def render(self, context):
-        return mark_safe(f"<span x-text='{self.var_name}'></span>")
+        return mark_safe(f"<{self.tag} x-text='{self.var_name}'></{self.tag}>")
 
 
 @register.filter(name="if")

@@ -9,6 +9,7 @@ from tests.utils import extract_component_tag
 from tests.main.helpers import render_component_tag
 import pytest
 
+from tetra import Component, Library
 from tetra.exceptions import ComponentNotFound
 
 
@@ -109,3 +110,46 @@ def test_basic_dynamic_non_existing_component(tetra_request):
             tetra_request,
             "{% @ =foo.bar.NotExistingComponent /%}",
         )
+
+
+# ---------- livevar  ------------
+
+default = Library("default", "main")
+
+
+@default.register
+class LiveVarComponent(Component):
+    name = "foo"
+    template = """
+    <div id='component'>{% livevar name %}</div>
+    """
+
+
+def test_livevar_tag(request_with_session):
+    """Tests a simple dynamic component"""
+    content = render_component_tag(
+        request_with_session,
+        "{% LiveVarComponent /%}",
+    )
+    assert str(extract_component_tag(content).contents[0]) == (
+        '<span x-text="name"></span>'
+    )
+
+
+@default.register
+class LiveVarComponentWithCustomTag(Component):
+    name = "foo"
+    template = """
+    <div id='component'>{% livevar name tag='bluff' %}</div>
+    """
+
+
+def test_livevar_tag_with_custom_tag(request_with_session):
+    """Tests a simple dynamic component"""
+    content = render_component_tag(
+        request_with_session,
+        "{% LiveVarComponentWithCustomTag /%}",
+    )
+    assert str(extract_component_tag(content).contents[0]) == (
+        '<bluff x-text="name"></bluff>'
+    )

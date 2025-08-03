@@ -104,11 +104,11 @@ Normal Django variables are only changed after the component is reloaded:
 <div>{{ first_name }}</div>
 ```
 
-If you want to use frontend variables, you can use the `@v` tag helper. In this case, a `<span>` tag is created with the `first_name` content that will reflect the variable instantly.
+If you want to use frontend variables, you can use the `livevar` tag helper. In this case, a `<span>` tag is created with the `first_name` content that will reflect the variable instantly.
 
 ```django
 <input type="text" x-model="first_name">
-<div>{% @v "first_name" %} is a good name!</div>
+<div>{% livevar "first_name" %} is a good name!</div>
 ```
 
 
