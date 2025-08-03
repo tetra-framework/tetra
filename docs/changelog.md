@@ -12,7 +12,7 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.0] - unreleased
+## [0.4.0] - 2025-08-04
 ### Changed
 - rename `request.tetra.current_url_abs_path` to `current_url_full_path` to better adhere to naming standards. `current_url_abs_path` is deprecated.
 - **BREAKING CHANGE** remove the `@` tag for component rendering. Use the component name alone.

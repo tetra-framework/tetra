@@ -1,6 +1,5 @@
 # Tetra helpers
 
-
 Tetra offers some helpers that solve common problems.
 
 
@@ -18,7 +17,7 @@ Spinners can be placed
 
 ### The `tetra-request` class
 
-While a request is in flight, the element that initiated the request (e.g. a button) receives the `tetra_request` class automatically. You can use that to show busy indicators within the button, just by adding some css.
+While a request is in flight, the element that initiated the request (e.g. a button) receives the `tetra-request` class automatically. You can use that to show busy indicators within the button, just by adding some css.
 
 Here is an example that works with Bootstrap 5 CSS (`.spinner-border`):
 

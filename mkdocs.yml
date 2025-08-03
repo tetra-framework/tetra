@@ -33,18 +33,15 @@ markdown_extensions:
 nav:
   - index.md
   - install.md
-  - Components:
+  - tutorial.md
+  - Libraries:
     - component-libraries.md
+  - Components:
     - components.md
     - basic-components.md
     - form-components.md
     - component-inheritance.md
-    - request.md
-    - messages.md
     - component-life-cycle.md
-    - events.md
-    - files.md
-    - helpers.md
   - Template:
     - component-tag.md
     - attribute-tag.md
@@ -53,6 +50,12 @@ nav:
     - if-else-filters.md
     - state-security.md
     - magic-static.md
+  - Additional topics:
+    - request.md
+    - messages.md
+    - events.md
+    - files.md
+    - helpers.md
   - Development:
     - contribute.md
     - changelog.md
