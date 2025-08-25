@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-25 10:20+0200\n"
+"POT-Creation-Date: 2025-08-25 11:00+0200\n"
 "PO-Revision-Date: 2025-08-25 10:21+0000\n"
 "Last-Translator: Gemini Code Assist\n"
 "Language-Team: Spanish\n"
@@ -435,3 +435,43 @@ msgstr "Alternar Navegación de Ejemplos"
 #: demo/templates/base_examples.html:173
 msgid "Toggle Navigation"
 msgstr "Alternar Navegación"
+
+#: demo/utils.py:6
+msgid "Discover Tetra"
+msgstr "Descubre Tetra"
+
+#: demo/utils.py:7
+msgid "Install and explore Tetra"
+msgstr "Instala y explora Tetra"
+
+#: demo/utils.py:8
+msgid "Decide to build your next startup using Tetra"
+msgstr "Decide construir tu próxima startup usando Tetra"
+
+#: demo/utils.py:9
+msgid "Become a billionaire"
+msgstr "Conviértete en multimillonario"
+
+#: demo/utils.py:10
+msgid "Start a rocket company"
+msgstr "Funda una compañía de cohetes"
+
+#: demo/utils.py:11
+msgid "Populate Pluto, it's a much cooler planet than Mars"
+msgstr "Puebla Plutón, es un planeta mucho más guay que Marte"
+
+#: demo/components/default/counter/counter.html:4
+msgid "Count"
+msgstr "Contador"
+
+#: demo/components/default/counter/counter.html:5
+msgid "Sum"
+msgstr "Suma"
+
+#: demo/components/default/counter/counter.html:6
+msgid "Decrement"
+msgstr "Decrementar"
+
+#: demo/components/default/counter/counter.html:7
+msgid "Increment"
+msgstr "Incrementar"
