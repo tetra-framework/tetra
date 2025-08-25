@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-25 11:10+0200\n"
+"POT-Creation-Date: 2025-08-25 11:32+0200\n"
 "PO-Revision-Date: 2024-05-16 10:00+0000\n"
 "Last-Translator: Gemini Code Assist <gemini@google.com>\n"
 "Language-Team: Spanish\n"
@@ -41,26 +41,6 @@ msgstr "Incrementar"
 msgid "I'm so excited!"
 msgstr "¡Estoy muy emocionado!"
 
-#: demo/templates/info_card.py:30
-msgid "Information"
-msgstr "Información"
-
-#: demo/templates/info_card.py:40
-msgid "Enter your name below!"
-msgstr "¡Introduce tu nombre aquí!"
-
-#: demo/templates/info_card.py:43
-msgid "Thanks,"
-msgstr "Gracias,"
-
-#: demo/templates/info_card.py:46
-msgid "Your name"
-msgstr "Tu nombre"
-
-#: demo/templates/info_card.py:51
-msgid "Ok"
-msgstr "Aceptar"
-
 #: demo/components/default/info_card/__init__.py:9
 #: demo/templates/info_card.py:9
 msgid "We got news for you."
@@ -84,6 +64,10 @@ msgstr "Nueva tarea..."
 #: demo/components/default/todo_list/todo_list.html:5
 msgid "Add"
 msgstr "Añadir"
+
+#: demo/components/examples/disable_button/disable_button.html:4
+msgid "Submit"
+msgstr "Enviar"
 
 #: demo/movies.py:4
 msgid "A Christmas Story"
@@ -686,10 +670,6 @@ msgstr "Cerrar"
 msgid "Tetra Docs"
 msgstr "Docs de Tetra"
 
-#: demo/templates/index.html:48
-msgid "Python code"
-msgstr "Código Python"
-
 #: demo/templates/base_examples.html:240
 msgid "Alpine.js Docs"
 msgstr "Docs de Alpine.js"
@@ -697,22 +677,6 @@ msgstr "Docs de Alpine.js"
 #: demo/templates/base_examples.html:243
 msgid "Django Docs"
 msgstr "Docs de Django"
-
-#: demo/templates/index.html:50
-msgid "Todo Item Python"
-msgstr "Python de Elemento de Tarea"
-
-#: demo/templates/index.html:53
-msgid "Template for todo_list"
-msgstr "Plantilla para lista de tareas"
-
-#: demo/templates/index.html:55
-msgid "Template for todo_item"
-msgstr "Plantilla para elemento de tarea"
-
-#: demo/templates/index.html:58
-msgid "Todo Item CSS"
-msgstr "CSS de Elemento de Tarea"
 
 #: demo/templates/base_examples.html:249
 msgid "On this page"
@@ -757,6 +721,38 @@ msgstr "Comenzar"
 #: demo/templates/index.html:45
 msgid "See how easy it is to build a <mark>todo list</mark>"
 msgstr "Mira lo fácil que es construir una <mark>lista de tareas</mark>"
+
+#: demo/templates/index.html:48
+msgid "Python code"
+msgstr "Código Python"
+
+#: demo/templates/index.html:50
+msgid "Todo Item Python"
+msgstr "Python de Elemento de Tarea"
+
+#: demo/templates/index.html:53
+msgid "Template for todo_list"
+msgstr "Plantilla para lista de tareas"
+
+#: demo/templates/index.html:55
+msgid "Template for todo_item"
+msgstr "Plantilla para elemento de tarea"
+
+#: demo/templates/index.html:58
+msgid "Todo Item CSS"
+msgstr "CSS de Elemento de Tarea"
+
+#: demo/templates/index.html:60
+#, fuzzy
+#| msgid "Todo Item Python"
+msgid "Todo Item Javascript"
+msgstr "Python de Elemento de Tarea"
+
+#: demo/templates/index.html:63
+#, fuzzy
+#| msgid "Todo Item Python"
+msgid "Models Python"
+msgstr "Python de Elemento de Tarea"
 
 #: demo/templates/index.html:73
 msgid "Or a reactive server rendered search component:"
@@ -881,6 +877,22 @@ msgstr ""
 msgid "Component library packaging"
 msgstr "Empaquetado de la librería de componentes"
 
+#: demo/templates/index.html:143
+msgid "Every component belongs to a \\"
+msgstr "Cada componente pertenece a un \\"
+
+#: demo/templates/index.html:145
+msgid "Components with overridable blocks"
+msgstr "Componentes con bloques sobreescribibles"
+
+#: demo/templates/index.html:146
+msgid "Components can have multiple <code>"
+msgstr "Componentes pueden tener múltiples <code>"
+
+#: demo/templates/index.html:146
+msgid "</code> which can be overridden when used."
+msgstr "</code> que pueden ser sobreescritos cuando se usan."
+
 #: demo/templates/index.html:150
 msgid "JS/CSS builds using <a href=\"https://esbuild.github.io\">esbuild</a>"
 msgstr ""
@@ -889,7 +901,6 @@ msgstr ""
 # Eliminando entradas duplicadas que causaban errores de msgfmt.
 # Las entradas originales en las líneas 743-762 se eliminan.
 # Las entradas correctas ya existen en las líneas 671-697.
-
 #: demo/templates/index.html:153
 msgid ""
 "Both for development (built into <code>runserver</code>) and production your "
@@ -996,7 +1007,7 @@ msgstr "Más características planificadas, incluyendo:"
 
 #: demo/templates/index.html:184
 msgid "ModelComponent for bootstrapping standard CRUD interactions."
-msgstr ""
+msgstr "ModelComponent para iniciar interacciones CRUD estándar."
 
 #: demo/templates/index.html:185
 #, fuzzy
@@ -1017,49 +1028,49 @@ msgstr ""
 
 #: demo/templates/index.html:188
 msgid "Routing <s>and query strings ✅</s> for \"whole page\" components."
-msgstr ""
+msgstr "Enrutamiento <s>y cadenas de consulta ✅</s> para componentes de \"página completa\"."
 
 #: demo/templates/index.html:189
 msgid "Page title and metadata in header."
-msgstr ""
+msgstr "Título de página y metadatos en el encabezado."
 
 #: demo/templates/index.html:190
 msgid "Pagination and Infinity Scroll components."
-msgstr ""
+msgstr "Paginación y componente de desplazamiento infinito."
 
 #: demo/templates/index.html:191
 msgid "PostCSS/SASS/etc. support."
-msgstr ""
+msgstr "Soporte PostCSS/SASS/etc."
 
 #: demo/templates/index.html:192
 msgid "CSS scoped to a component."
-msgstr ""
+msgstr "CSS acoplado a un componente."
 
 #: demo/templates/index.html:193
 msgid "Websocket/SSE components enabling realtime updates."
-msgstr ""
+msgstr "Websocket/SSE componentes habilitando actualizaciones en tiempo real."
 
 #: demo/templates/index.html:194
 msgid "Redirect responses."
-msgstr ""
+msgstr "Respuestas de redirección."
 
 #: demo/templates/index.html:195
 msgid "Additional authentication tools."
-msgstr ""
+msgstr "Herramientas de autenticación adicionales."
 
 #: demo/templates/index.html:196
 msgid "Integration with UI & component toolkits."
-msgstr ""
+msgstr "Integración con UI y kits de herramientas de componentes."
 
 #: demo/templates/index.html:197
 msgid "Bundling of esbuild to be npm free."
-msgstr ""
+msgstr "Agrupación de esbuild para que esté libre de npm."
 
 #: demo/templates/index.html:203
 msgid "Read the Docs to get started"
 msgstr "Lee la documentación para empezar"
 
-#: demo/views.py:92
+#: demo/views.py:112
 msgid "Demo"
 msgstr "Demostración"
 
@@ -1071,3 +1082,17 @@ msgstr "Inglés"
 msgid "Spanish"
 msgstr "Español"
 
+#~ msgid "Information"
+#~ msgstr "Información"
+
+#~ msgid "Enter your name below!"
+#~ msgstr "¡Introduce tu nombre aquí!"
+
+#~ msgid "Thanks,"
+#~ msgstr "Gracias,"
+
+#~ msgid "Your name"
+#~ msgstr "Tu nombre"
+
+#~ msgid "Ok"
+#~ msgstr "Aceptar"
