@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-25 11:32+0200\n"
+"POT-Creation-Date: 2025-08-25 11:42+0200\n"
 "PO-Revision-Date: 2024-05-16 10:00+0000\n"
 "Last-Translator: Gemini Code Assist <gemini@google.com>\n"
 "Language-Team: Spanish\n"
@@ -65,9 +65,22 @@ msgstr "Nueva tarea..."
 msgid "Add"
 msgstr "Añadir"
 
+#: demo/components/examples/click_to_edit/click_to_edit.html:14
+msgid "Name:"
+msgstr "Nombre:"
+
+#: demo/components/examples/delete_row/delete_row.html:5
+msgid "Delete"
+msgstr ""
+
 #: demo/components/examples/disable_button/disable_button.html:4
 msgid "Submit"
 msgstr "Enviar"
+
+#: demo/components/examples/spinner/spinner.html:10
+#: demo/components/examples/spinner/spinner.html:20
+msgid "Load data"
+msgstr "Cargar datos"
 
 #: demo/movies.py:4
 msgid "A Christmas Story"
@@ -682,6 +695,10 @@ msgstr "Docs de Django"
 msgid "On this page"
 msgstr "En esta página"
 
+#: demo/templates/examples/click_to_edit/demo.html:4
+msgid "Click the line below to start editing."
+msgstr "Haga clic en la línea a continuación para comenzar a editar."
+
 #: demo/templates/index.html:19
 msgid ""
 "Full stack reactive component framework for <a href=\"http://"
@@ -1028,7 +1045,9 @@ msgstr ""
 
 #: demo/templates/index.html:188
 msgid "Routing <s>and query strings ✅</s> for \"whole page\" components."
-msgstr "Enrutamiento <s>y cadenas de consulta ✅</s> para componentes de \"página completa\"."
+msgstr ""
+"Enrutamiento <s>y cadenas de consulta ✅</s> para componentes de \"página "
+"completa\"."
 
 #: demo/templates/index.html:189
 msgid "Page title and metadata in header."
@@ -1069,6 +1088,30 @@ msgstr "Agrupación de esbuild para que esté libre de npm."
 #: demo/templates/index.html:203
 msgid "Read the Docs to get started"
 msgstr "Lee la documentación para empezar"
+
+#: demo/utils.py:6
+msgid "Discover Tetra"
+msgstr "Descubra Tetra"
+
+#: demo/utils.py:7
+msgid "Install and explore Tetra"
+msgstr "Instalar y explorar Tetra"
+
+#: demo/utils.py:8
+msgid "Decide to build your next startup using Tetra"
+msgstr "Decide construir tu próxima startup usando Tetra"
+
+#: demo/utils.py:9
+msgid "Become a billionaire"
+msgstr "Conviértete en multimillonario"
+
+#: demo/utils.py:10
+msgid "Start a rocket company"
+msgstr "Iniciar una empresa de cohetes"
+
+#: demo/utils.py:11
+msgid "Populate Pluto, it's a much cooler planet than Mars"
+msgstr "Poblar Plutón, es un planeta mucho más frío que Marte."
 
 #: demo/views.py:112
 msgid "Demo"
