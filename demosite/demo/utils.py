@@ -1,13 +1,14 @@
+from django.utils.translation import gettext_lazy as _
 from .models import ToDo
 
 
 to_do_defaults = [
-    (True, "Discover Tetra"),
-    (False, "Install and explore Tetra"),
-    (False, "Decide to build your next startup using Tetra"),
-    (False, "Become a billionaire"),
-    (False, "Start a rocket company"),
-    (False, "Populate Pluto, it's a much cooler planet than Mars"),
+    (True, _("Discover Tetra")),
+    (False, _("Install and explore Tetra")),
+    (False, _("Decide to build your next startup using Tetra")),
+    (False, _("Become a billionaire")),
+    (False, _("Start a rocket company")),
+    (False, _("Populate Pluto, it's a much cooler planet than Mars")),
 ]
 
 
