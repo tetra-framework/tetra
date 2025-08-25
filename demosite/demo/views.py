@@ -8,7 +8,7 @@ from django.http import HttpResponse, Http404
 from django.shortcuts import render
 from django.template import TemplateDoesNotExist, Template, RequestContext
 from django.template.loader import render_to_string
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext as _, get_language
 from markdown.extensions.toc import TocExtension
 
 from .utils import prepopulate_session_to_do
@@ -58,7 +58,12 @@ def examples(request, slug: str = FIRST_SLUG) -> HttpResponse:
         ]
     )
     # first, render the markdown from text.md
-    with open(examples_dir / slug / "text.md") as f:
+    language_code = get_language()
+    md_file_path = examples_dir / slug / f"text.{language_code}.md"
+    if not md_file_path.exists():
+        md_file_path = examples_dir / slug / "text.md"
+
+    with open(md_file_path, encoding="utf-8") as f:
         # assume content has Django template directives, render them first
         content = Template("{% load demo_tags %}" + f.read()).render(
             context=RequestContext(request)
