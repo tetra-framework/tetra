@@ -8,6 +8,7 @@ from django.http import HttpResponse, Http404
 from django.shortcuts import render
 from django.template import TemplateDoesNotExist, Template, RequestContext
 from django.template.loader import render_to_string
+from django.utils.translation import gettext as _
 from markdown.extensions.toc import TocExtension
 
 from .utils import prepopulate_session_to_do
@@ -23,7 +24,7 @@ def home(request) -> HttpResponse:
 
 
 def titlify(slug: str) -> str:
-    return slug.replace("_", " ").title()
+    return _(slug.replace("_", " ").title())
 
 
 def markdown_title(title) -> str:
@@ -88,7 +89,7 @@ def examples(request, slug: str = FIRST_SLUG) -> HttpResponse:
     try:
         demo_html = render_to_string(examples_dir / slug / "demo.html", request=request)
         if demo_html:
-            content += "<hr class='hr'/><h2>Demo</h2>"
+            content += f"<hr class='hr'/><h2>{_('Demo')}</h2>"
             content += demo_html
     except TemplateDoesNotExist:
         pass
