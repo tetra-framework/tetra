@@ -1,32 +1,35 @@
 from django import template
-from django.urls import resolve, reverse
-from django.utils.translation import activate, get_language
+from django.conf import settings
 
 register = template.Library()
 
 
 @register.simple_tag(takes_context=True)
-def translate_url(context, language: str):
+def translate_url(context, target_language: str):
     """
     Given a language code, returns the absolute path of the current page
     in that language.
     Preserves the query string.
     """
-    path = context["request"].path
-    resolver_match = resolve(path)
+    full_path = context["request"].get_full_path()
 
-    current_language = get_language()
-    try:
-        activate(language)
-        url = reverse(
-            resolver_match.view_name,
-            args=resolver_match.args,
-            kwargs=resolver_match.kwargs,
-        )
-    finally:
-        activate(current_language)
+    # Split the path to separate the language prefix from the rest
+    path_parts = full_path.lstrip("/").split("/", 1)
 
-    if context["request"].GET:
-        url += "?" + context["request"].GET.urlencode()
+    # Check if the first part is a valid language code
+    is_prefixed = path_parts[0] in [lang[0] for lang in settings.LANGUAGES]
 
-    return url
+    if is_prefixed:
+        # The current URL is prefixed, e.g., /es/some/path/
+        base_path = path_parts[1] if len(path_parts) > 1 else ""
+    else:
+        # The current URL is not prefixed (it's the default language)
+        base_path = full_path.lstrip("/")
+
+    if (
+        target_language == settings.LANGUAGE_CODE
+        and not settings.PREFIX_DEFAULT_LANGUAGE
+    ):
+        return "/" + base_path
+    else:
+        return f"/{target_language}/{base_path}"
