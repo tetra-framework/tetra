@@ -1,10 +1,16 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.conf import settings
-from django.conf.urls.static import static
+from django.conf.urls.i18n import i18n_patterns
 
-urlpatterns = [
-    path("", include("demo.urls")),
+
+urlpatterns = i18n_patterns(
     path("admin/", admin.site.urls),
+    path("", include("demo.urls")),
+    prefix_default_language=False,  # Remove the prefix for the default language
+)
+
+# The language switcher URL should not be prefixed.
+urlpatterns += [
+    path("i18n/", include("django.conf.urls.i18n")),
     path("tetra/", include("tetra.urls")),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+]

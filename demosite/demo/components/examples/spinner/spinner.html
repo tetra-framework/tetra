@@ -1,3 +1,4 @@
+{% load i18n %}
 <div {% ... attrs %}>
   <!-- spinner within button -->
   <div class="mb-2">
@@ -6,7 +7,7 @@
             tx-indicator="#spinner-inline"
     >
       <span id="spinner-inline" class="spinner-border spinner-border-sm me-2"></span>
-      Load data
+      {% translate "Load data" %}
     </button>
   </div>
 
@@ -16,7 +17,7 @@
             @click="long_lasting_process()"
             tx-indicator="#spinner-external"
     >
-      Load data
+      {% translate "Load data" %}
     </button>
     <span id="spinner-external" class="spinner-border"></span>
   </div>
