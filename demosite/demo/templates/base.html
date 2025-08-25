@@ -100,8 +100,13 @@
             <ul class="dropdown-menu" aria-labelledby="languageDropdown">
                 {% for lang_code, lang_name in available_languages %}
                 <li>
-                    {% get_language_info for lang_code as lang_info %}
-                    <a class="dropdown-item {% if lang_code == LANGUAGE_CODE %}active{% endif %}" href="{% translate_url lang_code %}">{{ lang_info.name_local }}</a>
+                    <form action="{% url 'set_language' %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <input name="next" type="hidden" value="{% translate_url lang_code %}">
+                        <input name="language" type="hidden" value="{{ lang_code }}">
+                        {% get_language_info for lang_code as lang_info %}
+                        <button type="submit" class="dropdown-item {% if lang_code == LANGUAGE_CODE %}active{% endif %}">{{ lang_info.name_local }}</button>
+                    </form>
                 </li>
                 {% endfor %}
             </ul>
