@@ -1,4 +1,4 @@
-{% load demo_tags tetra static %}
+{% load demo_tags tetra static i18n i18n_tags %}
 <!doctype html>
 <html lang="en" class="{% block html_class %}{% endblock %}">
 <head>
@@ -84,9 +84,30 @@
   </main>
 {% endblock %}
 {% block footer %}
-  <footer class="py-3 mt-5 text-center text-muted border-top small">
-    © {% now "Y" %} <a href="https://mobile.twitter.com/samwillis">Sam Willis</a>, Christian González
-  </footer>
+<footer class="py-3 mt-5 text-center text-muted border-top small">
+    <div class="d-flex justify-content-center align-items-center">
+        <div class="me-3">
+            {% now "Y" as current_year %}
+            {% blocktranslate %}© {{ current_year }} <a href="https://mobile.twitter.com/samwillis">Sam Willis</a>, Christian González{% endblocktranslate %}
+        </div>
+
+        {% get_current_language as LANGUAGE_CODE %}
+        {% get_available_languages as available_languages %}
+        <div class="dropdown">
+            <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                {% get_language_info for LANGUAGE_CODE as lang %}{{ lang.name_local }}
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="languageDropdown">
+                {% for lang_code, lang_name in available_languages %}
+                <li>
+                    {% get_language_info for lang_code as lang_info %}
+                    <a class="dropdown-item {% if lang_code == LANGUAGE_CODE %}active{% endif %}" href="{% translate_url lang_code %}">{{ lang_info.name_local }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</footer>
 {% endblock %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js" integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq" crossorigin="anonymous"></script>
 </body>
