@@ -40,12 +40,28 @@ def examples(request, slug: str = FIRST_SLUG) -> HttpResponse:
     # keep Sam's "structure", as we may need it later, when more examples need to be
     # structured into sections
     structure = {}
+    language_code = get_language()
+    md_meta_parser = markdown.Markdown(extensions=["meta"])
     # TODO cache this!
     for entry in os.scandir(examples_dir):
         if entry.name == FIRST_SLUG:
             continue
         if entry.is_dir(follow_symlinks=False):
-            structure[entry.name] = {"slug": entry.name, "title": titlify(entry.name)}
+            example_slug = entry.name
+            title = titlify(example_slug)  # Fallback title
+
+            md_file_path = examples_dir / example_slug / f"text.{language_code}.md"
+            if not md_file_path.exists():
+                md_file_path = examples_dir / example_slug / "text.md"
+
+            if md_file_path.exists():
+                with open(md_file_path, encoding="utf-8") as f:
+                    md_content = f.read()
+                    md_meta_parser.reset()
+                    md_meta_parser.convert(md_content)
+                    if "title" in md_meta_parser.Meta and md_meta_parser.Meta["title"]:
+                        title = " ".join(md_meta_parser.Meta["title"])
+            structure[entry.name] = {"slug": entry.name, "title": title}
 
     if slug not in structure and slug != FIRST_SLUG:
         raise Http404()
@@ -58,7 +74,6 @@ def examples(request, slug: str = FIRST_SLUG) -> HttpResponse:
         ]
     )
     # first, render the markdown from text.md
-    language_code = get_language()
     md_file_path = examples_dir / slug / f"text.{language_code}.md"
     if not md_file_path.exists():
         md_file_path = examples_dir / slug / "text.md"
