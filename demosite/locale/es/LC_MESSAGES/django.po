@@ -760,13 +760,11 @@ msgid "Todo Item CSS"
 msgstr "CSS de Elemento de Tarea"
 
 #: demo/templates/index.html:60
-#, fuzzy
 #| msgid "Todo Item Python"
 msgid "Todo Item Javascript"
 msgstr "Python de Elemento de Tarea"
 
 #: demo/templates/index.html:63
-#, fuzzy
 #| msgid "Todo Item Python"
 msgid "Models Python"
 msgstr "Python de Elemento de Tarea"
@@ -915,9 +913,6 @@ msgid "JS/CSS builds using <a href=\"https://esbuild.github.io\">esbuild</a>"
 msgstr ""
 "Compilaciones JS/CSS usando <a href=\"https://esbuild.github.io\">esbuild</a>"
 
-# Eliminando entradas duplicadas que causaban errores de msgfmt.
-# Las entradas originales en las líneas 743-762 se eliminan.
-# Las entradas correctas ya existen en las líneas 671-697.
 #: demo/templates/index.html:153
 msgid ""
 "Both for development (built into <code>runserver</code>) and production your "
@@ -1027,13 +1022,11 @@ msgid "ModelComponent for bootstrapping standard CRUD interactions."
 msgstr "ModelComponent para iniciar interacciones CRUD estándar."
 
 #: demo/templates/index.html:185
-#, fuzzy
 #| msgid "Syntax highlighting with type annotations"
 msgid "Python type annotations"
 msgstr "Resaltado de sintaxis con anotaciones de tipo"
 
 #: demo/templates/index.html:186
-#, fuzzy
 #| msgid "Integration with Django Messages"
 msgid "Integration with Django Validators"
 msgstr "Integración con Mensajes de Django"
