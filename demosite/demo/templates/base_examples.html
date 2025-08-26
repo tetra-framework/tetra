@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load demo_tags static %}
+{% load demo_tags static i18n %}
 
 {% block title %}{{ block.super }} examples - {{ title }}{% endblock %}
 
@@ -167,32 +167,32 @@
           Alpha v{% tetra_version %}
         </span>
       </span>
-        <button class="navbar-toggler border-0 order-first" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasDocsNav" aria-controls="offcanvasDocsNav" aria-expanded="false" aria-label="Toggle Examples Navigation">
+        <button class="navbar-toggler border-0 order-first" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasDocsNav" aria-controls="offcanvasDocsNav" aria-expanded="false" aria-label="{% translate 'Toggle Examples Navigation' %}">
           <i class="fa-solid fa-bars"></i>
         </button>
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle Navigation">
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{% translate 'Toggle Navigation' %}">
           <i class="fa-solid fa-ellipsis"></i>
         </button>
         <div class="collapse navbar-collapse small fw-semibold" id="navbarSupportedContent">
           <ul class="navbar-nav flex-grow-1">
             <li class="nav-item">
-              <a class="nav-link active" href="{% url 'examples-home' %}">Examples</a>
+              <a class="nav-link active" href="{% url 'examples-home' %}">{% translate "Examples" %}</a>
             </li>
             {#          <li class="nav-item">#}
             {#            <a class="nav-link" href="/#examples">Examples</a>#}
             {#          </li>#}
           </ul>
-          <ul class="navbar-nav flex-end">
+          <ul class="navbar-nav">
             <li class="nav-item">
               <a class="nav-link" href="https://github.com/tetra-framework/tetra">
                 <i class="fa-brands fa-github"></i>
-                <span class="d-inline d-md-none">GitHub</span>
+                <span class="d-inline d-md-none">{% translate "GitHub" %}</span>
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="https://mobile.twitter.com/samwillis">
                 <i class="fa-brands fa-twitter"></i>
-                <span class="d-inline d-md-none">Twitter</span>
+                <span class="d-inline d-md-none">{% translate "Twitter" %}</span>
               </a>
             </li>
           </ul>
@@ -202,9 +202,9 @@
     <div class="container-xxl container-main">
       <div class="d-md-flex justify-content-between examples-content">
         <div class="examples-nav offcanvas-start offcanvas-md pt-md-4" id="offcanvasDocsNav" aria-labelledby="offcanvasDocsNavLabel">
-          <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="offcanvasDocsNavLabel">Browse Examples</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#offcanvasDocsNav" aria-label="Close"></button>
+          <div class="offcanvas-header" data-bs-theme="dark">
+            <h5 class="offcanvas-title" id="offcanvasDocsNavLabel">{% translate "Browse Examples" %}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#offcanvasDocsNav" aria-label="{% translate 'Close' %}"></button>
           </div>
           <div class="offcanvas-body">
             <ul class="list-unstyled">
@@ -234,19 +234,19 @@
 {#              {% endfor %}#}
               <hr class="hr">
               <li class="examples-nav-item my-1 mt-3">
-                <a href="https://tetra.readthedocs.org/">Tetra Docs</a>
+                <a href="https://tetra.readthedocs.org/">{% translate "Tetra Docs" %}</a>
               </li>
               <li class="examples-nav-item my-1">
-                <a href="https://alpinejs.dev">Alpine.js Docs</a>
+                <a href="https://alpinejs.dev">{% translate "Alpine.js Docs" %}</a>
               </li>
               <li class="examples-nav-item my-1">
-                <a href="https://docs.djangoproject.com/">Django Docs</a>
+                <a href="https://docs.djangoproject.com/">{% translate "Django Docs" %}</a>
               </li>
             </ul>
           </div>
         </div>
         <div class="examples-nav order-last toc-outer d-none d-lg-block pt-md-4">
-          <h2 class="h6">On this page</h2>
+          <h2 class="h6">{% translate "On this page" %}</h2>
           {{ toc|safe }}
         </div>
         <div class="main-content mx-md-4 pt-4">

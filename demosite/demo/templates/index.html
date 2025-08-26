@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %}{% load i18n %}
 {% load demo_tags tetra static %}
 
 {% block title %}{{ block.super }} - Full stack reactive component framework for Django using Alpine.js{% endblock %}
@@ -16,44 +16,51 @@
         </span>
       </div>
     </div>
-    <h4 class="display-7">Full stack reactive component framework for <a href="http://djangoproject.com">Django</a> using <a href="https://alpinejs.dev">Alpine.js</a></h4>
+    <h4 class="display-7">{% blocktranslate %}Full stack reactive component framework for <a href="http://djangoproject.com">Django</a> using <a href="https://alpinejs.dev">Alpine.js</a>{% endblocktranslate %}</h4>
     <div class="col-lg-7 mx-auto">
       <p class="lead mb-4">
-        Tetra is a new <mark>full stack component framework</mark> for Django, bridging the gap between your server logic and front end presentation.
-        It uses a <mark>public shared state</mark> and a <mark>resumable server state</mark> to enable <mark>inplace reactive updates</mark>. It also encapsulates your Python, HTML, JavaScript and CSS into one file for <mark>proximity of related concerns</mark>.
+        {% blocktranslate %}Tetra is a new <mark>full stack component framework</mark> for Django, bridging the gap between your server logic and front end presentation.
+        It uses a <mark>public shared state</mark> and a <mark>resumable server state</mark> to enable <mark>inplace reactive updates</mark>. It also encapsulates your Python, HTML, JavaScript and CSS into one file for <mark>proximity of related concerns</mark>.{% endblocktranslate %}
       </p>
       <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
         <a href="#features" class="btn btn-light btn-lg px-4">
-          Features
+          {% translate "Features" %}
         </a>
         <a href="https://tetra.readthedocs.org" class="btn btn-primary btn-lg px-4 gap-3">
           <i class="fa-solid fa-arrow-right"></i>
-          Get Started
+          {% translate "Get Started" %}
         </a>
         <a href="https://github.com/tetra-framework/tetra" class="btn btn-light btn-lg px-4">
           <i class="fa-brands fa-github"></i>
-          GitHub
+          {% translate "GitHub" %}
         </a>
         <a href="/examples" class="btn btn-light btn-lg px-4">
-          Examples
+          {% translate "Examples" %}
         </a>
       </div>
     </div>
   </div>
 
   {% ShowCase %}
-  {% slot title %}See how easy it is to build a <mark>todo list{% endslot %}
-  {% slot code %}
-    {% CodeBlock  file_name="todo_list/__init__.py" language="python" title="Python code" / %}
-    {% CodeBlock file_name="todo_item/__init__.py" language="python" / %}
+  {% slot title %}{% blocktranslate %}See how easy it is to build a <mark>todo list</mark>{% endblocktranslate %}{% endslot %}
+  {% slot code %}{% comment %}The code blocks don't need translation.{% endcomment %}
+    {% translate 'Python code' as python_code_title %}
+    {% CodeBlock  file_name="todo_list/__init__.py" language="python" title=python_code_title / %}
+    {% translate 'Todo Item Python' as todo_item_python_title %}
+    {% CodeBlock file_name="todo_item/__init__.py" language="python" title=todo_item_python_title / %}
 
-    {% CodeBlock title="Template for todo_list" file_name="todo_list/todo_list.html" language="django" / %}
-    {% CodeBlock title="Template for todo_item" file_name="todo_item/todo_item.html" language="django" / %}
+    {% translate 'Template for todo_list' as template_todo_list_title %}
+    {% CodeBlock title=template_todo_list_title file_name="todo_list/todo_list.html" language="django" / %}
+    {% translate 'Template for todo_item' as template_todo_item_title %}
+    {% CodeBlock title=template_todo_item_title file_name="todo_item/todo_item.html" language="django" / %}
 
-    {% CodeBlock title="todo_item css" file_name="todo_item/todo_item.css" language="css" / %}
-    {% CodeBlock title="todo_item Javascript" file_name="todo_item/todo_item.js" language="javascript" / %}
+    {% translate 'Todo Item CSS' as todo_item_css_title %}
+    {% CodeBlock title=todo_item_css_title file_name="todo_item/todo_item.css" language="css" / %}
+    {% translate 'Todo Item Javascript' as todo_item_js_title %}
+    {% CodeBlock title=todo_item_js_title file_name="todo_item/todo_item.js" language="javascript" / %}
 
-    {% CodeBlock title="models.py" file_name="todo_models.py" language="python" / %}
+    {% translate 'Models Python' as models_python_title %}
+    {% CodeBlock title=models_python_title file_name="todo_models.py" language="python" / %}
   {% endslot %}
   {% slot description %}
     {% TodoList / %}
@@ -62,7 +69,7 @@
 
 
   {% ShowCase %}
-  {% slot title %}Or a reactive server rendered search component:{% endslot %}
+  {% slot title %}{% translate "Or a reactive server rendered search component:" %}{% endslot %}
   {% slot code %}
     {% CodeBlock title="reactive_search/__init__.py" file_name="reactive_search.py" language="python" / %}
     {% CodeBlock title="reactive_search/reactive_search.html" file_name="reactive_search.html" language="django" / %}
@@ -75,7 +82,7 @@
 
 
   {% ShowCase %}
-  {% slot title %}Or a counter, but with multiple nested instances.{% endslot %}
+  {% slot title %}{% translate "Or a counter, but with multiple nested instances." %}{% endslot %}
   {% slot code %}
     {% CodeBlock title="components.py" file_name="counter.py" language="python" / %}
     {% CodeBlock title="index.html" file_name="counter.index.html" language="django" / %}
@@ -86,7 +93,7 @@
   {% /ShowCase %}
 
   {% ShowCase %}
-  {% slot title %}Or a simple card, with dynamic content.{% endslot %}
+  {% slot title %}{% translate "Or a simple card, with dynamic content." %}{% endslot %}
   {% slot code %}
     {% CodeBlock title="info_card/__init__.py" file_name="info_card.py" language="python" / %}
     {% CodeBlock title="index.html" file_name="info_card.index.html" language="django" / %}
@@ -99,104 +106,100 @@
 
 
 
-  <h4 class="text-center display-7 my-5" id="features">What does Tetra do?</h4>
+  <h4 class="text-center display-7 my-5" id="features">{% translate "What does Tetra do?" %}</h4>
 
   <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4">
     {% Col %}
     {% slot title %}
-      <a href="http://djangoproject.com">Django</a> on the  backend, <a href="https://alpinejs.dev">Alpine.js</a> in the browser
+      {% blocktranslate %}<a href="http://djangoproject.com">Django</a> on the  backend, <a href="https://alpinejs.dev">Alpine.js</a> in the browser{% endblocktranslate %}
     {% endslot %}
     {% slot default %}
-      Tetra combines the power of Django with Alpine.js to make development easier and  quicker.
+      {% translate "Tetra combines the power of Django with Alpine.js to make development easier and  quicker." %}
     {% endslot %}
     {% /Col %}
-    {% Col title="Component encapsulation" %}
-    Each component combines its Python, HTML, CSS and JavaScript in one place for close proximity of related code.
+    {% Col title=_("Component encapsulation") %}
+    {% translate "Each component combines its Python, HTML, CSS and JavaScript in one place for close proximity of related code." %}
     {% /Col %}
-    {% Col title="Async HTTP calls" %}
-    Server calls are asynchronous, ensuring the frontend remains responsive. Multiple, fast clicks on the same button
-    are not dropped between HTTP calls.
+    {% Col title=_("Async HTTP calls") %}
+    {% translate "Server calls are asynchronous, ensuring the frontend remains responsive. Multiple, fast clicks on the same button are not dropped between HTTP calls." %}
     {% /Col %}
-    {% Col title="Resumable server state" %}
-    The components' full server state is saved between public method calls. This state is <a href="https://tetra.readthedocs.io/en/latest/state-security/">encrypted for security</a>.
+    {% Col title=_("Resumable server state") %}
+    {% blocktranslate %}The components' full server state is saved between public method calls. This state is <a href="https://tetra.readthedocs.io/en/latest/state-security/">encrypted for security</a>.{% endblocktranslate %}
     {% /Col %}
-    {% Col title="Public server methods" %}
-    Methods can be made public, allowing you to easily call them from JS on the front end, resuming the component's state.
+    {% Col title=_("Public server methods") %}
+    {% translate "Methods can be made public, allowing you to easily call them from JS on the front end, resuming the component's state." %}
     {% /Col %}
-    {% Col title="Shared public state" %}
-    Attributes can be decorated to indicate they should be available in the browser as Alpine.js data objects.
+    {% Col title=_("Shared public state") %}
+    {% translate "Attributes can be decorated to indicate they should be available in the browser as Alpine.js data objects." %}
     {% /Col %}
-    {% Col title='Server "watcher" methods' %}
-    Public methods can be instructed to watch a public attribute, enabling reactive re-rendering on the server.
+    {% Col title=_("Server \"watcher\" methods") %}
+    {% translate "Public methods can be instructed to watch a public attribute, enabling reactive re-rendering on the server." %}
     {% /Col %}
-    {% Col title='Inplace updating from the server' %}
-    Server methods can update the rendered component in place. Powered by the Alpine.js morph plugin.
+    {% Col title=_("Inplace updating from the server") %}
+    {% translate "Server methods can update the rendered component in place. Powered by the Alpine.js morph plugin." %}
     {% /Col %}
-    {% Col title='Component library packaging' %}
-    Every component belongs to a "library"; their JS & CSS is packed together for quicker browser downloads.
+    {% Col title=_("Component library packaging") %}
+    {% translate "Every component belongs to a \"library\"; their JS & CSS is packed together for quicker browser downloads." %}
     {% /Col %}
-    {% Col title='Components with overridable blocks' %}
-    Components can have multiple <code>{% verbatim %}{%&nbsp;block(s)&nbsp;%}{% endverbatim  %}</code> which can be overridden when used.
+    {% Col title=_("Components with overridable blocks") %}
+    {% blocktranslate %}Components can have multiple <code>{% endblocktranslate %}{% verbatim %}{%&nbsp;block(s)&nbsp;%}{% endverbatim  %}{% blocktranslate %}</code> which can be overridden when used.{% endblocktranslate %}
     {% /Col %}
-    {% Col title='Inplace updating from the server' %}
+    {% Col %}
     {% slot title %}
-      JS/CSS builds using <a href="https://esbuild.github.io">esbuild</a>
+      {% blocktranslate %}JS/CSS builds using <a href="https://esbuild.github.io">esbuild</a>{% endblocktranslate %}
     {% endslot %}
     {% slot default %}
-      Both for development (built into <code>runserver</code>) and production your JS & CSS is built with esbuild.
+      {% blocktranslate %}Both for development (built into <code>runserver</code>) and production your JS & CSS is built with esbuild.{% endblocktranslate %}
     {% endslot %}
     {% /Col %}
-    {% Col title='Source Maps' %}
-    Source maps are generated during development so that you can track down errors to the original Python files.
+    {% Col title=_("Source Maps") %}
+    {% translate "Source maps are generated during development so that you can track down errors to the original Python files." %}
     {% /Col %}
-    {% Col title='Syntax highlighting with type annotations' %}
-    Tetra uses type annotations to syntax highlight your JS, CSS & HTML in your Python files with a <a href="https://github.com/samwillis/python-inline-source/tree/main/vscode-python-inline-source">VS Code plugin</a>
+    {% Col title=_("Syntax highlighting with type annotations") %}
+    {% blocktranslate %}Tetra uses type annotations to syntax highlight your JS, CSS & HTML in your Python files with a <a href="https://github.com/samwillis/python-inline-source/tree/main/vscode-python-inline-source">VS Code plugin</a>{% endblocktranslate %}
     {% /Col %}
-    {% Col title='Form components' %}
-    A simple replacement for Django's FormView, but due to Tetra's dynamic nature, e.g. a field can change its value or
-    disappear depending on other fields' values.
+    {% Col title=_("Form components") %}
+    {% translate "A simple replacement for Django's FormView, but due to Tetra's dynamic nature, e.g. a field can change its value or disappear depending on other fields' values." %}
     {% /Col %}
-    {% Col title='Event subscriptions' %}
-    Both frontend and backend components can subscribe to JavaScript events, enabling seamless event-driven programming
-    across the full stack.
+    {% Col title=_("Event subscriptions") %}
+    {% translate "Both frontend and backend components can subscribe to JavaScript events, enabling seamless event-driven programming across the full stack." %}
     {% /Col %}
-    {% Col title='File upload/downloads' %}
-    Whenever a form contains a FileField, Tetra makes sure the uploading process works smooth, even with page reloads.
+    {% Col title=_("File upload/downloads") %}
+    {% translate "Whenever a form contains a FileField, Tetra makes sure the uploading process works smooth, even with page reloads." %}
     {% /Col %}
-    {% Col title='Integration with Django Messages' %}
-    Django's messaging framework is deeply integrated into Tetra: Whenever a new message occurs, it is transformed
-    into a JavaScript object and sent as an event that can be subscribed to by any component.
+    {% Col title=_("Integration with Django Messages") %}
+    {% translate "Django's messaging framework is deeply integrated into Tetra: Whenever a new message occurs, it is transformed into a JavaScript object and sent as an event that can be subscribed to by any component." %}
     {% /Col %}
-    {% Col title='Loading indicators' %}
-    While an AJAX request is in flight, you can show a loading indicator, globally, per component, or per call.
+    {% Col title=_("Loading indicators") %}
+    {% translate "While an AJAX request is in flight, you can show a loading indicator, globally, per component, or per call." %}
     {% /Col %}
 
   </div>
 
-  <h4 class="text-center display-7 my-5" id="features">
-    More features are planned, including:
+  <h4 class="text-center display-7 my-5" id="features-planned">
+    {% translate "More features are planned, including:" %}
   </h4>
   <p id="plans" class="text-center max-width mt-3">
-    •&nbsp;ModelComponent for bootstrapping standard CRUD interactions. &nbsp;
-    •&nbsp;Python type annotations &nbsp;
-    •&nbsp;Integration with Django Validators &nbsp;
-    •&nbsp;Alpine.js directives for component state (<s>loading ✅</s>, offline  etc.) &nbsp;
-    •&nbsp;Routing <s>and query strings ✅</s> for "whole page" components. &nbsp;
-    •&nbsp;Page title and metadata in header. &nbsp;
-    •&nbsp;Pagination and Infinity Scroll components. &nbsp;
-    •&nbsp;PostCSS/SASS/etc. support. &nbsp;
-    •&nbsp;CSS scoped to a component. &nbsp;
-    •&nbsp;Websocket/SSE components enabling realtime updates. &nbsp;
-    •&nbsp;Redirect responses. &nbsp;
-    •&nbsp;Additional authentication tools. &nbsp;
-    •&nbsp;Integration with UI & component toolkits. &nbsp;
-    •&nbsp;Bundling of esbuild to be npm free. &nbsp;
+    •&nbsp;{% translate "ModelComponent for bootstrapping standard CRUD interactions." %} &nbsp;
+    •&nbsp;{% translate "Python type annotations" %} &nbsp;
+    •&nbsp;{% translate "Integration with Django Validators" %} &nbsp;
+    •&nbsp;{% blocktranslate %}Alpine.js directives for component state (<s>loading ✅</s>, offline  etc.){% endblocktranslate %} &nbsp;
+    •&nbsp;{% blocktranslate %}Routing <s>and query strings ✅</s> for "whole page" components.{% endblocktranslate %} &nbsp;
+    •&nbsp;{% translate "Page title and metadata in header." %} &nbsp;
+    •&nbsp;{% translate "Pagination and Infinity Scroll components." %} &nbsp;
+    •&nbsp;{% translate "PostCSS/SASS/etc. support." %} &nbsp;
+    •&nbsp;{% translate "CSS scoped to a component." %} &nbsp;
+    •&nbsp;{% translate "Websocket/SSE components enabling realtime updates." %} &nbsp;
+    •&nbsp;{% translate "Redirect responses." %} &nbsp;
+    •&nbsp;{% translate "Additional authentication tools." %} &nbsp;
+    •&nbsp;{% translate "Integration with UI & component toolkits." %} &nbsp;
+    •&nbsp;{% translate "Bundling of esbuild to be npm free." %} &nbsp;
   </p>
 
   <div class="text-center mt-4">
     <a href="https://tetra.readthedocs.org" class="btn btn-primary btn-lg px-4 gap-3">
       <i class="fa-solid fa-arrow-right"></i>
-      Read the Docs to get started
+      {% translate "Read the Docs to get started" %}
     </a>
   </div>
 

@@ -1,3 +1,4 @@
+{% load i18n %}
 <div {% ... attrs %}>
   {% if edit_mode %}
     <div class='input-group'>
@@ -10,6 +11,6 @@
               @click="save()">Save</button>
     </div>
   {% else %}
-    <div @click="edit()" role="button">Name: {{name}}</div>
+    <div @click="edit()" role="button">{% translate "Name:" %} {{name}}</div>
   {% endif %}
 </div>

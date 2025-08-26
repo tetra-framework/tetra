@@ -1,11 +1,12 @@
 from sourcetypes import django_html
+from django.utils.translation import gettext_lazy as _
 
 from tetra import Component, public
 
 
 class InfoCard(Component):
-    title: str = "I'm so excited!"
-    content: str = "We got news for you."
+    title: str = _("I'm so excited!")
+    content: str = _("We got news for you.")
     name: str = public("")
 
     @public
@@ -15,13 +16,14 @@ class InfoCard(Component):
     @public
     def done(self):
         print("User clicked on OK, username:", self.name)
-        self.content = f"Hi { self.name }! No further news."
+        self.content = _("Hi {name}! No further news.").format(name=self.name)
 
     # language=html
     template: django_html = """
+    {% load i18n %}
     <div class="card text-white bg-secondary mb-3" style="max-width: 18rem;">
       <div class="card-header d-flex justify-content-between">
-        <h3>Information</h3>
+        <h3>{% translate "Information" %}</h3>
         <button class="btn btn-sm btn-warning" @click="_removeComponent(
         )"><i class="fa fa-x"></i></button>
       </div>
@@ -32,17 +34,17 @@ class InfoCard(Component):
           {{ content }}
         </p>
         <p x-show="!name">
-          Enter your name below!
+          {% translate "Enter your name below!" %}
         </p>
         <p x-show="name">
-            Thanks, {% livevar name %}
+            {% translate "Thanks," %} {% livevar name %}
         </p>
         <div class="input-group mb-3">
 
           <input 
             type="text" 
             class="form-control" 
-            placeholder="Your name" 
+            placeholder="{% translate 'Your name' %}"
             @keyup.enter="done()"
             x-model="name">
         </div>
@@ -50,7 +52,7 @@ class InfoCard(Component):
             class="btn btn-primary" 
             @click="done()" 
             :disabled="name == ''">
-            Ok
+            {% translate "Ok" %}
         </button>
       </div>
       

@@ -1,0 +1,1134 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-08-25 11:42+0200\n"
+"PO-Revision-Date: 2024-05-16 10:00+0000\n"
+"Last-Translator: Gemini Code Assist <gemini@google.com>\n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+
+#: demo/components/default/counter/counter.html:4
+#: demo/components/examples/counter/counter.html:4
+msgid "Count"
+msgstr "Contador"
+
+#: demo/components/default/counter/counter.html:5
+msgid "Sum"
+msgstr "Suma"
+
+#: demo/components/default/counter/counter.html:6
+#: demo/components/examples/counter/counter.html:5
+msgid "Decrement"
+msgstr "Decrementar"
+
+#: demo/components/default/counter/counter.html:7
+#: demo/components/examples/counter/counter.html:6
+msgid "Increment"
+msgstr "Incrementar"
+
+#: demo/components/default/info_card/__init__.py:8
+#: demo/templates/info_card.py:8
+msgid "I'm so excited!"
+msgstr "¡Estoy muy emocionado!"
+
+#: demo/components/default/info_card/__init__.py:9
+#: demo/templates/info_card.py:9
+msgid "We got news for you."
+msgstr "Tenemos noticias para ti."
+
+#: demo/components/default/info_card/__init__.py:19
+#: demo/templates/info_card.py:19
+#, python-brace-format
+msgid "Hi {name}! No further news."
+msgstr "¡Hola {name}! No hay más noticias."
+
+#: demo/components/default/reactive_search/reactive_search.html:4
+#: demo/templates/reactive_search.html:4
+msgid "Search for an 80s movie..."
+msgstr "Busca una película de los 80..."
+
+#: demo/components/default/todo_list/todo_list.html:4
+msgid "New task..."
+msgstr "Nueva tarea..."
+
+#: demo/components/default/todo_list/todo_list.html:5
+msgid "Add"
+msgstr "Añadir"
+
+#: demo/components/examples/click_to_edit/click_to_edit.html:14
+msgid "Name:"
+msgstr "Nombre:"
+
+#: demo/components/examples/delete_row/delete_row.html:5
+msgid "Delete"
+msgstr ""
+
+#: demo/components/examples/disable_button/disable_button.html:4
+msgid "Submit"
+msgstr "Enviar"
+
+#: demo/components/examples/spinner/spinner.html:10
+#: demo/components/examples/spinner/spinner.html:20
+msgid "Load data"
+msgstr "Cargar datos"
+
+#: demo/movies.py:4
+msgid "A Christmas Story"
+msgstr "Una historia de Navidad"
+
+#: demo/movies.py:5
+msgid "A Fish Called Wanda"
+msgstr "Un pez llamado Wanda"
+
+#: demo/movies.py:6
+msgid "A Nightmare on Elm Street"
+msgstr "Pesadilla en Elm Street"
+
+#: demo/movies.py:7
+msgid "Adventures in Babysitting"
+msgstr "Aventuras en la gran ciudad"
+
+#: demo/movies.py:8
+msgid "After Hours"
+msgstr "Jo, qué noche"
+
+#: demo/movies.py:9
+msgid "Airplane!"
+msgstr "¡Aterriza como puedas!"
+
+#: demo/movies.py:10
+msgid "Akira"
+msgstr "Akira"
+
+#: demo/movies.py:11
+msgid "Amadeus"
+msgstr "Amadeus"
+
+#: demo/movies.py:12
+msgid "Au Revoir, les enfants"
+msgstr "Adiós, muchachos"
+
+#: demo/movies.py:13
+msgid "Baby Boom"
+msgstr "Baby Boom"
+
+#: demo/movies.py:14
+msgid "Back to the Future"
+msgstr "Regreso al futuro"
+
+#: demo/movies.py:15
+msgid "Batman"
+msgstr "Batman"
+
+#: demo/movies.py:16
+msgid "Beetlejuice"
+msgstr "Bitelchús"
+
+#: demo/movies.py:17
+msgid "Better Off Dead"
+msgstr "Mejor muerto"
+
+#: demo/movies.py:18
+msgid "Beverly Hills Cop"
+msgstr "Superdetective en Hollywood"
+
+#: demo/movies.py:19
+msgid "Big Trouble in Little China"
+msgstr "Golpe en la pequeña China"
+
+#: demo/movies.py:20
+msgid "Big"
+msgstr "Big"
+
+#: demo/movies.py:21
+msgid "Bill & Ted's Excellent Adventure"
+msgstr "Las alucinantes aventuras de Bill y Ted"
+
+#: demo/movies.py:22
+msgid "Blade Runner"
+msgstr "Blade Runner"
+
+#: demo/movies.py:23
+msgid "Blue Velvet"
+msgstr "Terciopelo azul"
+
+#: demo/movies.py:24
+msgid "Body Heat"
+msgstr "Fuego en el cuerpo"
+
+#: demo/movies.py:25
+msgid "Broadcast News"
+msgstr "Al filo de la noticia"
+
+#: demo/movies.py:26
+msgid "Caddyshack"
+msgstr "El club de los chalados"
+
+#: demo/movies.py:27
+msgid "Coming to America"
+msgstr "El príncipe de Zamunda"
+
+#: demo/movies.py:28
+msgid "Commando"
+msgstr "Commando"
+
+#: demo/movies.py:29
+msgid "Dead Poets Society"
+msgstr "El club de los poetas muertos"
+
+#: demo/movies.py:30
+msgid "Desperately Seeking Susan"
+msgstr "Buscando a Susan desesperadamente"
+
+#: demo/movies.py:31
+msgid "Die Hard"
+msgstr "Jungla de cristal"
+
+#: demo/movies.py:32
+msgid "Dirty Dancing"
+msgstr "Dirty Dancing"
+
+#: demo/movies.py:33
+msgid "Do the Right Thing"
+msgstr "Haz lo que debas"
+
+#: demo/movies.py:34
+msgid "Dragonslayer"
+msgstr "El dragón del lago de fuego"
+
+#: demo/movies.py:35
+msgid "Drugstore Cowboy"
+msgstr "Drugstore Cowboy"
+
+#: demo/movies.py:36
+msgid "E.T. the Extra-Terrestrial"
+msgstr "E.T., el extraterrestre"
+
+#: demo/movies.py:37
+msgid "Eddie Murphy: Delirious"
+msgstr "Eddie Murphy: Delirious"
+
+#: demo/movies.py:38
+msgid "Escape From New York"
+msgstr "1997: Rescate en Nueva York"
+
+#: demo/movies.py:39
+msgid "Evil Dead 2"
+msgstr "Evil Dead II"
+
+#: demo/movies.py:40
+msgid "Fast Times at Ridgemont High"
+msgstr "Aquel excitante curso"
+
+#: demo/movies.py:41
+msgid "Ferris Bueller's Day Off"
+msgstr "Todo en un día"
+
+#: demo/movies.py:42
+msgid "Field of Dreams"
+msgstr "Campo de sueños"
+
+#: demo/movies.py:43
+msgid "Flashdance"
+msgstr "Flashdance"
+
+#: demo/movies.py:44
+msgid "Flight of the Navigator"
+msgstr "El vuelo del navegante"
+
+#: demo/movies.py:45
+msgid "Footloose"
+msgstr "Footloose"
+
+#: demo/movies.py:46
+msgid "Friday the 13th"
+msgstr "Viernes 13"
+
+#: demo/movies.py:47
+msgid "Full Metal Jacket"
+msgstr "La chaqueta metálica"
+
+#: demo/movies.py:48
+msgid "Ghostbusters"
+msgstr "Los Cazafantasmas"
+
+#: demo/movies.py:49
+msgid "Grave of the Fireflies"
+msgstr "La tumba de las luciérnagas"
+
+#: demo/movies.py:50
+msgid "Gremlins"
+msgstr "Gremlins"
+
+#: demo/movies.py:51
+msgid "Hannah and Her Sisters"
+msgstr "Hannah y sus hermanas"
+
+#: demo/movies.py:52
+msgid "Heathers"
+msgstr "Escuela de jóvenes asesinos"
+
+#: demo/movies.py:53
+msgid "Highlander"
+msgstr "Los inmortales"
+
+#: demo/movies.py:54
+msgid "Indiana Jones and the Last Crusade"
+msgstr "Indiana Jones y la última cruzada"
+
+#: demo/movies.py:55
+msgid "Indiana Jones and the Temple of Doom"
+msgstr "Indiana Jones y el templo maldito"
+
+#: demo/movies.py:56
+msgid "Krush Groove"
+msgstr "Krush Groove"
+
+#: demo/movies.py:57
+msgid "Labyrinth"
+msgstr "Dentro del laberinto"
+
+#: demo/movies.py:58
+msgid "Ladyhawke"
+msgstr "Lady Halcón"
+
+#: demo/movies.py:59
+msgid "Lethal Weapon"
+msgstr "Arma letal"
+
+#: demo/movies.py:60
+msgid "Little Shop of Horrors"
+msgstr "La pequeña tienda de los horrores"
+
+#: demo/movies.py:61
+msgid "Lost in America"
+msgstr "Perdidos en América"
+
+#: demo/movies.py:62
+msgid "Mad Max 2"
+msgstr "Mad Max 2: El guerrero de la carretera"
+
+#: demo/movies.py:63
+msgid "Moonstruck"
+msgstr "Hechizo de luna"
+
+#: demo/movies.py:64
+msgid "My Left Foot"
+msgstr "Mi pie izquierdo"
+
+#: demo/movies.py:65
+msgid "My Life as a Dog"
+msgstr "Mi vida como un perro"
+
+#: demo/movies.py:66
+msgid "My Neighbor Totoro"
+msgstr "Mi vecino Totoro"
+
+#: demo/movies.py:67
+msgid "Mystery Train"
+msgstr "Mystery Train"
+
+#: demo/movies.py:68
+msgid "Mystic Pizza"
+msgstr "Mystic Pizza"
+
+#: demo/movies.py:69
+msgid "National Lampoon's Vacation"
+msgstr "Las vacaciones de una chiflada familia americana"
+
+#: demo/movies.py:70
+msgid "Near Dark"
+msgstr "Los viajeros de la noche"
+
+#: demo/movies.py:71
+msgid "Paris, Texas"
+msgstr "Paris, Texas"
+
+#: demo/movies.py:72
+msgid "Planes, Trains and Automobiles"
+msgstr "Mejor solo que mal acompañado"
+
+#: demo/movies.py:73
+msgid "Platoon"
+msgstr "Platoon"
+
+#: demo/movies.py:74
+msgid "Poltergeist"
+msgstr "Poltergeist"
+
+#: demo/movies.py:75
+msgid "Predator"
+msgstr "Depredador"
+
+#: demo/movies.py:76
+msgid "Pretty in Pink"
+msgstr "La chica de rosa"
+
+#: demo/movies.py:77
+msgid "Purple Rain"
+msgstr "Purple Rain"
+
+#: demo/movies.py:78
+msgid "Raging Bull"
+msgstr "Toro salvaje"
+
+#: demo/movies.py:79
+msgid "Raiders of the Lost Ark"
+msgstr "En busca del arca perdida"
+
+#: demo/movies.py:80
+msgid "Raising Arizona"
+msgstr "Arizona Baby"
+
+#: demo/movies.py:81
+msgid "Ran"
+msgstr "Ran"
+
+#: demo/movies.py:82
+msgid "Re-Animator"
+msgstr "Re-Animator"
+
+#: demo/movies.py:83
+msgid "Real Genius"
+msgstr "Genio y figura"
+
+#: demo/movies.py:84
+msgid "Repo Man"
+msgstr "Repo Man"
+
+#: demo/movies.py:85
+msgid "Return to Oz"
+msgstr "Oz, un mundo fantástico"
+
+#: demo/movies.py:86
+msgid "Revenge of the Nerds"
+msgstr "La venganza de los nerds"
+
+#: demo/movies.py:87
+msgid "Risky Business"
+msgstr "Risky Business"
+
+#: demo/movies.py:88
+msgid "RoboCop"
+msgstr "RoboCop"
+
+#: demo/movies.py:89
+msgid "Say Anything..."
+msgstr "Un gran amor"
+
+#: demo/movies.py:90
+msgid "Scanners"
+msgstr "Scanners"
+
+#: demo/movies.py:91
+msgid "Scarface"
+msgstr "Scarface"
+
+#: demo/movies.py:92
+msgid "Short Circuit"
+msgstr "Cortocircuito"
+
+#: demo/movies.py:93
+msgid "Sid & Nancy"
+msgstr "Sid y Nancy"
+
+#: demo/movies.py:94
+msgid "Sixteen Candles"
+msgstr "Dieciséis velas"
+
+#: demo/movies.py:95
+msgid "Sleepaway Camp"
+msgstr "Campamento sangriento"
+
+#: demo/movies.py:96
+msgid "Spaceballs"
+msgstr "Spaceballs"
+
+#: demo/movies.py:97
+msgid "St. Elmo's Fire"
+msgstr "St. Elmo, punto de encuentro"
+
+#: demo/movies.py:98
+msgid "Stand by Me"
+msgstr "Cuenta conmigo"
+
+#: demo/movies.py:99
+msgid "Star Wars: Episode V -- The Empire Strikes Back"
+msgstr "Star Wars: Episodio V - El Imperio contraataca"
+
+#: demo/movies.py:100
+msgid "Star Wars: Episode VI -- Return of the Jedi"
+msgstr "Star Wars: Episodio VI - El retorno del Jedi"
+
+#: demo/movies.py:101
+msgid "Steel Magnolias"
+msgstr "Magnolias de acero"
+
+#: demo/movies.py:102
+msgid "Stop Making Sense"
+msgstr "Stop Making Sense"
+
+#: demo/movies.py:103
+msgid "Stripes"
+msgstr "El pelotón chiflado"
+
+#: demo/movies.py:104
+msgid "Terms of Endearment"
+msgstr "La fuerza del cariño"
+
+#: demo/movies.py:105
+msgid "The Adventures of Buckaroo Banzai Across the Eighth Dimension"
+msgstr "Las aventuras de Buckaroo Banzai a través de la octava dimensión"
+
+#: demo/movies.py:106
+msgid "The Blues Brothers"
+msgstr "Granujas a todo ritmo"
+
+#: demo/movies.py:107
+msgid "The Boat"
+msgstr "El submarino"
+
+#: demo/movies.py:108
+msgid "The Breakfast Club"
+msgstr "El club de los cinco"
+
+#: demo/movies.py:109
+msgid "The Color Purple"
+msgstr "El color púrpura"
+
+#: demo/movies.py:110
+msgid "The Goonies"
+msgstr "Los Goonies"
+
+#: demo/movies.py:111
+msgid "The Karate Kid"
+msgstr "Karate Kid"
+
+#: demo/movies.py:112
+msgid "The Killer"
+msgstr "The Killer"
+
+#: demo/movies.py:113
+msgid "The Land Before Time"
+msgstr "En busca del valle encantado"
+
+#: demo/movies.py:114
+msgid "The Last Starfighter"
+msgstr "El último guerrero espacial"
+
+#: demo/movies.py:115
+msgid "The Little Mermaid"
+msgstr "La Sirenita"
+
+#: demo/movies.py:116
+msgid "The Lost Boys"
+msgstr "Jóvenes ocultos"
+
+#: demo/movies.py:117
+msgid "The Naked Gun"
+msgstr "Agárralo como puedas"
+
+#: demo/movies.py:118
+msgid "The Neverending Story"
+msgstr "La historia interminable"
+
+#: demo/movies.py:119
+msgid "The Princess Bride"
+msgstr "La princesa prometida"
+
+#: demo/movies.py:120
+msgid "The Return of the Living Dead"
+msgstr "El regreso de los muertos vivientes"
+
+#: demo/movies.py:121
+msgid "The Shining"
+msgstr "El resplandor"
+
+#: demo/movies.py:122
+msgid "The Terminator"
+msgstr "Terminator"
+
+#: demo/movies.py:123
+msgid "The Thing"
+msgstr "La cosa"
+
+#: demo/movies.py:124
+msgid "The Toxic Avenger"
+msgstr "El Vengador Tóxico"
+
+#: demo/movies.py:125
+msgid "The Transformers: The Movie"
+msgstr "Transformers: La película"
+
+#: demo/movies.py:126
+msgid "The Untouchables"
+msgstr "Los intocables de Eliot Ness"
+
+#: demo/movies.py:127
+msgid "They Live"
+msgstr "Están vivos"
+
+#: demo/movies.py:128
+msgid "This Is Spinal Tap"
+msgstr "This Is Spinal Tap"
+
+#: demo/movies.py:129
+msgid "Time Bandits"
+msgstr "Los héroes del tiempo"
+
+#: demo/movies.py:130
+msgid "To Live and Die in L.A."
+msgstr "Vivir y morir en Los Ángeles"
+
+#: demo/movies.py:131
+msgid "Tootsie"
+msgstr "Tootsie"
+
+#: demo/movies.py:132
+msgid "Top Gun"
+msgstr "Top Gun"
+
+#: demo/movies.py:133
+msgid "Trading Places"
+msgstr "De mendigo a millonario"
+
+#: demo/movies.py:134
+msgid "Tron"
+msgstr "Tron"
+
+#: demo/movies.py:135
+msgid "UHF"
+msgstr "UHF"
+
+#: demo/movies.py:136
+msgid "Valley Girl"
+msgstr "La chica del valle"
+
+#: demo/movies.py:137
+msgid "Wall Street"
+msgstr "Wall Street"
+
+#: demo/movies.py:138
+msgid "WarGames"
+msgstr "Juegos de guerra"
+
+#: demo/movies.py:139
+msgid "Weird Science"
+msgstr "Ciencia extraña"
+
+#: demo/movies.py:140
+msgid "When Harry Met Sally..."
+msgstr "Cuando Harry encontró a Sally..."
+
+#: demo/movies.py:141
+msgid "Who Framed Roger Rabbit"
+msgstr "¿Quién engañó a Roger Rabbit?"
+
+#: demo/movies.py:142
+msgid "Willow"
+msgstr "Willow"
+
+#: demo/movies.py:143
+msgid "Working Girl"
+msgstr "Armas de mujer"
+
+#: demo/templates/base.html:91
+#, python-format
+msgid ""
+"© %(current_year)s <a href=\"https://mobile.twitter.com/samwillis\">Sam "
+"Willis</a>, Christian González"
+msgstr ""
+"© %(current_year)s <a href=\"https://mobile.twitter.com/samwillis\">Sam "
+"Willis</a>, Christian González"
+
+#: demo/templates/base_examples.html:170
+msgid "Toggle Examples Navigation"
+msgstr "Alternar Navegación de Ejemplos"
+
+#: demo/templates/base_examples.html:173
+msgid "Toggle Navigation"
+msgstr "Alternar Navegación"
+
+#: demo/templates/base_examples.html:179 demo/templates/index.html:38
+msgid "Examples"
+msgstr "Ejemplos"
+
+#: demo/templates/base_examples.html:189 demo/templates/index.html:35
+msgid "GitHub"
+msgstr "GitHub"
+
+#: demo/templates/base_examples.html:195
+msgid "Twitter"
+msgstr "Twitter"
+
+#: demo/templates/base_examples.html:206
+msgid "Browse Examples"
+msgstr "Explorar Ejemplos"
+
+#: demo/templates/base_examples.html:207
+msgid "Close"
+msgstr "Cerrar"
+
+#: demo/templates/base_examples.html:237
+msgid "Tetra Docs"
+msgstr "Docs de Tetra"
+
+#: demo/templates/base_examples.html:240
+msgid "Alpine.js Docs"
+msgstr "Docs de Alpine.js"
+
+#: demo/templates/base_examples.html:243
+msgid "Django Docs"
+msgstr "Docs de Django"
+
+#: demo/templates/base_examples.html:249
+msgid "On this page"
+msgstr "En esta página"
+
+#: demo/templates/examples/click_to_edit/demo.html:4
+msgid "Click the line below to start editing."
+msgstr "Haga clic en la línea a continuación para comenzar a editar."
+
+#: demo/templates/index.html:19
+msgid ""
+"Full stack reactive component framework for <a href=\"http://"
+"djangoproject.com\">Django</a> using <a href=\"https://"
+"alpinejs.dev\">Alpine.js</a>"
+msgstr ""
+"Framework de componentes reactivos full-stack para <a href=\"http://"
+"djangoproject.com\">Django</a> usando <a href=\"https://"
+"alpinejs.dev\">Alpine.js</a>"
+
+#: demo/templates/index.html:22
+msgid ""
+"Tetra is a new <mark>full stack component framework</mark> for Django, "
+"bridging the gap between your server logic and front end presentation.\n"
+"        It uses a <mark>public shared state</mark> and a <mark>resumable "
+"server state</mark> to enable <mark>inplace reactive updates</mark>. It also "
+"encapsulates your Python, HTML, JavaScript and CSS into one file for "
+"<mark>proximity of related concerns</mark>."
+msgstr ""
+"Tetra es un nuevo <mark>framework de componentes full-stack</mark> para "
+"Django, que cierra la brecha entre la lógica de tu servidor y la "
+"presentación del frontend.\n"
+"        Utiliza un <mark>estado público compartido</mark> y un <mark>estado "
+"de servidor reanudable</mark> para permitir <mark>actualizaciones reactivas "
+"en el sitio</mark>. También encapsula tu Python, HTML, JavaScript y CSS en "
+"un solo archivo para <mark>mantener la proximidad de los elementos "
+"relacionados</mark>."
+
+#: demo/templates/index.html:27
+msgid "Features"
+msgstr "Características"
+
+#: demo/templates/index.html:31
+msgid "Get Started"
+msgstr "Comenzar"
+
+#: demo/templates/index.html:45
+msgid "See how easy it is to build a <mark>todo list</mark>"
+msgstr "Mira lo fácil que es construir una <mark>lista de tareas</mark>"
+
+#: demo/templates/index.html:48
+msgid "Python code"
+msgstr "Código Python"
+
+#: demo/templates/index.html:50
+msgid "Todo Item Python"
+msgstr "Python de Elemento de Tarea"
+
+#: demo/templates/index.html:53
+msgid "Template for todo_list"
+msgstr "Plantilla para lista de tareas"
+
+#: demo/templates/index.html:55
+msgid "Template for todo_item"
+msgstr "Plantilla para elemento de tarea"
+
+#: demo/templates/index.html:58
+msgid "Todo Item CSS"
+msgstr "CSS de Elemento de Tarea"
+
+#: demo/templates/index.html:60
+#| msgid "Todo Item Python"
+msgid "Todo Item Javascript"
+msgstr "Python de Elemento de Tarea"
+
+#: demo/templates/index.html:63
+#| msgid "Todo Item Python"
+msgid "Models Python"
+msgstr "Python de Elemento de Tarea"
+
+#: demo/templates/index.html:73
+msgid "Or a reactive server rendered search component:"
+msgstr "O un componente de búsqueda reactiva renderizado en el servidor:"
+
+#: demo/templates/index.html:86
+msgid "Or a counter, but with multiple nested instances."
+msgstr "O un contador, pero con múltiples instancias anidadas."
+
+#: demo/templates/index.html:97
+msgid "Or a simple card, with dynamic content."
+msgstr "O una tarjeta simple, con contenido dinámico."
+
+#: demo/templates/index.html:110
+msgid "What does Tetra do?"
+msgstr "¿Qué hace Tetra?"
+
+#: demo/templates/index.html:115
+msgid ""
+"<a href=\"http://djangoproject.com\">Django</a> on the  backend, <a "
+"href=\"https://alpinejs.dev\">Alpine.js</a> in the browser"
+msgstr ""
+"<a href=\"http://djangoproject.com\">Django</a> en el backend, <a "
+"href=\"https://alpinejs.dev\">Alpine.js</a> en el navegador"
+
+#: demo/templates/index.html:118
+msgid ""
+"Tetra combines the power of Django with Alpine.js to make development easier "
+"and  quicker."
+msgstr ""
+"Tetra combina el poder de Django con Alpine.js para hacer el desarrollo más "
+"fácil y rápido."
+
+#: demo/templates/index.html:121
+msgid "Component encapsulation"
+msgstr "Encapsulación de componentes"
+
+#: demo/templates/index.html:122
+msgid ""
+"Each component combines its Python, HTML, CSS and JavaScript in one place "
+"for close proximity of related code."
+msgstr ""
+"Cada componente combina su Python, HTML, CSS y JavaScript en un solo lugar "
+"para mantener la proximidad del código relacionado."
+
+#: demo/templates/index.html:124
+msgid "Async HTTP calls"
+msgstr "Llamadas HTTP asíncronas"
+
+#: demo/templates/index.html:125
+msgid ""
+"Server calls are asynchronous, ensuring the frontend remains responsive. "
+"Multiple, fast clicks on the same button are not dropped between HTTP calls."
+msgstr ""
+"Las llamadas al servidor son asíncronas, asegurando que el frontend se "
+"mantenga receptivo. Múltiples clics rápidos en el mismo botón no se pierden "
+"entre llamadas HTTP."
+
+#: demo/templates/index.html:127
+msgid "Resumable server state"
+msgstr "Estado de servidor reanudable"
+
+#: demo/templates/index.html:128
+msgid ""
+"The components' full server state is saved between public method calls. This "
+"state is <a href=\"https://tetra.readthedocs.io/en/latest/state-security/"
+"\">encrypted for security</a>."
+msgstr ""
+"El estado completo del servidor de los componentes se guarda entre llamadas "
+"a métodos públicos. Este estado está <a href=\"https://tetra.readthedocs.io/"
+"en/latest/state-security/\">cifrado por seguridad</a>."
+
+#: demo/templates/index.html:130
+msgid "Public server methods"
+msgstr "Métodos de servidor públicos"
+
+#: demo/templates/index.html:131
+msgid ""
+"Methods can be made public, allowing you to easily call them from JS on the "
+"front end, resuming the component's state."
+msgstr ""
+"Los métodos pueden hacerse públicos, permitiendo llamarlos fácilmente desde "
+"JS en el frontend, reanudando el estado del componente."
+
+#: demo/templates/index.html:133
+msgid "Shared public state"
+msgstr "Estado público compartido"
+
+#: demo/templates/index.html:134
+msgid ""
+"Attributes can be decorated to indicate they should be available in the "
+"browser as Alpine.js data objects."
+msgstr ""
+"Los atributos pueden ser decorados para indicar que deben estar disponibles "
+"en el navegador como objetos de datos de Alpine.js."
+
+#: demo/templates/index.html:136
+msgid "Server \"watcher\" methods"
+msgstr "Métodos \"watcher\" del servidor"
+
+#: demo/templates/index.html:137
+msgid ""
+"Public methods can be instructed to watch a public attribute, enabling "
+"reactive re-rendering on the server."
+msgstr ""
+"Los métodos públicos pueden ser instruidos para observar un atributo "
+"público, permitiendo la re-renderización reactiva en el servidor."
+
+#: demo/templates/index.html:139
+msgid "Inplace updating from the server"
+msgstr "Actualización en el sitio desde el servidor"
+
+#: demo/templates/index.html:140
+msgid ""
+"Server methods can update the rendered component in place. Powered by the "
+"Alpine.js morph plugin."
+msgstr ""
+"Los métodos del servidor pueden actualizar el componente renderizado en el "
+"sitio. Impulsado por el plugin morph de Alpine.js."
+
+#: demo/templates/index.html:142
+msgid "Component library packaging"
+msgstr "Empaquetado de la librería de componentes"
+
+#: demo/templates/index.html:143
+msgid "Every component belongs to a \\"
+msgstr "Cada componente pertenece a un \\"
+
+#: demo/templates/index.html:145
+msgid "Components with overridable blocks"
+msgstr "Componentes con bloques sobreescribibles"
+
+#: demo/templates/index.html:146
+msgid "Components can have multiple <code>"
+msgstr "Componentes pueden tener múltiples <code>"
+
+#: demo/templates/index.html:146
+msgid "</code> which can be overridden when used."
+msgstr "</code> que pueden ser sobreescritos cuando se usan."
+
+#: demo/templates/index.html:150
+msgid "JS/CSS builds using <a href=\"https://esbuild.github.io\">esbuild</a>"
+msgstr ""
+"Compilaciones JS/CSS usando <a href=\"https://esbuild.github.io\">esbuild</a>"
+
+#: demo/templates/index.html:153
+msgid ""
+"Both for development (built into <code>runserver</code>) and production your "
+"JS & CSS is built with esbuild."
+msgstr ""
+"Tanto para desarrollo (integrado en <code>runserver</code>) como para "
+"producción, tu JS y CSS se compila con esbuild."
+
+#: demo/templates/index.html:156
+msgid "Source Maps"
+msgstr "Mapas de origen"
+
+#: demo/templates/index.html:157
+msgid ""
+"Source maps are generated during development so that you can track down "
+"errors to the original Python files."
+msgstr ""
+"Los mapas de origen se generan durante el desarrollo para que puedas "
+"rastrear errores hasta los archivos Python originales."
+
+#: demo/templates/index.html:159
+msgid "Syntax highlighting with type annotations"
+msgstr "Resaltado de sintaxis con anotaciones de tipo"
+
+#: demo/templates/index.html:160
+msgid ""
+"Tetra uses type annotations to syntax highlight your JS, CSS & HTML in your "
+"Python files with a <a href=\"https://github.com/samwillis/python-inline-"
+"source/tree/main/vscode-python-inline-source\">VS Code plugin</a>"
+msgstr ""
+"Tetra utiliza anotaciones de tipo para resaltar la sintaxis de tu JS, CSS y "
+"HTML en tus archivos Python con un <a href=\"https://github.com/samwillis/"
+"python-inline-source/tree/main/vscode-python-inline-source\">plugin de VS "
+"Code</a>"
+
+#: demo/templates/index.html:162
+msgid "Form components"
+msgstr "Componentes de formulario"
+
+#: demo/templates/index.html:163
+msgid ""
+"A simple replacement for Django's FormView, but due to Tetra's dynamic "
+"nature, e.g. a field can change its value or disappear depending on other "
+"fields' values."
+msgstr ""
+"Un reemplazo simple para el FormView de Django, pero debido a la naturaleza "
+"dinámica de Tetra, por ejemplo, un campo puede cambiar su valor o "
+"desaparecer dependiendo de los valores de otros campos."
+
+#: demo/templates/index.html:165
+msgid "Event subscriptions"
+msgstr "Suscripciones a eventos"
+
+#: demo/templates/index.html:166
+msgid ""
+"Both frontend and backend components can subscribe to JavaScript events, "
+"enabling seamless event-driven programming across the full stack."
+msgstr ""
+"Tanto los componentes de frontend como los de backend pueden suscribirse a "
+"eventos de JavaScript, permitiendo una programación fluida basada en eventos "
+"en todo el stack."
+
+#: demo/templates/index.html:168
+msgid "File upload/downloads"
+msgstr "Carga/descarga de archivos"
+
+#: demo/templates/index.html:169
+msgid ""
+"Whenever a form contains a FileField, Tetra makes sure the uploading process "
+"works smooth, even with page reloads."
+msgstr ""
+"Siempre que un formulario contiene un FileField, Tetra se asegura de que el "
+"proceso de carga funcione sin problemas, incluso con recargas de página."
+
+#: demo/templates/index.html:171
+msgid "Integration with Django Messages"
+msgstr "Integración con Mensajes de Django"
+
+#: demo/templates/index.html:172
+msgid ""
+"Django's messaging framework is deeply integrated into Tetra: Whenever a new "
+"message occurs, it is transformed into a JavaScript object and sent as an "
+"event that can be subscribed to by any component."
+msgstr ""
+"El framework de mensajería de Django está profundamente integrado en Tetra: "
+"Siempre que ocurre un nuevo mensaje, se transforma en un objeto JavaScript y "
+"se envía como un evento al que cualquier componente puede suscribirse."
+
+#: demo/templates/index.html:174
+msgid "Loading indicators"
+msgstr "Indicadores de carga"
+
+#: demo/templates/index.html:175
+msgid ""
+"While an AJAX request is in flight, you can show a loading indicator, "
+"globally, per component, or per call."
+msgstr ""
+"Mientras una solicitud AJAX está en curso, puedes mostrar un indicador de "
+"carga, globalmente, por componente o por llamada."
+
+#: demo/templates/index.html:181
+msgid "More features are planned, including:"
+msgstr "Más características planificadas, incluyendo:"
+
+#: demo/templates/index.html:184
+msgid "ModelComponent for bootstrapping standard CRUD interactions."
+msgstr "ModelComponent para iniciar interacciones CRUD estándar."
+
+#: demo/templates/index.html:185
+#| msgid "Syntax highlighting with type annotations"
+msgid "Python type annotations"
+msgstr "Resaltado de sintaxis con anotaciones de tipo"
+
+#: demo/templates/index.html:186
+#| msgid "Integration with Django Messages"
+msgid "Integration with Django Validators"
+msgstr "Integración con Mensajes de Django"
+
+#: demo/templates/index.html:187
+msgid ""
+"Alpine.js directives for component state (<s>loading ✅</s>, offline  etc.)"
+msgstr ""
+
+#: demo/templates/index.html:188
+msgid "Routing <s>and query strings ✅</s> for \"whole page\" components."
+msgstr ""
+"Enrutamiento <s>y cadenas de consulta ✅</s> para componentes de \"página "
+"completa\"."
+
+#: demo/templates/index.html:189
+msgid "Page title and metadata in header."
+msgstr "Título de página y metadatos en el encabezado."
+
+#: demo/templates/index.html:190
+msgid "Pagination and Infinity Scroll components."
+msgstr "Paginación y componente de desplazamiento infinito."
+
+#: demo/templates/index.html:191
+msgid "PostCSS/SASS/etc. support."
+msgstr "Soporte PostCSS/SASS/etc."
+
+#: demo/templates/index.html:192
+msgid "CSS scoped to a component."
+msgstr "CSS acoplado a un componente."
+
+#: demo/templates/index.html:193
+msgid "Websocket/SSE components enabling realtime updates."
+msgstr "Websocket/SSE componentes habilitando actualizaciones en tiempo real."
+
+#: demo/templates/index.html:194
+msgid "Redirect responses."
+msgstr "Respuestas de redirección."
+
+#: demo/templates/index.html:195
+msgid "Additional authentication tools."
+msgstr "Herramientas de autenticación adicionales."
+
+#: demo/templates/index.html:196
+msgid "Integration with UI & component toolkits."
+msgstr "Integración con UI y kits de herramientas de componentes."
+
+#: demo/templates/index.html:197
+msgid "Bundling of esbuild to be npm free."
+msgstr "Agrupación de esbuild para que esté libre de npm."
+
+#: demo/templates/index.html:203
+msgid "Read the Docs to get started"
+msgstr "Lee la documentación para empezar"
+
+#: demo/utils.py:6
+msgid "Discover Tetra"
+msgstr "Descubra Tetra"
+
+#: demo/utils.py:7
+msgid "Install and explore Tetra"
+msgstr "Instalar y explorar Tetra"
+
+#: demo/utils.py:8
+msgid "Decide to build your next startup using Tetra"
+msgstr "Decide construir tu próxima startup usando Tetra"
+
+#: demo/utils.py:9
+msgid "Become a billionaire"
+msgstr "Conviértete en multimillonario"
+
+#: demo/utils.py:10
+msgid "Start a rocket company"
+msgstr "Iniciar una empresa de cohetes"
+
+#: demo/utils.py:11
+msgid "Populate Pluto, it's a much cooler planet than Mars"
+msgstr "Poblar Plutón, es un planeta mucho más frío que Marte."
+
+#: demo/views.py:112
+msgid "Demo"
+msgstr "Demostración"
+
+#: demosite/settings.py:136
+msgid "English"
+msgstr "Inglés"
+
+#: demosite/settings.py:137
+msgid "Spanish"
+msgstr "Español"
+
+#~ msgid "Information"
+#~ msgstr "Información"
+
+#~ msgid "Enter your name below!"
+#~ msgstr "¡Introduce tu nombre aquí!"
+
+#~ msgid "Thanks,"
+#~ msgstr "Gracias,"
+
+#~ msgid "Your name"
+#~ msgstr "Tu nombre"
+
+#~ msgid "Ok"
+#~ msgstr "Aceptar"
