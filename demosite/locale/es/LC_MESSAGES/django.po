@@ -760,12 +760,10 @@ msgid "Todo Item CSS"
 msgstr "CSS de Elemento de Tarea"
 
 #: demo/templates/index.html:60
-#| msgid "Todo Item Python"
 msgid "Todo Item Javascript"
 msgstr "Python de Elemento de Tarea"
 
 #: demo/templates/index.html:63
-#| msgid "Todo Item Python"
 msgid "Models Python"
 msgstr "Python de Elemento de Tarea"
 
@@ -1022,12 +1020,10 @@ msgid "ModelComponent for bootstrapping standard CRUD interactions."
 msgstr "ModelComponent para iniciar interacciones CRUD estándar."
 
 #: demo/templates/index.html:185
-#| msgid "Syntax highlighting with type annotations"
 msgid "Python type annotations"
 msgstr "Resaltado de sintaxis con anotaciones de tipo"
 
 #: demo/templates/index.html:186
-#| msgid "Integration with Django Messages"
 msgid "Integration with Django Validators"
 msgstr "Integración con Mensajes de Django"
 
