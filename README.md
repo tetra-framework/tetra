@@ -24,7 +24,7 @@ Read more at [Installation docs](https:/www.tetraframework.com/installation.md)
 
 ## Short Overview
 
-For the impatient: here's a short example video that shows what Tetra does:
+For the impatient: here's a short example video that shows what Tetra is capable of:
 
 
 https://github.com/user-attachments/assets/137c53af-1fc2-48c5-9c53-a007fbad7874
