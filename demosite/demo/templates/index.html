@@ -44,23 +44,16 @@
   {% ShowCase %}
   {% slot title %}{% blocktranslate %}See how easy it is to build a <mark>todo list</mark>{% endblocktranslate %}{% endslot %}
   {% slot code %}{% comment %}The code blocks don't need translation.{% endcomment %}
-    {% translate 'Python code' as python_code_title %}
-    {% CodeBlock  file_name="todo_list/__init__.py" language="python" title=python_code_title / %}
-    {% translate 'Todo Item Python' as todo_item_python_title %}
-    {% CodeBlock file_name="todo_item/__init__.py" language="python" title=todo_item_python_title / %}
+    {% CodeBlock  file_name="todo_list/__init__.py" language="python" title=_('Python code') / %}
+    {% CodeBlock file_name="todo_item/__init__.py" language="python" title=_('Todo Item Python') / %}
 
-    {% translate 'Template for todo_list' as template_todo_list_title %}
-    {% CodeBlock title=template_todo_list_title file_name="todo_list/todo_list.html" language="django" / %}
-    {% translate 'Template for todo_item' as template_todo_item_title %}
-    {% CodeBlock title=template_todo_item_title file_name="todo_item/todo_item.html" language="django" / %}
+    {% CodeBlock title=_('Template for todo_list') file_name="todo_list/todo_list.html" language="django" / %}
+    {% CodeBlock title=_('Template for todo_item') file_name="todo_item/todo_item.html" language="django" / %}
 
-    {% translate 'Todo Item CSS' as todo_item_css_title %}
-    {% CodeBlock title=todo_item_css_title file_name="todo_item/todo_item.css" language="css" / %}
-    {% translate 'Todo Item Javascript' as todo_item_js_title %}
-    {% CodeBlock title=todo_item_js_title file_name="todo_item/todo_item.js" language="javascript" / %}
+    {% CodeBlock title=_('Todo Item CSS') file_name="todo_item/todo_item.css" language="css" / %}
+    {% CodeBlock title=_('Todo Item Javascript') file_name="todo_item/todo_item.js" language="javascript" / %}
 
-    {% translate 'Models Python' as models_python_title %}
-    {% CodeBlock title=models_python_title file_name="todo_models.py" language="python" / %}
+    {% CodeBlock title=_('Models Python') file_name="todo_models.py" language="python" / %}
   {% endslot %}
   {% slot description %}
     {% TodoList / %}
