@@ -184,14 +184,14 @@ def do_component(parser, token):
 
     nodelist = None
     if has_content:
-        # Parse the contents of the use tag, we reset the parser.__loaded_blocks
-        # so that we can reuse block names inside each individual use tag
-        current_loaded_blocks = getattr(parser, "__loaded_blocks", None)
-        parser.__loaded_blocks = []
+        # Parse the contents of the use tag, we reset the parser.__loaded_slots
+        # so that we can reuse slot names inside each individual use tag
+        current_loaded_slots = getattr(parser, "__loaded_slots", None)
+        parser.__loaded_slots = []
         nodelist = parser.parse((f"/{component_name}",))
-        if current_loaded_blocks is not None:
-            parser.__loaded_blocks = (
-                current_loaded_blocks  # Return original __loaded_blocks
+        if current_loaded_slots is not None:
+            parser.__loaded_slots = (
+                current_loaded_slots  # Return original __loaded_slots
             )
         parser.delete_first_token()
 
@@ -230,7 +230,7 @@ class ComponentNode(template.Node):
         return f"<ComponentNode: {self.component_name}>"
 
     def get_nodes_by_type(self, nodetype):
-        # This stops blocks leeking out of scope.
+        # This stops slots leeking out of scope.
         if nodetype == BlockNode and not getattr(
             thread_local, "geting_nodes_by_type_deep", False
         ):
@@ -349,7 +349,7 @@ class ComponentNode(template.Node):
                 {k: v.resolve(context) for k, v in self.context_args.items()}
             )
 
-        # add "slots" dict to context, to easily filter out if each block is available
+        # add "slots" dict to context, to easily filter out if each slot is available
         if self.slots:
             resolved_context["slots"] = {}
             for slot in self.slots:
@@ -357,13 +357,13 @@ class ComponentNode(template.Node):
 
         slots = copy.copy(self.slots)
         if slots and BLOCK_CONTEXT_KEY in context.render_context:
-            old_block_context = context.render_context[BLOCK_CONTEXT_KEY]
-            for slot_name, block in slots.items():
-                expose_as = getattr(block, "expose_as", None)
+            old_slot_context = context.render_context[BLOCK_CONTEXT_KEY]
+            for slot_name, slot in slots.items():
+                expose_as = getattr(slot, "expose_as", None)
                 if expose_as:
-                    new_block = old_block_context.get_block(expose_as)
-                    if new_block:
-                        slots[slot_name] = new_block
+                    new_slot = old_slot_context.get_block(expose_as)
+                    if new_slot:
+                        slots[slot_name] = new_slot
 
         children_state = context.get("_loaded_children_state", None)
         if "key" not in resolved_kwargs:
@@ -483,10 +483,10 @@ def do_slot(parser, token):
     Based on the native Django "block" tag but adds an extra attribute (expose_as) to the
     BlockNode indicating if it is possible to override in an extending template and
     under what name.
-    Syntax to expose a slot under its own name
-    {% slot block_name expose %}
-    Syntax to expose a block under a different name:
-    {% block block_name expose as exposed_block_name %}
+    Syntax to expose a slot under its own name as block
+    {% slot slot_name expose %}
+    Syntax to expose a slot under a different (block) name:
+    {% slot slot_name expose as exposed_block_name %}
     """
     # token.split_contents() isn't useful here because this tag doesn't accept
     # variable as arguments.
@@ -514,13 +514,13 @@ def do_slot(parser, token):
     # Keep track of the names of BlockNodes found in this template, so we can
     # check for duplication.
     try:
-        if slot_name in parser.__loaded_blocks:
+        if slot_name in parser.__loaded_slots:
             raise TemplateSyntaxError(
                 "'%s' tag with name '%s' appears more than once" % (bits[0], slot_name)
             )
-        parser.__loaded_blocks.append(slot_name)
-    except AttributeError:  # parser.__loaded_blocks isn't a list yet
-        parser.__loaded_blocks = [slot_name]
+        parser.__loaded_slots.append(slot_name)
+    except AttributeError:  # parser.__loaded_slots isn't a list yet
+        parser.__loaded_slots = [slot_name]
     nodelist = parser.parse(("endslot",))
 
     # This check is kept for backwards-compatibility. See #3100.
