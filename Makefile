@@ -35,3 +35,6 @@ publish-test:
 
 publish-prod:
 	python -m twine upload --repository pypi dist/*
+
+localegen:
+	cd demosite && make localegen
