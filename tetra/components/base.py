@@ -1,6 +1,7 @@
 import logging
 import importlib
 import os
+import uuid
 from copy import copy
 from typing import Optional, Self, Any
 from types import FunctionType, NoneType
@@ -209,6 +210,7 @@ class RenderDataMode(Enum):
 class BasicComponent(metaclass=BasicComponentMetaClass):
     __abstract__ = True
     style: Optional[str] = None
+    component_id: Optional[str] = None
     _name = None
     _library = None
     _app = None
@@ -233,11 +235,23 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         self.attrs = _attrs
         self._context = _context
         self._blocks = _blocks
+        # FIXME: it could lead to mismatching component ids if it is recreated after
+        #  page reloading - test this for channels/long-lasting websocket connections
+        self.component_id = str(uuid.uuid4())
         self._call_load(*args, **kwargs)
 
     @classmethod
     def full_component_name(cls) -> str:
         return f"{cls._library.app.label}__{cls._library.name}__{cls._name}"
+
+    def get_extra_tags(self) -> dict[str, str]:
+        """Returns extra tags to be included in the component's HTML.
+
+        This method can be overridden in subclasses to add custom
+        attributes or classes to the component's HTML. Don't forget to call
+        super().get_extra_tags() in your own implementation.
+        """
+        return {"data-component-id": self.component_id}
 
     @classmethod
     def get_source_location(cls) -> tuple[str, int, int]:
@@ -885,6 +899,16 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     def _data(self) -> dict[str, Any]:
         return {key: getattr(self, key) for key in self._public_properties}
 
+    def get_extra_tags(self) -> dict[str, str]:
+        extra_tags = super().get_extra_tags()
+        extra_tags.update(
+            {
+                "tetra-component": f"{self.full_component_name()}",
+                "x-bind": "__rootBind",
+            }
+        )
+        return extra_tags
+
     def _encoded_state(self) -> str:
         return encode_component(self)
 
@@ -944,33 +968,33 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             )
         tag_name_end = tag_name.end(0)
 
-        extra_tags = [
-            f'tetra-component="{self.full_component_name()}"',
-            'x-bind="__rootBind"',
-        ]
+        extra_tags = self.get_extra_tags()
+
         if self.key:
-            extra_tags.append(f'key="{self.key}"')
+            extra_tags.update({"key": self.key})
         if mode == RenderDataMode.UPDATE and self._is_resumed_from_state:
             data_json = escape(to_json(self._render_data()))
             old_data_json = escape(to_json(self._resumed_from_state_data))
-            extra_tags.append('x-data=""')
-            extra_tags.append(f'x-data-update="{data_json}"')
-            extra_tags.append(f'x-data-update-old="{old_data_json}"')
+            extra_tags.update({"x-data": ""})
+            extra_tags.update({"x-data-update": data_json})
+            extra_tags.update({"x-data-update-old": old_data_json})
         elif mode == RenderDataMode.MAINTAIN:
-            extra_tags.append('x-data=""')
-            extra_tags.append("x-data-maintain")
+            extra_tags.update({"x-data": ""})
+            extra_tags.update({"x-data-maintain": ""})
         else:
             data_json = escapejs(to_json(self._render_data()))
-            extra_tags.append(f"x-data=\"{self.full_component_name()}('{data_json}')\"")
+            extra_tags.update(
+                {"x-data": f"{self.full_component_name()}('{data_json}')"}
+            )
 
         for method_data in self._public_methods:
             if "event_subscriptions" in method_data:
                 for event in method_data["event_subscriptions"]:
-                    extra_tags.append(
-                        f'@{event}="{method_data["name"]}($event.detail)"'
+                    extra_tags.update(
+                        {f"@{event}": f"{method_data["name"]}($event.detail)"}
                     )
-
-        html = f'{html[:tag_name_end]} {" ".join(extra_tags)} {html[tag_name_end:]}'
+        tags_strings = [f'{key}="{value}"' for key, value in extra_tags.items()]
+        html = f'{html[:tag_name_end]} {" ".join(tags_strings)} {html[tag_name_end:]}'
         return mark_safe(html)
 
     def update_html(self, include_state=False) -> None:

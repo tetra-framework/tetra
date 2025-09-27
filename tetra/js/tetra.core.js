@@ -14,6 +14,7 @@ const Tetra = {
       // Alpine.js lifecycle:
       init() {
         this.$dispatch('tetra:child-component-init', {component:  this});
+         // Set component ID attribute on DOM element for targeting
         this.__initServerWatchers();
         if (this.__initInner) {
           this.__initInner();
