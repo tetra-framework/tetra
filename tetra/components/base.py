@@ -244,7 +244,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
     def full_component_name(cls) -> str:
         return f"{cls._library.app.label}__{cls._library.name}__{cls._name}"
 
-    def get_extra_tags(self) -> dict[str, str]:
+    def get_extra_tags(self) -> dict[str, str | None]:
         """Returns extra tags to be included in the component's HTML.
 
         This method can be overridden in subclasses to add custom
@@ -899,7 +899,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     def _data(self) -> dict[str, Any]:
         return {key: getattr(self, key) for key in self._public_properties}
 
-    def get_extra_tags(self) -> dict[str, str]:
+    def get_extra_tags(self) -> dict[str, str | None]:
         extra_tags = super().get_extra_tags()
         extra_tags.update(
             {
@@ -993,7 +993,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
                     extra_tags.update(
                         {f"@{event}": f"{method_data["name"]}($event.detail)"}
                     )
-        tags_strings = [f'{key}="{value}"' for key, value in extra_tags.items()]
+        tags_strings = [f'{key}="{value or ''}"' for key, value in extra_tags.items()]
         html = f'{html[:tag_name_end]} {" ".join(tags_strings)} {html[tag_name_end:]}'
         return mark_safe(html)
 
