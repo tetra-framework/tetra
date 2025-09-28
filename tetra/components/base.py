@@ -1,7 +1,7 @@
+import hashlib
 import logging
 import importlib
 import os
-import uuid
 from copy import copy
 from typing import Optional, Self, Any
 from types import FunctionType, NoneType
@@ -237,8 +237,19 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         self._blocks = _blocks
         # FIXME: it could lead to mismatching component ids if it is recreated after
         #  page reloading - test this for channels/long-lasting websocket connections
-        self.component_id = str(uuid.uuid4())
+        self.component_id = self.get_component_id()
         self._call_load(*args, **kwargs)
+
+    def get_component_id(self) -> str:
+        """Creates a unique, reproducible, session-persistent component id.
+
+        This is calculated from the component name, the session key, and optionally
+        the component key, if available.
+        """
+        session_key = self.request.session.session_key
+        component_key = self.attrs.get("key")
+        s = f"{self.full_component_name()}{session_key}{component_key or ''}"
+        return hashlib.blake2b(s.encode(), digest_size=8).hexdigest()
 
     @classmethod
     def full_component_name(cls) -> str:
