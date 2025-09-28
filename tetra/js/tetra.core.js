@@ -322,7 +322,7 @@ const Tetra = {
 
   async callServerMethod(component, methodName, methodEndpoint, args) {
     let component_state = Tetra.getStateWithChildren(component);
-    component_state.args = args? args : [];
+    component_state.args = args || [];
     let payload = {
       method: 'POST',
       headers: {
