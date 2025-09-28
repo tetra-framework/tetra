@@ -18,6 +18,9 @@ class Person(Component):
 
 When Attributes are set directly in the class, they are used as default values, as in any other python class too. Even if no `load()` method is present, the component can use this values.
 
+### Special case: `component_id`
+Each component automatically gets a `component_id` attribute at creation time. This id is maintained over the whole life cycle of the component. Called component methods and re-rendering the component do not change the `component_id`, but a full page reload does. The component_id is also set as `data-component-id` HTML attribute in the rendered component.
+
 ## 2. Resumed data from encrypted state
 
 If the component is resumed from a previous state, the encrypted state data is decrypted, and all component attributes are set from the previous state.
