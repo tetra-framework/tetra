@@ -381,7 +381,7 @@ class ComponentNode(template.Node):
                 **resolved_kwargs,
                 _attrs=resolved_attrs,
                 _context=resolved_context,
-                _blocks=slots,
+                _slots=slots,
             )
             if "children" in component_state:
                 component._loaded_children_state = component_state["children"]
@@ -393,7 +393,7 @@ class ComponentNode(template.Node):
                 **resolved_kwargs,
                 _attrs=resolved_attrs,
                 _context=resolved_context,
-                _blocks=slots,
+                _slots=slots,
             )
 
 

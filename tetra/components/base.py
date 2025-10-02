@@ -222,7 +222,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         _request: TetraHttpRequest | HttpRequest,
         _attrs: dict = None,
         _context: dict | RequestContext | None = None,
-        _blocks=None,
+        _slots=None,
         *args,
         **kwargs,
     ) -> None:
@@ -234,7 +234,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         self.request = _request
         self.attrs = _attrs
         self._context = _context
-        self._blocks = _blocks
+        self._slots = _slots
         # FIXME: it could lead to mismatching component ids if it is recreated after
         #  page reloading - test this for channels/long-lasting websocket connections
         self.component_id = self.get_component_id()
@@ -421,11 +421,11 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         context = self.get_context_data()
 
         with context.render_context.push_state(self._template, isolated_context=True):
-            if self._blocks:
+            if self._slots:
                 if BLOCK_CONTEXT_KEY not in context.render_context:
                     context.render_context[BLOCK_CONTEXT_KEY] = BlockContext()
                 block_context = context.render_context[BLOCK_CONTEXT_KEY]
-                block_context.add_blocks(self._blocks)
+                block_context.add_blocks(self._slots)
 
             if context.template is None:
                 with context.bind_template(self._template):
@@ -693,7 +693,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         key: str = None,
         _attrs=None,
         _context=None,
-        _blocks=None,
+        _slots=None,
         *args,
         **kwargs,
     ) -> Any:
@@ -725,8 +725,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             component.attrs = _attrs
         if _context:
             component._context = _context
-        if _blocks:
-            component._blocks = _blocks
+        if _slots:
+            component._slots = _slots
         if len(args) > 0:
             component._load_args = args
         if len(kwargs) > 0:
