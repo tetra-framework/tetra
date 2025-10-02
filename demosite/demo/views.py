@@ -20,6 +20,7 @@ FIRST_SLUG = "introduction"
 
 def home(request) -> HttpResponse:
     prepopulate_session_to_do(request)
+    # TODO: purge entries from sessions older than 30 days
     return render(request, "index.html")
 
 

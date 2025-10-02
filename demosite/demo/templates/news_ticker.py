@@ -1,0 +1,1 @@
+../components/default/news_ticker/__init__.py

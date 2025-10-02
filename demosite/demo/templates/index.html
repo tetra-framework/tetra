@@ -20,7 +20,7 @@
     <div class="col-lg-7 mx-auto">
       <p class="lead mb-4">
         {% blocktranslate %}Tetra is a new <mark>full stack component framework</mark> for Django, bridging the gap between your server logic and front end presentation.
-        It uses a <mark>public shared state</mark> and a <mark>resumable server state</mark> to enable <mark>inplace reactive updates</mark>. It also encapsulates your Python, HTML, JavaScript and CSS into one file for <mark>proximity of related concerns</mark>.{% endblocktranslate %}
+        It uses a <mark>public shared state</mark> and a <mark>resumable server state</mark> to enable <mark>inplace reactive updates</mark>. It also encapsulates your Python, HTML, JavaScript and CSS into one file or directory for <mark>proximity of related concerns</mark>.{% endblocktranslate %}
       </p>
       <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
         <a href="#features" class="btn btn-light btn-lg px-4">
@@ -41,8 +41,7 @@
     </div>
   </div>
 
-  {% ShowCase %}
-  {% slot title %}{% blocktranslate %}See how easy it is to build a <mark>todo list</mark>{% endblocktranslate %}{% endslot %}
+  {% ShowCase title=_("See how easy it is to build a <mark>todo list</mark>") %}
   {% slot code %}{% comment %}The code blocks don't need translation.{% endcomment %}
     {% CodeBlock  file_name="todo_list/__init__.py" language="python" title=_('Python code') / %}
     {% CodeBlock file_name="todo_item/__init__.py" language="python" title=_('Todo Item Python') / %}
@@ -61,8 +60,7 @@
   {% /ShowCase %}
 
 
-  {% ShowCase %}
-  {% slot title %}{% translate "Or a reactive server rendered search component:" %}{% endslot %}
+  {% ShowCase title=_("Or a reactive server rendered search component:") %}
   {% slot code %}
     {% CodeBlock title="reactive_search/__init__.py" file_name="reactive_search.py" language="python" / %}
     {% CodeBlock title="reactive_search/reactive_search.html" file_name="reactive_search.html" language="django" / %}
@@ -74,8 +72,7 @@
 
 
 
-  {% ShowCase %}
-  {% slot title %}{% translate "Or a counter, but with multiple nested instances." %}{% endslot %}
+  {% ShowCase title=_("Or a counter, but with multiple nested instances.") %}
   {% slot code %}
     {% CodeBlock title="components.py" file_name="counter.py" language="python" / %}
     {% CodeBlock title="index.html" file_name="counter.index.html" language="django" / %}
@@ -85,8 +82,7 @@
   {% endslot %}
   {% /ShowCase %}
 
-  {% ShowCase %}
-  {% slot title %}{% translate "Or a simple card, with dynamic content." %}{% endslot %}
+  {% ShowCase title=_("Or a simple card, with dynamic content.") %}
   {% slot code %}
     {% CodeBlock title="info_card/__init__.py" file_name="info_card.py" language="python" / %}
     {% CodeBlock title="index.html" file_name="info_card.index.html" language="django" / %}
@@ -96,6 +92,41 @@
   {% endslot %}
   {% /ShowCase %}
 
+  {% ShowCase title=_("Not convinced? How about a reactive news ticker with push notifications?") %}
+  {% slot code %}
+    {% CodeBlock title=_("Python") file_name="news_ticker.py" language="python" / %}
+    {% CodeBlock title=_("HTML") file_name="news_ticker.index.html" language="django" / %}
+    {% CodeBlock title=_("Django Template") language="django" %}{% verbatim %}{% NewsTicker subscribe="notifications.news.headline" %}{% endverbatim %}{% /CodeBlock %}
+    {% CodeBlock title=_("Async server code") file_name="news_ticker.index.html" language="python" %}{% verbatim %}while True:
+    count = await BreakingNews.objects.acount()
+    offset = random.randint(0, count - 1)
+    news = await BreakingNews.objects.all()[offset : offset + 1].aget()
+
+    await ComponentDispatcher.update_data(
+    "notifications.news.headline",
+    {
+    "headline": news.title,
+    },
+    )
+    await asyncio.sleep(5)
+    {% endverbatim %}{% /CodeBlock %}
+  {% endslot %}
+  {% slot description %}
+    <div class="text-muted">
+      {% translate "The following (partly fake) news line is not polled, but pushed from the server to all connected clients simultaneously each 10 seconds." %}
+    </div>
+    {% NewsTicker subscribe="notifications.news.headline" / %}
+    <div class="text-muted mt-2">
+      {% blocktranslate %}
+        This might look trivial, you could do that with polling too. But Tetra is smarter than that.<br/>
+        <a href="." target="_blank">Open multiple browsers/tabs with this very page</a>, even on your phone,
+        and watch the news change simultaneously.<br/>
+        An async django task worker is pushing the news to all connected clients.
+      {% endblocktranslate %}
+    </div>
+  {% endslot %}
+
+  {% /ShowCase %}
 
 
 
@@ -134,8 +165,8 @@
     {% Col title=_("Component library packaging") %}
     {% translate "Every component belongs to a \"library\"; their JS & CSS is packed together for quicker browser downloads." %}
     {% /Col %}
-    {% Col title=_("Components with overridable blocks") %}
-    {% blocktranslate %}Components can have multiple <code>{% endblocktranslate %}{% verbatim %}{%&nbsp;block(s)&nbsp;%}{% endverbatim  %}{% blocktranslate %}</code> which can be overridden when used.{% endblocktranslate %}
+    {% Col title=_("Components with overridable slots") %}
+    {% blocktranslate %}Components can have multiple <code>{% endblocktranslate %}{% verbatim %}{%&nbsp;slot(s)&nbsp;%}{% endverbatim  %}{% blocktranslate %}</code> which can be overridden when used.{% endblocktranslate %}
     {% /Col %}
     {% Col %}
     {% slot title %}
@@ -166,7 +197,9 @@
     {% Col title=_("Loading indicators") %}
     {% translate "While an AJAX request is in flight, you can show a loading indicator, globally, per component, or per call." %}
     {% /Col %}
-
+    {% Col title=_("Reactive components / realtime updates") %}
+    {% translate "Component data can be updated from the server using websockets/push notification, even by async Django background tasks, Celery, signals etc." %}
+    {% /Col %}
   </div>
 
   <h4 class="text-center display-7 my-5" id="features-planned">
@@ -182,7 +215,6 @@
     •&nbsp;{% translate "Pagination and Infinity Scroll components." %} &nbsp;
     •&nbsp;{% translate "PostCSS/SASS/etc. support." %} &nbsp;
     •&nbsp;{% translate "CSS scoped to a component." %} &nbsp;
-    •&nbsp;{% translate "Websocket/SSE components enabling realtime updates." %} &nbsp;
     •&nbsp;{% translate "Redirect responses." %} &nbsp;
     •&nbsp;{% translate "Additional authentication tools." %} &nbsp;
     •&nbsp;{% translate "Integration with UI & component toolkits." %} &nbsp;

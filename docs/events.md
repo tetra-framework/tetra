@@ -1,4 +1,4 @@
-# Tetra events
+# Tetra client side JavaScript events
 
 There are some events that occur during the tetra component life cycle. You can use them to hook into.
 
@@ -50,3 +50,33 @@ After a request returns a response, Tetra fires this event if there are new mess
 
 #### Details
 * `messages`: a list of message objects, see [messages](messages.md)
+
+### `tetra:component-subscribed`
+
+After a successful subscription to a group, the component fires this event.
+
+#### Details
+* `group`: the group the component was subscribed to.
+
+
+## Component subscription 
+
+These events are fired after a websocket subscription returned, successfully or unsuccessfully.
+
+#### Details:
+* `component`: this,
+* `group`: the group name of the subscription
+* `message`: (Optional) message in case of an error.
+
+### `tetra:component-subscribed`
+
+When a component subscription was completed successfully.
+
+### `tetra:component-unsubscribed`
+
+When a component subscription was redacted.
+
+### `tetra:component-subscription-error`
+
+When a component subscription/unsubsription process did not succeed.
+ 

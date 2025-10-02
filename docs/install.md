@@ -10,16 +10,20 @@ Once ready, install Tetra from PyPi:
 
 ```
 $ pip install tetra
+# +reactive components?
+# pip install tetra channels daphne
 ```
 
+If you want to have reactive components as well, you have to install channels and an ASGI capable server like Daphne too. Have a look at [Reactive Components](reactive-components.md) how to get started with them.
+
 !!! warning
-    As Tetra is still being developed it has only been tested with Python 3.9-3.12, we intend to support all officially supported Python versions at the time of v1.0.0.
+    As Tetra is still being developed it has only been tested with Python 3.10-3.12, we intend to support all officially supported Python versions at the time of v1.0.0.
 
 ## Initial configuration
 
 Modify your Django `settings.py`:
 
-* Add `tetra` to your INSTALLED_APPS (if you use `daphne` or `django.contrib.staticfiles`, tetra must occur before it)
+* Add `tetra` to your INSTALLED_APPS (if you use `daphne` or `django.contrib.staticfiles`, put tetra *before* daphne!)
 * add `tetra.middleware.TetraMiddleware` to your middlewares
 
 ``` python

@@ -596,7 +596,7 @@ This hook is called when the component is fully loaded, just
 1. before the state of a component is restored, `load()` was called, immediately before user interactions happen using component methods, and 
 2. just before rendering, after all user interactions
 
-You can do some further data updates here that should override all other rules - especially automatical 
+You can do some further data updates here that should override all other rules - especially automatically 
 updates of attributes can be calculated here, like a "dirty" flag of a form component, or an update of
 an attribute that needs to be calculated from other attributes. 
 As example, this method is e.g. used in [FormComponent](form-components.md) to clear form errors if the form was not yet submitted.

@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import importlib
 import os
@@ -209,6 +210,7 @@ class RenderDataMode(Enum):
 class BasicComponent(metaclass=BasicComponentMetaClass):
     __abstract__ = True
     style: Optional[str] = None
+    component_id: Optional[str] = None
     _name = None
     _library = None
     _app = None
@@ -220,7 +222,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         _request: TetraHttpRequest | HttpRequest,
         _attrs: dict = None,
         _context: dict | RequestContext | None = None,
-        _blocks=None,
+        _slots=None,
         *args,
         **kwargs,
     ) -> None:
@@ -232,12 +234,35 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         self.request = _request
         self.attrs = _attrs
         self._context = _context
-        self._blocks = _blocks
+        self._slots = _slots
+        # FIXME: it could lead to mismatching component ids if it is recreated after
+        #  page reloading - test this for channels/long-lasting websocket connections
+        self.component_id = self.get_component_id()
         self._call_load(*args, **kwargs)
+
+    def get_component_id(self) -> str:
+        """Creates a unique, reproducible, session-persistent component id.
+
+        This is calculated from the component name, the session key, and optionally
+        the component key, if available.
+        """
+        session_key = self.request.session.session_key
+        component_key = self.attrs.get("key")
+        s = f"{self.full_component_name()}{session_key}{component_key or ''}"
+        return hashlib.blake2b(s.encode(), digest_size=8).hexdigest()
 
     @classmethod
     def full_component_name(cls) -> str:
         return f"{cls._library.app.label}__{cls._library.name}__{cls._name}"
+
+    def get_extra_tags(self) -> dict[str, str | None]:
+        """Returns extra tags to be included in the component's HTML.
+
+        This method can be overridden in subclasses to add custom
+        attributes or classes to the component's HTML. Don't forget to call
+        super().get_extra_tags() in your own implementation.
+        """
+        return {"tetra-component-id": self.component_id}
 
     @classmethod
     def get_source_location(cls) -> tuple[str, int, int]:
@@ -396,11 +421,11 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         context = self.get_context_data()
 
         with context.render_context.push_state(self._template, isolated_context=True):
-            if self._blocks:
+            if self._slots:
                 if BLOCK_CONTEXT_KEY not in context.render_context:
                     context.render_context[BLOCK_CONTEXT_KEY] = BlockContext()
                 block_context = context.render_context[BLOCK_CONTEXT_KEY]
-                block_context.add_blocks(self._blocks)
+                block_context.add_blocks(self._slots)
 
             if context.template is None:
                 with context.bind_template(self._template):
@@ -529,10 +554,6 @@ class Public(metaclass=PublicMeta):
         search for `do_<name>` in the class.
         """
 
-        # prevent infinitive loops (dunder methods), and work around a PyCharm bug:
-        # https://youtrack.jetbrains.com/issue/PY-48306/PyCharm-Debugger-accesses-shape-object-attribute-with-overriden-getattr-method
-        if name.startswith("_") or name == "shape":
-            return None
         if hasattr(self, f"do_{name}"):
             return getattr(self, f"do_{name}")
         else:
@@ -668,7 +689,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         key: str = None,
         _attrs=None,
         _context=None,
-        _blocks=None,
+        _slots=None,
         *args,
         **kwargs,
     ) -> Any:
@@ -700,8 +721,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             component.attrs = _attrs
         if _context:
             component._context = _context
-        if _blocks:
-            component._blocks = _blocks
+        if _slots:
+            component._slots = _slots
         if len(args) > 0:
             component._load_args = args
         if len(kwargs) > 0:
@@ -885,6 +906,16 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     def _data(self) -> dict[str, Any]:
         return {key: getattr(self, key) for key in self._public_properties}
 
+    def get_extra_tags(self) -> dict[str, str | None]:
+        extra_tags = super().get_extra_tags()
+        extra_tags.update(
+            {
+                "tetra-component": f"{self.full_component_name()}",
+                "x-bind": "__rootBind",
+            }
+        )
+        return extra_tags
+
     def _encoded_state(self) -> str:
         return encode_component(self)
 
@@ -944,33 +975,33 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             )
         tag_name_end = tag_name.end(0)
 
-        extra_tags = [
-            f'tetra-component="{self.full_component_name()}"',
-            'x-bind="__rootBind"',
-        ]
+        extra_tags = self.get_extra_tags()
+
         if self.key:
-            extra_tags.append(f'key="{self.key}"')
+            extra_tags.update({"key": self.key})
         if mode == RenderDataMode.UPDATE and self._is_resumed_from_state:
             data_json = escape(to_json(self._render_data()))
             old_data_json = escape(to_json(self._resumed_from_state_data))
-            extra_tags.append('x-data=""')
-            extra_tags.append(f'x-data-update="{data_json}"')
-            extra_tags.append(f'x-data-update-old="{old_data_json}"')
+            extra_tags.update({"x-data": ""})
+            extra_tags.update({"x-data-update": data_json})
+            extra_tags.update({"x-data-update-old": old_data_json})
         elif mode == RenderDataMode.MAINTAIN:
-            extra_tags.append('x-data=""')
-            extra_tags.append("x-data-maintain")
+            extra_tags.update({"x-data": ""})
+            extra_tags.update({"x-data-maintain": ""})
         else:
             data_json = escapejs(to_json(self._render_data()))
-            extra_tags.append(f"x-data=\"{self.full_component_name()}('{data_json}')\"")
+            extra_tags.update(
+                {"x-data": f"{self.full_component_name()}('{data_json}')"}
+            )
 
         for method_data in self._public_methods:
             if "event_subscriptions" in method_data:
                 for event in method_data["event_subscriptions"]:
-                    extra_tags.append(
-                        f'@{event}="{method_data["name"]}($event.detail)"'
+                    extra_tags.update(
+                        {f"@{event}": f"{method_data["name"]}($event.detail)"}
                     )
-
-        html = f'{html[:tag_name_end]} {" ".join(extra_tags)} {html[tag_name_end:]}'
+        tags_strings = [f'{key}="{value or ''}"' for key, value in extra_tags.items()]
+        html = f'{html[:tag_name_end]} {" ".join(tags_strings)} {html[tag_name_end:]}'
         return mark_safe(html)
 
     def update_html(self, include_state=False) -> None:
@@ -1039,6 +1070,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             return result
         else:
             # TODO: error handling
+            # TODO: use TetraMessage for this, for more consistence!
             return JsonResponse(
                 {
                     "styles": [lib.styles_url for lib in libs],

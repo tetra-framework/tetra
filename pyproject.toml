@@ -53,11 +53,13 @@ dev = [
 demo = [
     "PyYAML>=6.0",
     "markdown>=3.3.7",
-    "gunicorn",
     "django-environ",
-    "whitenoise>=6.6.0",
+    "blacknoise",
     "PyYAML>=6.0",
     "markdown>=3.3.7",
+    "channels",
+    "channels_redis",
+    "daphne",
 ]
 doc = [
     "mkdocs",

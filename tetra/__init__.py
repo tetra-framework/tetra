@@ -1,8 +1,8 @@
 """Full stack component framework for Django using Alpine.js"""
 
-from .components import BasicComponent, Component, public
+from .components import BasicComponent, Component, ReactiveComponent, public
 from .library import Library
 
-__all__ = [BasicComponent, Component, public, Library]
+__all__ = [BasicComponent, Component, ReactiveComponent, public, Library]
 __version__ = "0.4.0"
 __version_info__ = tuple([int(num) for num in __version__.split(".")])

@@ -2,5 +2,7 @@ from tetra import BasicComponent
 
 
 class ShowCase(BasicComponent):
-    def load(self, *args, **kwargs):
-        pass
+    title: str = ""
+
+    def load(self, title: str = "", *args, **kwargs):
+        self.title = title

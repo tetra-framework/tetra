@@ -19,7 +19,17 @@ from django.template.loader import render_to_string
 from django.utils.text import re_camel_case
 from django.utils.timezone import is_aware
 
+from tetra.globals import has_reactive_components
 from tetra.types import ComponentData
+
+try:
+    from asgiref.sync import async_to_sync
+    from channels.layers import get_channel_layer
+
+    channel_layer = get_channel_layer()
+except ImportError:
+    channel_layer = None
+
 
 # list of hardcoded modules that are not searched for components
 # this is necessary as some 3rd party modules contain a "components" package with
@@ -60,7 +70,8 @@ def render_scripts(request, csrf_token):
             "libs": libs,
             "include_alpine": request.tetra_scripts_placeholder_include_alpine,
             "csrf_token": csrf_token,
-            "debug": settings.DEBUG
+            "debug": settings.DEBUG,
+            "use_websockets": str(has_reactive_components()).lower()
             and request.META.get("REMOTE_ADDR") in settings.INTERNAL_IPS,
         },
     )
@@ -382,3 +393,79 @@ def remove_surrounding_quotes(string: str) -> str:
     while len(string) > 2 and string[0] == string[-1] and string[0] in ('"', "'"):
         string = string[1:-1]
     return string
+
+
+class TetraWsResponse:
+    """Standard message format for Tetra WebSocket communication"""
+
+    @staticmethod
+    def subscription(
+        group: str,
+        component_id: str,
+        status: str = "subscribed",
+        message: str | None = None,
+    ) -> dict[str, Any]:
+        return {
+            "type": "subscription",
+            "group": group,
+            "component_id": component_id,
+            "status": status,  # "subscribed", "unsubscribed", "error"
+            "message": message or "",
+        }
+
+    @staticmethod
+    def message(
+        group: str, event_name: str, data: Any, sender_id: str | None = None
+    ) -> dict[str, Any]:
+        return {
+            "type": "channel_message",
+            "groups": group,
+            "data": data,
+            "sender_id": sender_id,
+            "event_name": event_name,
+            # "timestamp": datetime.now(),
+        }
+
+    @staticmethod
+    def component_update(group: str, topic: str | None = None) -> dict[str, Any]:
+        return {"type": "component.update", "group": group, "topic": topic or group}
+
+    @staticmethod
+    def component_update_data(group: str, data: dict) -> dict[str, Any]:
+        return {
+            group: {
+                "type": "component.update_data",
+                "group": group,
+                "data": data,
+            },
+        }
+
+    @staticmethod
+    def component_remove(component_id: str) -> dict[str, Any]:
+        return {
+            "type": "component.remove",
+            "component_id": component_id,
+        }
+
+    @staticmethod
+    def broadcast(
+        message: str, level: str = "info", data: dict | None = None
+    ) -> dict[str, Any]:
+        return {
+            "type": "message.broadcast",
+            "level": level,  # "info", "warning", "error", "success"
+            "message": message,
+            "data": data,
+            # "timestamp": datetime.now(),
+        }
+
+    @staticmethod
+    def error(
+        message: str, code: str | None = None, details: dict | None = None
+    ) -> dict[str, Any]:
+        return {
+            "type": "message.error",
+            "message": message,
+            "code": code or "",
+            "details": details or {},
+        }
