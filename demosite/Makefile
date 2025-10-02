@@ -1,11 +1,25 @@
 LANGUAGES:=`find ./medspeak/locale/ -mindepth 1 -maxdepth 1 -type d -printf "--locale %f "`
 MANAGE = ./manage.py
 
+MANAGE:="django-admin"
+LANGUAGES:=`find ./locale/ -mindepth 1 -maxdepth 1 -type d -printf "--locale %f "`
+
 update:
 	git pull
-	./manage.py tetrabuild
-	./manage.py collectstatic --noinput
+	$(MANAGE) tetrabuild
+	$(MANAGE) collectstatic --noinput
 	supervisorctl restart tetra
+
+
+localecompile:
+	$(MANAGE) compilemessages
+
+localegen:
+    # don't --keep-pot
+	$(MANAGE) makemessages --ignore "build/*" $(LANGUAGES)
+
+
+locale: localegen localecompile
 
 
 localegen:

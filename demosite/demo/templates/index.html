@@ -20,7 +20,7 @@
     <div class="col-lg-7 mx-auto">
       <p class="lead mb-4">
         {% blocktranslate %}Tetra is a new <mark>full stack component framework</mark> for Django, bridging the gap between your server logic and front end presentation.
-        It uses a <mark>public shared state</mark> and a <mark>resumable server state</mark> to enable <mark>inplace reactive updates</mark>. It also encapsulates your Python, HTML, JavaScript and CSS into one file or directory for <mark>proximity of related concerns</mark>.{% endblocktranslate %}
+          It uses a <mark>public shared state</mark> and a <mark>resumable server state</mark> to enable <mark>inplace reactive updates</mark>. It also encapsulates your Python, HTML, JavaScript and CSS into one file or directory for <mark>proximity of related concerns</mark>.{% endblocktranslate %}
       </p>
       <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
         <a href="#features" class="btn btn-light btn-lg px-4">
@@ -43,16 +43,16 @@
 
   {% ShowCase title=_("See how easy it is to build a <mark>todo list</mark>") %}
   {% slot code %}{% comment %}The code blocks don't need translation.{% endcomment %}
-    {% CodeBlock  file_name="todo_list/__init__.py" language="python" title=_('Python code') / %}
-    {% CodeBlock file_name="todo_item/__init__.py" language="python" title=_('Todo Item Python') / %}
+    {% CodeBlock title=_("Python: Todo List") file_name="todo_list/__init__.py" language="python" / %}
+    {% CodeBlock title=_("Python: Todo Item") file_name="todo_item/__init__.py" language="python" / %}
 
-    {% CodeBlock title=_('Template for todo_list') file_name="todo_list/todo_list.html" language="django" / %}
-    {% CodeBlock title=_('Template for todo_item') file_name="todo_item/todo_item.html" language="django" / %}
+    {% CodeBlock title=_("HTML: Todo List") file_name="todo_list/todo_list.html" language="django" / %}
+    {% CodeBlock title=_("HTML: Todo Item") file_name="todo_item/todo_item.html" language="django" / %}
 
-    {% CodeBlock title=_('Todo Item CSS') file_name="todo_item/todo_item.css" language="css" / %}
-    {% CodeBlock title=_('Todo Item Javascript') file_name="todo_item/todo_item.js" language="javascript" / %}
+    {% CodeBlock title="CSS" file_name="todo_item/todo_item.css" language="css" / %}
+    {% CodeBlock title="Javascript" file_name="todo_item/todo_item.js" language="javascript" / %}
 
-    {% CodeBlock title=_('Models Python') file_name="todo_models.py" language="python" / %}
+    {% CodeBlock title=_("Python: Models") file_name="todo_models.py" language="python" / %}
   {% endslot %}
   {% slot description %}
     {% TodoList / %}
@@ -62,8 +62,8 @@
 
   {% ShowCase title=_("Or a reactive server rendered search component:") %}
   {% slot code %}
-    {% CodeBlock title="reactive_search/__init__.py" file_name="reactive_search.py" language="python" / %}
-    {% CodeBlock title="reactive_search/reactive_search.html" file_name="reactive_search.html" language="django" / %}
+    {% CodeBlock title=_("Python") file_name="reactive_search.py" language="python" / %}
+    {% CodeBlock title=_("HTML") file_name="reactive_search.html" language="django" / %}
   {% endslot %}
   {% slot description %}
     {% ReactiveSearch / %}
@@ -74,8 +74,8 @@
 
   {% ShowCase title=_("Or a counter, but with multiple nested instances.") %}
   {% slot code %}
-    {% CodeBlock title="components.py" file_name="counter.py" language="python" / %}
-    {% CodeBlock title="index.html" file_name="counter.index.html" language="django" / %}
+    {% CodeBlock title=_("Python") file_name="counter.py" language="python" / %}
+    {% CodeBlock title=_("Django Template") file_name="counter.index.html" language="django" / %}
   {% endslot %}
   {% slot description %}
     {% include "counter.index.html" %}
@@ -84,8 +84,8 @@
 
   {% ShowCase title=_("Or a simple card, with dynamic content.") %}
   {% slot code %}
-    {% CodeBlock title="info_card/__init__.py" file_name="info_card.py" language="python" / %}
-    {% CodeBlock title="index.html" file_name="info_card.index.html" language="django" / %}
+    {% CodeBlock title=_("Python") file_name="info_card.py" language="python" / %}
+    {% CodeBlock title=_("Django Template") language="django" / %}
   {% endslot %}
   {% slot description %}
     {% InfoCard / %}
