@@ -554,10 +554,6 @@ class Public(metaclass=PublicMeta):
         search for `do_<name>` in the class.
         """
 
-        # prevent infinitive loops (dunder methods), and work around a PyCharm bug:
-        # https://youtrack.jetbrains.com/issue/PY-48306/PyCharm-Debugger-accesses-shape-object-attribute-with-overriden-getattr-method
-        if name.startswith("_") or name == "shape":
-            return None
         if hasattr(self, f"do_{name}"):
             return getattr(self, f"do_{name}")
         else:
