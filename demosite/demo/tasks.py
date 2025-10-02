@@ -16,4 +16,4 @@ async def send_breaking_news_to_channel():
                 "headline": news.title,
             },
         )
-        await asyncio.sleep(5)
+        await asyncio.sleep(10)
