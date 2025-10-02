@@ -2,6 +2,26 @@
 
 from django.db import migrations, models
 
+breaking_fake_news = [
+    "Tetra Framework revolutionizes web development: Apps now run 10x faster on any "
+    "device!",
+    "Secret Tetra feature revealed: AI-generated UIs in real-time!",
+    "NASA adopts Tetra Framework for Mars rover control – First browser on Mars?",
+    "Tetra Framework breaks security records: Zero known exploits since launch!",
+    "Millions of developers switch to Tetra – GitHub explodes with new repos!",
+    "Tetra Framework brings native VR directly to browsers – no plugins required!",
+    "Governments test Tetra for secure digital voting – Blockchain included!",
+    "Tetra Framework goes open source: Devs worldwide spark a massive innovation wave!",
+    "Tech giants fight over Tetra – Google, Apple, and Microsoft offer billions for patents!",
+    "Tetra Framework enables self-optimizing apps – Machine Learning built-in!",
+]
+
+
+def add_fake_breaking_news(apps, schema_editor):
+    BreakingNews = apps.get_model("demo", "BreakingNews")
+    for news in breaking_fake_news:
+        BreakingNews.objects.create(title=news)
+
 
 class Migration(migrations.Migration):
 
@@ -31,5 +51,8 @@ class Migration(migrations.Migration):
         migrations.AlterModelOptions(
             name="todo",
             options={"verbose_name": "ToDo", "verbose_name_plural": "ToDos"},
+        ),
+        migrations.RunPython(
+            add_fake_breaking_news, reverse_code=migrations.RunPython.noop
         ),
     ]
