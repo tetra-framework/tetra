@@ -1,6 +1,8 @@
 <div {% ... attrs %} >
 
-  <h4 class="text-center display-7 my-5">{% slot title %}{% endslot %}</h4>
+  {% if title or slots.title %}
+  <h4 class="text-center display-7 my-5">{% slot title %}{{ title }}{% endslot %}</h4>
+  {% endif %}
 
   <div class="container shadow-sm rounded-3 overflow-hidden">
     <div class="row align-items-md-stretch">

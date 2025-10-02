@@ -41,8 +41,7 @@
     </div>
   </div>
 
-  {% ShowCase %}
-  {% slot title %}{% blocktranslate %}See how easy it is to build a <mark>todo list</mark>{% endblocktranslate %}{% endslot %}
+  {% ShowCase title=_("See how easy it is to build a <mark>todo list</mark>") %}
   {% slot code %}{% comment %}The code blocks don't need translation.{% endcomment %}
     {% CodeBlock  file_name="todo_list/__init__.py" language="python" title=_('Python code') / %}
     {% CodeBlock file_name="todo_item/__init__.py" language="python" title=_('Todo Item Python') / %}
@@ -61,8 +60,7 @@
   {% /ShowCase %}
 
 
-  {% ShowCase %}
-  {% slot title %}{% translate "Or a reactive server rendered search component:" %}{% endslot %}
+  {% ShowCase title=_("Or a reactive server rendered search component:") %}
   {% slot code %}
     {% CodeBlock title="reactive_search/__init__.py" file_name="reactive_search.py" language="python" / %}
     {% CodeBlock title="reactive_search/reactive_search.html" file_name="reactive_search.html" language="django" / %}
@@ -74,8 +72,7 @@
 
 
 
-  {% ShowCase %}
-  {% slot title %}{% translate "Or a counter, but with multiple nested instances." %}{% endslot %}
+  {% ShowCase title=_("Or a counter, but with multiple nested instances.") %}
   {% slot code %}
     {% CodeBlock title="components.py" file_name="counter.py" language="python" / %}
     {% CodeBlock title="index.html" file_name="counter.index.html" language="django" / %}
@@ -85,8 +82,7 @@
   {% endslot %}
   {% /ShowCase %}
 
-  {% ShowCase %}
-  {% slot title %}{% translate "Or a simple card, with dynamic content." %}{% endslot %}
+  {% ShowCase title=_("Or a simple card, with dynamic content.") %}
   {% slot code %}
     {% CodeBlock title="info_card/__init__.py" file_name="info_card.py" language="python" / %}
     {% CodeBlock title="index.html" file_name="info_card.index.html" language="django" / %}
