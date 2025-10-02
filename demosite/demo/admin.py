@@ -1,2 +1,10 @@
+from django.contrib import admin
+from .models import ToDo
 
-# Register your models here.
+
+class ToDoAdmin(admin.ModelAdmin):
+    list_display = ("title", "done", "added", "modified", "session_key")
+    list_filter = ["session_key", "title", "done"]
+
+
+admin.site.register(ToDo, ToDoAdmin)
