@@ -6,6 +6,7 @@ from .base import (
     ModelFormComponent,
     DynamicFormMixin,
 )
+from .reactive import ReactiveComponent
 from ..exceptions import ComponentError, ComponentNotFound
 
 __all__ = [
@@ -17,4 +18,5 @@ __all__ = [
     public,
     DynamicFormMixin,
     FormComponent,
+    ReactiveComponent,
 ]

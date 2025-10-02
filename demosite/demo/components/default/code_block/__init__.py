@@ -7,8 +7,13 @@ class CodeBlock(BasicComponent):
     language: str = "django"
 
     def load(
-        self, file_name: str, language: str, title: str = "", *args, **kwargs
+        self,
+        title: str = "",
+        file_name: str = None,
+        language: str = None,
+        *args,
+        **kwargs,
     ) -> None:
         self.title = title
-        self.file_name = file_name
-        self.language = language
+        self.file_name = file_name or ""
+        self.language = language or ""

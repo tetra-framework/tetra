@@ -262,7 +262,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         attributes or classes to the component's HTML. Don't forget to call
         super().get_extra_tags() in your own implementation.
         """
-        return {"data-component-id": self.component_id}
+        return {"tetra-component-id": self.component_id}
 
     @classmethod
     def get_source_location(cls) -> tuple[str, int, int]:
@@ -1070,6 +1070,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             return result
         else:
             # TODO: error handling
+            # TODO: use TetraMessage for this, for more consistence!
             return JsonResponse(
                 {
                     "styles": [lib.styles_url for lib in libs],

@@ -1,20 +1,185 @@
 (() => {
   // js/tetra.core.js
   var Tetra = {
+    ws: null,
+    pendingSubscriptions: /* @__PURE__ */ new Map(),
+    // Store subscriptions until WS is ready
     init() {
       Alpine.magic("static", () => Tetra.$static);
+      if (window.__tetra_useWebsockets) {
+        this.ensureWebSocketConnection();
+      }
     },
     $static() {
       return (path) => {
         return window.__tetra_staticRoot + path;
       };
     },
+    // Add WebSocket management methods
+    ensureWebSocketConnection() {
+      if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
+        console.log("Connecting to Tetra WebSocket...");
+        this.ws = new WebSocket(`ws://${window.location.host}/ws/tetra/`);
+        this.ws.onopen = () => {
+          console.log("Tetra WebSocket connected");
+          this.pendingSubscriptions.forEach((data, componentId) => {
+            this.ws.send(JSON.stringify(data));
+          });
+          this.pendingSubscriptions.clear();
+        };
+        this.ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          this.handleWebsocketMessage(data);
+        };
+        this.ws.onclose = () => {
+          console.log("Tetra WebSocket disconnected");
+          setTimeout(() => {
+            this.ensureWebSocketConnection();
+          }, 3e3);
+        };
+        this.ws.onerror = (error) => {
+          console.error("Tetra WebSocket error:", error);
+        };
+      }
+      return this.ws;
+    },
+    _get_component_by_id(component_id) {
+      const componentEl = document.querySelector(`[tetra-component-id="${component_id}"]`);
+      if (!componentEl) {
+        console.error(`AlpineJs Component with ID ${component_id} not found.`);
+        return;
+      }
+      return Alpine.$data(componentEl);
+    },
+    _get_components_by_subscribe_group(group) {
+      const componentEls = document.querySelectorAll("[tetra-subscription]");
+      const matchingEls = Array.from(componentEls).filter((el) => {
+        const subscribeAttr = el.getAttribute("tetra-subscription");
+        const topics = subscribeAttr.split(",").map((t) => t.trim());
+        return topics.includes(group);
+      });
+      return matchingEls.map((el) => Alpine.$data(el));
+    },
+    handleWebsocketMessage(data) {
+      const dataType = data.type;
+      switch (dataType) {
+        case "subscription.response":
+          this.handleSubscriptionResponse(data);
+          break;
+        case "notify":
+          this.handleGroupNotify(data);
+          break;
+        case "component.update_data":
+          this.handleComponentUpdateData(data);
+          break;
+        // case 'component.reload':
+        //   this.handleComponentReload(data);
+        //   break;
+        case "component.remove":
+          this.handleComponentRemove(data);
+          break;
+        default:
+          console.warn("Unknown WebSocket message type:", dataType, ":", data);
+      }
+    },
+    handleSubscriptionResponse(event) {
+      switch (event["status"]) {
+        case "subscribed":
+          console.debug("Subscription to group", event["group"], "successful.");
+          document.dispatchEvent(new CustomEvent(`tetra:component-subscribed`, {
+            detail: {
+              component: this,
+              group: event["group"]
+            }
+          }));
+          break;
+        case "unsubscribed":
+          console.debug("Subscription to group", event["group"], "redacted successfully.");
+          document.dispatchEvent(new CustomEvent(`tetra:component-unsubscribed`, {
+            detail: {
+              component: this,
+              group: event["group"]
+            }
+          }));
+          break;
+        case "error":
+          console.error("Error subscribing component", event["component_id"], "to group", event["group"], ":", event["message"]);
+          document.dispatchEvent(new CustomEvent(`tetra:component-subscription-error`, {
+            detail: {
+              component: this,
+              group: event["group"],
+              message: event["message"]
+            }
+          }));
+          break;
+        default:
+          console.debug("Subscription response faulty:", event);
+      }
+    },
+    handleGroupNotify(data) {
+      const { group, event_name, data: payload } = data;
+      document.dispatchEvent(new CustomEvent(`tetra:group:${group}`, {
+        detail: {
+          event_name,
+          data: payload,
+          sender_id,
+          group
+        }
+      }));
+      document.dispatchEvent(new CustomEvent("tetra:group-message", {
+        detail: {
+          event_name,
+          data: payload,
+          sender_id,
+          group
+        }
+      }));
+    },
+    handleComponentUpdateData(event) {
+      const { type, group, data } = event;
+      const components = this._get_components_by_subscribe_group(group);
+      components.forEach((component) => component._updateData(data));
+    },
+    handleComponentRemove(event) {
+      const { type, group, component_id } = event;
+      const component = this._get_component_by_id(component_id);
+      if (component && component._removeComponent) {
+        component._removeComponent();
+      } else {
+        component.remove();
+        console.debug("Element with ID ${component_id} not identified as Alpine component, just removed it anyway.");
+      }
+    },
+    sendWebSocketMessage(message) {
+      if (!this.ws) {
+        console.log("WebSocket is not connected. Cannot send message.");
+        return;
+      }
+      if (this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify(message));
+      } else {
+        if (message.type === "subscribe" && message.component_id) {
+          this.pendingSubscriptions.set(message.component_id, message);
+        }
+        this.ws.addEventListener("open", () => {
+          this.ws.send(JSON.stringify(message));
+        }, { once: true });
+      }
+    },
     alpineComponentMixins() {
       return {
         // Alpine.js lifecycle:
         init() {
+          this.component_id = this.$el.getAttribute("tetra-component-id");
           this.$dispatch("tetra:child-component-init", { component: this });
           this.__initServerWatchers();
+          if (this.$el.hasAttribute("tetra-reactive")) {
+            Tetra.ensureWebSocketConnection();
+          }
+          const group = this.$el.getAttribute("tetra-subscription");
+          if (group) {
+            this._subscribe(group);
+          }
           if (this.__initInner) {
             this.__initInner();
           }
@@ -37,9 +202,26 @@
         },
         destroy() {
           this.$dispatch("tetra:child-component-destroy", { component: this });
+          if (this.__subscribedGroups) {
+            this.__subscribedGroups.forEach((group) => {
+              this._unsubscribe(group);
+            });
+          }
           if (this.__destroyInner) {
             this.__destroyInner();
           }
+        },
+        _handleGroupEvent(eventData) {
+          const { event_name, data, sender_id: sender_id2, group } = eventData;
+          if (sender_id2 === this.component_id) {
+            return;
+          }
+          this.$dispatch(`tetra:group-event:${event_name}`, {
+            data,
+            sender_id: sender_id2,
+            group,
+            component: this
+          });
         },
         // Tetra built ins:
         _updateHtml(html) {
@@ -112,6 +294,39 @@
             url.searchParams.delete(param);
           }
           window.history.pushState(null, "", url.toString());
+        },
+        // Push notification methods
+        _subscribe(groupName, autoUpdate = true) {
+          if (!this.__subscribedGroups) {
+            this.__subscribedGroups = /* @__PURE__ */ new Set();
+          }
+          this.__subscribedGroups.add(groupName);
+          return Tetra.sendWebSocketMessage({
+            type: "subscribe",
+            group: groupName,
+            component_id: this.component_id,
+            component_class: this.componentName,
+            auto_update: autoUpdate
+          });
+        },
+        _unsubscribe(groupName) {
+          if (this.__subscribedGroups) {
+            this.__subscribedGroups.delete(groupName);
+          }
+          return Tetra.sendWebSocketMessage({
+            type: "unsubscribe",
+            group: groupName,
+            component_id: this.component_id
+          });
+        },
+        _notifyGroup(groupName, eventName, data) {
+          return Tetra.sendWebSocketMessage({
+            type: "notify",
+            group: groupName,
+            event_name: eventName,
+            data,
+            sender_id: this.component_id
+          });
         },
         // Tetra private:
         __initServerWatchers() {
@@ -298,7 +513,7 @@
     },
     async callServerMethod(component, methodName, methodEndpoint, args) {
       let component_state = Tetra.getStateWithChildren(component);
-      component_state.args = args ? args : [];
+      component_state.args = args || [];
       let payload = {
         method: "POST",
         headers: {

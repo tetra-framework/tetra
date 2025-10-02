@@ -16,3 +16,13 @@ class ToDo(models.Model):
     def __str__(self):
         return self.title
 
+
+class BreakingNews(models.Model):
+
+    class Meta:
+        verbose_name_plural = _("Breaking news")
+
+    title = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.title

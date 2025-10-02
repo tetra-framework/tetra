@@ -43,12 +43,14 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
 # Application definition
 
 INSTALLED_APPS = [
+    "tetra",
+    "daphne",
+    "channels",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "tetra",
     "django.contrib.staticfiles",
     "demo",
 ]
@@ -94,7 +96,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "demosite.wsgi.application"
+ASGI_APPLICATION = "demosite.asgi.application"
 
 
 # Database
@@ -175,5 +177,14 @@ LOGGING = {
         "django": {"handlers": ["console"], "level": "INFO", "propagate": True},
         "tetra": {"handlers": ["console"], "level": "DEBUG" if DEBUG else "INFO"},
         "demo": {"handlers": ["console"], "level": "DEBUG" if DEBUG else "INFO"},
+    },
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
     },
 }
