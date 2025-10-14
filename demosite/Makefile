@@ -1,7 +1,5 @@
 LANGUAGES:=`find ./medspeak/locale/ -mindepth 1 -maxdepth 1 -type d -printf "--locale %f "`
 MANAGE = ./manage.py
-
-MANAGE:="django-admin"
 LANGUAGES:=`find ./locale/ -mindepth 1 -maxdepth 1 -type d -printf "--locale %f "`
 
 update:
