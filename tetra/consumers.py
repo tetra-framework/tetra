@@ -166,7 +166,7 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
             else:
                 raise WebSocketPayloadException(
                     f"No matching components found for "
-                    f"channel group data {event["data"].keys()} in '{group_name}'."
+                    f"channel group data {event['data'].keys()} in '{group_name}'."
                 )
         if not components:
             logger.warning(
