@@ -998,7 +998,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             if "event_subscriptions" in method_data:
                 for event in method_data["event_subscriptions"]:
                     extra_tags.update(
-                        {f"@{event}": f"{method_data["name"]}($event.detail)"}
+                        {f"@{event}": f'{method_data["name"]}($event.detail)'}
                     )
         tags_strings = [f'{key}="{value or ''}"' for key, value in extra_tags.items()]
         html = f'{html[:tag_name_end]} {" ".join(tags_strings)} {html[tag_name_end:]}'
