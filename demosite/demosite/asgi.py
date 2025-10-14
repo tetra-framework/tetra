@@ -10,7 +10,6 @@ https://docs.djangoproject.com/en/4.0/howto/deployment/asgi/
 import os
 import asyncio
 from pathlib import Path
-from blacknoise import BlackNoise
 from channels.security.websocket import AllowedHostsOriginValidator
 
 from django.core.asgi import get_asgi_application
@@ -49,7 +48,7 @@ try:
     from tetra.routing import websocket_urlpatterns
 
     # Configure ASGI application with WebSocket support
-    base_application = BlackNoise(
+    application = TetraASGIApplication(
         ProtocolTypeRouter(
             {
                 "http": django_asgi_app,
@@ -60,8 +59,6 @@ try:
         )
     )
 
-    base_application.add(BASE_DIR / "static", "/static")
-    application = TetraASGIApplication(base_application)
 except ImportError:
     # Channels not installed - fall back to HTTP-only ASGI app
     print(

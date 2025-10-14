@@ -54,7 +54,6 @@ demo = [
     "PyYAML>=6.0",
     "markdown>=3.3.7",
     "django-environ",
-    "blacknoise",
     "PyYAML>=6.0",
     "markdown>=3.3.7",
     "channels[daphne]",
