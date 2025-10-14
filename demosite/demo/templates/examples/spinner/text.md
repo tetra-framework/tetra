@@ -1,5 +1,5 @@
 ---
-title: Click to Edit
+title: Loading indicator / spinner
 ---
 
 # Loading indicator / spinner
