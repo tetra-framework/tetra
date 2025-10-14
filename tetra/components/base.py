@@ -1000,7 +1000,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
                     extra_tags.update(
                         {f"@{event}": f'{method_data["name"]}($event.detail)'}
                     )
-        tags_strings = [f'{key}="{value or ''}"' for key, value in extra_tags.items()]
+        tags_strings = [f"{key}=\"{value or ''}\"" for key, value in extra_tags.items()]
         html = f'{html[:tag_name_end]} {" ".join(tags_strings)} {html[tag_name_end:]}'
         return mark_safe(html)
 
