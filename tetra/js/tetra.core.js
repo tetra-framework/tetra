@@ -19,7 +19,9 @@ const Tetra = {
   ensureWebSocketConnection() {
     if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
       console.log("Connecting to Tetra WebSocket...");
-      this.ws = new WebSocket(`ws://${window.location.host}/ws/tetra/`);
+      const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+      const ws_url = `${ws_scheme}://${window.location.host}/ws/tetra/`;
+      this.ws = new WebSocket(ws_url);
 
       this.ws.onopen = () => {
         console.log('Tetra WebSocket connected');
