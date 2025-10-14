@@ -3,10 +3,10 @@ import logging
 from typing import Set
 from django.contrib.auth.models import AnonymousUser, AbstractUser
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from websocket import WebSocketPayloadException
 
 from tetra.components import subscription
 from tetra.dispatcher import ComponentDispatcher
+from tetra.exceptions import ComponentError
 from tetra.utils import TetraWsResponse
 
 logger = logging.getLogger(__name__)
@@ -164,7 +164,7 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
             if all(key in c._public_properties for key in event["data"].keys()):
                 await self.send_json(event)
             else:
-                raise WebSocketPayloadException(
+                raise ComponentError(
                     f"No matching components found for "
                     f"channel group data {event['data'].keys()} in '{group_name}'."
                 )
