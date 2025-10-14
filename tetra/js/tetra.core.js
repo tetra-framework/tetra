@@ -140,9 +140,9 @@ const Tetra = {
         console.debug("Subscription response faulty:", event)
     }
   },
-  handleGroupNotify(data) {
+  handleGroupNotify(event) {
     /// Dispatch a custom event that was sent from the server as notification
-    const { group, event_name, data } = data;
+    const { group, event_name, data } = event;
 
     // Dispatch group-specific event
     document.dispatchEvent(new CustomEvent(event_name, {

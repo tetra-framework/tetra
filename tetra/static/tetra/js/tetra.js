@@ -19,7 +19,9 @@
     ensureWebSocketConnection() {
       if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
         console.log("Connecting to Tetra WebSocket...");
-        this.ws = new WebSocket(`ws://${window.location.host}/ws/tetra/`);
+        const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+        const ws_url = `${ws_scheme}://${window.location.host}/ws/tetra/`;
+        this.ws = new WebSocket(ws_url);
         this.ws.onopen = () => {
           console.log("Tetra WebSocket connected");
           this.pendingSubscriptions.forEach((data, componentId) => {
@@ -116,21 +118,11 @@
           console.debug("Subscription response faulty:", event);
       }
     },
-    handleGroupNotify(data) {
-      const { group, event_name, data: payload } = data;
-      document.dispatchEvent(new CustomEvent(`tetra:group:${group}`, {
+    handleGroupNotify(event) {
+      const { group, event_name, data } = event;
+      document.dispatchEvent(new CustomEvent(event_name, {
         detail: {
-          event_name,
-          data: payload,
-          sender_id,
-          group
-        }
-      }));
-      document.dispatchEvent(new CustomEvent("tetra:group-message", {
-        detail: {
-          event_name,
-          data: payload,
-          sender_id,
+          data,
           group
         }
       }));
@@ -210,18 +202,6 @@
           if (this.__destroyInner) {
             this.__destroyInner();
           }
-        },
-        _handleGroupEvent(eventData) {
-          const { event_name, data, sender_id: sender_id2, group } = eventData;
-          if (sender_id2 === this.component_id) {
-            return;
-          }
-          this.$dispatch(`tetra:group-event:${event_name}`, {
-            data,
-            sender_id: sender_id2,
-            group,
-            component: this
-          });
         },
         // Tetra built ins:
         _updateHtml(html) {
