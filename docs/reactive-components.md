@@ -67,7 +67,7 @@ class NewsTicker(ReactiveComponent):
     def load(self, *args, **kwargs) -> None:
         # Fetch the latest news headline from database
         self.breaking_news = BreakingNews.objects.all()
-        # get random item from todos
+        # get random item from BreakingNews
         self.headline = random.choice(self.breaking_news).title    
 ```
 
