@@ -48,8 +48,8 @@ application = ProtocolTypeRouter({
         URLRouter(websocket_urlpatterns)
     ),
 })
-
 ```
+
 
 ## Creating reactive components
 To make a component reactive, simply inherit from `ReactiveComponent` instead of `Component`:

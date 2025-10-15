@@ -31,7 +31,7 @@ https://github.com/user-attachments/assets/137c53af-1fc2-48c5-9c53-a007fbad7874
 
 
 
-This is done using simple and concise code in one component, rendered in your template with just `{% InfoCard / %}. No page reload needed.
+This is done using simple and concise code in one component, rendered in your template with just `{% InfoCard / %}`. No page reload needed.
 
 ```python
 from tetra import Component, public
