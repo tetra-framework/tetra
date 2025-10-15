@@ -103,10 +103,9 @@
     news = await BreakingNews.objects.all()[offset : offset + 1].aget()
 
     await ComponentDispatcher.update_data(
-    "notifications.news.headline",
-    {
-    "headline": news.title,
-    },
+      "notifications.news.headline", {
+        "headline": news.title,
+      },
     )
     await asyncio.sleep(5)
     {% endverbatim %}{% /CodeBlock %}
