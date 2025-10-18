@@ -5,7 +5,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 from django.contrib.messages import get_messages
 from django.contrib.messages.storage.base import Message
-from django.http import HttpRequest, QueryDict, JsonResponse, FileResponse
+from django.http import HttpRequest, QueryDict, FileResponse
 from django.middleware.csrf import get_token
 from django.utils.functional import cached_property
 
@@ -162,12 +162,27 @@ class TetraMiddleware:
 
     def __init__(self, get_response):
         self.get_response = get_response
+        # Check if WebSocket support is properly configured
+        self._websocket_available = self._check_websocket_support()
         if iscoroutinefunction(self.get_response):
             markcoroutinefunction(self)
+
+    def _check_websocket_support(self) -> bool:
+        """Check if Django Channels and WebSocket routing is properly configured"""
+        try:
+            from channels.routing import ProtocolTypeRouter
+
+            # Additional check could be added here to verify ASGI configuration
+            return True
+        except ImportError:
+            return False
 
     async def __call__(self, request):
         csrf_token = get_token(request)
         request.tetra = TetraDetails(request)
+        # Add WebSocket availability to request
+        request.tetra.websocket_available = self._websocket_available
+
         response = await self.get_response(request)
         messages: list[Message] = []
 

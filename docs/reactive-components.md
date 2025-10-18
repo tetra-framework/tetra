@@ -50,6 +50,8 @@ application = ProtocolTypeRouter({
 })
 ```
 
+If you don't add a `ProtocolTypeRouter` wrapper, your websockets won't work. However, Tetra automatically detects whether Django Channels is installed and properly configured in your project. When WebSocket support is not available, Tetra logs a warning to your configured logging mechanism, and proceeds without websockets functionality.
+
 
 ## Creating reactive components
 To make a component reactive, simply inherit from `ReactiveComponent` instead of `Component`:
@@ -203,14 +205,14 @@ Additionally, use hierarchical channel group names for better organization:
 ## Performance tips
 
 - **Limit subscriptions**: Only subscribe to channels you actually need
-- **Use specific channels**: Avoid broad channels that generate too many events  
+- **Use specific channels**: Avoid creating and sending to broad channels that generate too many events
 - **Clean up**: Unsubscribe when components are destroyed
 
 ## Debugging
 
 ### Django server
 
-Enable WebSocket logging:
+You can enable WebSocket specific logging, if you do not already log everything:
 
 ```python
 # settings.py

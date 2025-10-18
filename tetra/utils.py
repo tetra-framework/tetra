@@ -63,6 +63,25 @@ def render_styles(request):
 
 
 def render_scripts(request, csrf_token):
+    """Render Tetra JavaScript with WebSocket support detection"""
+    websocket_available = False
+    try:
+        import channels
+
+        websocket_available = True
+    except ImportError:
+        pass
+
+    if not websocket_available:
+        # log a warning
+        logger.warning(
+            "Tetra: WebSocket support not available. Real-time features disabled."
+        )
+        logger.warning(
+            "To enable WebSocket support, install Django Channels and configure "
+            "your ASGI application."
+        )
+
     libs = list(set(component._library for component in request.tetra_components_used))
     return render_to_string(
         "lib_scripts.html",
