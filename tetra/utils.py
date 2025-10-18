@@ -108,11 +108,6 @@ class TetraTemporaryUploadedFile(UploadedFile):
         temp_name: The path to the temporary file. If given, that file is reused.
     """
 
-    # Django's original InMemoryUploadedFile does not support temporary file paths,
-    # and TemporaryUploadedFile uses a really temporary file that is deleted when
-    # the request is gc'ed. So we need a file that stays where it is until it is
-    # deleted manually or saved to its destination.
-
     def __init__(
         self,
         name: str,
@@ -126,17 +121,17 @@ class TetraTemporaryUploadedFile(UploadedFile):
         temp_file = None
         if temp_name:
             try:
-                temp_file = open(
-                    os.path.join(
-                        settings.MEDIA_ROOT,
-                        settings.TETRA_TEMP_UPLOAD_PATH,
-                        temp_name,
-                    ),
-                    "rb",
+                temp_file_path = os.path.join(
+                    settings.MEDIA_ROOT,
+                    settings.TETRA_TEMP_UPLOAD_PATH,
+                    temp_name,
                 )
-            except FileNotFoundError as e:
-                # if the file does not exist, we just use a new temporary file
-                logger.warning(e)
+                if os.path.exists(temp_file_path):
+                    temp_file = open(temp_file_path, "rb")
+                else:
+                    logger.warning(f"Temporary file not found: {temp_file_path}")
+            except (FileNotFoundError, OSError) as e:
+                logger.warning(f"Could not open temporary file {temp_name}: {e}")
 
         if not temp_file:
             # create a temporary file that is NOT deleted after closing.
@@ -162,8 +157,37 @@ class TetraTemporaryUploadedFile(UploadedFile):
     def close(self):
         try:
             return self.file.close()
-        except FileNotFoundError:
+        except (FileNotFoundError, OSError):
             pass
+
+    def read(self, num_bytes=None):
+        """Override read to handle missing files gracefully"""
+        try:
+            return super().read(num_bytes)
+        except (FileNotFoundError, OSError) as e:
+            logger.error(f"Could not read from temporary file {self.file.name}: {e}")
+            return b""
+
+    def chunks(self, chunk_size=None):
+        """Override chunks to handle missing files gracefully"""
+        try:
+            yield from super().chunks(chunk_size)
+        except (FileNotFoundError, OSError) as e:
+            logger.error(
+                f"Could not read chunks from temporary file {self.file.name}: {e}"
+            )
+            return
+
+    def open(self, mode="rb"):
+        """Override open to handle missing files gracefully"""
+        try:
+            return super().open(mode)
+        except (FileNotFoundError, OSError) as e:
+            logger.error(f"Could not open temporary file {self.file.name}: {e}")
+            # Return a dummy file-like object
+            import io
+
+            return io.BytesIO(b"")
 
 
 class PersistentTemporaryFileUploadHandler(FileUploadHandler):
@@ -412,6 +436,29 @@ def remove_surrounding_quotes(string: str) -> str:
     while len(string) > 2 and string[0] == string[-1] and string[0] in ('"', "'"):
         string = string[1:-1]
     return string
+
+
+def cleanup_temp_uploads(max_age_hours=24) -> int:
+    """Clean up old temporary upload files.
+
+    Returns:
+        The number of files deleted.
+    """
+    temp_dir = Path(settings.MEDIA_ROOT) / settings.TETRA_TEMP_UPLOAD_PATH
+    count = 0
+    if not temp_dir.exists() and temp_dir != settings.MEDIA_ROOT:
+        return 0
+
+    cutoff_time = datetime.datetime.now() - datetime.timedelta(hours=max_age_hours)
+    for temp_file in temp_dir.glob("tmp*.*"):
+        try:
+            if datetime.datetime.fromtimestamp(temp_file.stat().st_mtime) < cutoff_time:
+                temp_file.unlink()
+                logger.info(f"Cleaned up old temporary file: {temp_file}")
+                count += 1
+        except (OSError, FileNotFoundError):
+            pass
+    return count
 
 
 class TetraWsResponse:
