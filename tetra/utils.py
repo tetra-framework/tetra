@@ -64,25 +64,21 @@ def render_styles(request):
 
 def render_scripts(request, csrf_token):
     """Render Tetra JavaScript with WebSocket support detection"""
-    websocket_available = False
-    try:
-        import channels
+    websockets_support = check_websocket_support()
 
-        websocket_available = True
-    except ImportError:
-        pass
-
-    if not websocket_available:
-        # log a warning
+    if not websockets_support:
         logger.warning(
-            "Tetra: WebSocket support not available. Real-time features disabled."
-        )
-        logger.warning(
+            "Tetra: WebSocket support not available. Real-time features disabled.\n"
             "To enable WebSocket support, install Django Channels and configure "
             "your ASGI application."
         )
 
     libs = list(set(component._library for component in request.tetra_components_used))
+    use_websockets = (
+        has_reactive_components()
+        and websockets_support
+        and (settings.DEBUG or request.META.get("REMOTE_ADDR") in settings.INTERNAL_IPS)
+    )
     return render_to_string(
         "lib_scripts.html",
         {
@@ -90,10 +86,37 @@ def render_scripts(request, csrf_token):
             "include_alpine": request.tetra_scripts_placeholder_include_alpine,
             "csrf_token": csrf_token,
             "debug": settings.DEBUG,
-            "use_websockets": str(has_reactive_components()).lower()
-            and request.META.get("REMOTE_ADDR") in settings.INTERNAL_IPS,
+            "use_websockets": use_websockets,
+            "websockets_support": websockets_support,
         },
     )
+
+
+# cache websockets support.
+_websockets_support: bool | None = None
+
+
+def check_websocket_support() -> bool:
+    """Check if Django Channels and WebSocket routing is properly configured"""
+    global _websockets_support
+    if _websockets_support is not None:
+        return _websockets_support
+
+    try:
+        from channels.layers import get_channel_layer
+        from django.conf import settings
+
+        # Simple checks - detailed validation is handled by system checks
+        has_channels = True
+        has_asgi_app = hasattr(settings, "ASGI_APPLICATION") and getattr(settings, "ASGI_APPLICATION")
+        has_channel_layer = get_channel_layer() is not None
+        
+        _websockets_support = has_channels and has_asgi_app and has_channel_layer
+        return _websockets_support
+
+    except ImportError:
+        _websockets_support = False
+        return False
 
 
 class TetraTemporaryUploadedFile(UploadedFile):

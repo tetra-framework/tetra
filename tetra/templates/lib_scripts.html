@@ -3,7 +3,7 @@
 <script>
   window.__tetra_csrfToken = '{{ csrf_token }}';
   window.__tetra_staticRoot = '{% get_static_prefix %}';
-  window.__tetra_useWebsockets = '{{ use_websockets }}';
+  window.__tetra_useWebsockets = {{ use_websockets|yesno:"true,false" }};
 </script>
 {% endif %}
 {% for lib in libs %}
@@ -11,7 +11,7 @@
 {% endfor %}
 <script defer src="{% static 'tetra/js/tetra.js' %}"></script>
 {% if include_alpine %}
-  {% if debug %}
+  {% if debug|yesno:"true,false" %}
     <script defer src="{% static 'tetra/js/alpinejs.morph.cdn.js' %}"></script>
     <script defer src="{% static 'tetra/js/alpinejs.cdn.js' %}"></script>
   {% else %}

@@ -27,7 +27,7 @@ class TetraConfig(AppConfig):
 
     def ready(self):
         from .component_register import find_component_libraries
-        from . import default_settings
+        from tetra import default_settings, checks  # noqa
         from django.conf import settings
 
         for name in dir(default_settings):

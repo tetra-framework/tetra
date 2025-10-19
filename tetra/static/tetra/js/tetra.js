@@ -1,5 +1,5 @@
 (() => {
-  // js/tetra.core.js
+  // tetra/js/tetra.core.js
   var Tetra = {
     ws: null,
     pendingSubscriptions: /* @__PURE__ */ new Map(),
@@ -23,7 +23,7 @@
         const ws_url = `${ws_scheme}://${window.location.host}/ws/tetra/`;
         this.ws = new WebSocket(ws_url);
         this.ws.onopen = () => {
-          console.log("Tetra WebSocket connected");
+          console.debug("Tetra WebSocket connected");
           this.pendingSubscriptions.forEach((data, componentId) => {
             this.ws.send(JSON.stringify(data));
           });
@@ -165,12 +165,12 @@
           this.component_id = this.$el.getAttribute("tetra-component-id");
           this.$dispatch("tetra:child-component-init", { component: this });
           this.__initServerWatchers();
-          if (this.$el.hasAttribute("tetra-reactive")) {
+          if (window.__tetra_useWebsockets && this.$el.hasAttribute("tetra-reactive")) {
             Tetra.ensureWebSocketConnection();
-          }
-          const group = this.$el.getAttribute("tetra-subscription");
-          if (group) {
-            this._subscribe(group);
+            const group = this.$el.getAttribute("tetra-subscription");
+            if (group) {
+              this._subscribe(group);
+            }
           }
           if (this.__initInner) {
             this.__initInner();
@@ -607,7 +607,7 @@
   };
   var tetra_core_default = Tetra;
 
-  // js/tetra.js
+  // tetra/js/tetra.js
   window.Tetra = tetra_core_default;
   window.document.addEventListener("alpine:init", () => {
     tetra_core_default.init();

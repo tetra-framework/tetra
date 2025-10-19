@@ -24,7 +24,7 @@ const Tetra = {
       this.ws = new WebSocket(ws_url);
 
       this.ws.onopen = () => {
-        console.log('Tetra WebSocket connected');
+        console.debug('Tetra WebSocket connected');
         // Process any pending subscriptions
         this.pendingSubscriptions.forEach((data, componentId) => {
           this.ws.send(JSON.stringify(data));
@@ -202,15 +202,15 @@ const Tetra = {
         this.__initServerWatchers();
 
         // Auto-subscribe if component is reactive
-        if (this.$el.hasAttribute('tetra-reactive')) {
+        if (window.__tetra_useWebsockets && this.$el.hasAttribute('tetra-reactive')) {
           Tetra.ensureWebSocketConnection();
-        }
 
-        // Handle dynamic subscriptions from template
+          // Handle dynamic subscriptions from template
 
-        const group = this.$el.getAttribute('tetra-subscription');
-        if (group) {
-          this._subscribe(group);
+          const group = this.$el.getAttribute('tetra-subscription');
+          if (group) {
+            this._subscribe(group);
+          }
         }
 
         if (this.__initInner) {

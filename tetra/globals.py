@@ -1,3 +1,4 @@
+# This is set to True if any ReactiveComponent is initialized
 _has_reactive_components = False
 
 

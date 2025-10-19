@@ -38,6 +38,7 @@ def inline_styles_tag(source) -> str:
 
 class TetraDetails:
     _url: str = ""
+    _websockets_available: bool = False
 
     # Based on HtmxDetails from htmx-django by adamchainz
     def __init__(self, request: HttpRequest) -> None:
@@ -58,6 +59,10 @@ class TetraDetails:
     @cached_property
     def current_url(self) -> str | None:
         return self._url
+
+    @cached_property
+    def websockets_available(self) -> bool:
+        return self._websockets_available
 
     # @cached_property
     # def new_url(self) -> str | None:
@@ -181,7 +186,7 @@ class TetraMiddleware:
         csrf_token = get_token(request)
         request.tetra = TetraDetails(request)
         # Add WebSocket availability to request
-        request.tetra.websocket_available = self._websocket_available
+        request.tetra._websockets_available = self._websocket_available
 
         response = await self.get_response(request)
         messages: list[Message] = []
