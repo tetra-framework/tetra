@@ -739,9 +739,9 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             # recovered data as Model.pk and get the model again.
             if issubclass(AttributeType, Model):
                 if value:
-                    # FIXME: this could possibly be used as attack vector. Any number
-                    #  could be submitted here, so all model entries can be
-                    #  retrieved, even if e.g. not in queryset of this field.
+                    # FIXME: this hits the database, before the actual (and probably
+                    #  different) value is set via e.g. the load() method.
+                    #  Find a way to only load the model when needed.
                     value = AttributeType.objects.get(pk=value)
                 else:
                     value = None  # or attr_type.objects.none()
