@@ -12,6 +12,22 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2025-10-19
+### Fixed
+- fix "optional" channels dependency blocking tetra when not using channels. Only import channels if websockets are needed in project
+### Changed
+- switch to playwright in ui component testing
+
+## [0.5.1] - 2025-10-03
+### Fixed
+- use encrypted wss scheme when connecting to server using https
+- some smaller bugfixes
+### Changed
+- clear static files before building libraries 
+- get rid of Blacknoise in demo project
+
+
+
 ## [0.5.0] - 2025-10-02
 ### Changed
 - introduce websocket-enhanced `ReactiveComponent`s
