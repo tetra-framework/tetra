@@ -1067,6 +1067,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         # if the response is a FileResponse, we directly return the result.
         if isinstance(result, FileResponse):
             result.headers["T-Response"] = "true"
+            result.as_attachment = True
             return result
         else:
             # TODO: error handling
