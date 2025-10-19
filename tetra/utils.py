@@ -201,7 +201,7 @@ class TetraTemporaryUploadedFile(UploadedFile):
             )
             return
 
-    def open(self, mode="rb"):
+    def open(self, mode="rb", *args, **kwargs):
         """Override open to handle missing files gracefully"""
         try:
             return super().open(mode)
