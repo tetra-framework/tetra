@@ -28,9 +28,12 @@ class DownloadComponent(Component):
     """
 
 
-def test_component_download(post_request_with_session, page, live_server, tmp_path):
-    """Test component that provides a download button which stars a file download
-    when clicked."""
+def test_component_download(page, live_server, tmp_path):
+    """
+    Test component that provides a download button which starts a file download
+    when clicked.
+    """
+
     # Navigate to and click the download button
     page.goto(live_server.url + reverse("download_component"))
     # Wait for the file to be downloaded (max 0.5 seconds)
