@@ -48,7 +48,7 @@ dev = [
     "beautifulsoup4",
     "tetra[demo]", # include all the demo packages too
     "tetra[doc]",
-    "selenium"
+    "pytest-playwright"
 ]
 demo = [
     "PyYAML>=6.0",

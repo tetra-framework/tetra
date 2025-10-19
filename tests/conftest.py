@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from pathlib import Path
 
@@ -6,12 +8,32 @@ from django.conf import settings
 from django.contrib.sessions.backends.cache import SessionStore
 from django.core.management import call_command
 from django.test import RequestFactory
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-
 from tetra.middleware import TetraDetails
 
+
 BASE_DIR = Path(__file__).resolve().parent
+os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+
+
+def pytest_addoption(parser):
+    """Looks for the `runplaywright` argument"""
+    parser.addoption(
+        "--runplaywright",
+        action="store_true",
+        default=False,
+        help="run playwright tests",
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    """This skips the tests if runslow is not present"""
+    return
+    if config.getoption("--runplaywright"):
+        return
+    skip_slow = pytest.mark.skip(reason="need --runplaywright option to run")
+    for item in items:
+        if "playwright" in item.keywords:
+            item.add_marker(skip_slow)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -23,9 +45,17 @@ def setup_django_environment():
 
 @pytest.fixture
 def tetra_request():
+    from django.contrib.auth.models import AnonymousUser
+
     factory = RequestFactory()
     req = factory.get("/")
+
+    req.session = SessionStore()
+    req.session.create()
+
+    req.user = AnonymousUser()
     req.tetra = TetraDetails(req)
+
     return req
 
 
@@ -33,6 +63,7 @@ def tetra_request():
 def request_with_session():
     """Fixture to provide an Http GET Request with a session."""
     from django.contrib.auth.models import AnonymousUser
+    from tetra.middleware import TetraDetails
 
     factory = RequestFactory()
     req = factory.get("/")  # Create a request object
@@ -65,20 +96,8 @@ def current_app():
     return apps.get_app_config("main")
 
 
-@pytest.fixture(scope="module")
-def driver():
-    options = Options()
-    options.add_argument("--headless")
-    # options.add_argument("--no-sandbox")
-    # options.add_argument("--disable-dev-shm-usage")
-    driver = webdriver.Chrome(
-        options=options,
-    )
-    yield driver
-    driver.quit()
-
-
-def pytest_configure():
+def pytest_configure(config):
+    """Auto-add the slow mark to the config at runtime"""
     settings.configure(
         BASE_DIR=BASE_DIR,
         SECRET_KEY="django-insecure1234567890",
@@ -116,9 +135,15 @@ def pytest_configure():
         STATIC_URL="/static/",
         STATIC_ROOT=BASE_DIR / "staticfiles",
         DEBUG=True,
-        STORAGES={
-            "staticfiles": {
-                "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        # STORAGES={
+        #     "staticfiles": {
+        #         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        #     },
+        # },
+        CHANNEL_LAYERS={
+            "default": {
+                "BACKEND": "channels.layers.InMemoryChannelLayer",
             },
         },
     )
+    config.addinivalue_line("markers", "playwright: mark test as slow to run")

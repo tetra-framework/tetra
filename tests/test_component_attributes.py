@@ -13,10 +13,10 @@ class SimpleComponentWithAttributeStr(BasicComponent):
     template: django_html = "<div id='component'>str: {{ my_str }}</div>"
 
 
-def test_simple_component_attribute_str(request_with_session):
+def test_simple_component_attribute_str(tetra_request):
     """Tests a simple component with a str attribute"""
     content = render_component_tag(
-        request_with_session,
+        tetra_request,
         "{% attrs.SimpleComponentWithAttributeStr / %}",
     )
     soup = extract_component_tag(content)
@@ -27,11 +27,11 @@ def test_simple_component_attribute_str(request_with_session):
     assert component.my_str == "foo"
 
 
-def test_simple_component_attribute_int(request_with_session):
+def test_simple_component_attribute_int(tetra_request):
     """Tests a simple component with an int attribute"""
 
     content = render_component_tag(
-        request_with_session, "{% SimpleComponentWithAttributeInt / %}"
+        tetra_request, "{% SimpleComponentWithAttributeInt / %}"
     )
     soup = extract_component_tag(content)
 
@@ -43,20 +43,20 @@ def test_simple_component_attribute_int(request_with_session):
     assert component.my_int == 23
 
 
-def test_simple_component_attribute_float(request_with_session):
+def test_simple_component_attribute_float(tetra_request):
     """Tests a simple component with a float attribute"""
 
     content = render_component_tag(
-        request_with_session, "{% SimpleComponentWithAttributeFloat / %}"
+        tetra_request, "{% SimpleComponentWithAttributeFloat / %}"
     )
     assert extract_component_tag(content).text == "float: 2.32"
 
 
-def test_simple_component_attribute_list(request_with_session):
+def test_simple_component_attribute_list(tetra_request):
     """Tests a simple component with a list attribute"""
 
     content = render_component_tag(
-        request_with_session, "{% SimpleComponentWithAttributeList / %}"
+        tetra_request, "{% SimpleComponentWithAttributeList / %}"
     )
     soup = extract_component_tag(content)
     assert soup.text == "list: [1, 2, 3]"
@@ -66,11 +66,11 @@ def test_simple_component_attribute_list(request_with_session):
     assert component.my_list == [1, 2, 3]
 
 
-def test_simple_component_attribute_dict(request_with_session):
+def test_simple_component_attribute_dict(tetra_request):
     """Tests a simple component with a dict attribute"""
 
     content = render_component_tag(
-        request_with_session, "{% SimpleComponentWithAttributeDict / %}"
+        tetra_request, "{% SimpleComponentWithAttributeDict / %}"
     )
     soup = extract_component_tag(content)
     assert soup.text == "dict: {'key': 'value'}"
@@ -80,11 +80,11 @@ def test_simple_component_attribute_dict(request_with_session):
     assert component.my_dict == {"key": "value"}
 
 
-def test_simple_component_attribute_set(request_with_session):
+def test_simple_component_attribute_set(tetra_request):
     """Tests a simple component with a set attribute"""
 
     content = render_component_tag(
-        request_with_session, "{% SimpleComponentWithAttributeSet / %}"
+        tetra_request, "{% SimpleComponentWithAttributeSet / %}"
     )
     soup = extract_component_tag(content)
     assert soup.text == "set: {1, 2, 3}"
@@ -94,22 +94,22 @@ def test_simple_component_attribute_set(request_with_session):
     assert component.my_set == {1, 2, 3}
 
 
-def test_simple_component_attribute_frozenset(request_with_session):
+def test_simple_component_attribute_frozenset(tetra_request):
     """Tests a simple component with a frozenset attribute"""
 
     content = render_component_tag(
-        request_with_session,
+        tetra_request,
         "{% SimpleComponentWithAttributeFrozenSet / %}",
     )
     soup = extract_component_tag(content)
     assert soup.text == "frozenset: frozenset({1, 2, 3})"
 
 
-def test_simple_component_attribute_bool(request_with_session):
+def test_simple_component_attribute_bool(tetra_request):
     """Tests a simple component with a bool attribute"""
 
     content = render_component_tag(
-        request_with_session,
+        tetra_request,
         "{% SimpleComponentWithAttributeBool / %}",
     )
     soup = extract_component_tag(content)

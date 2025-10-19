@@ -13,4 +13,9 @@ urlpatterns = [
         views.download_component,
         name="download_component",
     ),
+    path(
+        "component_with_button",
+        views.component_with_button,
+        name="component_with_button",
+    ),
 ]

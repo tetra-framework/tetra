@@ -11,8 +11,12 @@ def simple_basic_component_with_css(request):
 
 def component_with_return_value(request):
     return HttpResponse(
-        render_component_tag(request, "{% ComponentWithMethodReturnValue / %}")
+        render_component_tag(request, "{% ui.ComponentWithMethodReturnValue / %}")
     )
+
+
+def component_with_button(request):
+    return HttpResponse(render_component_tag(request, "{% ui.ComponentWithButton / %}"))
 
 
 def download_component(request):

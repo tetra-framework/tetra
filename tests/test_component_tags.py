@@ -111,10 +111,10 @@ class LiveVarComponent(Component):
     """
 
 
-def test_livevar_tag(request_with_session):
+def test_livevar_tag(tetra_request):
     """Tests a simple dynamic component"""
     content = render_component_tag(
-        request_with_session,
+        tetra_request,
         "{% LiveVarComponent /%}",
     )
     assert str(extract_component_tag(content).contents[0]) == (
@@ -130,10 +130,10 @@ class LiveVarComponentWithCustomTag(Component):
     """
 
 
-def test_livevar_tag_with_custom_tag(request_with_session):
+def test_livevar_tag_with_custom_tag(tetra_request):
     """Tests a simple dynamic component"""
     content = render_component_tag(
-        request_with_session,
+        tetra_request,
         "{% LiveVarComponentWithCustomTag /%}",
     )
     assert str(extract_component_tag(content).contents[0]) == (

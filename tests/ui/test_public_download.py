@@ -3,7 +3,6 @@ import time
 import pytest
 from django.http import FileResponse
 from django.urls import reverse
-from selenium.webdriver.common.by import By
 
 from tetra import Library, Component, public
 
