@@ -232,7 +232,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
 
         super().__init__()  # call init without kwargs.
         self.request = _request
-        self.attrs = _attrs
+        self.attrs = _attrs or {}
         self._context = _context
         self._slots = _slots
         # FIXME: it could lead to mismatching component ids if it is recreated after
@@ -247,8 +247,8 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         the component key, if available.
         """
         session_key = self.request.session.session_key
-        component_key = self.attrs.get("key")
-        s = f"{self.full_component_name()}{session_key}{component_key or ''}"
+        component_key = self.attrs.get("key", "")
+        s = f"{self.full_component_name()}{session_key}{component_key}"
         return hashlib.blake2b(s.encode(), digest_size=8).hexdigest()
 
     @classmethod
