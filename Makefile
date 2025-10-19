@@ -24,7 +24,10 @@ doc: venv _activate
 doc-dev: venv _activate
 	mkdocs serve -a localhost:8002
 
-build: venv _activate npm
+build-js:
+	scripts/build_js.sh
+
+build: venv _activate npm build-js
 	# remove dist/ if it exists
 	rm -rf dist/
 	python -m build
