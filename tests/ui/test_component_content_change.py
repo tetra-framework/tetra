@@ -15,6 +15,7 @@ class ComponentWithButton(Component):
     def click(self):
         self.text = "changed"
 
+    # language=html
     template = """
     <div> 
         <button id="click_button" @click="click()">
@@ -40,6 +41,8 @@ def test_component_click_content_change(page, live_server):
 
 
 # ------------------- dynamic content return and variable change ------------------
+
+
 @lib.register
 class ComponentWithMethodReturnValue(Component):
     msg = public("")
@@ -49,6 +52,7 @@ class ComponentWithMethodReturnValue(Component):
         # don't set the value directly, just return it
         return "Hello, World!"
 
+    # language=html
     template = """<div id='component'>
     <button id="clickme" @click="msg=get_hello()">Click me</button>
     <div id="result" x-text="msg"></div>
