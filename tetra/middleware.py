@@ -9,8 +9,13 @@ from django.http import HttpRequest, QueryDict, FileResponse
 from django.middleware.csrf import get_token
 from django.utils.functional import cached_property
 
-from .utils import render_scripts, render_styles, TetraJSONEncoder
-from asgiref.sync import iscoroutinefunction, markcoroutinefunction
+from .utils import (
+    render_scripts,
+    render_styles,
+    TetraJSONEncoder,
+    check_websocket_support,
+)
+from asgiref.sync import iscoroutinefunction, markcoroutinefunction, sync_to_async
 
 
 class TetraMiddlewareException(Exception):
@@ -163,32 +168,41 @@ class TetraDetails:
 
 class TetraMiddleware:
     async_capable = True
-    sync_capable = False
+    sync_capable = True
 
     def __init__(self, get_response):
         self.get_response = get_response
-        # Check if WebSocket support is properly configured
-        self._websocket_available = self._check_websocket_support()
-        if iscoroutinefunction(self.get_response):
+        self._websocket_available = check_websocket_support()
+        # Determine if we need async handling
+        self._is_async = iscoroutinefunction(self.get_response)
+        if self._is_async:
             markcoroutinefunction(self)
 
-    def _check_websocket_support(self) -> bool:
-        """Check if Django Channels and WebSocket routing is properly configured"""
-        try:
-            from channels.routing import ProtocolTypeRouter
+    def __call__(self, request):
+        if self._is_async:
+            return self.__acall__(request)
+        else:
+            return self._sync_call(request)
 
-            # Additional check could be added here to verify ASGI configuration
-            return True
-        except ImportError:
-            return False
-
-    async def __call__(self, request):
+    async def __acall__(self, request):
         csrf_token = get_token(request)
         request.tetra = TetraDetails(request)
         # Add WebSocket availability to request
         request.tetra._websockets_available = self._websocket_available
 
         response = await self.get_response(request)
+        return self._process_response(request, response, csrf_token)
+
+    def _sync_call(self, request):
+        csrf_token = get_token(request)
+        request.tetra = TetraDetails(request)
+        # Add WebSocket availability to request
+        request.tetra._websockets_available = self._websocket_available
+
+        response = self.get_response(request)
+        return self._process_response(request, response, csrf_token)
+
+    def _process_response(self, request, response, csrf_token):
         messages: list[Message] = []
 
         if isinstance(response, FileResponse):

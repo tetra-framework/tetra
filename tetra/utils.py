@@ -22,14 +22,6 @@ from django.utils.timezone import is_aware
 from tetra.globals import has_reactive_components
 from tetra.types import ComponentData
 
-try:
-    from asgiref.sync import async_to_sync
-    from channels.layers import get_channel_layer
-
-    channel_layer = get_channel_layer()
-except ImportError:
-    channel_layer = None
-
 
 # list of hardcoded modules that are not searched for components
 # this is necessary as some 3rd party modules contain a "components" package with
@@ -66,13 +58,6 @@ def render_scripts(request, csrf_token):
     """Render Tetra JavaScript with WebSocket support detection"""
     websockets_support = check_websocket_support()
 
-    if not websockets_support:
-        logger.warning(
-            "Tetra: WebSocket support not available. Real-time features disabled.\n"
-            "To enable WebSocket support, install Django Channels and configure "
-            "your ASGI application."
-        )
-
     libs = list(set(component._library for component in request.tetra_components_used))
     use_websockets = (
         has_reactive_components()
@@ -108,9 +93,11 @@ def check_websocket_support() -> bool:
 
         # Simple checks - detailed validation is handled by system checks
         has_channels = True
-        has_asgi_app = hasattr(settings, "ASGI_APPLICATION") and getattr(settings, "ASGI_APPLICATION")
+        has_asgi_app = hasattr(settings, "ASGI_APPLICATION") and getattr(
+            settings, "ASGI_APPLICATION"
+        )
         has_channel_layer = get_channel_layer() is not None
-        
+
         _websockets_support = has_channels and has_asgi_app and has_channel_layer
         return _websockets_support
 
