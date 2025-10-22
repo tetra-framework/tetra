@@ -2,6 +2,9 @@ import hashlib
 import logging
 import importlib
 import os
+from datetime import datetime, date, time
+from decimal import Decimal
+
 from copy import copy
 from typing import Optional, Self, Any
 from types import FunctionType, NoneType
@@ -1091,6 +1094,51 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         """
 
 
+def get_python_type_from_form_field(field) -> type:
+    """
+    Derives the Python type from a Django form field.
+
+    Args:
+        field: A Django form field instance
+
+    Returns:
+        The corresponding Python type. If it can't be determined, return NoneType
+    """
+    # The order of this map is important, as some fields derive from others. If we
+    # checked a field against IntegerField before checking agains FloatField,
+    # it would be True, even if it was a FloatField. We could have checked with "is"
+    # or "==", but then we would have lost the ability to handle future or
+    # existing field types derived from these base types.
+    field_type_map = {
+        forms.FloatField: float,
+        forms.DecimalField: Decimal,
+        forms.IntegerField: int,
+        forms.BooleanField: bool,
+        forms.DateField: date,
+        forms.DateTimeField: datetime,
+        forms.TimeField: time,
+        forms.EmailField: str,
+        forms.URLField: str,
+        forms.CharField: str,
+        forms.ChoiceField: str,
+        forms.FileField: UploadedFile,
+        forms.ImageField: UploadedFile,
+    }
+
+    # Check for ModelChoiceField first (special case)
+    if isinstance(field, ModelChoiceField):
+        return field.queryset.model
+
+    # Check against field type map
+    for field_class, python_type in field_type_map.items():
+        if isinstance(field, field_class):
+            return python_type
+
+    # Fallback: try to infer from initial value
+    initial = field.to_python(field.initial or "")
+    return type(initial) if initial is not None else NoneType
+
+
 class FormComponentMetaClass(ComponentMetaClass):
     def __new__(cls, name, bases, dct):
         # iter through form fields if there is a static form_class, and set a public
@@ -1107,12 +1155,7 @@ class FormComponentMetaClass(ComponentMetaClass):
             for field_name, field in form_class.base_fields.items():
                 # try to read the type of the component attribute from the form field
                 initial = field.to_python(field.initial or "")
-                if isinstance(field, ModelChoiceField):
-                    python_type = field.queryset.model
-                elif isinstance(field, FileField):
-                    python_type = UploadedFile
-                else:
-                    python_type = type(initial)
+                python_type = get_python_type_from_form_field(field)
 
                 # logger.debug(f"  {field_name} -> {python_type}")
                 dct[field_name] = public(initial)

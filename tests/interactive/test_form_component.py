@@ -37,6 +37,15 @@ def test_form_gains_form_attributes(tetra_request):
     assert hasattr(c, "age")
 
 
+def test_form_knows_type_annotations(tetra_request):
+    """Confirm that the PersonComponent1 receives attributes from its associated form
+    fields."""
+
+    c = PersonComponent1(tetra_request)
+    assert c.__annotations__["name"] == str
+    assert c.__annotations__["age"] == int
+
+
 @pytest.mark.playwright
 def test_person_component_call_submit_valid(page: Page, live_server):
     """Test that the PersonComponent1 form submission triggers the form_valid method."""
