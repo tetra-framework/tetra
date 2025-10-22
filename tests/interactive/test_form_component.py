@@ -3,7 +3,7 @@ from unittest.mock import patch
 from django import forms
 from django.urls import reverse
 from playwright.sync_api import Page
-from tetra import Library, public
+from tetra import Library
 from tetra.components import FormComponent
 
 ui = Library("ui", "main")
@@ -26,6 +26,15 @@ class PersonComponent1(FormComponent):
         <button id="submit-button" @click="submit()">Submit</button>
     </div>
     """
+
+
+def test_form_gains_form_attributes(tetra_request):
+    """Confirm that the PersonComponent1 receives attributes from its associated form
+    fields."""
+
+    c = PersonComponent1(tetra_request)
+    assert hasattr(c, "name")
+    assert hasattr(c, "age")
 
 
 @pytest.mark.playwright
