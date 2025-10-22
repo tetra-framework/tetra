@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
 from tetra.types import ComponentData
 from . import Library
-from .utils import from_json, PersistentTemporaryFileUploadHandler
+from .utils import from_json, NamedTemporaryFileUploadHandler
 
 
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def component_method(request, *args, **kwargs):
     """Override default upload handlers, to create a "persistent" temporary file for
     file uploads that are done using Tetra methods."""
-    request.upload_handlers = [PersistentTemporaryFileUploadHandler(request)]
+    request.upload_handlers = [NamedTemporaryFileUploadHandler(request)]
     return _component_method(request, *args, **kwargs)
 
 

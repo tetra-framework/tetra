@@ -96,6 +96,19 @@ def current_app():
     return apps.get_app_config("main")
 
 
+@pytest.fixture(scope="function")
+def page(browser: Browser) -> Generator[Page, Page, None]:
+    context = browser.new_context()  # cheap, isolated
+    page = context.new_page()
+    # Here comes a fancy hack:
+    # If debugging tests (e.g. using PyCharm, should work in VSCode too),
+    # deactivate the timeout, as it makes breakpoints impossible to use. As default
+    # else use 3s, this should suffice for even file uploads locally.
+    page.set_default_timeout(0 if "pydevd" in sys.modules else 3000)
+    yield page
+    context.close()
+
+
 def pytest_configure(config):
     """Auto-add the slow mark to the config at runtime"""
     settings.configure(

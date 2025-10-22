@@ -1,6 +1,7 @@
 import io
 from django.http import FileResponse
 from django.urls import reverse
+from playwright.sync_api import Page
 
 from tetra import Library, Component, public
 
@@ -28,14 +29,17 @@ class DownloadComponent(Component):
     """
 
 
-def test_component_download(page, live_server, tmp_path):
+def test_component_download(page: Page, live_server, tmp_path):
     """
     Test component that provides a download button which starts a file download
     when clicked.
     """
 
     # Navigate to and click the download button
-    page.goto(live_server.url + reverse("download_component"))
+    page.goto(
+        live_server.url
+        + reverse("generic_ui_component_test_view", args=["DownloadComponent"])
+    )
     # Wait for the file to be downloaded (max 0.5 seconds)
     with page.expect_download(timeout=200) as download_info:
         # Perform the action that initiates download

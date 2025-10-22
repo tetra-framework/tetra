@@ -2,12 +2,9 @@ from asgiref.sync import async_to_sync
 
 import tetra.globals
 from .base import Component, public
-from channels.layers import get_channel_layer
-
 from .subscription import registry
 from ..dispatcher import ComponentDispatcher
 
-channel_layer = get_channel_layer()
 
 # Global flag to track if reactive components are registered
 

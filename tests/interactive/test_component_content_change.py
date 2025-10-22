@@ -1,12 +1,13 @@
 import pytest
 from django.urls import reverse
+from playwright.sync_api import Page
 
 from tetra import Library, public, Component
 
-lib = Library("ui", "main")
+ui = Library("ui", "main")
 
 
-@lib.register
+@ui.register
 class ComponentWithButton(Component):
 
     text: str = "initial"
@@ -27,23 +28,26 @@ class ComponentWithButton(Component):
 
 
 @pytest.mark.playwright
-def test_component_click_content_change(page, live_server):
+def test_component_click_content_change(page: Page, live_server):
     """Tests component button click using playwright"""
-    page.goto(live_server.url + reverse("component_with_button"))
+    page.goto(
+        live_server.url
+        + reverse("generic_ui_component_test_view", args=["ComponentWithButton"])
+    )
 
     # # Check initial state
     result_div = page.locator("#result")
     assert result_div.text_content() == "initial"
 
     page.click("#click_button")
-    page.wait_for_selector("#result")
-    assert result_div.text_content() == "changed"
+    result_div = page.wait_for_selector("#result")
+    assert result_div.inner_text() == "changed"
 
 
 # ------------------- dynamic content return and variable change ------------------
 
 
-@lib.register
+@ui.register
 class ComponentWithMethodReturnValue(Component):
     msg = public("")
 
@@ -59,12 +63,18 @@ class ComponentWithMethodReturnValue(Component):
     </div>"""
 
 
-@pytest.mark.django_db
 @pytest.mark.playwright
-def test_basic_component_return_value_changes_content_dynamically(page, live_server):
+def test_basic_component_return_value_changes_content_dynamically(
+    page: Page, live_server
+):
     """Tests a component that dynamically returns a value to the Js frontend,
     which updates the content dynamically with the return value"""
-    page.goto(live_server.url + reverse("component_with_return_value"))
+    page.goto(
+        live_server.url
+        + reverse(
+            "generic_ui_component_test_view", args=["ComponentWithMethodReturnValue"]
+        )
+    )
 
     button = page.locator("#clickme")
     assert button.text_content() == "Click me"

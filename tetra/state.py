@@ -19,7 +19,7 @@ from django.template.loader_tags import BlockNode
 from django.utils.functional import SimpleLazyObject, LazyObject
 
 from .exceptions import ComponentError
-from .utils import isclassmethod, TetraTemporaryUploadedFile
+from .utils import isclassmethod, NamedTemporaryUploadedFile
 from .templates import InlineOrigin
 
 if TYPE_CHECKING:
@@ -122,10 +122,10 @@ class PickleModel(Pickler):
             return None
 
 
-@register_pickler(TetraTemporaryUploadedFile, b"TetraTemporaryUploadedFile")
+@register_pickler(NamedTemporaryUploadedFile, b"TetraTemporaryUploadedFile")
 class PickleTetraTemporaryUploadedFile(Pickler):
     @staticmethod
-    def pickle(file: TetraTemporaryUploadedFile) -> bytes | None:
+    def pickle(file: NamedTemporaryUploadedFile) -> bytes | None:
         # return a reference to file's temporary location
         value = pickle.dumps(
             {
@@ -138,14 +138,14 @@ class PickleTetraTemporaryUploadedFile(Pickler):
         return value
 
     @staticmethod
-    def unpickle(bs: bytes) -> TetraTemporaryUploadedFile:
+    def unpickle(bs: bytes) -> NamedTemporaryUploadedFile:
         data = pickle.loads(bs)
-        return TetraTemporaryUploadedFile(
+        return NamedTemporaryUploadedFile(
             name=data["name"],
             size=data["size"],
             content_type=data["content_type"],
             charset=settings.DEFAULT_CHARSET,
-            temp_name=data["temp_path"],
+            temp_path=data["temp_path"],
         )
 
 
