@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=77.0.0", "wheel"]
+requires = ["setuptools>=77.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -19,7 +19,10 @@ keywords = ["python", "django", "framework", "components"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Programming Language :: Python :: 3",
+    "Framework :: Django",
+    "Framework :: Django :: 5",
     "Operating System :: OS Independent",
+    "Topic :: Software Development",
 ]
 dependencies = [
     "cryptography>=37.0.1",
