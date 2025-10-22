@@ -1,4 +1,4 @@
-from types import FunctionType, MethodType
+from types import MethodType
 
 import pytest
 
