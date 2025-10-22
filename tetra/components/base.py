@@ -141,8 +141,10 @@ def make_template(cls) -> Template:
         # Here we definitely must have a dir-style component
         if not hasattr(module, "__path__"):
             raise ComponentError(
-                f"'{cls.__module__}' is not a valid component library of component "
-                f"'{cls.__name__}'."
+                f"'{cls.__module__}.{cls.__name__}' is not a valid component. "
+                f"You either have to put it into a correct library directory with a "
+                f"template HTML alongside, or add a 'template'/'template_name' "
+                f"attribute to the component."
             )
         module_path = module.__path__[0]
         component_name = module.__name__.split(".")[-1]
@@ -1094,7 +1096,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         """
 
 
-def get_python_type_from_form_field(field) -> type:
+def get_python_type_from_form_field(field, initial) -> type:
     """
     Derives the Python type from a Django form field.
 
@@ -1135,8 +1137,13 @@ def get_python_type_from_form_field(field) -> type:
             return python_type
 
     # Fallback: try to infer from initial value
-    initial = field.to_python(field.initial or "")
-    return type(initial) if initial is not None else NoneType
+    if initial is not None:
+        initial = field.to_python(initial)
+        return type(initial)
+    else:
+        # Infer type from field class
+        initial = field.to_python(initial or "")
+        return type(initial) if initial is not None else NoneType
 
 
 class FormComponentMetaClass(ComponentMetaClass):
@@ -1148,14 +1155,10 @@ class FormComponentMetaClass(ComponentMetaClass):
         dct.setdefault("__annotations__", {})
 
         if form_class:
-            # logger.debug(
-            #     f"Automatically creating component attributes from form fields for "
-            #     f"class {name}"
-            # )
             for field_name, field in form_class.base_fields.items():
+                initial = field.initial
                 # try to read the type of the component attribute from the form field
-                initial = field.to_python(field.initial or "")
-                python_type = get_python_type_from_form_field(field)
+                python_type = get_python_type_from_form_field(field, initial)
 
                 # logger.debug(f"  {field_name} -> {python_type}")
                 dct[field_name] = public(initial)
