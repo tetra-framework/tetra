@@ -1,7 +1,7 @@
 import pytest
 from django.template import TemplateSyntaxError
 
-from tests.main.helpers import render_component_tag
+from tests.apps.main.helpers import render_component_tag
 from tetra.exceptions import ComponentError, ComponentNotFound
 
 

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from tests.main.models import SimpleModel, AwareDateTimeModel
+from tests.apps.main.models import SimpleModel, AwareDateTimeModel
 from tetra.utils import (
     TetraJSONDecoder,
     TetraJSONEncoder,

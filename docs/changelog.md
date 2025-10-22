@@ -12,9 +12,11 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.2] - 2025-10-19
+## [0.5.2] - 2025-10-xx
 ### Fixed
 - fix "optional" channels dependency blocking tetra when not using channels. Only import channels if websockets are needed in project
+- components in subdir apps are now found correctly by label
+
 ### Changed
 - switch to playwright in ui component testing
 

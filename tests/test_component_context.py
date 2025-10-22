@@ -1,5 +1,5 @@
 from tests.utils import extract_component_tag
-from tests.main.helpers import render_component_tag
+from tests.apps.main.helpers import render_component_tag
 
 
 def test_use_extra_context_not_scoped(tetra_request):

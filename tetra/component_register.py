@@ -54,7 +54,7 @@ def find_component_libraries():
 
                     # if submodule is a package, treat it as library package
                     library_module_name = ".".join(
-                        [app_config.label, components_module_name, library_name]
+                        [app_config.name, components_module_name, library_name]
                     )
                     try:
                         library_module = importlib.import_module(library_module_name)

@@ -29,6 +29,8 @@ class FooComponent(Component):
 
 # create a new library named "default" for the "main" app
 default = Library(name="default", app=apps.get_app_config("main"))
+# or just with the label
+default = Library("default", "main")
 
 # register the FooComponent manually to the default library
 default.register(FooComponent)

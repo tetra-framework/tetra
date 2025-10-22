@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class Library:
-    # a dictionary to store all Library instances: [app][library][components]
+    # a dictionary to store all Library instances: [app_label][library][components]
     registry = defaultdict(dict)
 
     @staticmethod
