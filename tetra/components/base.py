@@ -1243,11 +1243,6 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
                     {"@change": f"{field_name}=$event.target.files?.[0];"}
                 )
 
-                if hasattr(field, "temp_file"):
-                    # TODO: Check if we need to send back the temp file name and which attribute to use, might not be necessary
-                    form.fields[field_name].widget.attrs.update(
-                        {"data-tetra-temp-file": field.temp_file}
-                    )
                 # form.fields[field_name].initial = getattr(self, field_name)
             else:
                 if prefix is None:
