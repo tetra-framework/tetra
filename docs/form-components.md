@@ -194,7 +194,7 @@ class CarForm(forms.Form):
         
 # components/default.py
 class CarComponent(DependencyFormMixin, FormComponent):
-    @þublic.watch("make")
+    @public.watch("make")
     def make_changed(self, value, old_value, attr):
         """A dummy trigger hook, to rerender the component every time 'make' changes."""
     

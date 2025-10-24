@@ -1580,7 +1580,7 @@ class DynamicFormMixin:
         ```python
 
 
-        @þublic.watch("make")
+        @public.watch("make")
         def make_changed_dummy(self, value, old_value, attr) -> None:
             pass
 
