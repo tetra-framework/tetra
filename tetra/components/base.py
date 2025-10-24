@@ -1468,7 +1468,7 @@ class ModelFormComponent(FormComponent, metaclass=ModelFormComponentMetaClass):
             self.model = self.get_form_class()._meta.model
         return self.model
 
-    def get_form_class(self) -> type(forms.ModelForm):
+    def get_form_class(self) -> type[forms.ModelForm]:
         """Returns the form class to use in this component."""
 
         # if there is an explicit form_class defined, use it
