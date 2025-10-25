@@ -21,14 +21,14 @@ class UploadForm(forms.Form):
 @ui.register
 class UploadComponent(FormComponent):
     form_class = UploadForm
-    text = ""
+    text = "loading"
     uploaded_filename = ""
 
     def form_valid(self, form: BaseForm) -> None:
         uploaded_file: NamedTemporaryUploadedFile = self.file  # noqa
         assert isinstance(uploaded_file, NamedTemporaryUploadedFile)
 
-        # Save the file to MEDIA
+        # Save the file to MEDIA by moving it there
         temp_path = settings.MEDIA_ROOT / uploaded_file.name
         with open(temp_path, "wb") as f:
             for chunk in uploaded_file.chunks():
@@ -39,11 +39,11 @@ class UploadComponent(FormComponent):
     # language=html
     template = """
     <div>
-        {{ form.file }}
-        <div id="errors">{{ form.file.errors }}</div>
-        <button id="submit-button" @click="submit()">Upload</button>
-        <div id="result">{{ text }}</div>
-        <div id="filename" style="display:none;">{{ uploaded_filename }}</div>
+      <label>{{ form.file.label }} {{ form.file }}</label>
+      <div id="errors">{{ form.file.errors }}</div>
+      <button id="submit-button" @click="submit()">Upload</button>
+      <div id="result">{{ text }}</div>
+      <div id="filename" style="display:none;">{{ uploaded_filename }}</div>
     </div>
     """
 
@@ -55,21 +55,19 @@ class UploadComponent(FormComponent):
 def test_component_upload_with_no_file_must_fail(page, live_server):
 
     with patch.object(UploadComponent, "form_invalid") as mock_form_invalid:
-
         page.goto(
             live_server.url
             + reverse("generic_ui_component_test_view", args=["UploadComponent"])
         )
-
         # Clear any existing file selection by setting empty files
-        page.locator("#id_file").set_input_files("")
+        page.locator("#id_file").set_input_files([])
 
         # don't assign a file to the input, just click on "submit"
         page.locator("#submit-button").click()
         page.wait_for_load_state()
         mock_form_invalid.assert_called_once()
 
-        # assert "This field is required" in page.locator("#errors").inner_html()
+        assert "This field is required" in page.locator("#errors").inner_html()
         # assert page.locator("#filename").inner_html() == ""
 
 
@@ -82,15 +80,14 @@ def test_upload_file_with_form_component(page, live_server):
         live_server.url
         + reverse("generic_ui_component_test_view", args=["UploadComponent"])
     )
-    result_div = page.locator("#result")
-    assert result_div.text_content() == ""
+    page.wait_for_selector("#id_file", state="visible")
 
     page.locator("#id_file").set_input_files(file_path)
-    page.locator("#submit-button").click()
 
-    # Wait for the file to be uploaded, then check if result text was changed after
-    # page reload
-    page.wait_for_load_state()
+    page.locator("#submit-button").click()
+    page.wait_for_selector("#result:has-text('Uploaded successfully')")
+
+    result_div = page.locator("#result")
     assert result_div.text_content() == "Uploaded successfully"
 
     # Get the uploaded filename and verify content
@@ -101,6 +98,3 @@ def test_upload_file_with_form_component(page, live_server):
 
     # Clean up
     os.remove(uploaded_filename)
-
-    # Clear file input to prevent state leakage to next test
-    # page.locator("#id_file").set_input_files([])

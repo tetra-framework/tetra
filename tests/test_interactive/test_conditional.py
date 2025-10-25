@@ -4,7 +4,7 @@ from django.urls import reverse
 from playwright.sync_api import Page
 
 from tetra import Library, public
-from tetra.components import FormComponent
+from tetra.components import FormComponent, DynamicFormMixin
 
 ui = Library("ui", "main")
 
@@ -22,15 +22,19 @@ class ConditionalForm(forms.Form):
 
 
 @ui.register
-class CarModelComponent(FormComponent):
+class CarModelComponent(DynamicFormMixin, FormComponent):
     form_class = ConditionalForm
 
     @public.watch("vendor")
     def vendor_changed(self, value, old_value, attr):
-        self.form.fields["model"].choices = [
-            (f"{value}_{model}", f"{model.capitalize()} {value.capitalize()}")
-            for model in car_models[value]
-        ]
+        pass
+
+    def get_model_choices(self):
+        vendor = self.vendor
+        if not vendor:
+            return ()
+
+        return ((f"{vendor}_{model.lower()}", model) for model in car_models[vendor])
 
     # language=html
     template = """
@@ -56,16 +60,26 @@ def test_conditional_form_component(page: Page, live_server):
         live_server.url
         + reverse("generic_ui_component_test_view", args=["CarModelComponent"])
     )
-
     # Select Volvo
     page.locator("#id_vendor").select_option("volvo")
-    page.wait_for_load_state()
     page.locator("#id_model").select_option("volvo_v40")
 
-    # Check that the model choices are updated
-    assert page.locator("#id_model").has_option("Volvo V40")
-    assert page.locator("#id_model").has_option("Volvo Polo")
-    assert page.locator("#id_model").has_option("Volvo Passat")
+    model_options = page.locator("#id_model option").all_text_contents()
+    assert "V40" in model_options
+    assert "V60" in model_options
+    assert "S60" in model_options
+    assert "S80" in model_options
 
     # Select VW
     page.locator("#id_vendor").select_option("vw")
+    page.wait_for_load_state()
+
+    # Wait for the model dropdown to be populated with VW options
+    # FIXME: this is buggy
+    # page.locator("#id_model option[value='vw_golf']").wait_for()
+
+    # Check that the model choices are updated to VW models
+    model_options = page.locator("#id_model option").all_text_contents()
+    assert "Golf" in model_options
+    assert "Polo" in model_options
+    assert "Passat" in model_options
