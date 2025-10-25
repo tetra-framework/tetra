@@ -127,7 +127,7 @@ class PickleTetraTemporaryUploadedFile(Pickler):
     @staticmethod
     def pickle(file: NamedTemporaryUploadedFile) -> bytes | None:
         # return a reference to file's temporary location
-        value = pickle.dumps(
+        return pickle.dumps(
             {
                 "name": file.name,
                 "size": file.size,
@@ -135,7 +135,6 @@ class PickleTetraTemporaryUploadedFile(Pickler):
                 "temp_path": file.temporary_file_path(),
             }
         )
-        return value
 
     @staticmethod
     def unpickle(bs: bytes) -> NamedTemporaryUploadedFile:
@@ -233,6 +232,8 @@ class StatePickler(pickle.Pickler):
             pickled = pickler.pickle(obj)
             if pickled is not None:
                 return b":".join([pickler.prefix, pickled])
+
+        return None
 
 
 class StateUnpickler(pickle.Unpickler):
