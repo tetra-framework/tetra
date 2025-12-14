@@ -106,7 +106,7 @@ def check_websocket_support() -> bool:
         return False
 
 
-class TetraTemporaryUploadedFile(UploadedFile):
+class NamedTemporaryUploadedFile(UploadedFile):
     """
     A "temporary" file, uploaded to a known temporary location, but with a "persistent"
     name, to be found again after a page refresh.
