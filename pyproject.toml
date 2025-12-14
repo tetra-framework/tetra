@@ -45,6 +45,7 @@ dev = [
     "pkginfo>=1.12.1.2",
     "pytest",
     "pytest-django",
+    "pytest-cov",
     "pre-commit",
     "black",
     "python-dateutil>=2.8.2",
