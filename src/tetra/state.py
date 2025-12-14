@@ -122,8 +122,8 @@ class PickleModel(Pickler):
             return None
 
 
-@register_pickler(NamedTemporaryUploadedFile, b"TetraTemporaryUploadedFile")
-class PickleTetraTemporaryUploadedFile(Pickler):
+@register_pickler(NamedTemporaryUploadedFile, b"NamedTemporaryUploadedFile")
+class PickleNamedTemporaryUploadedFile(Pickler):
     @staticmethod
     def pickle(file: NamedTemporaryUploadedFile) -> bytes | None:
         # return a reference to file's temporary location
