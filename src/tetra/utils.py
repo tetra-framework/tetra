@@ -108,14 +108,17 @@ def check_websocket_support() -> bool:
 
 class TetraTemporaryUploadedFile(UploadedFile):
     """
-    A file uploaded to a "persistent" temporary location, to be persisted
-    across page refreshes.
+    A "temporary" file, uploaded to a known temporary location, but with a "persistent"
+    name, to be found again after a page refresh.
+
+    If you pass a temporary file path, that will be used instead of creating a new one.
 
     Attributes:
-        name: The name of the file.
+        name: The (final) name of the uploaded file.
         size: The size of the file in bytes.
         content_type: The content type of the file.
         temp_name: The path to the temporary file. If given, that file is reused.
+        content_type_extra: Extra content type parameters.
     """
 
     def __init__(
@@ -168,6 +171,7 @@ class TetraTemporaryUploadedFile(UploadedFile):
         try:
             return self.file.close()
         except (FileNotFoundError, OSError):
+            logger.warning(f"Could not close temp. file properly: {self.file.name}")
             pass
 
     def read(self, num_bytes=None):

@@ -183,12 +183,12 @@ class Library:
         file_out_path = os.path.join(
             self.app.path, "static", self.app.label, "tetra", self.name
         )
-        
+
         # Clear existing files to prevent old versions
         if os.path.exists(file_out_path):
             shutil.rmtree(file_out_path)
         os.makedirs(file_out_path)
-        
+
         # Also clear from STATIC_ROOT if it exists
         if hasattr(settings, 'STATIC_ROOT') and settings.STATIC_ROOT:
             static_root_path = os.path.join(
@@ -196,11 +196,11 @@ class Library:
             )
             if os.path.exists(static_root_path):
                 shutil.rmtree(static_root_path)
-        
+
         if os.path.exists(library_cache_path):
             shutil.rmtree(library_cache_path)
         os.makedirs(library_cache_path)
-        
+
         self.build_js(library_cache_path, file_out_path)
         self.build_styles(library_cache_path, file_out_path)
 

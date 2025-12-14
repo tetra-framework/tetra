@@ -41,9 +41,9 @@ def _component_method(
         # check if request includes multipart/form-data files
         if request.content_type == "multipart/form-data":
             component_state = from_json(request.POST["component_state"])
-            # data["args"].extend(request.FILES.values())
+
+        # if the request is application-data/json, we need to decode it ourselves
         elif request.content_type == "application/json" and request.body:
-            # if request is application-data/json, we need to decode it ourselves
             component_state = from_json(request.body.decode())
         else:
             logger.error("Unsupported content type: %s", request.content_type)

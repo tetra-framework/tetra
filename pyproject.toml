@@ -77,6 +77,7 @@ doc = [
 version = {attr = "tetra.__version__"}
 
 [tool.setuptools.packages.find]
+where = ["src"]
 exclude = ["docs", "tests", "demosite"]
 
 [tool.pytest.ini_options]

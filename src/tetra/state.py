@@ -205,7 +205,34 @@ skip_check = {
 
 
 class StatePickler(pickle.Pickler):
+    """Custom pickler for serializing component state with support for special object types.
+
+    Extends pickle.Pickler to handle Django-specific objects and custom types that require
+    special serialization logic. Uses registered picklers to serialize objects that cannot
+    be pickled using standard pickle mechanisms.
+    """
+
     def persistent_id(self, obj) -> bytes | None:
+        """Generate a persistent ID for objects requiring custom serialization.
+
+        This method is called by the pickle module for each object during serialization.
+        It determines whether an object needs custom handling and returns a persistent ID
+        that can be used to reconstruct the object during unpickling.
+
+        The method performs the following steps:
+        1. Skips basic types that can be pickled normally
+        2. Handles Django Origin objects by removing unpickleable loader references
+        3. Resolves lazy objects before pickling
+        4. Finds and applies appropriate custom picklers for registered types
+
+        Args:
+            obj: The object to be pickled. Can be any Python object.
+
+        Returns:
+            bytes | None: A persistent ID in the format b"prefix:pickled_data" if a custom
+                pickler is found and successfully serializes the object, None otherwise.
+                When None is returned, the standard pickle mechanism is used.
+        """
         if type(obj) in skip_check:
             return None
 

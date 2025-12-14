@@ -698,7 +698,42 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         *args,
         **kwargs,
     ) -> Any:
-        """Creates and initializes a component instance from its serialized state."""
+        """Creates and initializes a component instance from its serialized state.
+
+        This method reconstructs a component from its encrypted state data, typically
+        received from the client after a previous server interaction. It handles:
+
+        - Decrypting and validating the component state
+        - Restoring component attributes and properties
+        - Resolving Django Model instances from their primary keys
+        - Managing uploaded files and their temporary storage
+        - Re-executing the component's load() method with original arguments
+        - Updating public properties from client-side changes
+
+        Args:
+            component_state: Dictionary containing 'encrypted' state string and 'data'
+                dict with current client-side property values
+            request: The current HTTP request object
+            key: Optional component key for identification
+            _attrs: Optional attributes to set on the component
+            _context: Optional template context to use
+            _slots: Optional template slots to use
+            *args: Positional arguments to pass to load()
+            **kwargs: Keyword arguments to pass to load()
+
+        Returns:
+            Component: A fully initialized component instance with restored state
+
+        Raises:
+            TypeError: If component_state structure is invalid
+            AttributeError: If required state attributes are missing
+
+        Note:
+            - Model fields are automatically fetched from the database using their PKs
+            - File fields maintain references to temporary uploaded files
+            - The component's load() method is called with the original arguments
+            - Client-side property changes override the encrypted state values
+        """
         if not isinstance(component_state, dict):
             raise TypeError("Encrypted state has wrong type")
         if "encrypted" not in component_state:
