@@ -86,3 +86,6 @@ addopts = "--nomigrations"
 testpaths =[
     "tests"
 ]
+pythonpath = [
+  "src"
+]
