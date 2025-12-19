@@ -158,5 +158,6 @@ def pytest_configure(config):
                 "BACKEND": "channels.layers.InMemoryChannelLayer",
             },
         },
+        FORMS_URLFIELD_ASSUME_HTTPS=True,
     )
     config.addinivalue_line("markers", "playwright: mark test as slow to run")
