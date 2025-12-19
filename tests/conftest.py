@@ -1,4 +1,7 @@
 import os
+import shutil
+import sys
+from typing import Generator
 
 import pytest
 from pathlib import Path
@@ -7,11 +10,17 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.sessions.backends.cache import SessionStore
 from django.core.management import call_command
+from django.http import HttpRequest
 from django.test import RequestFactory
+from playwright.sync_api import Page, Browser
+
 from tetra.middleware import TetraDetails
 
 
 BASE_DIR = Path(__file__).resolve().parent
+# Ensure tests directory is importable (so `from utils import ...` and `from apps...` work)
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 
 
@@ -27,7 +36,6 @@ def pytest_addoption(parser):
 
 def pytest_collection_modifyitems(config, items):
     """This skips the tests if runslow is not present"""
-    return
     if config.getoption("--runplaywright"):
         return
     skip_slow = pytest.mark.skip(reason="need --runplaywright option to run")
@@ -38,57 +46,71 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_django_environment():
-    # Call your `tetrabuild` command before running tests - to make sure the Js
-    # scripts and CSS files are built.
+    """
+    This fixture sets up the Django environment for the test session.
+    It ensures that the temporary upload directory exists and then runs
+    the 'tetrabuild' command.
+    """
+    # Ensure the temporary upload directory exists
+    upload_dir = Path(settings.MEDIA_ROOT) / "tetra_temp_upload"
+    os.makedirs(upload_dir, exist_ok=True)
+
     call_command("tetrabuild")
 
 
-@pytest.fixture
-def tetra_request():
+@pytest.fixture(autouse=True)
+def cleanup_temp_uploads_and_media():
+    """
+    This fixture cleans up the temporary upload directory after each test.
+    """
+    yield
+    temp_upload_dir = Path(settings.MEDIA_ROOT) / "tetra_temp_upload"
+    if temp_upload_dir.exists():
+        for item in temp_upload_dir.iterdir():
+            if item.is_file():
+                item.unlink()
+            elif item.is_dir():
+                shutil.rmtree(item)
+
+
+def add_session_to_request(request: HttpRequest) -> HttpRequest:
+    """
+    Helper to add a session to a factory request
+    """
     from django.contrib.auth.models import AnonymousUser
 
-    factory = RequestFactory()
-    req = factory.get("/")
-
-    req.session = SessionStore()
-    req.session.create()
-
-    req.user = AnonymousUser()
-    req.tetra = TetraDetails(req)
-
-    return req
+    request.session = SessionStore()
+    request.session.create()
+    request.user = AnonymousUser()
+    return request
 
 
 @pytest.fixture
-def request_with_session():
-    """Fixture to provide an Http GET Request with a session."""
-    from django.contrib.auth.models import AnonymousUser
-    from tetra.middleware import TetraDetails
-
+def tetra_request() -> HttpRequest:
+    """
+    Returns an Http GET Request with a session, and a `tetra` attribute.
+    """
     factory = RequestFactory()
-    req = factory.get("/")  # Create a request object
+    request = factory.get("/")
 
-    req.session = SessionStore()
-    req.session.create()
-    req.user = AnonymousUser()
-    req.tetra = TetraDetails(req)
+    add_session_to_request(request)
 
-    return req
+    request.tetra = TetraDetails(request)
+
+    return request
 
 
 @pytest.fixture
 def post_request_with_session():
-    """Fixture to provide a Http POST Request with a session."""
-    from django.contrib.auth.models import AnonymousUser
-
+    """
+    Returns an Http GET Request with a session, and a `tetra` attribute.
+    """
     factory = RequestFactory()
-    req = factory.post("/")  # Create a request object
+    request = factory.post("/")  # Create a request object
 
-    req.session = SessionStore()
-    req.session.create()
-    req.user = AnonymousUser()
+    add_session_to_request(request)
 
-    return req
+    return request
 
 
 @pytest.fixture
@@ -104,7 +126,7 @@ def page(browser: Browser) -> Generator[Page, Page, None]:
     # If debugging tests (e.g. using PyCharm, should work in VSCode too),
     # deactivate the timeout, as it makes breakpoints impossible to use. As default
     # else use 3s, this should suffice for even file uploads locally.
-    page.set_default_timeout(0 if "pydevd" in sys.modules else 3000)
+    page.set_default_timeout(1000 * 60 if "pydevd" in sys.modules else 3000)
     yield page
     context.close()
 
@@ -121,8 +143,8 @@ def pytest_configure(config):
             "django.contrib.contenttypes",
             "django.contrib.staticfiles",
             "django.contrib.sessions",
-            "tests.main",
-            "tests.another_app",
+            "tests.apps.main",
+            "tests.apps.another_app",
         ],
         MIDDLEWARE=[
             "django.middleware.security.SecurityMiddleware",
@@ -147,6 +169,7 @@ def pytest_configure(config):
         ],
         STATIC_URL="/static/",
         STATIC_ROOT=BASE_DIR / "staticfiles",
+        MEDIA_ROOT=BASE_DIR / "media",
         DEBUG=True,
         # STORAGES={
         #     "staticfiles": {

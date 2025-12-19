@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 
 
-class AnotherAppConfig(AppConfig):
+class MainConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "tests.another_app"
+    name = "tests.apps.main"
+    label = "main"

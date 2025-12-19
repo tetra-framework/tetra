@@ -2,9 +2,7 @@ from django.http import HttpRequest
 from django.template import Template, RequestContext
 
 
-def render_component_tag(
-    request_with_session: HttpRequest, component_string, context=None
-):
+def render_component_tag(tetra_request: HttpRequest, component_string, context=None):
     """Helper function to return a full html document with loaded Tetra stuff,
     and the component_string as body content.
 
@@ -15,10 +13,10 @@ def render_component_tag(
         context: The context the template is rendered with. This is the outer context
             of the component
     """
-    ctx = RequestContext(request_with_session)
+    ctx = RequestContext(tetra_request)
     if context:
         ctx.update(context)
-    ctx.request = request_with_session
+    ctx.request = tetra_request
     return Template(
         "{% load tetra %}<!doctype html>"
         "<html><head>"
