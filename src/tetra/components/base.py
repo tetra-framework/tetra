@@ -196,9 +196,13 @@ def make_template(cls) -> Template:
 
 
 class BasicComponentMetaClass(type):
+    _library = None
+    _app = None
+    _name = None
+
     def __new__(mcls, name, bases, attrs):
         newcls = super().__new__(mcls, name, bases, attrs)
-        newcls._name = camel_case_to_underscore(newcls.__name__)
+        mcls._name = camel_case_to_underscore(newcls.__name__)
         if "__abstract__" not in attrs or attrs["__abstract__"] is False:
             newcls._template = make_template(newcls)
         return newcls
@@ -214,18 +218,16 @@ class RenderDataMode(Enum):
 
 class BasicComponent(metaclass=BasicComponentMetaClass):
     __abstract__ = True
-    style: Optional[str] = None
+    style: str = ""
     component_id: Optional[str] = None
-    _name = None
-    _library = None
-    _app = None
     _is_resumed_from_state = False
     _is_directory_component: bool = False
+    _template: Template
 
     def __init__(
         self,
         _request: TetraHttpRequest | HttpRequest,
-        _attrs: dict = None,
+        _attrs: dict | None = None,
         _context: dict | RequestContext | None = None,
         _slots=None,
         *args,
@@ -258,6 +260,10 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
 
     @classmethod
     def full_component_name(cls) -> str:
+        if not cls._library:
+            raise ComponentError(
+                f"Component class '{cls.__name__}' is not registered in a library."
+            )
         return f"{cls._library.app.label}__{cls._library.name}__{cls._name}"
 
     def get_extra_tags(self) -> dict[str, str | None]:
@@ -274,6 +280,10 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         """Returns the filename, line number, and line count of the component's
         source code."""
         filename = inspect.getsourcefile(cls)
+        if not filename:
+            raise ComponentError(
+                f"Could not find source file for component '{cls.__name__}'."
+            )
         lines, start = inspect.getsourcelines(cls)
         return filename, start, len(lines)
 
@@ -500,7 +510,7 @@ class Public(metaclass=PublicMeta):
             update (bool): whether update() should be called at the end of the method.
         """
         self._update = update
-        self._watch = []
+        self._watch: list[str] = []
         self._debounce = None
         self._debounce_immediate = None
         self._throttle = None

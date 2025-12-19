@@ -5,7 +5,7 @@ import subprocess
 import json
 import warnings
 from collections import defaultdict
-from typing import Self
+from typing import Self, Optional
 
 from django.apps import AppConfig, apps
 from django.conf import settings
@@ -47,7 +47,9 @@ class Library:
 
         # Initialize only if this is a new instance
         if not hasattr(self, "components"):
-            self.components = {}
+            self.components: dict[str, BasicComponentMetaClass | ComponentMetaClass] = (
+                {}
+            )
             self.name = name
             self.path = path
             self.app: AppConfig = app
@@ -109,29 +111,33 @@ class Library:
             styles_filename = f.read()
         return static(os.path.join(self.app.label, "tetra", self.name, styles_filename))
 
-    def register(self, component: BasicComponentMetaClass = None, name=None):
+    def register(
+        self,
+        component_cls: BasicComponentMetaClass | ComponentMetaClass,
+        name: str | None = None,
+    ):
         if not name:
-            name = component.__name__
+            name = component_cls.__name__
         underscore_name = camel_case_to_underscore(name)
 
         def dec(cls: BasicComponentMetaClass):
             if hasattr(cls, "_library") and cls._library:
                 if cls._library is not self:
                     raise LibraryError(
-                        f"Error registering component '{component.__name__}' to "
+                        f"Error registering component '{component_cls.__name__}' to "
                         f"library {self.display_name}, at it is "
                         f"already registered to library {cls._library.display_name}."
                     )
                 else:
                     logger.warning(
-                        f"Component {component.__name__} is already "
+                        f"Component class {component_cls.__name__} is already "
                         f"registered to library {cls._library}."
                         f"Ignoring second registration."
                     )
                     return cls
-            component._library = self
-            component._name = underscore_name
-            self.components[underscore_name] = component
+            component_cls._library = self
+            component_cls._name = underscore_name
+            self.components[underscore_name] = component_cls
             return cls
 
         def component_tag_compile_function(parser, token):
@@ -149,7 +155,7 @@ class Library:
                 )
             return do_component(parser, token)
 
-        if component:
+        if component_cls:
             # Dynamically register a template tag with ComponentName and
             # library.ComponentName
 
@@ -166,7 +172,7 @@ class Library:
                 compile_function=component_tag_compile_function,
             )
 
-            return dec(component)
+            return dec(component_cls)
         else:
             return dec
 
