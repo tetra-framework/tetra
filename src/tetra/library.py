@@ -12,7 +12,7 @@ from django.conf import settings
 from django.templatetags.static import static
 from django.utils.functional import cached_property
 
-from .components.base import BasicComponentMetaClass
+from .components.base import BasicComponentMetaClass, ComponentMetaClass
 from .exceptions import LibraryError
 from .utils import camel_case_to_underscore
 
@@ -21,11 +21,11 @@ logger = logging.getLogger(__name__)
 
 class Library:
     # a dictionary to store all Library instances: [app_label][library][components]
-    registry = defaultdict(dict)
+    registry: defaultdict[str, dict[str, Self]] = defaultdict(dict)
 
     @staticmethod
     def __new__(
-        cls, name: str = None, app: AppConfig | str = None, path: str = ""
+        cls, name: str = "", app: AppConfig | str = None, path: str = ""
     ) -> Self:
         """Returns a new instance of Library, or the existing instance, if a library
         with the same app/name already exists."""

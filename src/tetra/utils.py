@@ -5,7 +5,7 @@ import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, AnyStr
 
 from dateutil import parser as datetime_parser
 from django.conf import settings
@@ -117,8 +117,9 @@ class NamedTemporaryUploadedFile(UploadedFile):
         name: The (final) name of the uploaded file.
         size: The size of the file in bytes.
         content_type: The content type of the file.
-        temp_name: The path to the temporary file. If given, that file is reused.
+        charset: The character set of the file.
         content_type_extra: Extra content type parameters.
+        temp_path: The path to the temporary file. If given, that file is reused.
     """
 
     def __init__(
@@ -126,25 +127,19 @@ class NamedTemporaryUploadedFile(UploadedFile):
         name: str,
         content_type: str,
         size: int,
-        charset,
-        content_type_extra=None,
-        temp_name=None,
+        charset: str | None,
+        content_type_extra: dict[str, str] | None = None,
+        temp_path: str = None,
     ):
         _, ext = os.path.splitext(name)
         temp_file = None
-        if temp_name:
+
+        # try to reuse the temporary file if it exists.
+        if temp_path and os.path.exists(temp_path):
             try:
-                temp_file_path = os.path.join(
-                    settings.MEDIA_ROOT,
-                    settings.TETRA_TEMP_UPLOAD_PATH,
-                    temp_name,
-                )
-                if os.path.exists(temp_file_path):
-                    temp_file = open(temp_file_path, "rb")
-                else:
-                    logger.warning(f"Temporary file not found: {temp_file_path}")
+                temp_file = open(temp_path, "rb")
             except (FileNotFoundError, OSError) as e:
-                logger.warning(f"Could not open temporary file {temp_name}: {e}")
+                logger.warning(f"Could not open temporary file {temp_path}: {e}")
 
         if not temp_file:
             # create a temporary file that is NOT deleted after closing.
@@ -174,7 +169,7 @@ class NamedTemporaryUploadedFile(UploadedFile):
             logger.warning(f"Could not close temp. file properly: {self.file.name}")
             pass
 
-    def read(self, num_bytes=None):
+    def read(self, num_bytes=None) -> AnyStr:
         """Override read to handle missing files gracefully"""
         try:
             return super().read(num_bytes)
@@ -204,11 +199,11 @@ class NamedTemporaryUploadedFile(UploadedFile):
             return io.BytesIO(b"")
 
 
-class PersistentTemporaryFileUploadHandler(FileUploadHandler):
+class NamedTemporaryFileUploadHandler(FileUploadHandler):
     """
     Upload handler that streams data into a "persistent" (across page requests)
-    temporary file, which can be
-    saved to its destination when a form is submitted finally.
+    temporary file, which can be saved to its destination when a form is submitted
+    finally.
 
     Modified after Django's TemporaryFileUploadHandler, but uses a
     TetraTemporaryUploadedFile instead of TemporaryUploadedFile
@@ -219,18 +214,15 @@ class PersistentTemporaryFileUploadHandler(FileUploadHandler):
         self.file = None
 
     def new_file(self, *args, **kwargs):
-        """
-        Create the file object to append to as data is coming in.
-        """
         super().new_file(*args, **kwargs)
-        self.file = TetraTemporaryUploadedFile(
+        self.file = NamedTemporaryUploadedFile(
             self.file_name, self.content_type, 0, self.charset, self.content_type_extra
         )
 
     def receive_data_chunk(self, raw_data, start):
         self.file.write(raw_data)
 
-    def file_complete(self, file_size: int) -> TetraTemporaryUploadedFile:
+    def file_complete(self, file_size: int) -> NamedTemporaryUploadedFile:
         self.file.seek(0)
         self.file.size = file_size
         return self.file
@@ -288,13 +280,9 @@ class TetraJSONEncoder(json.JSONEncoder):
         # # FIXME: to_json does not work properly
         # elif hasattr(obj, "to_json"):
         #     return {"__type": "generic", "value": obj.to_json()}
-        elif isinstance(obj, (FieldFile, TetraTemporaryUploadedFile)):
-            # this case rases various errors, so a good options should
-            # be to use a try/except for each property and check if there
-            # is a file associated with the object
-
+        elif isinstance(obj, (FieldFile, NamedTemporaryUploadedFile)):
             # Check if there is a file associated with the object
-            if not obj:
+            if not obj or obj.size == 0:
                 return None
 
             # This is just for initial page loads, where FileFields are initialized with
@@ -303,7 +291,7 @@ class TetraJSONEncoder(json.JSONEncoder):
             if obj.name is None or obj.name == "":
                 return None
             # if a file is attached, it must have been uploaded using a component
-            # method. In this case, it certainly is a TetraTemporaryUploadedFile
+            # method. In this case, it certainly is a NamedTemporaryUploadedFile
 
             return {
                 "__type": "file",
@@ -374,11 +362,11 @@ class TetraJSONDecoder(json.JSONDecoder):
         elif _type == "set":
             return set(obj["value"])
         elif _type == "file":
-            return TetraTemporaryUploadedFile(
+            return NamedTemporaryUploadedFile(
                 name=obj["name"],
                 size=obj["size"],
                 content_type=obj["content_type"],
-                temp_name=obj["temp_path"],
+                temp_path=obj["temp_path"],
                 charset=settings.DEFAULT_CHARSET,
             )
         elif _type == "message":

@@ -41,6 +41,9 @@ def _component_method(
         # check if request includes multipart/form-data files
         if request.content_type == "multipart/form-data":
             component_state = from_json(request.POST["component_state"])
+            # get files too and add them to the component state
+            for key in request.FILES:
+                component_state["data"][key] = request.FILES[key]
 
         # if the request is application-data/json, we need to decode it ourselves
         elif request.content_type == "application/json" and request.body:

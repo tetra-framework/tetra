@@ -18,6 +18,7 @@ from threading import local
 
 from django import forms
 from django.core.exceptions import ImproperlyConfigured
+from django.core.files import File
 from django.core.files.uploadedfile import UploadedFile
 from django.db import models
 from django.db.models import Model
@@ -687,7 +688,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     _loaded_children_state = None
     _load_args = []
     _load_kwargs = {}
-    _resumed_from_state_data: ComponentData | None = None
+    _resumed_from_state_data: ComponentData
     # _temp_files is an internal dict to track which data attributes are files.
     _temp_files: dict[str, UploadedFile] = {}
     key = public(None)
@@ -701,7 +702,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         cls,
         component_state: ComponentData,
         request: HttpRequest,
-        key: str = None,
+        key: str | None = None,
         _attrs=None,
         _context=None,
         _slots=None,
@@ -780,7 +781,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         component._recall_load()
 
         # get data from client and populate component attributes with it
-        for key, value in component_state["data"].items():
+        for key, state_value in component_state["data"].items():
             # try to get attribute type (from the class annotations created when the
             # component was declared)
             AttributeType = component.__annotations__.get(key, NoneType)
@@ -788,37 +789,36 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             # if client data type is a model, try to see the value in the
             # recovered data as Model.pk and get the model again.
             if issubclass(AttributeType, Model):
-                if value:
+                if state_value:
                     # FIXME: this hits the database, before the actual (and probably
                     #  different) value is set via e.g. the load() method.
                     #  Find a way to only load the model when needed.
-                    value = AttributeType.objects.get(pk=value)
+                    state_value = AttributeType.objects.get(pk=state_value)
                 else:
-                    value = None  # or attr_type.objects.none()
-            elif issubclass(AttributeType, UploadedFile):
-                if value:
-                    logger.error(
-                        "When uploading a file JSON file field must be empty, "
-                        f"not '{value}'. "
-                        "The file is sent using FormData."
-                    )
-                    continue
+                    state_value = None  # or attr_type.objects.none()
 
-                # if there are newly uploaded files (in any public method call),
-                # add them to the component. HTML uploads only are possible *once*,
-                # as in the following GET requests the browser removes the file from
-                # input field tags, so the temporary files must be kept.
-                # Only set attr if it's an UploadedFile to avoid overwriting non-file fields
-                value = request.FILES.get(key, None)
-                if not value:
+            # if the data type is a file, try to find the file by its path
+            elif issubclass(AttributeType, UploadedFile):
+                if state_value:
+                    # the value (temp file path) from the saved component client state
+                    # could be stale, as the file could be already saved as permanent
+                    # file in MEDIA_ROOT/* somewhere using submit() in another session.
+                    # Then the state's file_path is wrong. in this case,
+                    # delete this state!
+                    if not os.path.exists(state_value.file.name):
+                        component_state["data"][key] = None
+                        del component._temp_files[key]
+
+                else:
                     # if there is no valid file in the request, it means the file was
-                    # not correctly uploaded or removed from the input field, so just skip it
+                    # not correctly uploaded or removed from the input field,
+                    # so just skip it
                     continue
 
                 # save file in a separate dict so we can access it easier
-                component._temp_files[key] = value
+                component._temp_files[key] = state_value
 
-            setattr(component, key, value)
+            setattr(component, key, state_value)
 
         component._is_resumed_from_state = True
         component._resumed_from_state_data = component_state["data"]
@@ -933,7 +933,9 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         component's state.
         """
         if self in tracing_component_load:
-            tracing_component_load[self].add(item)
+            # TODO: maybe File is too broad? FieldFile, UploadedFile?
+            if not isinstance(value, File):
+                tracing_component_load[self].add(item)
         return super().__setattr__(item, value)
 
     @property
@@ -1251,6 +1253,10 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
             # Don't show form errors if form is not submitted yet
             if not self.form_submitted:
                 self._form.errors.clear()
+            # If form was submitted, ensure it's validated so errors are available
+            else:
+                # Trigger validation if not already done
+                _ = self._form.errors
         else:
             self._form = self.get_form()
 
@@ -1284,6 +1290,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         """Connects the form's fields to the Tetra backend using x-model attributes."""
         for field_name, field in form.fields.items():
             if isinstance(field, FileField):
+                # TODO: this is not necessary any more
                 form.fields[field_name].widget.attrs.update(
                     {"@change": f"{field_name}=$event.target.files?.[0];"}
                 )
@@ -1349,6 +1356,43 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
             form: The form instance that contains the invalid form data.
         """
 
+    def _call_public_method(
+        self, request, method_name, children_state, *args
+    ) -> JsonResponse | FileResponse:
+        """Override to automatically submit form when files are uploaded.
+
+        When files are uploaded via any component method call, they need to be
+        processed immediately since browser file inputs are cleared on subsequent
+        requests. This method checks if files were uploaded and automatically
+        validates the form before calling the requested method.
+        """
+        # Check if any files were uploaded in this request
+        has_uploaded_files = bool(self._temp_files)
+
+        # If files were uploaded and the method is not already submit(),
+        # automatically validate and process the form first
+        if has_uploaded_files and method_name != "submit":
+            self._process_form()
+
+        # Now call the original method
+        return super()._call_public_method(request, method_name, children_state, *args)
+
+    def _process_form(self) -> None:
+        """Internal method to validate and process the form.
+
+        This is called both by submit() and automatically when files are uploaded.
+        """
+        self.form_submitted = True
+
+        if self._form.is_valid():
+            self.form_valid(self._form)
+        else:
+            self.form_errors = self._form.errors.get_json_data(escape_html=True)
+            # set the possibly cleaned values back to the component's attributes
+            for attr, value in self._form.cleaned_data.items():
+                setattr(self, attr, value)
+            self.form_invalid(self._form)
+
     @public
     def submit(self) -> None:
         """Submits the form.
@@ -1356,30 +1400,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         The component will validate the data against the form, and if the form is valid,
         it will call form_valid(), else form_invalid().
         """
-        # cache_key = "tetra_uploaded_files"
-
-        # we should not render form errors
-        self.form_submitted = True
-
-        if self._form.is_valid():
-            # cache.delete("tetra_uploaded_files")
-            self.form_valid(self._form)
-        else:
-            # for file_field_name, field in self._form.base_fields.items():
-            #     if isinstance(field, FileField):
-            #         if file_field_name in self.request.FILES:
-            #             cache.set(
-            #                 cache_key, self.request.FILES[file_field_name], timeout=300
-            #             )
-            #         else:
-            #             cached_file = cache.get(cache_key)
-            #             if cached_file:
-            #                 self._form.files[file_field_name] = cached_file
-            self.form_errors = self._form.errors.get_json_data(escape_html=True)
-            # set the possibly cleaned values back to the component's attributes
-            for attr, value in self._form.cleaned_data.items():
-                setattr(self, attr, value)
-            self.form_invalid(self._form)
+        self._process_form()
 
     def _reset(self):
         """Internally resets all form fields to their defaults set in load(). This
@@ -1611,11 +1632,8 @@ class DynamicFormMixin:
     attributes, based on other fields or circumstances.
 
     This class checks for the existence of special methods in your component,
-    and calls them to get the current `queryset`, `hidden`, `disabled` and `required`
-    status for the corresponding field.
-    Use this class as a mixin for a FormComponent and define methods in it according
-    to a specific scheme, and create public method that is called when trigger fields
-    are changed.
+    and calls them to get the current `queryset`, `choices`, `hidden`, `disabled`,
+    and `required` status for the corresponding field.
 
     Usage:
         Create a method that is called whenever a parent field changes its value, using
@@ -1626,7 +1644,7 @@ class DynamicFormMixin:
 
 
         @public.watch("make")
-        def make_changed_dummy(self, value, old_value, attr) -> None:
+        def make_changed(self, value, old_value, attr) -> None:
             pass
 
         def get_engine_hidden(self) -> bool:
@@ -1646,9 +1664,7 @@ class DynamicFormMixin:
         get_<field_name>_required(): returns whether the given field is
             required, depending on the values of other fields.
 
-        All these methods are instance methods (with a `self` parameter)
-        and should return a boolean value.
-
+        All these methods are normal instance methods and must return a boolean value.
     """
 
     def get_form(self, *args, **kwargs):
@@ -1672,6 +1688,9 @@ class DynamicFormMixin:
             if update_method := getattr(self, f"get_{field_name}_queryset", None):
                 form.fields[field_name].queryset = update_method()
 
+            # check if there are dynamic choices
+            if update_method := getattr(self, f"get_{field_name}_choices", None):
+                form.fields[field_name].choices = update_method()
         return form
 
 
