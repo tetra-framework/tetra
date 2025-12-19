@@ -24,8 +24,10 @@ While it is not necessary, it is also possible to create libraries manually (e.g
 from tetra import Library, Component
 from django.apps import apps
 
+
 class FooComponent(Component):
     template = "<div>foo!</div>"
+
 
 # create a new library named "default" for the "main" app
 default = Library(name="default", app=apps.get_app_config("main"))

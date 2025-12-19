@@ -5,4 +5,4 @@ class ComponentData(TypedDict):
     encrypted: str
     data: dict[str, Any]
     children: list["ComponentData"]
-    args: [str]
+    args: list[str]

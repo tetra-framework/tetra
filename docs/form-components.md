@@ -216,7 +216,7 @@ Tetra makes sure that whenever the form is rendered, the `queryset` and `disable
 
 You have to do two things:
 
-1. Make sure that whenever a parent field value changes, the form is reloaded usign Tetra. Just use an empty dummy method and decorate it with `@public("<field>"")`
+1. Make sure that whenever a parent field value changes, the form is reloaded using Tetra. Just use an empty dummy method and decorate it with `@public("<field>"")`
 2. Create methods that are named using the scheme that Django also uses for `Form.clean_<field>()`. You have full access to all component methods and attributes in those methods:
 
 ###### `get_<field:T>_queryset(self)-> QuerySet[T]`

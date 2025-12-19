@@ -1227,7 +1227,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     """
 
     __abstract__ = True
-    form_class: type(forms.BaseForm) = None
+    form_class: type[forms.BaseForm] = None
     form_submitted: bool = False
     form_errors: dict = {}  # TODO: make protected + include in render context
     _form: Form = None

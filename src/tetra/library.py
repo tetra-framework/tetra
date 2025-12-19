@@ -196,7 +196,7 @@ class Library:
         os.makedirs(file_out_path)
 
         # Also clear from STATIC_ROOT if it exists
-        if hasattr(settings, 'STATIC_ROOT') and settings.STATIC_ROOT:
+        if hasattr(settings, "STATIC_ROOT") and settings.STATIC_ROOT:
             static_root_path = os.path.join(
                 settings.STATIC_ROOT, self.app.label, "tetra", self.name
             )
