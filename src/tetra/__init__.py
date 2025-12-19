@@ -3,7 +3,8 @@
 from .components import BasicComponent, Component, public
 from .library import Library
 
-__all__ = []
+__all__: list = []
+
 try:
     # if channels is available, ReactiveComponent can be imported, so try it
     # and fail silently if it does not work.
@@ -14,5 +15,5 @@ except ImportError:
     pass
 
 __all__ += [BasicComponent, Component, public, Library]
-__version__ = "0.5.2"
+__version__ = "0.5.3"
 __version_info__ = tuple([int(num) for num in __version__.split(".")])
