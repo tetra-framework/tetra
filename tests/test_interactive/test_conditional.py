@@ -72,11 +72,10 @@ def test_conditional_form_component(page: Page, live_server):
 
     # Select VW
     page.locator("#id_vendor").select_option("vw")
-    page.wait_for_load_state()
 
     # Wait for the model dropdown to be populated with VW options
-    # FIXME: this is buggy
-    # page.locator("#id_model option[value='vw_golf']").wait_for()
+    # Wait specifically for a VW option to appear (not a Volvo option)
+    page.locator("#id_model option:has-text('Golf')").wait_for(state="attached")
 
     # Check that the model choices are updated to VW models
     model_options = page.locator("#id_model option").all_text_contents()
