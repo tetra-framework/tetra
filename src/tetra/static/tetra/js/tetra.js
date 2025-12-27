@@ -176,7 +176,7 @@
             this.__initInner();
           }
           document.addEventListener("tetra:before-request", (event) => {
-            const css_selector = event.target.getAttribute("tx-indicator");
+            const css_selector = event.target.getAttribute("t-indicator");
             if (css_selector) {
               this.$el.querySelectorAll(css_selector).forEach((el) => el.classList.add("tetra-request"));
             } else {
@@ -184,7 +184,7 @@
             }
           });
           document.addEventListener("tetra:after-request", (event) => {
-            const css_selector = event.target.getAttribute("tx-indicator");
+            const css_selector = event.target.getAttribute("t-indicator");
             if (css_selector) {
               this.$el.querySelectorAll(css_selector).forEach((el) => el.classList.remove("tetra-request"));
             } else {

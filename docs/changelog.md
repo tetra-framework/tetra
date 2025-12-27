@@ -12,7 +12,9 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.4] - unreleased
+## [0.6.0] - unreleased
+### Changed
+- BREAKING change: rename `tx-indicator` to `t-indicator` HTML class
 
 ### Fixed
 - build_sh.sh does now produce output code in `src/` directory structure.

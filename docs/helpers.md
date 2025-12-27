@@ -46,16 +46,16 @@ This is all you need to get a simple loading indicator working, for within an el
     
     Beware that if you just use `.tetra-request .spinner-border` you select all child elements below too - so if the `tetra-request` event fires in any parent component, **all** spinners of all its childs will be visible, which is mostly not what you'll want. So write your CSS wisely.
 
-### `tx-indicator` attribute
+### `t-indicator` attribute
 
 If you don't want to place the indicator **into** the calling element, you have to tell Tetra somehow where this indicator is:
 
-The `tx-indicator` attribute contains a CSS selector that directs Tetra to the element that is used as loading indicator. During a Tetra request, **that element** will get the class `tetra-request` now.
+The `t-indicator` attribute contains a CSS selector that directs Tetra to the element that is used as loading indicator. During a Tetra request, **that element** will get the class `tetra-request` now.
 
-`tx-indicator` elements will take precedence over any inline spinners defined directly in the element. This means if both an inline spinner and a tx-indicator target are specified, the tx-indicator target will be used and the inline spinner will be ignored.
+`t-indicator` elements will take precedence over any inline spinners defined directly in the element. This means if both an inline spinner and a t-indicator target are specified, the t-indicator target will be used and the inline spinner will be ignored.
 
 ```html
-<button @click="submit()" tx-indicator="#submit_spinner">Submit</button>
+<button @click="submit()" t-indicator="#submit_spinner">Submit</button>
 <span id="submit_spinner" class="spinner-border"></span>
 ```
 
@@ -72,12 +72,12 @@ There is nothing that holds you from doing "fancier" transitions than `display: 
 }
 ```
 
-It does not matter where you put the spinner, nor how many elements point to one spinner using `tx-indicator`:
+It does not matter where you put the spinner, nor how many elements point to one spinner using `t-indicator`:
 
 ```html
-<button @click="increase()" tx-indicator="#spinner">+1</button>
-<button @click="decrease()" tx-indicator="#spinner">-1</button>
-<button @click="foo()" tx-indicator="#spinner">foO!</button>
+<button @click="increase()" t-indicator="#spinner">+1</button>
+<button @click="decrease()" t-indicator="#spinner">-1</button>
+<button @click="foo()" t-indicator="#spinner">foO!</button>
 ...
 <span id="spinner" class="spinner-border"></span>
 ```
@@ -85,7 +85,7 @@ It does not matter where you put the spinner, nor how many elements point to one
 You can also add full syntactic ARIA sugar:
 
 ```html
-<button class="btn btn-primary" type="button" @click="$el.disabled=true; foo()" tx-indicator="#spinner">
+<button class="btn btn-primary" type="button" @click="$el.disabled=true; foo()" t-indicator="#spinner">
   <span id="spinner" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
   Loading...
 </button>
