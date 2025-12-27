@@ -1,5 +1,5 @@
 (() => {
-  // tetra/js/tetra.core.js
+  // src/tetra/js/tetra.core.js
   var Tetra = {
     ws: null,
     pendingSubscriptions: /* @__PURE__ */ new Map(),
@@ -607,7 +607,7 @@
   };
   var tetra_core_default = Tetra;
 
-  // tetra/js/tetra.js
+  // src/tetra/js/tetra.js
   window.Tetra = tetra_core_default;
   window.document.addEventListener("alpine:init", () => {
     tetra_core_default.init();
