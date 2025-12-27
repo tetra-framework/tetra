@@ -12,13 +12,25 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.2] - 2025-10-xx
+## [0.5.4] - unreleased
+
+### Fixed
+- build_sh.sh does now produce output code in `src/` directory structure.
+
+
+## [0.5.3] - 2025-12-20
 ### Fixed
 - fix "optional" channels dependency blocking tetra when not using channels. Only import channels if websockets are needed in project
 - components in subdir apps are now found correctly by label
 
 ### Changed
+- change to a `src/` based directory structure
+- Django 6.0 compatibility
+
+### Changed
 - switch to playwright in ui component testing
+
+## [0.5.2] - omitted. Don't ask.
 
 ## [0.5.1] - 2025-10-03
 ### Fixed
