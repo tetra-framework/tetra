@@ -1,0 +1,10 @@
+
+.tetra-indicator {
+    display: none;
+}
+
+.tetra-request + .tetra-indicator,
+.tetra-request .tetra-indicator{
+    display: inline-block;
+}
+

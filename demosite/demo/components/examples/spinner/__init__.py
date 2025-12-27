@@ -2,7 +2,7 @@ from time import sleep
 from tetra import Component, public
 
 
-class LoadingIndicatorDemo(Component):
+class Spinner(Component):
 
     @public
     def long_lasting_process(self):

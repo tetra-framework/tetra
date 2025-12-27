@@ -3,11 +3,9 @@
   <!-- spinner within button -->
   <div class="mb-2">
     <button class="btn btn-primary" type="button"
-            @click="long_lasting_process()"
-            t-indicator="#spinner-inline"
-    >
-      <span id="spinner-inline" class="spinner-border spinner-border-sm me-2"></span>
-      {% translate "Load data" %}
+            @click="long_lasting_process()">
+      <span class="tetra-indicator spinner-border spinner-border-sm me-2"></span>
+      {% translate "Load data (local spinner)" %}
     </button>
   </div>
 
@@ -15,10 +13,8 @@
   <div class="d-flex align-items-center gap-2">
     <button class="btn btn-primary" type="button"
             @click="long_lasting_process()"
-            t-indicator="#spinner-external"
-    >
-      {% translate "Load data" %}
+            t-indicator="#spinner-external">
+      {% translate "Load data (external spinner)" %}
     </button>
-    <span id="spinner-external" class="spinner-border"></span>
   </div>
 </div>

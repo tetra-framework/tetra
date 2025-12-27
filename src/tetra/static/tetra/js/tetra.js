@@ -175,22 +175,29 @@
           if (this.__initInner) {
             this.__initInner();
           }
-          document.addEventListener("tetra:before-request", (event) => {
-            const css_selector = event.target.getAttribute("t-indicator");
-            if (css_selector) {
-              this.$el.querySelectorAll(css_selector).forEach((el) => el.classList.add("tetra-request"));
-            } else {
-              event.target.classList.add("tetra-request");
+          const addClassToExternalIndicators = () => {
+            const selector = this.$el.querySelector("[t-indicator]").getAttribute("t-indicator");
+            if (selector) {
+              document.querySelectorAll(selector).forEach((indicator) => {
+                indicator.hidden = true;
+                indicator.classList.add("tetra-indicator-" + this.component_id);
+              });
             }
-          });
-          document.addEventListener("tetra:after-request", (event) => {
-            const css_selector = event.target.getAttribute("t-indicator");
-            if (css_selector) {
-              this.$el.querySelectorAll(css_selector).forEach((el) => el.classList.remove("tetra-request"));
-            } else {
-              event.target.classList.remove("tetra-request");
+          };
+          addClassToExternalIndicators();
+          this.$el.addEventListener("tetra:component-updated", addClassToExternalIndicators);
+          const handleRequestEvent = (event, isBefore) => {
+            const triggerEl = event.detail.triggerEl || event.target;
+            triggerEl.classList.toggle("tetra-request", isBefore);
+            const selector = triggerEl.getAttribute("t-indicator");
+            if (selector && triggerEl.querySelectorAll(selector).length === 0) {
+              document.querySelectorAll(".tetra-indicator-" + this.component_id).forEach((el) => {
+                el.hidden = !isBefore;
+              });
             }
-          });
+          };
+          this.$el.addEventListener("tetra:before-request", (event) => handleRequestEvent(event, true));
+          this.$el.addEventListener("tetra:after-request", (event) => handleRequestEvent(event, false));
         },
         destroy() {
           this.$dispatch("tetra:child-component-destroy", { component: this });
@@ -519,9 +526,16 @@
         payload.body = Tetra.jsonEncode(component_state);
         payload.headers["Content-Type"] = "application/json";
       }
-      component.$dispatch("tetra:before-request", { component: this });
+      const triggerEl = component.$event ? component.$event.target : component.$el;
+      component.$dispatch("tetra:before-request", {
+        component,
+        triggerEl
+      });
       const response = await fetch(methodEndpoint, payload);
-      component.$dispatch("tetra:after-request", { component: this });
+      component.$dispatch("tetra:after-request", {
+        component,
+        triggerEl
+      });
       return await this.handleServerMethodResponse(response, component);
     },
     jsonReplacer(key, value) {

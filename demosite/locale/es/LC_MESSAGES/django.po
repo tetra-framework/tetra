@@ -59,9 +59,12 @@ msgid "Submit"
 msgstr "Enviar"
 
 #: demo/components/examples/spinner/spinner.html:10
+msgid "Load data (local spinner)"
+msgstr "Cargar datos (spinner local)"
+
 #: demo/components/examples/spinner/spinner.html:20
-msgid "Load data"
-msgstr "Cargar datos"
+msgid "Load data (external spinner)"
+msgstr "Cargar datos (spinner external)"
 
 #: demo/models.py:7
 msgid "ToDo"
