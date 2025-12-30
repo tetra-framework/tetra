@@ -182,7 +182,6 @@ def test_person_component_call_submit_triggers_form_invalid(page: Page, live_ser
     for invalid data.
     """
     with patch.object(PersonComponent, "form_invalid") as mock_form_invalid:
-        # Navigate to upload element and add file
         page.goto(
             live_server.url
             + reverse("generic_ui_component_test_view", args=["PersonComponent"])

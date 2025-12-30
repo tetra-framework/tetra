@@ -583,7 +583,7 @@ class Public(metaclass=PublicMeta):
                 self._watch.append(arg)
             else:
                 self._watch.extend(arg)
-        return self  # noqa
+        return self
 
     def do_debounce(self, timeout, immediate=False) -> Self:
         self._debounce = timeout
