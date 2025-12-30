@@ -25,23 +25,22 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 
 
 def pytest_addoption(parser):
-    """Looks for the `runplaywright` argument"""
+    """Looks for the `skip-slow` argument"""
     parser.addoption(
-        "--runplaywright",
+        "--skip-slow",
         action="store_true",
         default=False,
-        help="run playwright tests",
+        help="skip slow tests",
     )
 
 
 def pytest_collection_modifyitems(config, items):
-    """This skips the tests if runslow is not present"""
-    if config.getoption("--runplaywright"):
-        return
-    skip_slow = pytest.mark.skip(reason="need --runplaywright option to run")
-    for item in items:
-        if "playwright" in item.keywords:
-            item.add_marker(skip_slow)
+    """This skips the tests if skip-slow is present"""
+    if config.getoption("--skip-slow"):
+        skip_slow = pytest.mark.skip(reason="skip slow tests")
+        for item in items:
+            if "playwright" in item.keywords:
+                item.add_marker(skip_slow)
 
 
 @pytest.fixture(scope="session", autouse=True)
