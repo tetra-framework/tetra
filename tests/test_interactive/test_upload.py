@@ -53,29 +53,6 @@ class UploadComponent(FormComponent):
     """
 
 
-# FIXME: if this test is run AFTER other tests with UploadComponent, playwright's
-#  browser seems to persist the old file input data, causing the test to fail
-#  if it is run alone or before others, it passes.
-@pytest.mark.playwright
-def test_component_upload_with_no_file_must_fail(page, live_server):
-
-    with patch.object(UploadComponent, "form_invalid") as mock_form_invalid:
-        page.goto(
-            live_server.url
-            + reverse("generic_ui_component_test_view", args=["UploadComponent"])
-        )
-        # Clear any existing file selection by setting empty files
-        # page.locator("#id_file").set_input_files([])
-
-        # don't assign a file to the input, just click on "submit"
-        page.locator("#submit-button").click()
-        page.wait_for_load_state()
-        mock_form_invalid.assert_called_once()
-
-        assert "This field is required" in page.locator("#errors").inner_html()
-        # assert page.locator("#filename").inner_html() == ""
-
-
 @pytest.mark.playwright
 def test_upload_file_with_submit(page, live_server):
     """Test component that provides a file upload button.
@@ -106,6 +83,31 @@ def test_upload_file_with_submit(page, live_server):
 
     # Clean up
     os.remove(uploaded_filename)
+
+
+# FIXME: if this test is run AFTER other tests with UploadComponent, playwright's
+#  browser seems to persist the old file input data, causing the test to fail
+
+
+#  if it is run alone or before others, it passes.
+@pytest.mark.playwright
+def test_component_upload_with_no_file_must_fail(page, live_server):
+
+    with patch.object(UploadComponent, "form_invalid") as mock_form_invalid:
+        page.goto(
+            live_server.url
+            + reverse("generic_ui_component_test_view", args=["UploadComponent"])
+        )
+        # Clear any existing file selection by setting empty files
+        # page.locator("#id_file").set_input_files([])
+
+        # don't assign a file to the input, just click on "submit"
+        page.locator("#submit-button").click()
+        page.wait_for_load_state()
+        mock_form_invalid.assert_called_once()
+
+        assert "This field is required" in page.locator("#errors").inner_html()
+        # assert page.locator("#filename").inner_html() == ""
 
 
 @pytest.mark.playwright
