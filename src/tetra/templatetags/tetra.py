@@ -580,16 +580,16 @@ class LiveVariableNode(template.Node):
 
 
 @register.filter(name="if")
-def if_filter(value, arg):
-    if arg:
+def if_filter(value, condition):
+    if condition:
         return value
     else:
         return ""
 
 
 @register.filter(name="else")
-def if_filter(value, arg):  # noqa: F811
+def else_filter(value, else_value):
     if value:
         return value
     else:
-        return arg
+        return else_value
