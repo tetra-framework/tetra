@@ -6,7 +6,7 @@ from django import forms
 from django.forms import Form
 from django.urls import reverse
 
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 
 from tetra import Library
 from tetra.components import FormComponent
@@ -153,47 +153,44 @@ def test_form_component_get_form(tetra_request):
 
 
 @pytest.mark.playwright
-def test_person_component_call_submit_triggers_form_valid(page: Page, live_server):
+def test_person_component_call_submit_triggers_form_valid(page: Page, tetra_component):
+    """Test that the PersonComponent form submission triggers form_valid method
+    for valid data."""
 
     with patch.object(PersonComponent, "form_valid") as mock_form_valid:
-        # Navigate to upload element and add file
-        page.goto(
-            live_server.url
-            + reverse("generic_ui_component_test_view", args=["PersonComponent"])
-        )
-        page.locator("#id_name").type("Johny Deo")
-        page.locator("#id_age").type("21")
-        page.locator("#id_email").type("john@example.net")
-        page.locator("#id_dob").type("2000-01-02")
-        # page.locator("#id_weight").type("70.0")
-        # page.locator("#id_website").type("https://example.net")
-        # page.locator("#id_lucky").check()
+        component = tetra_component(PersonComponent)
 
-        page.locator("#submit-button").click()
-        page.wait_for_load_state()
+        component.locator("#id_name").wait_for(state="visible")
+        component.locator("#id_name").fill("John Doe")
+        component.locator("#id_age").fill("23")
+        component.locator("#id_email").fill("john@example.net")
+        component.locator("#id_dob").fill("2000-01-02")
+
+        with page.expect_response(lambda response: "submit" in response.url):
+            component.locator("#submit-button").click()
 
         mock_form_valid.assert_called_once()
 
 
 @pytest.mark.playwright
-def test_person_component_call_submit_triggers_form_invalid(page: Page, live_server):
+def test_person_component_call_submit_triggers_form_invalid(
+    page: Page, tetra_component
+):
     """
     Test that the PersonComponent form submission triggers form_invalid method
     for invalid data.
     """
     with patch.object(PersonComponent, "form_invalid") as mock_form_invalid:
-        page.goto(
-            live_server.url
-            + reverse("generic_ui_component_test_view", args=["PersonComponent"])
-        )
-        page.locator("#id_name").type("John Doe")
-        page.locator("#submit-button").click()
-        page.wait_for_load_state()
+        component = tetra_component(PersonComponent)
+        component.locator("#id_name").fill("John Doe")
+        with page.expect_response(lambda response: "submit" in response.url):
+            component.locator("#submit-button").click()
         mock_form_invalid.assert_called_once()
 
     with patch.object(PersonComponent, "form_invalid") as mock_form_invalid:
-        page.locator("#id_age").type("23")
-        page.locator("#id_name").clear()
-        page.locator("#submit-button").click()
-        page.wait_for_load_state()
+        component = tetra_component(PersonComponent)
+        component.locator("#id_age").fill("23")
+        component.locator("#id_name").clear()
+        with page.expect_response(lambda response: "submit" in response.url):
+            component.locator("#submit-button").click()
         mock_form_invalid.assert_called_once()

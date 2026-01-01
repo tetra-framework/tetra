@@ -14,7 +14,9 @@ from django.http import HttpRequest
 from django.test import RequestFactory
 from playwright.sync_api import Page, Browser
 
+from django.urls import reverse
 from tetra.middleware import TetraDetails
+from tetra import Library
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -22,6 +24,38 @@ BASE_DIR = Path(__file__).resolve().parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+
+
+@pytest.fixture
+def tetra_component(page: Page, live_server):
+    test_ui = Library("test_ui", "main")
+
+    def _tetra_component(component_cls, **kwargs):
+        if not hasattr(component_cls, "_library") or component_cls._library is None:
+            component_cls = test_ui.register(component_cls)
+            test_ui.build()
+        else:
+            # ensure the library is built if it hasn't been yet
+            # (though normally libraries registered at module level are built by tetrabuild)
+            pass
+
+        library = component_cls._library
+        component_name = component_cls.__name__
+        full_component_name = component_cls.full_component_name()
+
+        component_tag = f"{{% {library.name}.{component_name} "
+        for key, value in kwargs.items():
+            component_tag += f'{key}="{value}" '
+        component_tag += "/ %}"
+
+        page.goto(
+            live_server.url
+            + reverse("render_component_view")
+            + f"?component_tag={component_tag}"
+        )
+        return page.locator(f'[tetra-component="{full_component_name}"]')
+
+    return _tetra_component
 
 
 def pytest_addoption(parser):

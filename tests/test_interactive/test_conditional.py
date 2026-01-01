@@ -50,35 +50,33 @@ class CarModelComponent(DynamicFormMixin, FormComponent):
 
 
 @pytest.mark.playwright
-def test_conditional_form_component(page: Page, live_server):
+def test_conditional_form_component(tetra_component):
     """
     Test that the ConditionalFormComponent updates the model choices based on the
     selected vendor.
     """
 
-    page.goto(
-        live_server.url
-        + reverse("generic_ui_component_test_view", args=["CarModelComponent"])
-    )
-    # Select Volvo
-    page.locator("#id_vendor").select_option("volvo")
-    page.locator("#id_model").select_option("volvo_v40")
+    component = tetra_component(CarModelComponent)
 
-    model_options = page.locator("#id_model option").all_text_contents()
+    # Select Volvo
+    component.locator("#id_vendor").select_option("volvo")
+    component.locator("#id_model").select_option("volvo_v40")
+
+    model_options = component.locator("#id_model option").all_text_contents()
     assert "V40" in model_options
     assert "V60" in model_options
     assert "S60" in model_options
     assert "S80" in model_options
 
     # Select VW
-    page.locator("#id_vendor").select_option("vw")
+    component.locator("#id_vendor").select_option("vw")
 
     # Wait for the model dropdown to be populated with VW options
     # Wait specifically for a VW option to appear (not a Volvo option)
-    page.locator("#id_model option:has-text('Golf')").wait_for(state="attached")
+    component.locator("#id_model option:has-text('Golf')").wait_for(state="attached")
 
     # Check that the model choices are updated to VW models
-    model_options = page.locator("#id_model option").all_text_contents()
+    model_options = component.locator("#id_model option").all_text_contents()
     assert "Golf" in model_options
     assert "Polo" in model_options
     assert "Passat" in model_options

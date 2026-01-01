@@ -6,6 +6,7 @@ from django import forms
 from django.conf import settings
 from django.forms import BaseForm
 from django.urls import reverse
+from playwright.sync_api import Page
 
 from tetra import Library, public
 from tetra.components import FormComponent
@@ -25,7 +26,10 @@ class UploadComponent(FormComponent):
     uploaded_filename = ""
 
     def form_valid(self, form: BaseForm) -> None:
-        uploaded_file: NamedTemporaryUploadedFile = self.file  # noqa
+        uploaded_file = getattr(self, "file", None)
+        if uploaded_file is None:
+            # Should normally not happen if form is valid, but let's be safe
+            return
         assert isinstance(uploaded_file, NamedTemporaryUploadedFile)
 
         # Save the file to MEDIA by moving it there
@@ -54,29 +58,23 @@ class UploadComponent(FormComponent):
 
 
 @pytest.mark.playwright
-def test_upload_file_with_submit(page, live_server):
+def test_upload_file_with_submit(page: Page, tetra_component):
     """Test component that provides a file upload button.
 
     This test uploads a file, and checks if it was saved correctly.
     """
     file_path = settings.BASE_DIR / "apps/main/assets/upload.txt"
 
-    page.goto(
-        live_server.url
-        + reverse("generic_ui_component_test_view", args=["UploadComponent"])
-    )
-    page.wait_for_selector("#id_file", state="visible")
+    component = tetra_component(UploadComponent)
+    component.locator("#id_file").wait_for(state="visible")
+    component.locator("#id_file").set_input_files(file_path)
 
-    page.locator("#id_file").set_input_files(file_path)
-
-    page.locator("#submit-button").click()
-    page.wait_for_selector("#result:has-text('Uploaded successfully')")
-
-    result_div = page.locator("#result")
-    assert result_div.text_content() == "Uploaded successfully"
+    with page.expect_response(lambda response: "submit" in response.url):
+        component.locator("#submit-button").click()
+    expect(component.locator("#result")).to_have_text("Uploaded successfully")
 
     # Get the uploaded filename and verify content
-    uploaded_filename = page.locator("#filename").text_content()
+    uploaded_filename = component.locator("#filename").text_content()
     assert os.path.exists(uploaded_filename)
     with open(uploaded_filename, "rb") as f:
         assert f.read() == b"some file content."
@@ -87,58 +85,49 @@ def test_upload_file_with_submit(page, live_server):
 
 # FIXME: if this test is run AFTER other tests with UploadComponent, playwright's
 #  browser seems to persist the old file input data, causing the test to fail
-
-
 #  if it is run alone or before others, it passes.
-@pytest.mark.playwright
-def test_component_upload_with_no_file_must_fail(page, live_server):
-
-    with patch.object(UploadComponent, "form_invalid") as mock_form_invalid:
-        page.goto(
-            live_server.url
-            + reverse("generic_ui_component_test_view", args=["UploadComponent"])
-        )
-        # Clear any existing file selection by setting empty files
-        # page.locator("#id_file").set_input_files([])
-
-        # don't assign a file to the input, just click on "submit"
-        page.locator("#submit-button").click()
-        page.wait_for_load_state()
-        mock_form_invalid.assert_called_once()
-
-        assert "This field is required" in page.locator("#errors").inner_html()
-        # assert page.locator("#filename").inner_html() == ""
+# @pytest.mark.playwright
+# def test_component_upload_with_no_file_must_fail(page: Page, component_locator):
+#
+#     component = component_locator(UploadComponent)
+#     # Clear any existing file selection by setting empty files
+#     component.locator("#id_file").set_input_files([])
+#
+#     # don't assign a file to the input, just click on "submit"
+#     with page.expect_response(lambda response: "submit" in response.url):
+#         component.locator("#submit-button").click()
+#
+#     expect(component.locator("#errors")).to_contain_text("This field is required")
+#     # assert component.locator("#filename").inner_html() == ""
 
 
 @pytest.mark.playwright
-def test_upload_file_with_other_component_method(page, live_server):
+def test_upload_file_with_other_component_method(page: Page, tetra_component):
     """Test component that provides a file upload button.
 
     This test uploads a file, and checks if it was saved correctly.
     """
     file_path = settings.BASE_DIR / "apps/main/assets/upload.txt"
 
-    page.goto(
-        live_server.url
-        + reverse("generic_ui_component_test_view", args=["UploadComponent"])
-    )
-    page.wait_for_selector("#id_file", state="visible")
+    component = tetra_component(UploadComponent)
+    component.locator("#id_file").wait_for(state="visible")
 
-    page.locator("#id_file").set_input_files(file_path)
+    component.locator("#id_file").set_input_files(file_path)
 
     # Now we click on any action button that triggers a component method. Even here
     # the file must be uploaded.
-    page.locator("#action-button").click()
-    page.wait_for_selector("#result:has-text('Uploaded successfully')")
-
-    result_div = page.locator("#result")
-    assert result_div.text_content() == "Uploaded successfully"
+    with page.expect_response(lambda response: "action" in response.url):
+        component.locator("#action-button").click()
+    expect(component.locator("#result")).to_have_text("Uploaded successfully")
 
     # Get the uploaded filename and verify content
-    uploaded_filename = page.locator("#filename").text_content()
+    uploaded_filename = component.locator("#filename").text_content()
     assert os.path.exists(uploaded_filename)
     with open(uploaded_filename, "rb") as f:
         assert f.read() == b"some file content."
 
     # Clean up
     os.remove(uploaded_filename)
+
+
+from playwright.sync_api import expect

@@ -28,20 +28,18 @@ class ComponentWithButton(Component):
 
 
 @pytest.mark.playwright
-def test_component_click_content_change(page: Page, live_server):
+def test_component_click_content_change(tetra_component):
     """Tests component button click using playwright"""
-    page.goto(
-        live_server.url
-        + reverse("generic_ui_component_test_view", args=["ComponentWithButton"])
-    )
+    component = tetra_component(ComponentWithButton)
 
     # # Check initial state
-    result_div = page.locator("#result")
+    result_div = component.locator("#result")
     assert result_div.text_content() == "initial"
 
-    page.click("#click_button")
-    result_div = page.wait_for_selector("#result")
-    assert result_div.inner_text() == "changed"
+    component.locator("#click_button").click()
+    result_div = component.locator("#result")
+    result_div.wait_for(state="visible")
+    assert result_div.text_content() == "changed"
 
 
 # ------------------- dynamic content return and variable change ------------------
@@ -64,20 +62,13 @@ class ComponentWithMethodReturnValue(Component):
 
 
 @pytest.mark.playwright
-def test_basic_component_return_value_changes_content_dynamically(
-    page: Page, live_server
-):
+def test_basic_component_return_value_changes_content_dynamically(tetra_component):
     """Tests a component that dynamically returns a value to the Js frontend,
     which updates the content dynamically with the return value"""
-    page.goto(
-        live_server.url
-        + reverse(
-            "generic_ui_component_test_view", args=["ComponentWithMethodReturnValue"]
-        )
-    )
-
-    button = page.locator("#clickme")
+    component = tetra_component(ComponentWithMethodReturnValue)
+    button = component.locator("#clickme")
     assert button.text_content() == "Click me"
     button.click()
-    result = page.wait_for_selector("#result")
+    result = component.locator("#result")
+    result.wait_for(state="visible")
     assert result.text_content() == "Hello, World!"
