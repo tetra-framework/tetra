@@ -176,9 +176,10 @@
             this.__initInner();
           }
           const addClassToExternalIndicators = () => {
-            const selector = this.$el.querySelector("[t-indicator]").getAttribute("t-indicator");
+            const selector = this.$el.querySelector("[t-indicator]");
             if (selector) {
-              document.querySelectorAll(selector).forEach((indicator) => {
+              const indicators = selector.getAttribute("t-indicator");
+              document.querySelectorAll(indicators).forEach((indicator) => {
                 indicator.hidden = true;
                 indicator.classList.add("tetra-indicator-" + this.component_id);
               });

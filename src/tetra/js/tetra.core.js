@@ -219,10 +219,11 @@ const Tetra = {
 
         const addClassToExternalIndicators = () => {
           // adds `tetra-indicator` class to all elements targeted with `t-indicator` attribute
-          const selector = this.$el.querySelector('[t-indicator]').getAttribute('t-indicator')
-          if (selector) {
+          const selector = this.$el.querySelector('[t-indicator]')
+          if(selector) {
+            const indicators = selector.getAttribute('t-indicator')
             // If an explicit selector is given, hide it and add marker class to find it later
-            document.querySelectorAll(selector).forEach(indicator => {
+            document.querySelectorAll(indicators).forEach(indicator => {
               indicator.hidden = true;
               indicator.classList.add('tetra-indicator-' + this.component_id);
             });
@@ -238,7 +239,7 @@ const Tetra = {
 
           const selector = triggerEl.getAttribute('t-indicator');
           // indicator selector is not local: use global selector
-          if (selector && triggerEl.querySelectorAll(selector).length === 0){
+          if (selector && triggerEl.querySelectorAll(selector).length === 0) {
             document.querySelectorAll('.tetra-indicator-'+this.component_id).forEach(el => {
               el.hidden = !isBefore;
             })
