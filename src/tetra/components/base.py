@@ -519,6 +519,7 @@ class Public(metaclass=PublicMeta):
         self._throttle_trailing = None
         self._throttle_leading = None
         self._event_subscriptions: list[str] = []
+        self.obj = None
         self.__call__(obj)
 
     def __call__(self, obj: Any) -> Self:
