@@ -381,10 +381,13 @@ class TetraJSONDecoder(json.JSONDecoder):
 
 
 def to_json(obj: Any) -> str:
-    return json.dumps(obj, cls=TetraJSONEncoder)
+    """Convert an arbitrary object into a serializable JSON str by using
+    TetraJSONEncoder."""
+    return json.dumps(obj or {}, cls=TetraJSONEncoder)
 
 
 def from_json(s: str) -> ComponentData:
+    """Convert a JSON str into a Python object by using TetraJSONDecoder."""
     return json.loads(s, cls=TetraJSONDecoder)
 
 
