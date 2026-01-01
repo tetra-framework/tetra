@@ -134,3 +134,14 @@ def test_watch_parameter_names():
         str(exc_info.value)
         == "The .watch method `watchmethod` must have 'value', 'old_value' and 'attr' as arguments."
     )
+
+
+def test_notexistent_public_method():
+    """When a non-existent public method is called, it should raise an AttributeError"""
+    with pytest.raises(AttributeError):
+
+        @default.register
+        class SomeComponent(ComponentWatchBase):
+            @public.skjghkjlh()  # wrong method name
+            def foo_method(self):
+                pass

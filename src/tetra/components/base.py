@@ -474,9 +474,10 @@ empty = object()
 
 class PublicMeta(type):
     def __getattr__(self, name):
-        if hasattr(self, f"do_{name}"):
+        do_name = f"do_{name}"
+        if do_name in self.__dict__:
             inst = self()
-            return getattr(inst, f"do_{name}")
+            return getattr(inst, do_name)
         else:
             raise AttributeError(f"Public decorator has no method {name}.")
 
@@ -569,9 +570,9 @@ class Public(metaclass=PublicMeta):
         """If an attribute name is requested that does not exist in the class,
         search for `do_<name>` in the class.
         """
-
-        if hasattr(self, f"do_{name}"):
-            return getattr(self, f"do_{name}")
+        do_name = f"do_{name}"
+        if do_name in self.__class__.__dict__:
+            return getattr(self, do_name)
         else:
             raise AttributeError(f"Public decorator has no method {name}.")
 
