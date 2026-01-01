@@ -65,15 +65,17 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
                 f"Subscribed '{self.channel_name}' to 'user.{self.user.id}' group."
             )
 
-        # subscribe client to session-specific group
-        await self.channel_layer.group_add(
-            f"session.{self.session.session_key}", self.channel_name
-        )
-        self.subscribed_groups.add(f"session.{self.session.session_key}")
-        logger.debug(
-            f"Subscribed '{self.channel_name}' to 'session.{self.session.session_key}' "
-            f"group."
-        )
+        # session keys theoretically could be None in an invalid session.
+        if self.session.session_key:
+            # subscribe client to session-specific group
+            await self.channel_layer.group_add(
+                f"session.{self.session.session_key}", self.channel_name
+            )
+            self.subscribed_groups.add(f"session.{self.session.session_key}")
+            logger.debug(
+                f"Subscribed '{self.channel_name}' to 'session.{self.session.session_key}' "
+                f"group."
+            )
 
         # Connect to public broadcast group
         await self.channel_layer.group_add("broadcast", self.channel_name)
