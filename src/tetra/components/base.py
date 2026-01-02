@@ -56,6 +56,7 @@ from ..utils import (
     isclassmethod,
     param_names_exist,
     param_count,
+    has_single_root,
 )
 from ..types import ComponentData
 from ..state import encode_component, decode_component
@@ -193,6 +194,11 @@ def make_template(cls) -> Template:
                 f"Template file '{template_file_name}' not found for component"
                 f" '{cls.__name__}'."
             )
+    if not has_single_root(template.source):
+        raise ComponentError(
+            f"Component template '{cls.__name__}.template' must contain exactly "
+            f"one top-level tag."
+        )
     return template
 
 

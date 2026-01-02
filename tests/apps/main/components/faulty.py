@@ -22,8 +22,3 @@ class FaultyComponent2(Component):
     def __init__(self, _request, *args, **kwargs):  # noqa
         #  This must raise a NameError
         foo  # noqa
-
-
-class FaultyComponent3(Component):
-    # this component has no html tag as root element in the template
-    template = "foo"

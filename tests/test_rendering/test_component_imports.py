@@ -34,9 +34,3 @@ def test_component_with_name_error(tetra_request):
     """If a component calls not-existing code, this must be raised transparently."""
     with pytest.raises(NameError):
         render_component_tag(tetra_request, "{% faulty.FaultyComponent2 / %}")
-
-
-def test_component_with_no_root_tag(tetra_request):
-    """If a component calls not-existing code, this must be raised transparently."""
-    with pytest.raises(ComponentError):
-        render_component_tag(tetra_request, "{% faulty.FaultyComponent3 / %}")

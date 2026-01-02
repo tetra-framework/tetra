@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import tempfile
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, AnyStr
 
@@ -540,3 +541,28 @@ class TetraWsResponse:
             "code": code or "",
             "details": details or {},
         }
+
+
+class SingleRootChecker(HTMLParser):
+    """HTML parser that counts the number of root tags."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.depth = 0
+        self.root_tags = 0
+
+    def handle_starttag(self, tag: str, attrs) -> None:
+        if self.depth == 0:
+            self.root_tags += 1
+        self.depth += 1
+
+    def handle_endtag(self, tag: str) -> None:
+        self.depth -= 1
+
+
+def has_single_root(html: str) -> bool:
+    """Check if HTML has exactly one root tag."""
+    parser = SingleRootChecker()
+    parser.feed(html)
+    parser.close()
+    return parser.root_tags == 1
