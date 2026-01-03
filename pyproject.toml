@@ -81,6 +81,9 @@ version = {attr = "tetra.__version__"}
 where = ["src"]
 exclude = ["docs", "tests", "demosite"]
 
+[tool.setuptools.package-data]
+tetra = ["templates/*", "js/*", "static/*", "scripts/*.sh"]
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "--nomigrations --cov-config=.coveragerc"
