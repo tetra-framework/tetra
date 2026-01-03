@@ -129,7 +129,7 @@ def make_template(cls) -> Template:
 
     elif hasattr(cls, "template_name"):
         raise NotImplementedError(
-            f"'template_name' is not implemented yet for Tetra components ({cls})"
+            f"'template_name' is not implemented for Tetra components ({cls})"
         )
         # template_file_name = cls.template_name
         # template_dir = os.path.dirname(template_file_name)

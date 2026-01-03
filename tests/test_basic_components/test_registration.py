@@ -1,3 +1,6 @@
+import pytest
+
+from apps.main.helpers import render_component_tag
 from tetra import Library, BasicComponent
 
 
@@ -26,3 +29,11 @@ def test_register_decorator(current_app):
     syntax and make sure it exists in the library"""
     lib2 = Library("lib2", current_app)
     assert lib2.components["component2"] is Component2
+
+
+def test_template_name_attr():
+    """`template_name` should not be allowed as attribute"""
+    with pytest.raises(NotImplementedError):
+
+        class SomeComponent(BasicComponent):
+            template_name = "no_available_template.html"
