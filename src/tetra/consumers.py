@@ -128,7 +128,11 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         if group_name.startswith("user."):
             user_id = group_name.split(".")[1]
             # TODO: admin group instead of is_superuser
-            if str(self.user.id) != user_id and not self.user.is_superuser:
+            if (
+                self.user
+                and str(self.user.id) != user_id
+                and not self.user.is_superuser
+            ):
                 logger.warning(
                     f"Unauthorized access to group {group_name} by user "
                     f"{user_id} blocked."
