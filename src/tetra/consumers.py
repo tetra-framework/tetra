@@ -45,7 +45,7 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         self.session = self.scope.get("session")
         if not self.session:
             # Handle case where session is not available
-            # There is no channels connection feasible then.
+            # There is no channels connection possible then.
             await self.close()
             return
 
