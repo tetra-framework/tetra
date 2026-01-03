@@ -3,11 +3,10 @@ import logging
 from typing import Set
 from django.contrib.auth.models import AnonymousUser, AbstractUser
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from django.contrib.sessions.backends.file import SessionStore
 
 from tetra.components import subscription
-from tetra.dispatcher import ComponentDispatcher
 from tetra.exceptions import ComponentError
-from tetra.utils import TetraWsResponse
 
 logger = logging.getLogger(__name__)
 
@@ -29,14 +28,14 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         }
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.user: AbstractUser | None = None
-        self.session: str | None = None
+        self.session: SessionStore | None = None
         self.component_id: str | None = None
         self.subscribed_groups: Set[str] = set()
 
-    async def connect(self):
+    async def connect(self) -> None:
         """
         Establish WebSocket connection and auto-subscribe to user, session, and broadcast groups.
 
@@ -82,10 +81,8 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         self.subscribed_groups.add("broadcast")
         logger.debug(f"Subscribed '{self.channel_name}' to 'broadcast' group.")
 
-    async def disconnect(self, code):
-        """
-        Disconnects from all subscribed groups.
-        """
+    async def disconnect(self, code) -> None:
+        """Disconnects from all subscribed groups."""
         for group in self.subscribed_groups:
             await self.channel_layer.group_discard(group, self.channel_name)
             logger.debug(f"Discarded '{self.channel_name}' from '{group}' group.")
@@ -93,8 +90,7 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         self.subscribed_groups.clear()
 
     async def receive_json(self, content, **kwargs):
-        """
-        Handle incoming JSON messages.
+        """Handle incoming JSON messages.
 
         This method processes different types of messages based on the 'type' field
         in the received JSON content and routes them to appropriate handler methods.
@@ -111,14 +107,19 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
                 f"Unknown message type received via websocket: {message_type}"
             )
 
-    async def _handle_subscribe(self, data):
+    async def _handle_subscribe(self, data) -> None:
         """Handles subscription requests to named groups."""
         group_name = data.get("group")
         if group_name in self.subscribed_groups:
             return
         if not group_name:
-            await ComponentDispatcher.subscription_response(
-                group_name, status="error", message="Invalid group name"
+            await self.send_json(
+                {
+                    "type": "subscription.response",
+                    "group": group_name,
+                    "status": "error",
+                    "message": "Invalid group name",
+                }
             )
             return
 
@@ -137,23 +138,33 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         # Join channel group
         await self.channel_layer.group_add(group_name, self.channel_name)
         self.subscribed_groups.add(group_name)
-        await ComponentDispatcher.subscription_response(group_name, status="subscribed")
+        await self.send_json(
+            {
+                "type": "subscription.response",
+                "group": group_name,
+                "status": "subscribed",
+            }
+        )
 
-    async def _handle_unsubscribe(self, data):
+    async def _handle_unsubscribe(self, data) -> None:
         group_name = data.get("group")
 
         if group_name in self.subscribed_groups:
             await self.channel_layer.group_discard(group_name, self.channel_name)
-            await ComponentDispatcher.subscription_response(
-                group_name, status="unsubscribed"
-            )
             self.subscribed_groups.remove(group_name)
+            await self.send_json(
+                {
+                    "type": "subscription.response",
+                    "group": group_name,
+                    "status": "unsubscribed",
+                }
+            )
 
-    async def subscription_response(self, event):
+    async def subscription_response(self, event) -> None:
         """Handle confirmation of subscription"""
         await self.send_json(event)
 
-    async def component_update_data(self, event):
+    async def component_update_data(self, event) -> None:
         """Handle component data update
 
         This method is automatically called when a message is sent via group_send
@@ -175,6 +186,10 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
                 f"No matching component found for channel group {group_name}."
             )
 
-    async def component_remove(self, event):
+    async def component_remove(self, event) -> None:
         """Handle component removal"""
+        await self.send_json(event)
+
+    async def notify(self, event) -> None:
+        """Handle notification"""
         await self.send_json(event)
