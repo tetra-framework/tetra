@@ -107,18 +107,9 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
                 f"Unknown message type received via websocket: {message_type}"
             )
 
-    async def _handle_subscribe(self, data) -> None:
+    async def _handle_subscribe(self, data: dict[str, str]) -> None:
         """Handles subscription requests to named groups."""
-        group_name = data.get("group")
-        if group_name in self.subscribed_groups:
-            await self.send_json(
-                {
-                    "type": "subscription.response",
-                    "group": group_name,
-                    "status": "resubscribed",
-                }
-            )
-            return
+        group_name = data.get("group", "")
         if not group_name:
             await self.send_json(
                 {
@@ -144,7 +135,41 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
                     f"Unauthorized access to group {group_name} by user "
                     f"{user_id} blocked."
                 )
+                await self.send_json(
+                    {
+                        "type": "subscription.response",
+                        "group": group_name,
+                        "status": "error",
+                        "message": "Unauthorized",
+                    }
+                )
                 return
+        if group_name.startswith("session."):
+            # you cannot manually subscribe to a session group.
+            # While we could check against the current valid session key, it is way
+            # too dangerous, enabling XSS attacks. So deny that completely.
+            logger.warning(
+                f"Unauthorized access to group {group_name} by session "
+                f"{self.session.session_key if self.session else None} blocked."
+            )
+            await self.send_json(
+                {
+                    "type": "subscription.response",
+                    "group": group_name,
+                    "status": "error",
+                    "message": "No manually joining of session groups allowed.",
+                }
+            )
+        # check if we already subscribed to this group - if so, send "resubscribed"
+        if group_name in self.subscribed_groups:
+            await self.send_json(
+                {
+                    "type": "subscription.response",
+                    "group": group_name,
+                    "status": "resubscribed",
+                }
+            )
+            return
 
         # Join channel group
         await self.channel_layer.group_add(group_name, self.channel_name)
@@ -157,7 +182,7 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
             }
         )
 
-    async def _handle_unsubscribe(self, data) -> None:
+    async def _handle_unsubscribe(self, data: dict[str, str]) -> None:
         group_name = data.get("group")
 
         if group_name in self.subscribed_groups:

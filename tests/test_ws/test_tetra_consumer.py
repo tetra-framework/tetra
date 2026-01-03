@@ -1,10 +1,6 @@
 from asyncio import sleep
 
 import pytest
-from channels.testing import WebsocketCommunicator
-from tetra.consumers import TetraConsumer
-from django.contrib.auth.models import AnonymousUser
-from django.contrib.sessions.backends.db import SessionStore
 from tetra.dispatcher import ComponentDispatcher
 
 
@@ -15,19 +11,6 @@ async def test_connect(tetra_ws_communicator):
     # we don't have to do anything here, as the consumer connection is asserted
     # correctly within the fixture
     pass
-
-
-@pytest.mark.django_db
-@pytest.mark.asyncio
-async def test_consumer_connection(tetra_ws_communicator):
-    communicator = tetra_ws_communicator
-    # Subscribe to a group
-    await communicator.send_json_to({"type": "subscribe", "group": "test-group"})
-
-    response = await communicator.receive_json_from()
-    assert response["type"] == "subscription.response"
-    assert response["group"] == "test-group"
-    assert response["status"] == "subscribed"
 
 
 @pytest.mark.django_db
@@ -85,22 +68,37 @@ async def test_auto_subscriptions(tetra_ws_communicator):
 
 @pytest.mark.django_db
 @pytest.mark.asyncio
+async def test_subscribe(tetra_ws_communicator):
+    communicator = tetra_ws_communicator
+    # Subscribe to a group
+    group_name = "test-group"
+    await communicator.send_json_to({"type": "subscribe", "group": group_name})
+
+    response = await communicator.receive_json_from()
+    assert response["type"] == "subscription.response"
+    assert response["group"] == group_name
+    assert response["status"] == "subscribed"
+
+
+@pytest.mark.django_db
+@pytest.mark.asyncio
 async def test_subscribe_unsubscribe(tetra_ws_communicator):
     """Test manual subscription and unsubscription."""
     communicator = tetra_ws_communicator
+    group_name = "test-group"
 
     # Subscribe
-    await communicator.send_json_to({"type": "subscribe", "group": "custom-group"})
+    await communicator.send_json_to({"type": "subscribe", "group": group_name})
     response = await communicator.receive_json_from()
     assert response["type"] == "subscription.response"
-    assert response["group"] == "custom-group"
+    assert response["group"] == group_name
     assert response["status"] == "subscribed"
 
     # Unsubscribe
-    await communicator.send_json_to({"type": "unsubscribe", "group": "custom-group"})
+    await communicator.send_json_to({"type": "unsubscribe", "group": group_name})
     response = await communicator.receive_json_from()
     assert response["type"] == "subscription.response"
-    assert response["group"] == "custom-group"
+    assert response["group"] == group_name
     assert response["status"] == "unsubscribed"
 
 
@@ -109,18 +107,20 @@ async def test_subscribe_unsubscribe(tetra_ws_communicator):
 async def test_resubscribed(tetra_ws_communicator):
     """Test that a user can't subscribe to a group they're already subscribed to."""
     communicator = tetra_ws_communicator
+    group_name = "test-group"
+
     # Subscribe
-    await communicator.send_json_to({"type": "subscribe", "group": "custom-group"})
+    await communicator.send_json_to({"type": "subscribe", "group": group_name})
     response = await communicator.receive_json_from()
     assert response["type"] == "subscription.response"
-    assert response["group"] == "custom-group"
+    assert response["group"] == group_name
     assert response["status"] == "subscribed"
 
     # Subscribe to same group again
-    await communicator.send_json_to({"type": "subscribe", "group": "custom-group"})
+    await communicator.send_json_to({"type": "subscribe", "group": group_name})
     response = await communicator.receive_json_from()
     assert response["type"] == "subscription.response"
-    assert response["group"] == "custom-group"
+    assert response["group"] == group_name
     assert response["status"] == "resubscribed"
 
 
@@ -207,3 +207,72 @@ async def test_notify_handler(tetra_ws_communicator):
     assert response["type"] == "notify"
     assert response["event_name"] == "tetra:test-event"
     assert response["data"] == {"foo": "bar"}
+
+
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_handle_subscribe_missing_group(tetra_ws_communicator):
+    communicator = tetra_ws_communicator
+
+    await communicator.send_json_to({"type": "subscribe", "group": None})
+
+    response = await communicator.receive_json_from()
+    assert response == {
+        "type": "subscription.response",
+        "group": None,
+        "status": "error",
+        "message": "Invalid group name",
+    }
+
+
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_handle_subscribe_unauthorized_group(tetra_ws_communicator):
+    communicator = tetra_ws_communicator
+
+    unauthorized_group = "user.999"  # Assuming our user ID is not 999
+    await communicator.send_json_to({"type": "subscribe", "group": unauthorized_group})
+
+    response = await communicator.receive_json_from()
+    assert response == {
+        "type": "subscription.response",
+        "group": unauthorized_group,
+        "status": "error",
+        "message": "Unauthorized",
+    }
+
+
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_handle_subscribe_any_session_group(tetra_ws_communicator):
+    communicator = tetra_ws_communicator
+
+    unauthorized_group = "session.no-way-that-this-session-id-is-valid"
+    await communicator.send_json_to({"type": "subscribe", "group": unauthorized_group})
+
+    response = await communicator.receive_json_from()
+    assert response == {
+        "type": "subscription.response",
+        "group": unauthorized_group,
+        "status": "error",
+        "message": "No manually joining of session groups allowed.",
+    }
+
+
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_handle_subscribe_own_session_group(tetra_ws_communicator):
+    """Test subscribing manually to the valid, own session group must fail."""
+
+    own_session_group = f"session.{tetra_ws_communicator.scope['session'].session_key}"
+    await tetra_ws_communicator.send_json_to(
+        {"type": "subscribe", "group": own_session_group}
+    )
+
+    response = await tetra_ws_communicator.receive_json_from()
+    assert response == {
+        "type": "subscription.response",
+        "group": own_session_group,
+        "status": "error",
+        "message": "No manually joining of session groups allowed.",
+    }
