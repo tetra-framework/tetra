@@ -126,6 +126,15 @@ const Tetra = {
           },
         }))
         break;
+      case "resubscribed":
+        console.debug("Re-subscription to group", event["group"], "successful.")
+        document.dispatchEvent(new CustomEvent(`tetra:component-resubscribed`,  {
+          detail: {
+            component: this,
+            group: event["group"]
+          },
+        }))
+        break;
       case "error":
         console.error("Error subscribing component", event["component_id"], "to group", event["group"], ":", event["message"])
         document.dispatchEvent(new CustomEvent(`tetra:component-subscription-error`,  {

@@ -94,7 +94,7 @@ class ComponentDispatcher:
     @staticmethod
     async def subscription_response(
         group: str,
-        status: Literal["subscribed", "unsubscribed", "error"],
+        status: Literal["subscribed", "unsubscribed", "resubscribed", "error"],
         message: str = "",
     ) -> None:
         """
@@ -102,10 +102,10 @@ class ComponentDispatcher:
 
         Args:
             group: WebSocket group name
-            status: "subscribed", "unsubscribed", or "error"
+            status: "subscribed", "unsubscribed", "resubscribed", or "error"
             message: Optional additional details
         """
-        assert status in ["subscribed", "unsubscribed", "error"]
+        assert status in ["subscribed", "unsubscribed", "resubscribed", "error"]
         channel_layer = get_channel_layer()
         await channel_layer.group_send(
             group,

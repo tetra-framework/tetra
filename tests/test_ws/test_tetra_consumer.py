@@ -106,6 +106,26 @@ async def test_subscribe_unsubscribe(tetra_ws_communicator):
 
 @pytest.mark.django_db
 @pytest.mark.asyncio
+async def test_resubscribed(tetra_ws_communicator):
+    """Test that a user can't subscribe to a group they're already subscribed to."""
+    communicator = tetra_ws_communicator
+    # Subscribe
+    await communicator.send_json_to({"type": "subscribe", "group": "custom-group"})
+    response = await communicator.receive_json_from()
+    assert response["type"] == "subscription.response"
+    assert response["group"] == "custom-group"
+    assert response["status"] == "subscribed"
+
+    # Subscribe to same group again
+    await communicator.send_json_to({"type": "subscribe", "group": "custom-group"})
+    response = await communicator.receive_json_from()
+    assert response["type"] == "subscription.response"
+    assert response["group"] == "custom-group"
+    assert response["status"] == "resubscribed"
+
+
+@pytest.mark.django_db
+@pytest.mark.asyncio
 async def test_component_update_data_handler(tetra_ws_communicator):
     """Test the component_update_data event handler."""
     from tetra.components import subscription, Component, public

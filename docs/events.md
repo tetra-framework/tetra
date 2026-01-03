@@ -51,13 +51,6 @@ After a request returns a response, Tetra fires this event if there are new mess
 #### Details
 * `messages`: a list of message objects, see [messages](messages.md)
 
-### `tetra:component-subscribed`
-
-After a successful subscription to a group, the component fires this event.
-
-#### Details
-* `group`: the group the component was subscribed to.
-
 
 ## Component subscription 
 
@@ -71,6 +64,10 @@ These events are fired after a websocket subscription returned, successfully or 
 ### `tetra:component-subscribed`
 
 When a component subscription was completed successfully.
+
+### `tetra:component-resubscribed`
+
+When a component subscription was re-issued. Rarely used.
 
 ### `tetra:component-unsubscribed`
 

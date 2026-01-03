@@ -111,6 +111,13 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         """Handles subscription requests to named groups."""
         group_name = data.get("group")
         if group_name in self.subscribed_groups:
+            await self.send_json(
+                {
+                    "type": "subscription.response",
+                    "group": group_name,
+                    "status": "resubscribed",
+                }
+            )
             return
         if not group_name:
             await self.send_json(
