@@ -83,7 +83,7 @@ A `ReactiveComponent` that is rendered on a page in the context of an authentica
 
 These groups can be used to dispatch component notifications to 
 
-* **one specific user**: No matter where he/she is connected, all sessions on all devices are reached. This is especially useful for user messages, list updates etc.
+* **one specific user**: No matter where the user is connected, all sessions on all devices are reached. This is especially useful for user messages, list updates etc.
 * **one session**: This is just for one website user (even not authenticated), *at one device, but maybe multiple opened tabs*. Useful for updates that should not be visible on other devices, like unsaved data in a form.
 * **everyone**: the `broadcast` group reaches ALL connected devices. Don't overuse this. It's helpful for global status updates, anonymous new tickers, or system alerts ("Warning! Shutdown planned in 2 minutes.")
 

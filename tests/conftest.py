@@ -1,7 +1,7 @@
 import os
 import shutil
 import sys
-from typing import Generator
+from typing import Generator, AsyncGenerator, Any
 
 import pytest
 from pathlib import Path
@@ -17,6 +17,7 @@ from playwright.sync_api import Page, Browser
 from django.urls import reverse
 from tetra.middleware import TetraDetails
 from tetra import Library
+from channels.testing import WebsocketCommunicator
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -24,6 +25,37 @@ BASE_DIR = Path(__file__).resolve().parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+
+
+@pytest.fixture
+async def tetra_ws_communicator(db) -> AsyncGenerator[WebsocketCommunicator, Any]:
+    """
+    Returns a WebsocketCommunicator for TetraConsumer with a valid session and
+    AnonymousUser, and closes it after usage.
+    """
+    from django.contrib.auth.models import AnonymousUser
+    from django.contrib.sessions.backends.db import SessionStore
+    from tetra.consumers import TetraConsumer
+
+    session = SessionStore()
+    session.create()
+
+    scope = {
+        "type": "websocket",
+        "session": session,
+        "user": AnonymousUser(),
+        "path": "/ws/tetra/",
+    }
+
+    communicator = WebsocketCommunicator(
+        TetraConsumer.as_asgi(),
+        "/ws/tetra/",
+    )
+    communicator.scope.update(scope)
+    connected, _ = await communicator.connect()
+    assert connected
+    yield communicator
+    await communicator.disconnect()
 
 
 @pytest.fixture
