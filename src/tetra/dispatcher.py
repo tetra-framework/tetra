@@ -10,7 +10,7 @@ class ComponentDispatcher:
 
     It provides convenient methods to asynchronously send data to client components.
     Beware that any of the methods are asynchronous and should be called inside an
-    asynchronous context. If ou use them from synchronous code, you will need to use
+    asynchronous context. If you use them from synchronous code, you will need to use
     `async_to_sync` from `asgiref.sync` to convert synchronous code to asynchronous:
 
     ```python

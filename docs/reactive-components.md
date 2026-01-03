@@ -64,7 +64,8 @@ from .models import BreakingNews
 
 class NewsTicker(ReactiveComponent):
     breaking_news: list = []
-    group_subscription = "news.updates"  # this component always subscribes to one channel
+    # this component always subscribes to one channel: "news.updates"
+    group_subscription = "news.updates"
 
     def load(self, *args, **kwargs) -> None:
         # Fetch the latest news headline from database
@@ -78,7 +79,7 @@ class NewsTicker(ReactiveComponent):
 
 Tetra keeps track of each `ReactiveComponent` that subscribed to a channel group. When sending push notifications to a group, you can refer to that component by its `component_id` again.
 
-A `ReactiveComponent` that is rendered one a page in the context of an authenticated user with the id 7 has joined the groups `user.7`, `session.jyox98seevk9dll9fy8cyb7wspdnyala` and `broadcast`.
+A `ReactiveComponent` that is rendered on a page in the context of an authenticated user with the id 7 has joined the groups `user.7`, `session.jyox98seevk9dll9fy8cyb7wspdnyala` and `broadcast`.
 
 These groups can be used to dispatch component notifications to 
 
@@ -152,7 +153,10 @@ from asgiref.sync import async_to_sync
 async def send_message():
     # update the public data of any component
     await ComponentDispatcher.update_data("chat.room.hprc", data={
-        "message": "Hello Mat, this is Fred Wesley! I'd like to reconfirm our appointment in Munich tomorrow. We'll see us at the hotel."
+        "message": "Hello Mat, this is Fred Wesley! "
+                   "I'd like to reconfirm our appointment in "
+                   "Munich tomorrow. We'll see us at the "
+                   "hotel."
     })
 
 # or sync:
@@ -164,7 +168,7 @@ def send_message():
         })
 ```
 
-!!! Important!
+!!! warning
     Make absolutely sure that the data you are sending is a dict with keys that match your target components' public properties. They will be updated with that data on the client.
 
 The `ComponentDispatcher` does NOT change the server state of the components.
