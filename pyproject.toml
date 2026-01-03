@@ -83,7 +83,7 @@ exclude = ["docs", "tests", "demosite"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--nomigrations"
+addopts = "--nomigrations --cov-config=.coveragerc"
 testpaths = [
     "tests"
 ]

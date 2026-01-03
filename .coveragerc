@@ -1,0 +1,34 @@
+[run]
+source = src/
+omit =
+  ./venv/*,
+  tests*,
+  *apps.py,
+  *manage.py,
+  *migrations*,
+  *asgi.py,
+  *wsgi.py,
+
+[report]
+omit =
+  ./venv/*,
+  tests*,
+  *apps.py,
+  *manage.py,
+  *__init__.py,
+  *migrations*,
+  *asgi.py,
+  *wsgi.py,
+  *admin.py
+
+exclude_also =
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod
