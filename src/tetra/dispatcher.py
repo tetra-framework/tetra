@@ -1,3 +1,5 @@
+from typing import Literal
+
 from channels.layers import get_channel_layer
 
 
@@ -47,7 +49,7 @@ class ComponentDispatcher:
     @staticmethod
     async def update_data(group: str, data: dict | None = None) -> None:
         """
-        Sends data updates to public properties of all component that are subscribed to
+        Sends data updates to public properties of all components that are subscribed to
         WebSocket connections in a group.
 
         Args:
@@ -91,7 +93,9 @@ class ComponentDispatcher:
 
     @staticmethod
     async def subscription_response(
-        group: str, status: str, message: str | None = None
+        group: str,
+        status: Literal["subscribed", "unsubscribed", "error"],
+        message: str = "",
     ) -> None:
         """
         Send subscription confirmation to a WebSocket group.
