@@ -57,14 +57,30 @@ def render_styles(request):
 
 def render_scripts(request, csrf_token):
     """Render Tetra JavaScript with WebSocket support detection"""
-    websockets_support = check_websocket_support()
-
+    websockets_supported = check_websocket_support()
+    websockets_allowed = False
     libs = list(set(component._library for component in request.tetra_components_used))
-    use_websockets = (
-        has_reactive_components()
-        and websockets_support
-        and (settings.DEBUG or request.META.get("REMOTE_ADDR") in settings.INTERNAL_IPS)
-    )
+    if has_reactive_components:
+        if not websockets_supported:
+            raise ImproperlyConfigured(
+                "Reactive components are used, but WebSockets are not supported."
+                "Make sure you have installed the required "
+                "packages (channels, channels_redis, daphne)."
+            )
+
+        websockets_allowed = (
+            settings.DEBUG or request.META.get("REMOTE_ADDR") in settings.INTERNAL_IPS
+        )
+        if not settings.DEBUG and not websockets_allowed:
+            logger.critical(
+                "WebSockets are disabled from INTERNAL_IPS: "
+                "This would be a security risk."
+            )
+    else:
+        # even if we support it - there are no reactive components in use,
+        # so disable support: it only generates overhead.
+        websockets_supported = False
+
     return render_to_string(
         "lib_scripts.html",
         {
@@ -72,21 +88,21 @@ def render_scripts(request, csrf_token):
             "include_alpine": request.tetra_scripts_placeholder_include_alpine,
             "csrf_token": csrf_token,
             "debug": settings.DEBUG,
-            "use_websockets": use_websockets,
-            "websockets_support": websockets_support,
+            "use_websockets": websockets_supported and websockets_allowed,
+            "websockets_supported": websockets_supported,
         },
     )
 
 
 # cache websockets support.
-_websockets_support: bool | None = None
+__websockets_support: bool | None = None
 
 
 def check_websocket_support() -> bool:
     """Check if Django Channels and WebSocket routing is properly configured"""
-    global _websockets_support
-    if _websockets_support is not None:
-        return _websockets_support
+    global __websockets_support
+    if __websockets_support is not None:
+        return __websockets_support
 
     try:
         from channels.layers import get_channel_layer
@@ -99,11 +115,18 @@ def check_websocket_support() -> bool:
         )
         has_channel_layer = get_channel_layer() is not None
 
-        _websockets_support = has_channels and has_asgi_app and has_channel_layer
-        return _websockets_support
+        __websockets_support = has_channels and has_asgi_app and has_channel_layer
+        if __websockets_support:
+            logger.info("WebSocket support detected")
+        else:
+            logger.info("WebSocket support not detected")
+        return __websockets_support
 
     except ImportError:
-        _websockets_support = False
+        __websockets_support = False
+        logger.warning(
+            "Django Channels and WebSocket routing is not properly configured"
+        )
         return False
 
 

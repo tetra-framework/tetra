@@ -15,7 +15,7 @@ def check_websocket_support(app_configs, **kwargs):
     from tetra.globals import has_reactive_components
 
     # Only check if reactive components are being used
-    if not has_reactive_components():
+    if not has_reactive_components:
         return errors
 
     # Check if Channels is installed
