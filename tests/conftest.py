@@ -213,7 +213,6 @@ def pytest_configure(config):
         ],
         MIDDLEWARE=[
             "django.middleware.security.SecurityMiddleware",
-            "whitenoise.middleware.WhiteNoiseMiddleware",
             "django.contrib.sessions.middleware.SessionMiddleware",
             "django.middleware.common.CommonMiddleware",
             "django.middleware.csrf.CsrfViewMiddleware",
@@ -236,11 +235,6 @@ def pytest_configure(config):
         STATIC_ROOT=BASE_DIR / "staticfiles",
         MEDIA_ROOT=BASE_DIR / "media",
         DEBUG=True,
-        # STORAGES={
-        #     "staticfiles": {
-        #         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
-        #     },
-        # },
         CHANNEL_LAYERS={
             "default": {
                 "BACKEND": "channels.layers.InMemoryChannelLayer",
