@@ -19,9 +19,10 @@ Fork the repository locally and install it as editable package:
 ```bash
 git clone git@github.com:tetra-framework/tetra.git
 cd tetra
-uv pip install -e .
+make setup-dev
 ```
 
+This takes care of setting up the development environment (install uv and dev dependencies, run `playwright install` etc.)
 
 ### Code style
 
