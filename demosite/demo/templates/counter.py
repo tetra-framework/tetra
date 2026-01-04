@@ -1,1 +1,0 @@
-../components/default/counter/__init__.py

@@ -54,15 +54,6 @@ dev = [
     "tetra[doc]",
     "pytest-playwright"
 ]
-demo = [
-    "PyYAML~=6.0",
-    "markdown~=3.3",
-    "django-environ~=0.12",
-    "PyYAML>=6.0",
-    "markdown~=3.3",
-    "channels[daphne]~=4.2",
-    "channels_redis~=4.3",
-]
 doc = [
     "mkdocs~=1.6",
     "mkdocs-material~=9.7",
@@ -79,7 +70,7 @@ version = {attr = "tetra.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-exclude = ["docs", "tests", "demosite"]
+exclude = ["docs", "tests"]
 
 [tool.setuptools.package-data]
 tetra = ["templates/*", "js/*", "static/*", "scripts/*.sh"]
