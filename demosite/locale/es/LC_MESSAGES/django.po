@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-02 23:54+0200\n"
+"POT-Creation-Date: 2026-01-04 00:19+0000\n"
 "PO-Revision-Date: 2024-05-16 10:00+0000\n"
 "Last-Translator: Gemini Code Assist <gemini@google.com>\n"
 "Language-Team: Spanish\n"
@@ -17,21 +17,25 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 
-#: demo/components/default/info_card/__init__.py:8
-#: demo/templates/info_card.py:8
-msgid "I'm so excited!"
-msgstr "¡Estoy muy emocionado!"
+#: demo/components/default/info_card/__init__.py:26
+msgid "Information"
+msgstr "Información"
 
-#: demo/components/default/info_card/__init__.py:9
-#: demo/templates/info_card.py:9
-msgid "We got news for you."
-msgstr "Tenemos noticias para ti."
+#: demo/components/default/info_card/__init__.py:37
+msgid "Enter your name below!"
+msgstr "¡Introduce tu nombre aquí!"
 
-#: demo/components/default/info_card/__init__.py:19
-#: demo/templates/info_card.py:19
-#, python-brace-format
-msgid "Hi {name}! No further news."
-msgstr "¡Hola {name}! No hay más noticias."
+#: demo/components/default/info_card/__init__.py:40
+msgid "Thanks,"
+msgstr "Gracias,"
+
+#: demo/components/default/info_card/__init__.py:47
+msgid "Your name"
+msgstr "Tu nombre"
+
+#: demo/components/default/info_card/__init__.py:55
+msgid "Ok"
+msgstr "Aceptar"
 
 #: demo/components/default/reactive_search/reactive_search.html:4
 #: demo/templates/reactive_search.html:4
@@ -58,11 +62,11 @@ msgstr ""
 msgid "Submit"
 msgstr "Enviar"
 
-#: demo/components/examples/spinner/spinner.html:10
+#: demo/components/examples/spinner/spinner.html:8
 msgid "Load data (local spinner)"
 msgstr "Cargar datos (spinner local)"
 
-#: demo/components/examples/spinner/spinner.html:20
+#: demo/components/examples/spinner/spinner.html:17
 msgid "Load data (external spinner)"
 msgstr "Cargar datos (spinner external)"
 
@@ -805,15 +809,16 @@ msgstr ""
 msgid "Async server code"
 msgstr "Código de servidor asíncrono"
 
-#: demo/templates/index.html:117
+#: demo/templates/index.html:116
 msgid ""
 "The following (partly fake) news line is not polled, but pushed from the "
 "server to all connected clients simultaneously each 10 seconds."
 msgstr ""
 "La siguiente línea de noticias (parcialmente falsa) no se consulta, sino que "
-"se envía desde el servidor a todos los clientes conectados simultáneamente cada 10 segundos."
+"se envía desde el servidor a todos los clientes conectados simultáneamente "
+"cada 10 segundos."
 
-#: demo/templates/index.html:121
+#: demo/templates/index.html:120
 msgid ""
 "\n"
 "        This might look trivial, you could do that with polling too. But "
@@ -835,11 +840,11 @@ msgstr ""
 "noticias a todos los clientes conectados.\n"
 "    "
 
-#: demo/templates/index.html:134
+#: demo/templates/index.html:133
 msgid "What does Tetra do?"
 msgstr "¿Qué hace Tetra?"
 
-#: demo/templates/index.html:139
+#: demo/templates/index.html:138
 msgid ""
 "<a href=\"http://djangoproject.com\">Django</a> on the  backend, <a "
 "href=\"https://alpinejs.dev\">Alpine.js</a> in the browser"
@@ -847,7 +852,7 @@ msgstr ""
 "<a href=\"http://djangoproject.com\">Django</a> en el backend, <a "
 "href=\"https://alpinejs.dev\">Alpine.js</a> en el navegador"
 
-#: demo/templates/index.html:142
+#: demo/templates/index.html:141
 msgid ""
 "Tetra combines the power of Django with Alpine.js to make development easier "
 "and  quicker."
@@ -855,11 +860,11 @@ msgstr ""
 "Tetra combina el poder de Django con Alpine.js para hacer el desarrollo más "
 "fácil y rápido."
 
-#: demo/templates/index.html:145
+#: demo/templates/index.html:144
 msgid "Component encapsulation"
 msgstr "Encapsulación de componentes"
 
-#: demo/templates/index.html:146
+#: demo/templates/index.html:145
 msgid ""
 "Each component combines its Python, HTML, CSS and JavaScript in one place "
 "for close proximity of related code."
@@ -867,11 +872,11 @@ msgstr ""
 "Cada componente combina su Python, HTML, CSS y JavaScript en un solo lugar "
 "para mantener la proximidad del código relacionado."
 
-#: demo/templates/index.html:148
+#: demo/templates/index.html:147
 msgid "Async HTTP calls"
 msgstr "Llamadas HTTP asíncronas"
 
-#: demo/templates/index.html:149
+#: demo/templates/index.html:148
 msgid ""
 "Server calls are asynchronous, ensuring the frontend remains responsive. "
 "Multiple, fast clicks on the same button are not dropped between HTTP calls."
@@ -880,11 +885,11 @@ msgstr ""
 "mantenga receptivo. Múltiples clics rápidos en el mismo botón no se pierden "
 "entre llamadas HTTP."
 
-#: demo/templates/index.html:151
+#: demo/templates/index.html:150
 msgid "Resumable server state"
 msgstr "Estado de servidor reanudable"
 
-#: demo/templates/index.html:152
+#: demo/templates/index.html:151
 msgid ""
 "The components' full server state is saved between public method calls. This "
 "state is <a href=\"https://tetra.readthedocs.io/en/latest/state-security/"
@@ -894,11 +899,11 @@ msgstr ""
 "a métodos públicos. Este estado está <a href=\"https://tetra.readthedocs.io/"
 "en/latest/state-security/\">cifrado por seguridad</a>."
 
-#: demo/templates/index.html:154
+#: demo/templates/index.html:153
 msgid "Public server methods"
 msgstr "Métodos de servidor públicos"
 
-#: demo/templates/index.html:155
+#: demo/templates/index.html:154
 msgid ""
 "Methods can be made public, allowing you to easily call them from JS on the "
 "front end, resuming the component's state."
@@ -906,11 +911,11 @@ msgstr ""
 "Los métodos pueden hacerse públicos, permitiendo llamarlos fácilmente desde "
 "JS en el frontend, reanudando el estado del componente."
 
-#: demo/templates/index.html:157
+#: demo/templates/index.html:156
 msgid "Shared public state"
 msgstr "Estado público compartido"
 
-#: demo/templates/index.html:158
+#: demo/templates/index.html:157
 msgid ""
 "Attributes can be decorated to indicate they should be available in the "
 "browser as Alpine.js data objects."
@@ -918,11 +923,11 @@ msgstr ""
 "Los atributos pueden ser decorados para indicar que deben estar disponibles "
 "en el navegador como objetos de datos de Alpine.js."
 
-#: demo/templates/index.html:160
+#: demo/templates/index.html:159
 msgid "Server \"watcher\" methods"
 msgstr "Métodos \"watcher\" del servidor"
 
-#: demo/templates/index.html:161
+#: demo/templates/index.html:160
 msgid ""
 "Public methods can be instructed to watch a public attribute, enabling "
 "reactive re-rendering on the server."
@@ -930,11 +935,11 @@ msgstr ""
 "Los métodos públicos pueden ser instruidos para observar un atributo "
 "público, permitiendo la re-renderización reactiva en el servidor."
 
-#: demo/templates/index.html:163
+#: demo/templates/index.html:162
 msgid "Inplace updating from the server"
 msgstr "Actualización en el sitio desde el servidor"
 
-#: demo/templates/index.html:164
+#: demo/templates/index.html:163
 msgid ""
 "Server methods can update the rendered component in place. Powered by the "
 "Alpine.js morph plugin."
@@ -942,34 +947,34 @@ msgstr ""
 "Los métodos del servidor pueden actualizar el componente renderizado en el "
 "sitio. Impulsado por el plugin morph de Alpine.js."
 
-#: demo/templates/index.html:166
+#: demo/templates/index.html:165
 msgid "Component library packaging"
 msgstr "Empaquetado de la librería de componentes"
 
-#: demo/templates/index.html:167
+#: demo/templates/index.html:166
 msgid "Every component belongs to a \\"
 msgstr "Cada componente pertenece a un \\"
 
-#: demo/templates/index.html:169
+#: demo/templates/index.html:168
 #, fuzzy
 #| msgid "Components with overridable blocks"
 msgid "Components with overridable slots"
 msgstr "Componentes con bloques sobreescribibles"
 
-#: demo/templates/index.html:170
+#: demo/templates/index.html:169
 msgid "Components can have multiple <code>"
 msgstr "Componentes pueden tener múltiples <code>"
 
-#: demo/templates/index.html:170
+#: demo/templates/index.html:169
 msgid "</code> which can be overridden when used."
 msgstr "</code> que pueden ser sobreescritos cuando se usan."
 
-#: demo/templates/index.html:174
+#: demo/templates/index.html:173
 msgid "JS/CSS builds using <a href=\"https://esbuild.github.io\">esbuild</a>"
 msgstr ""
 "Compilaciones JS/CSS usando <a href=\"https://esbuild.github.io\">esbuild</a>"
 
-#: demo/templates/index.html:177
+#: demo/templates/index.html:176
 msgid ""
 "Both for development (built into <code>runserver</code>) and production your "
 "JS & CSS is built with esbuild."
@@ -977,11 +982,11 @@ msgstr ""
 "Tanto para desarrollo (integrado en <code>runserver</code>) como para "
 "producción, tu JS y CSS se compila con esbuild."
 
-#: demo/templates/index.html:180
+#: demo/templates/index.html:179
 msgid "Source Maps"
 msgstr "Mapas de origen"
 
-#: demo/templates/index.html:181
+#: demo/templates/index.html:180
 msgid ""
 "Source maps are generated during development so that you can track down "
 "errors to the original Python files."
@@ -989,11 +994,11 @@ msgstr ""
 "Los mapas de origen se generan durante el desarrollo para que puedas "
 "rastrear errores hasta los archivos Python originales."
 
-#: demo/templates/index.html:183
+#: demo/templates/index.html:182
 msgid "Syntax highlighting with type annotations"
 msgstr "Resaltado de sintaxis con anotaciones de tipo"
 
-#: demo/templates/index.html:184
+#: demo/templates/index.html:183
 msgid ""
 "Tetra uses type annotations to syntax highlight your JS, CSS & HTML in your "
 "Python files with a <a href=\"https://github.com/samwillis/python-inline-"
@@ -1004,11 +1009,11 @@ msgstr ""
 "python-inline-source/tree/main/vscode-python-inline-source\">plugin de VS "
 "Code</a>"
 
-#: demo/templates/index.html:186
+#: demo/templates/index.html:185
 msgid "Form components"
 msgstr "Componentes de formulario"
 
-#: demo/templates/index.html:187
+#: demo/templates/index.html:186
 msgid ""
 "A simple replacement for Django's FormView, but due to Tetra's dynamic "
 "nature, e.g. a field can change its value or disappear depending on other "
@@ -1018,11 +1023,11 @@ msgstr ""
 "dinámica de Tetra, por ejemplo, un campo puede cambiar su valor o "
 "desaparecer dependiendo de los valores de otros campos."
 
-#: demo/templates/index.html:189
+#: demo/templates/index.html:188
 msgid "Event subscriptions"
 msgstr "Suscripciones a eventos"
 
-#: demo/templates/index.html:190
+#: demo/templates/index.html:189
 msgid ""
 "Both frontend and backend components can subscribe to JavaScript events, "
 "enabling seamless event-driven programming across the full stack."
@@ -1031,11 +1036,11 @@ msgstr ""
 "eventos de JavaScript, permitiendo una programación fluida basada en eventos "
 "en todo el stack."
 
-#: demo/templates/index.html:192
+#: demo/templates/index.html:191
 msgid "File upload/downloads"
 msgstr "Carga/descarga de archivos"
 
-#: demo/templates/index.html:193
+#: demo/templates/index.html:192
 msgid ""
 "Whenever a form contains a FileField, Tetra makes sure the uploading process "
 "works smooth, even with page reloads."
@@ -1043,11 +1048,11 @@ msgstr ""
 "Siempre que un formulario contiene un FileField, Tetra se asegura de que el "
 "proceso de carga funcione sin problemas, incluso con recargas de página."
 
-#: demo/templates/index.html:195
+#: demo/templates/index.html:194
 msgid "Integration with Django Messages"
 msgstr "Integración con Mensajes de Django"
 
-#: demo/templates/index.html:196
+#: demo/templates/index.html:195
 msgid ""
 "Django's messaging framework is deeply integrated into Tetra: Whenever a new "
 "message occurs, it is transformed into a JavaScript object and sent as an "
@@ -1057,11 +1062,11 @@ msgstr ""
 "Siempre que ocurre un nuevo mensaje, se transforma en un objeto JavaScript y "
 "se envía como un evento al que cualquier componente puede suscribirse."
 
-#: demo/templates/index.html:198
+#: demo/templates/index.html:197
 msgid "Loading indicators"
 msgstr "Indicadores de carga"
 
-#: demo/templates/index.html:199
+#: demo/templates/index.html:198
 msgid ""
 "While an AJAX request is in flight, you can show a loading indicator, "
 "globally, per component, or per call."
@@ -1069,13 +1074,13 @@ msgstr ""
 "Mientras una solicitud AJAX está en curso, puedes mostrar un indicador de "
 "carga, globalmente, por componente o por llamada."
 
-#: demo/templates/index.html:201
+#: demo/templates/index.html:200
 #, fuzzy
 #| msgid "Websocket/SSE components enabling realtime updates."
 msgid "Reactive components / realtime updates"
 msgstr "Websocket/SSE componentes habilitando actualizaciones en tiempo real."
 
-#: demo/templates/index.html:202
+#: demo/templates/index.html:201
 msgid ""
 "Component data can be updated from the server using websockets/push "
 "notification, even by async Django background tasks, Celery, signals etc."
@@ -1084,68 +1089,81 @@ msgstr ""
 "websockets/notificaciones push, incluso por tareas de fondo asíncronas de "
 "Django, Celery, señales, etc."
 
-#: demo/templates/index.html:207
+#: demo/templates/index.html:206
 msgid "More features are planned, including:"
 msgstr "Más características planificadas, incluyendo:"
 
-#: demo/templates/index.html:210
+#: demo/templates/index.html:209
 msgid "ModelComponent for bootstrapping standard CRUD interactions."
 msgstr "ModelComponent para iniciar interacciones CRUD estándar."
 
-#: demo/templates/index.html:211
+#: demo/templates/index.html:210
 msgid "Python type annotations"
 msgstr "Resaltado de sintaxis con anotaciones de tipo"
 
-#: demo/templates/index.html:212
+#: demo/templates/index.html:211
 msgid "Integration with Django Validators"
 msgstr "Integración con Mensajes de Django"
 
-#: demo/templates/index.html:213
+#: demo/templates/index.html:212
 msgid ""
 "Alpine.js directives for component state (<s>loading ✅</s>, offline  etc.)"
 msgstr ""
 
-#: demo/templates/index.html:214
+#: demo/templates/index.html:213
 msgid "Routing <s>and query strings ✅</s> for \"whole page\" components."
 msgstr ""
 "Enrutamiento <s>y cadenas de consulta ✅</s> para componentes de \"página "
 "completa\"."
 
-#: demo/templates/index.html:215
+#: demo/templates/index.html:214
 msgid "Page title and metadata in header."
 msgstr "Título de página y metadatos en el encabezado."
 
-#: demo/templates/index.html:216
+#: demo/templates/index.html:215
 msgid "Pagination and Infinity Scroll components."
 msgstr "Paginación y componente de desplazamiento infinito."
 
-#: demo/templates/index.html:217
+#: demo/templates/index.html:216
 msgid "PostCSS/SASS/etc. support."
 msgstr "Soporte PostCSS/SASS/etc."
 
-#: demo/templates/index.html:218
+#: demo/templates/index.html:217
 msgid "CSS scoped to a component."
 msgstr "CSS acoplado a un componente."
 
-#: demo/templates/index.html:219
+#: demo/templates/index.html:218
 msgid "Redirect responses."
 msgstr "Respuestas de redirección."
 
-#: demo/templates/index.html:220
+#: demo/templates/index.html:219
 msgid "Additional authentication tools."
 msgstr "Herramientas de autenticación adicionales."
 
-#: demo/templates/index.html:221
+#: demo/templates/index.html:220
 msgid "Integration with UI & component toolkits."
 msgstr "Integración con UI y kits de herramientas de componentes."
 
-#: demo/templates/index.html:222
+#: demo/templates/index.html:221
 msgid "Bundling of esbuild to be npm free."
 msgstr "Agrupación de esbuild para que esté libre de npm."
 
-#: demo/templates/index.html:228
+#: demo/templates/index.html:227
 msgid "Read the Docs to get started"
 msgstr "Lee la documentación para empezar"
+
+#: demo/templates/info_card.py:8
+msgid "I'm so excited!"
+msgstr "¡Estoy muy emocionado!"
+
+#: demo/templates/info_card.py:9
+msgid "We got news for you."
+msgstr "Tenemos noticias para ti."
+
+#: demo/templates/info_card.py:19
+#, python-brace-format
+msgid "Hi {name}! No further news."
+msgstr "¡Hola {name}! No hay más noticias."
 
 #: demo/utils.py:6
 msgid "Discover Tetra"
@@ -1199,18 +1217,3 @@ msgstr "Español"
 
 #~ msgid "Demo"
 #~ msgstr "Demostración"
-
-#~ msgid "Information"
-#~ msgstr "Información"
-
-#~ msgid "Enter your name below!"
-#~ msgstr "¡Introduce tu nombre aquí!"
-
-#~ msgid "Thanks,"
-#~ msgstr "Gracias,"
-
-#~ msgid "Your name"
-#~ msgstr "Tu nombre"
-
-#~ msgid "Ok"
-#~ msgstr "Aceptar"
