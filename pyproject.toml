@@ -39,7 +39,6 @@ Repository = "https://github.com/tetra-framework/tetra"
 
 [project.optional-dependencies]
 dev = [
-    "build~=1.3.0",
     "twine>=6.2",
     "packaging>=25.0",
     "pkginfo>=1.12",

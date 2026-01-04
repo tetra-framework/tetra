@@ -1,43 +1,34 @@
 
-venv:
+setup:
 	# Create venv if it doesn't exist
-	test -d .venv || /usr/bin/env python3 -m venv .venv
-
-_activate:
-	. .venv/bin/activate
+	pip install -U pip uv
+	uv sync
 
 npm:
-	cd tests && test -d node_modules || npm install
+	test -d node_modules || npm install
 
-test: venv _activate npm
-	cd tests && python -m pytest
+test: npm
+	python -m pytest
 
 #coverage:
 #	coverage run -m pytest
 
-check: venv _activate
-	ruff check .
+check:
+	uvx ruff check
 
-doc: venv _activate
+doc:
 	mkdocs build -d docs/build/doc/
 
-doc-dev: venv _activate
+doc-dev:
 	mkdocs serve -a localhost:8002
 
 build-js:
 	scripts/build_js.sh
 
-build: venv _activate npm build-js
-	# remove dist/ if it exists
-	rm -rf dist/
-	python -m build
+build: npm build-js
+	rm -rf ./dist/
+	uv build
 
 # https://packaging.python.org/en/latest/tutorials/packaging-projects/#uploading-your-project-to-pypi
-publish-test:
-	python -m twine upload --repository testpypi dist/*
-
 publish-prod:
-	python -m twine upload --repository pypi dist/*
-
-localegen:
-	cd demosite && make localegen
+	uv publish
