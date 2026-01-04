@@ -70,7 +70,7 @@ def test_component_with_no_template():
             pass
 
     assert (
-        "'tests.test_templates.ComponentWithNoTemplate' is not a valid component."
+        "'test_templates.ComponentWithNoTemplate' is not a valid component."
     ) in str(exc_info.value)
 
 
