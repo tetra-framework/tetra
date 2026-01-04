@@ -28,5 +28,5 @@ fi
 cd "$project_dir"
 
 
-node_modules/.bin/esbuild src/tetra/js/tetra.js --bundle --sourcemap --target=chrome80,firefox73,safari13,edge80 --outfile=src/tetra/static/tetra/js/tetra.js
-node_modules/.bin/esbuild src/tetra/js/tetra.js --bundle --minify --sourcemap --target=chrome80,firefox73,safari13,edge80 --outfile=src/tetra/static/tetra/js/tetra.min.js
+tests/node_modules/.bin/esbuild src/tetra/js/tetra.js --bundle --sourcemap --target=chrome80,firefox73,safari13,edge80 --outfile=src/tetra/static/tetra/js/tetra.js
+tests/node_modules/.bin/esbuild src/tetra/js/tetra.js --bundle --minify --sourcemap --target=chrome80,firefox73,safari13,edge80 --outfile=src/tetra/static/tetra/js/tetra.min.js

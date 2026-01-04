@@ -9,13 +9,13 @@ Tetra is a new full stack component framework for Django, bridging the gap betwe
 
 Too much for a README. There's a [Documentation](https://tetra.readthedocs.org) page. 
 
-There are also a shortcut to some [examples](https://www.tetraframework.com/examples/).
+There is also a shortcut to some [examples](https://www.tetraframework.com/examples/).
 
 ## Installation
 
 As usual:
 ```
-pip install tetra
+uv pip install tetra
 ```
 
 But wait, this isn't all. Tetra needs some customization in your Django project. 

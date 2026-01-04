@@ -201,15 +201,15 @@ def pytest_configure(config):
     settings.configure(
         BASE_DIR=BASE_DIR,
         SECRET_KEY="django-insecure1234567890",
-        ROOT_URLCONF="tests.urls",
+        ROOT_URLCONF="urls",
         INSTALLED_APPS=[
             "tetra",
             "django.contrib.auth",
             "django.contrib.contenttypes",
             "django.contrib.staticfiles",
             "django.contrib.sessions",
-            "tests.apps.main",
-            "tests.apps.another_app",
+            "apps.main",
+            "apps.another_app",
         ],
         MIDDLEWARE=[
             "django.middleware.security.SecurityMiddleware",

@@ -1,5 +1,5 @@
 from utils import extract_component_tag
-from tests.apps.main.helpers import render_component_tag
+from apps.main.helpers import render_component_tag
 
 
 def test_attrs(tetra_request):

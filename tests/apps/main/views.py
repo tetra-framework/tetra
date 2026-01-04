@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from tests.apps.main.helpers import render_component_tag
+from apps.main.helpers import render_component_tag
 
 
 def simple_basic_component_with_css(request):

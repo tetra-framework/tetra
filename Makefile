@@ -7,8 +7,10 @@ setup:
 setup-dev:
 	pip install -U pip uv
 	uv sync --extra dev
+	playwright install
 
 npm:
+	cd tests
 	test -d node_modules || npm install
 
 test: npm

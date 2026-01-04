@@ -1,7 +1,7 @@
 from django.conf.urls.static import static
 from django.urls import path, include
 from django.conf import settings
-from tests.apps.main.views import (
+from apps.main.views import (
     simple_basic_component_with_css,
     render_component_view,
 )
@@ -19,5 +19,5 @@ urlpatterns = [
         render_component_view,
         name="render_component_view",
     ),
-    path("main/", include("tests.apps.main.urls")),
+    path("main/", include("apps.main.urls")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
