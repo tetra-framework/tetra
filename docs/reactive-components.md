@@ -9,10 +9,11 @@ Reactive components can (as the name may suggest) *react* to events that are tri
 
 ## Setup
 
-To use reactive components, you need to install Django Channels and configure WebSocket routing. You have to use an ASGI capable server (e.g. [Daphne](https://github.com/django/daphne)) instead of the standard Django WSGI server:
+To use reactive components, you need to add Django Channels and an ASGI capable server to your project and configure WebSocket routing.
+You can use e.g. [Daphne](https://github.com/django/daphne)) instead of the standard Django WSGI server:
 
 ```bash
-pip install channels daphne
+uv add channels daphne
 ```
 
 Add to your Django settings:
@@ -27,7 +28,7 @@ INSTALLED_APPS = [
     "your_app"
 ]
 
-ASGI_APPLICATION = 'your_project.asgi.application'
+ASGI_APPLICATION = '<your_project>.asgi.application'
 ```
 
 Configure your ASGI application:
@@ -40,7 +41,7 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from tetra.routing import websocket_urlpatterns
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'your_project.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', '<your_project>.settings')
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),

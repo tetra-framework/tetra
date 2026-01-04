@@ -19,7 +19,7 @@ Fork the repository locally and install it as editable package:
 ```bash
 git clone git@github.com:tetra-framework/tetra.git
 cd tetra
-python -m pip install -e .
+uv pip install -e .
 ```
 
 
@@ -27,5 +27,5 @@ python -m pip install -e .
 
 * Please only write [Black](https://github.com/psf/black) styled code. You can automate that by using your IDE's save
 trigger feature.
-* Document your code well, using [Napoleon style docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google).
+* Document your code well, using [Napoleon/Google style docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google).
 * Write appropriate tests for your code.

@@ -6,12 +6,12 @@ title: Installation
 
 As a component framework for Django, Tetra requires that you have a Django project setup before installing. [Follow the Django introduction tutorial](https://docs.djangoproject.com/en/4.2/intro/tutorial01/).
 
-Once ready, install Tetra from PyPi:
+Once ready, install Tetra from PyPi - we recommend to use [uv](https://docs.astral.sh/uv/) as package manager:
 
 ```
-$ pip install tetra
+$ uv pip install tetra
 # +reactive components?
-# pip install tetra channels daphne
+# uv pip install tetra channels daphne
 ```
 
 If you want to have reactive components as well, you have to install channels and an ASGI capable server like Daphne too. Have a look at [Reactive Components](reactive-components.md) how to get started with them.

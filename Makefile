@@ -4,11 +4,15 @@ setup:
 	pip install -U pip uv
 	uv sync
 
+setup-dev:
+	pip install -U pip uv
+	uv sync --extra dev
+
 npm:
 	test -d node_modules || npm install
 
 test: npm
-	python -m pytest
+	uvx pytest
 
 #coverage:
 #	coverage run -m pytest
@@ -17,9 +21,11 @@ check:
 	uvx ruff check
 
 doc:
+	uv sync --extra doc
 	mkdocs build -d docs/build/doc/
 
 doc-dev:
+	uv sync --extra doc
 	mkdocs serve -a localhost:8002
 
 build-js:
@@ -32,3 +38,4 @@ build: npm build-js
 # https://packaging.python.org/en/latest/tutorials/packaging-projects/#uploading-your-project-to-pypi
 publish-prod:
 	uv publish
+
