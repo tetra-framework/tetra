@@ -184,6 +184,7 @@
           if (this.__initInner) {
             this.__initInner();
           }
+          this._handleAutofocus();
           const addClassToExternalIndicators = () => {
             const selector = this.$el.querySelector("[t-indicator]");
             if (selector) {
@@ -243,6 +244,7 @@
             },
             lookahead: true
           });
+          this._handleAutofocus();
           this.$dispatch("tetra:component-updated", { component: this });
         },
         _updateData(data) {
@@ -266,6 +268,7 @@
           this.$root.insertAdjacentHTML("afterend", html);
           this.$root.remove();
           this.$dispatch("tetra:component-updated", { component: this });
+          this._handleAutofocus();
         },
         _redirect(url) {
           document.location = url;
@@ -291,6 +294,14 @@
             url.searchParams.delete(param);
           }
           window.history.pushState(null, "", url.toString());
+        },
+        _handleAutofocus() {
+          this.$nextTick(() => {
+            const focus_el = this.$root.querySelector("[autofocus]");
+            if (focus_el) {
+              focus_el.focus();
+            }
+          });
         },
         // Push notification methods
         _subscribe(groupName, autoUpdate = true) {

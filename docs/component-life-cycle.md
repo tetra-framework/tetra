@@ -56,6 +56,14 @@ The final step involves updating attributes using *data* passed from the client-
 
 Have a look at the [events][events.md].
 
+## Autofocus
+
+While the HTML `autofocus` attribute is useful for full page loads, it is ignored by browsers when just a component is reloaded.
+
+Tetra handles `autofocus` attributes by setting the focus on the element that has the `autofocus` attribute set, **whenever the component is updated**."
+
+So you can simply set `autofocus` on an input tag, and it will be focused whenever the component is reloaded.
+
 # Sequence diagram
 
 For the technically interested: What happens when a public method is called? This sequence diagram shows everything.
