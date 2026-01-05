@@ -1,6 +1,7 @@
 from .base import (
     BasicComponent,
     Component,
+    ViewMixin,
     FormComponent,
     public,
     ModelFormComponent,
@@ -13,6 +14,7 @@ __all__ = [
     ComponentNotFound,
     BasicComponent,
     Component,
+    ViewMixin,
     ModelFormComponent,
     public,
     DynamicFormMixin,

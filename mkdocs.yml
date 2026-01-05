@@ -41,6 +41,7 @@ nav:
     - basic-components.md
     - form-components.md
     - reactive-components.md
+    - component-views.md
     - component-inheritance.md
     - component-life-cycle.md
   - Template:

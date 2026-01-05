@@ -43,7 +43,7 @@ from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockContext, BlockNo
 from django.utils.safestring import mark_safe, SafeString
 from django.utils.html import escapejs, escape
 from django.utils.functional import SimpleLazyObject
-from django.http import JsonResponse, HttpRequest, FileResponse
+from django.http import JsonResponse, HttpRequest, FileResponse, HttpResponse
 from django.urls import reverse
 from django.template.loaders.filesystem import Loader as FileSystemLoader
 
@@ -221,6 +221,55 @@ class RenderDataMode(Enum):
     INIT = 0  # initialize data. There was no component state before
     MAINTAIN = 1  # keep component data
     UPDATE = 2  # update component data with new data from server
+
+
+class ViewMixin:
+    """Mixin for components that can be used as standalone Django views.
+
+    Only GET requests are supported, as it is meant to load the initial state of the
+    component. The component acts as Tetra component from then on.
+
+    They receive GET parameters that are passed to the load() method,
+    and return a response.
+
+    """
+
+    allowed_params: Optional[list[str]] = None
+
+    def get_query_params(self, allowed_params=None):
+        allowed_params = allowed_params or self.allowed_params
+        if not allowed_params:
+            return {}
+        return {k: v for k, v in self.request.GET.items() if k in allowed_params}
+
+    def _call_load(self, *args, **kwargs):
+        """Passes request params to load if allowed"""
+        if self.allowed_params:
+            params = self.get_query_params(self.allowed_params)
+            for k, v in params.items():
+                if k not in kwargs:
+                    kwargs[k] = v
+        super()._call_load(*args, **kwargs)
+
+    @classmethod
+    def as_view(cls: BasicComponentMetaClass, **initkwargs):
+        def view(request, *args, **kwargs):
+            self = cls(_request=request, _attrs=kwargs, **kwargs)
+            return self.dispatch(request, *args, **kwargs)
+
+        view.view_class = cls
+        view.view_initkwargs = initkwargs
+        view.__doc__ = cls.__doc__
+        view.__module__ = cls.__module__
+        return view
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.method.lower() == "get":
+            return self.get(request, *args, **kwargs)
+        return HttpResponse(status=405)
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(self.render())
 
 
 class BasicComponent(metaclass=BasicComponentMetaClass):

@@ -1,6 +1,6 @@
 """Full stack component framework for Django using Alpine.js"""
 
-from .components import BasicComponent, Component, public
+from .components import BasicComponent, Component, ViewMixin, public
 from .library import Library
 
 __all__: list = []
@@ -14,6 +14,6 @@ try:
 except ImportError:
     pass
 
-__all__ += [BasicComponent, Component, public, Library]
+__all__ += [BasicComponent, Component, ViewMixin, public, Library]
 __version__ = "0.6.5"
 __version_info__ = tuple([num for num in __version__.split(".")])

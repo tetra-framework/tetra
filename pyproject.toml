@@ -54,6 +54,7 @@ dev = [
     "tetra[doc]",
     "pytest-playwright",
     "channels",
+    "channels-redis",
     "daphne"
 ]
 doc = [

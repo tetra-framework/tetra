@@ -13,9 +13,16 @@ title: Changelog
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.6.6] - unreleased
+## [0.6.6] - 2026-01-05
+### Added
+- add `ViewMixin` to allow components to be used as standalone Django views with `as_view()`.
+- include security-filtered GET parameter retrieval in `ViewMixin`, with automatic injection into `load()`.
+
 ### Fixed
 -  fix a bug that prevented the `TetraConsumer` from working with channels when DEBUG==False
+- 
+### Added
+- allow "page" components to be used as full Django views
 
 ## [0.6.5] - 2026-01-04
 ## [0.6.3] - 2026-01-04
