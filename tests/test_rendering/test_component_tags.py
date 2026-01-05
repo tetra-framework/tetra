@@ -2,10 +2,12 @@ import re
 import pytest
 
 from bs4 import BeautifulSoup
-from django.urls import reverse
 from django.template.exceptions import TemplateSyntaxError
 
-from apps.main.components.default import SimpleBasicComponent
+from apps.main.components.default import (
+    SimpleBasicComponent,
+    SimpleBasicComponentWithCSS,
+)
 from utils import extract_component_tag
 from apps.main.helpers import render_component_tag
 
@@ -59,9 +61,9 @@ def test_basic_component_with_missing_end_tag(tetra_request):
         )
 
 
-def test_component_css_link_generation(client):
-    """Tests a component with CSS file"""
-    response = client.get(reverse("simple_basic_component_with_css"))
+def test_component_css_link_generation(component_render):
+    """Tests a component with a CSS file"""
+    response = component_render(SimpleBasicComponentWithCSS)
     assert response.status_code == 200
     soup = BeautifulSoup(response.content, "html.parser")
     # it should be the only link in the header... TODO: make that more fool-proof

@@ -15,6 +15,8 @@ from django.test import RequestFactory
 from playwright.sync_api import Page, Browser
 
 from django.urls import reverse
+
+from tetra.components.base import BasicComponentMetaClass
 from tetra.middleware import TetraDetails
 from tetra import Library
 from channels.testing import WebsocketCommunicator
@@ -88,6 +90,36 @@ def component_locator(page: Page, live_server):
         return page.locator(f'[tetra-component="{full_component_name}"]')
 
     return _component_locator
+
+
+@pytest.fixture
+def component_render(client):
+    """Fixture that renders a component class for testing"""
+    test_ui = Library("test_ui", "main")
+
+    def _component_render(component_cls: BasicComponentMetaClass, **kwargs):
+        if not hasattr(component_cls, "_library") or component_cls._library is None:
+            component_cls = test_ui.register(component_cls)
+            test_ui.build()
+        else:
+            # ensure the library is built if it hasn't been yet
+            # (though normally libraries registered at module level are built by tetrabuild)
+            pass
+
+        library = component_cls._library
+        component_name = component_cls.__name__
+        full_component_name = component_cls.full_component_name()
+
+        component_tag = f"{{% {library.name}.{component_name} "
+        for key, value in kwargs.items():
+            component_tag += f'{key}="{value}" '
+        component_tag += "/ %}"
+
+        return client.get(
+            reverse("render_component_view") + f"?component_tag={component_tag}"
+        )
+
+    return _component_render
 
 
 def pytest_addoption(parser):
