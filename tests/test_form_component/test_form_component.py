@@ -153,12 +153,14 @@ def test_form_component_get_form(tetra_request):
 
 
 @pytest.mark.playwright
-def test_person_component_call_submit_triggers_form_valid(page: Page, tetra_component):
+def test_person_component_call_submit_triggers_form_valid(
+    page: Page, component_locator
+):
     """Test that the PersonComponent form submission triggers form_valid method
     for valid data."""
 
     with patch.object(PersonComponent, "form_valid") as mock_form_valid:
-        component = tetra_component(PersonComponent)
+        component = component_locator(PersonComponent)
 
         component.locator("#id_name").wait_for(state="visible")
         component.locator("#id_name").fill("John Doe")
@@ -174,21 +176,21 @@ def test_person_component_call_submit_triggers_form_valid(page: Page, tetra_comp
 
 @pytest.mark.playwright
 def test_person_component_call_submit_triggers_form_invalid(
-    page: Page, tetra_component
+    page: Page, component_locator
 ):
     """
     Test that the PersonComponent form submission triggers form_invalid method
     for invalid data.
     """
     with patch.object(PersonComponent, "form_invalid") as mock_form_invalid:
-        component = tetra_component(PersonComponent)
+        component = component_locator(PersonComponent)
         component.locator("#id_name").fill("John Doe")
         with page.expect_response(lambda response: "submit" in response.url):
             component.locator("#submit-button").click()
         mock_form_invalid.assert_called_once()
 
     with patch.object(PersonComponent, "form_invalid") as mock_form_invalid:
-        component = tetra_component(PersonComponent)
+        component = component_locator(PersonComponent)
         component.locator("#id_age").fill("23")
         component.locator("#id_name").clear()
         with page.expect_response(lambda response: "submit" in response.url):

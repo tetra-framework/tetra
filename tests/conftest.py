@@ -59,10 +59,10 @@ async def tetra_ws_communicator(db) -> AsyncGenerator[WebsocketCommunicator, Any
 
 
 @pytest.fixture
-def tetra_component(page: Page, live_server):
+def component_locator(page: Page, live_server):
     test_ui = Library("test_ui", "main")
 
-    def _tetra_component(component_cls, **kwargs):
+    def _component_locator(component_cls, **kwargs):
         if not hasattr(component_cls, "_library") or component_cls._library is None:
             component_cls = test_ui.register(component_cls)
             test_ui.build()
@@ -87,7 +87,7 @@ def tetra_component(page: Page, live_server):
         )
         return page.locator(f'[tetra-component="{full_component_name}"]')
 
-    return _tetra_component
+    return _component_locator
 
 
 def pytest_addoption(parser):

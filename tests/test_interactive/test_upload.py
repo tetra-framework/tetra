@@ -58,14 +58,14 @@ class UploadComponent(FormComponent):
 
 
 @pytest.mark.playwright
-def test_upload_file_with_submit(page: Page, tetra_component):
+def test_upload_file_with_submit(page: Page, component_locator):
     """Test component that provides a file upload button.
 
     This test uploads a file, and checks if it was saved correctly.
     """
     file_path = settings.BASE_DIR / "apps/main/assets/upload.txt"
 
-    component = tetra_component(UploadComponent)
+    component = component_locator(UploadComponent)
     component.locator("#id_file").wait_for(state="visible")
     component.locator("#id_file").set_input_files(file_path)
 
@@ -102,14 +102,14 @@ def test_upload_file_with_submit(page: Page, tetra_component):
 
 
 @pytest.mark.playwright
-def test_upload_file_with_other_component_method(page: Page, tetra_component):
+def test_upload_file_with_other_component_method(page: Page, component_locator):
     """Test component that provides a file upload button.
 
     This test uploads a file, and checks if it was saved correctly.
     """
     file_path = settings.BASE_DIR / "apps/main/assets/upload.txt"
 
-    component = tetra_component(UploadComponent)
+    component = component_locator(UploadComponent)
     component.locator("#id_file").wait_for(state="visible")
 
     component.locator("#id_file").set_input_files(file_path)

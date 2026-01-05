@@ -25,9 +25,9 @@ class LoadingIndicatorComponent(Component):
 
 
 @pytest.mark.playwright
-def test_loading_indicator(tetra_component):
+def test_loading_indicator(component_locator):
 
-    component = tetra_component(LoadingIndicatorComponent)
+    component = component_locator(LoadingIndicatorComponent)
 
     spinner = component.locator("#spinner")
     button = component.locator("#slow_button")

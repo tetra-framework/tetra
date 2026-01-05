@@ -30,14 +30,14 @@ class DownloadComponent(Component):
 
 
 @pytest.mark.playwright
-def test_component_download(page: Page, tetra_component, tmp_path):
+def test_component_download(page: Page, component_locator, tmp_path):
     """
     Test component that provides a download button which starts a file download
     when clicked.
     """
 
     # Navigate to and click the download button
-    component = tetra_component(DownloadComponent)
+    component = component_locator(DownloadComponent)
 
     # Wait for the file to be downloaded (max 0.5 seconds)
     with page.expect_download(timeout=1000) as download_info:

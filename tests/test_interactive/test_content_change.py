@@ -28,9 +28,9 @@ class ComponentWithButton(Component):
 
 
 @pytest.mark.playwright
-def test_component_click_content_change(tetra_component):
+def test_component_click_content_change(component_locator):
     """Tests component button click using playwright"""
-    component = tetra_component(ComponentWithButton)
+    component = component_locator(ComponentWithButton)
 
     # # Check initial state
     result_div = component.locator("#result")
@@ -62,10 +62,10 @@ class ComponentWithMethodReturnValue(Component):
 
 
 @pytest.mark.playwright
-def test_basic_component_return_value_changes_content_dynamically(tetra_component):
+def test_basic_component_return_value_changes_content_dynamically(component_locator):
     """Tests a component that dynamically returns a value to the Js frontend,
     which updates the content dynamically with the return value"""
-    component = tetra_component(ComponentWithMethodReturnValue)
+    component = component_locator(ComponentWithMethodReturnValue)
     button = component.locator("#clickme")
     assert button.text_content() == "Click me"
     button.click()

@@ -50,13 +50,13 @@ class CarModelComponent(DynamicFormMixin, FormComponent):
 
 
 @pytest.mark.playwright
-def test_conditional_form_component(tetra_component):
+def test_conditional_form_component(component_locator):
     """
     Test that the ConditionalFormComponent updates the model choices based on the
     selected vendor.
     """
 
-    component = tetra_component(CarModelComponent)
+    component = component_locator(CarModelComponent)
 
     # Select Volvo
     component.locator("#id_vendor").select_option("volvo")
