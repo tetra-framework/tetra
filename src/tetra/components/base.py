@@ -257,12 +257,19 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
     def get_component_id(self) -> str:
         """Creates a unique, reproducible, session-persistent component id.
 
-        This is calculated from the component name, the session key, and optionally
-        the component key, if available.
+        This is calculated from the component name, optionally the session key,
+        and the component key, if available.
         """
-        session_key = self.request.session.session_key
+        try:
+            name = self.full_component_name()
+        except ComponentError:
+            name = f"{self.__class__.__module__}.{self.__class__.__name__}"
+
+        session_key = (
+            self.request.session.session_key if hasattr(self.request, "session") else ""
+        )
         component_key = self.attrs.get("key", "")
-        s = f"{self.full_component_name()}{session_key}{component_key}"
+        s = f"{name}{session_key}{component_key}"
         return hashlib.blake2b(s.encode(), digest_size=8).hexdigest()
 
     @classmethod
