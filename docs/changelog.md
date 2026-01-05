@@ -11,6 +11,18 @@ title: Changelog
     The intention is to stabilise the API prior to a v1.0 release, as well as
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+
+## [0.6.6] - unreleased
+### Fixed
+-  fix a bug that prevented the `TetraConsumer` from working with channels when DEBUG==False
+
+## [0.6.5] - 2026-01-04
+## [0.6.3] - 2026-01-04
+## [0.6.4] - 2026-01-04
+### Changed
+- introduced some complicated workarounds for websockets not working properly, introducing a few new bugs... pfff..
+
 ## [0.6.2] - 2026-01-04
 ### Fixed
 -  correctly add all js, scripts, staticfiles etc into the pypi package

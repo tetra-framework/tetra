@@ -58,7 +58,6 @@ def render_styles(request):
 def render_scripts(request, csrf_token):
     """Render Tetra JavaScript with WebSocket support detection"""
     websockets_supported = check_websocket_support()
-    websockets_allowed = False
     libs = list(set(component._library for component in request.tetra_components_used))
     if has_reactive_components:
         if not websockets_supported:
@@ -68,19 +67,6 @@ def render_scripts(request, csrf_token):
                 "packages (channels, channels_redis, daphne)."
             )
 
-        websockets_allowed = (
-            settings.DEBUG or request.META.get("REMOTE_ADDR") in settings.INTERNAL_IPS
-        )
-        if not settings.DEBUG and not websockets_allowed:
-            logger.critical(
-                "WebSockets are disabled from INTERNAL_IPS: "
-                "This would be a security risk."
-            )
-    else:
-        # even if we support it - there are no reactive components in use,
-        # so disable support: it only generates overhead.
-        websockets_supported = False
-
     return render_to_string(
         "lib_scripts.html",
         {
@@ -88,8 +74,9 @@ def render_scripts(request, csrf_token):
             "include_alpine": request.tetra_scripts_placeholder_include_alpine,
             "csrf_token": csrf_token,
             "debug": settings.DEBUG,
-            "use_websockets": websockets_supported and websockets_allowed,
-            "websockets_supported": websockets_supported,
+            # even if we support it - there are no reactive components in use,
+            # so disable support: it only generates overhead.
+            "use_websockets": has_reactive_components and websockets_supported,
         },
     )
 
