@@ -303,8 +303,8 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
     def __init__(
         self,
         _request: TetraHttpRequest | HttpRequest,
-        _attrs: dict | None = None,
-        _context: dict | RequestContext | None = None,
+        _attrs: dict[str, Any] | None = None,
+        _context: dict[str, Any] | RequestContext | None = None,
         _slots=None,
         *args,
         **kwargs,
