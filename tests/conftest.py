@@ -10,7 +10,7 @@ from django.conf import settings
 from django.core.management import call_command
 from playwright.sync_api import Page, Browser
 
-from tetra.tests.fixtures import (
+from tetra.tests.fixtures import (  # type: ignore[unused-import]
     tetra_request,
     tetra_ws_communicator,
     component_render,
