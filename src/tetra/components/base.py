@@ -79,6 +79,17 @@ def make_template(cls) -> Template:
     """
     from ..templatetags.tetra import get_nodes_by_type_deep
 
+    def prepare_template_source(source):
+        if re.match(r"^\s*{%\s*extends", source):
+            # If the template starts with an extends tag, we must insert the
+            # load tetra tag AFTER the extends tag.
+            return re.sub(
+                r"^(\s*{%\s*extends\s+['\"][^'\"]+['\"]\s*%})",
+                r"\1{% load tetra %}",
+                source,
+            )
+        return "{% load tetra %}" + source
+
     # if only "template" is defined, use it as inline template string.
     if hasattr(cls, "template"):
         if not cls.template:
@@ -93,7 +104,7 @@ def make_template(cls) -> Template:
         )
         try:
             template = InlineTemplate(
-                "{% load tetra %}" + cls.template,
+                prepare_template_source(cls.template),
                 origin=origin,
             )
         except TemplateSyntaxError as e:
@@ -111,7 +122,7 @@ def make_template(cls) -> Template:
                 making_lazy_after_exception = True
                 template = SimpleLazyObject(
                     lambda: InlineTemplate(
-                        "{% load tetra %}" + cls.template,
+                        prepare_template_source(cls.template),
                         origin=origin,
                     )
                 )
@@ -176,7 +187,9 @@ def make_template(cls) -> Template:
                     )
                     # Compile the template
                     template = Template(
-                        "{% load tetra %}" + template_source, origin, template_file_name
+                        prepare_template_source(template_source),
+                        origin,
+                        template_file_name,
                     )
                     break
                 except FileNotFoundError:
@@ -194,7 +207,9 @@ def make_template(cls) -> Template:
                 f"Template file '{template_file_name}' not found for component"
                 f" '{cls.__name__}'."
             )
-    if not has_single_root(template.source):
+    if not re.match(r"^\s*{%\s*extends", template.source) and not has_single_root(
+        template.source
+    ):
         raise ComponentError(
             f"Component template '{cls.__name__}.template' must contain exactly "
             f"one top-level tag."
@@ -1090,10 +1105,25 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             del thread_local._tetra_render_mode
         tag_name = re.match(r"^\s*(<!--.*-->)?\s*<\w+", html)
         if not tag_name:
-            raise ComponentError(
-                f"Error in {self.__class__.__name__}: The component's template is "
-                "not enclosed in HTML tags."
-            )
+            # If there is an extends tag, the rendered HTML might not start with
+            # a tag if it's just blocks being filled. However, Tetra components
+            # are expected to have a root element.
+            # When extending, the root element should be in the base template.
+            # But the regex check is on the *rendered* html.
+            if not re.match(r"^\s*{%\s*extends", self._template.source):
+                raise ComponentError(
+                    f"Error in {self.__class__.__name__}: The component's template is "
+                    "not enclosed in HTML tags."
+                )
+            # If it is an extends template, we should probably find the first tag
+            # in the rendered output, which might have come from the base template.
+            tag_name = re.search(r"<\w+", html)
+            if not tag_name:
+                raise ComponentError(
+                    f"Error in {self.__class__.__name__}: The component's rendered "
+                    "template is not enclosed in HTML tags."
+                )
+
         tag_name_end = tag_name.end(0)
 
         extra_tags = self.get_extra_tags()
