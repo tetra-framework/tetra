@@ -254,7 +254,12 @@ class ViewMixin:
     @classmethod
     def as_view(cls: BasicComponentMetaClass, **initkwargs):
         def view(request, *args, **kwargs):
-            self = cls(_request=request, _attrs=kwargs, **kwargs)
+            self = cls(
+                _request=request,
+                _attrs=kwargs,
+                _context=RequestContext(request),
+                **kwargs,
+            )
             return self.dispatch(request, *args, **kwargs)
 
         view.view_class = cls
