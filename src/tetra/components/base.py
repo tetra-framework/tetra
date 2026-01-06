@@ -465,11 +465,11 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         return cls.extract_styles()
 
     @classmethod
-    def as_tag(cls, _request, *args, **kwargs) -> SafeString:
-        if not hasattr(_request, "tetra_components_used"):
-            _request.tetra_components_used = set()
-        _request.tetra_components_used.add(cls)
-        component = cls(_request, *args, **kwargs)
+    def as_tag(cls, request, *args, **kwargs) -> SafeString:
+        if not hasattr(request, "tetra_components_used"):
+            request.tetra_components_used = set()
+        request.tetra_components_used.add(cls)
+        component = cls(request, *args, **kwargs)
         component.recalculate_attrs(component_method_finished=False)
         return component.render()
 
