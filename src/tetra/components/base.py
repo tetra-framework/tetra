@@ -289,7 +289,7 @@ class ViewMixin:
         return HttpResponse(status=405)
 
     def get(self, request, *args, **kwargs):
-        return HttpResponse(self.render())
+        return HttpResponse(self.__class__.as_tag(request))
 
 
 class BasicComponent(metaclass=BasicComponentMetaClass):
