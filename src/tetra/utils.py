@@ -3,6 +3,7 @@ import inspect
 import json
 import logging
 import os
+import re
 import tempfile
 from html.parser import HTMLParser
 from pathlib import Path
@@ -561,6 +562,7 @@ class SingleRootChecker(HTMLParser):
         super().__init__()
         self.depth = 0
         self.root_tags = 0
+        self.has_root_text = False
 
     def handle_starttag(self, tag: str, attrs) -> None:
         if self.depth == 0:
@@ -570,10 +572,20 @@ class SingleRootChecker(HTMLParser):
     def handle_endtag(self, tag: str) -> None:
         self.depth -= 1
 
+    def handle_data(self, data: str) -> None:
+        if self.depth == 0 and data.strip():
+            self.has_root_text = True
+
 
 def has_single_root(html: str) -> bool:
     """Check if HTML has exactly one root tag."""
+    # Replace django tags with placeholders so they can be parsed as tags
+    # We replace {% ... %} and {# ... #} first, then {{ ... }}
+    html = re.sub(r"{%.*?%}", "", html, flags=re.DOTALL)
+    html = re.sub(r"{#.*?#}", "", html, flags=re.DOTALL)
+    html = re.sub(r"{{.*?}}", "django-tag", html, flags=re.DOTALL)
+
     parser = SingleRootChecker()
     parser.feed(html)
     parser.close()
-    return parser.root_tags == 1
+    return parser.root_tags == 1 and not parser.has_root_text
