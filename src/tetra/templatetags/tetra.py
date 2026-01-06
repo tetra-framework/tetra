@@ -288,9 +288,9 @@ class ComponentNode(template.Node):
                     raise ComponentNotFound(
                         f"Unable to resolve dynamic component: '{self.component_name}'"
                     )
-            Component = c
+            component_class = c
         else:
-            Component = resolve_component(context, self.component_name)
+            component_class = resolve_component(context, self.component_name)
 
         try:
             request: HttpRequest = context.request
@@ -304,7 +304,7 @@ class ComponentNode(template.Node):
         resolved_attrs = {k: v.resolve(context) for k, v in self.attrs.items()}
 
         # check extra context arguments
-        extra_context = getattr(Component, "_extra_context", [])
+        extra_context = getattr(component_class, "_extra_context", [])
         if type(extra_context) is str:
             extra_context = [extra_context]
 
@@ -367,14 +367,14 @@ class ComponentNode(template.Node):
 
         children_state = context.get("_loaded_children_state", None)
         if "key" not in resolved_kwargs:
-            resolved_kwargs["key"] = Component.full_component_name()
+            resolved_kwargs["key"] = component_class.full_component_name()
         if (
             children_state
             and (resolved_kwargs["key"] in children_state)
             and not is_dynamic
         ):
             component_state = children_state[resolved_kwargs["key"]]
-            component = Component.from_state(
+            component = component_class.from_state(
                 component_state,
                 request,
                 *resolved_args,
@@ -387,7 +387,7 @@ class ComponentNode(template.Node):
                 component._loaded_children_state = component_state["children"]
             return component.render()
         else:
-            return Component.as_tag(
+            return component_class.as_tag(
                 request,
                 *resolved_args,
                 **resolved_kwargs,
