@@ -62,7 +62,7 @@ def render_scripts(request, csrf_token):
     if has_reactive_components:
         if not websockets_supported:
             raise ImproperlyConfigured(
-                "Reactive components are used, but WebSockets are not supported."
+                "Reactive components are used, but WebSockets are not supported. "
                 "Make sure you have installed the required "
                 "packages (channels, channels_redis, daphne)."
             )
