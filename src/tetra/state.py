@@ -333,7 +333,7 @@ def encode_component(component: "BasicComponent") -> str:
     # TODO: in future would be better to patch RequestContext to keep track of what
     #  it adds that then they can be easily removed.
     original_context = component._context
-    context = copy(original_context)
+    context = copy(original_context) or {}
     if isinstance(context, RequestContext):
         # Remove the top to layer of the context dicts:
         # 0: is the template defaults (True, False, None etc.)
