@@ -1,6 +1,6 @@
 from asgiref.sync import async_to_sync
+from django.apps import apps
 
-import tetra.globals
 from .base import Component, public
 from .subscription import registry
 from ..dispatcher import ComponentDispatcher
@@ -23,7 +23,7 @@ class ReactiveComponent(Component):
         super().__init_subclass__(**kwargs)
 
         # set a global flag to indicate that reactive components are in use
-        tetra.globals.has_reactive_components = True
+        apps.get_app_config("tetra").has_reactive_components = True
 
     def __init__(self, *args, **kwargs):
         if "subscribe" in kwargs:

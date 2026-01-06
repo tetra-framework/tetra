@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, AnyStr
 
 from dateutil import parser as datetime_parser
+from django.apps import apps
 from django.conf import settings
 from django.contrib.messages.storage.base import Message
 from django.core.exceptions import ImproperlyConfigured
@@ -20,7 +21,6 @@ from django.template.loader import render_to_string
 from django.utils.text import re_camel_case
 from django.utils.timezone import is_aware
 
-from tetra.globals import has_reactive_components
 from tetra.types import ComponentData
 
 
@@ -58,6 +58,7 @@ def render_styles(request):
 def render_scripts(request, csrf_token):
     """Render Tetra JavaScript with WebSocket support detection"""
     websockets_supported = check_websocket_support()
+    has_reactive_components = apps.get_app_config("tetra").has_reactive_components
     libs = list(set(component._library for component in request.tetra_components_used))
     if has_reactive_components:
         if not websockets_supported:

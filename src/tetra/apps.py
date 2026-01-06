@@ -24,6 +24,7 @@ def watch_extra_files(sender, *args, **kwargs):
 
 class TetraConfig(AppConfig):
     name = "tetra"
+    has_reactive_components = False
 
     def ready(self):
         from .component_register import find_component_libraries

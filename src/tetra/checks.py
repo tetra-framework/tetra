@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.core.checks import Error, Warning, register, Tags
 from django.conf import settings
 
@@ -12,10 +13,8 @@ def check_websocket_support(app_configs, **kwargs):
     """
     errors = []
 
-    from tetra.globals import has_reactive_components
-
     # Only check if reactive components are being used
-    if not has_reactive_components:
+    if not apps.get_app_config("tetra").has_reactive_components:
         return errors
 
     # Check if Channels is installed
