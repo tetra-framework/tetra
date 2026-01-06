@@ -45,6 +45,10 @@ Without a `t-indicator` attribute, Tetra automatically shows/hides elements with
 <span id="submit_spinner" class="spinner-border"></span>
 ```
 
+Loading indicators for buttons work independently. Each button has its own indicator that only shows while that
+  specific button's action is running. Tetra keeps track of each buttons clicks and requests for this. 
+When a button finishes its task, only its indicator turns off, while other
+  buttons' indicators get their running state reapplied if their requests are still in progress.
 
 ### Custom CSS
 

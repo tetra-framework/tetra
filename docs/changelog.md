@@ -12,6 +12,12 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.8] - unreleased
+### Added
+- Loading indicators for buttons now work independently. Each button has its own indicator that only shows while that
+  specific button's action is running. When a button finishes its task, only its indicator turns off, while other
+  buttons' indicators keep running if their tasks are still in progress.
+
 ## [0.6.7] - 2026-01-06
 ### Added
 - DownloadButton demo component

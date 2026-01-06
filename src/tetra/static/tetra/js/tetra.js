@@ -186,29 +186,102 @@
           }
           this._handleAutofocus();
           const addClassToExternalIndicators = () => {
-            const selector = this.$el.querySelector("[t-indicator]");
-            if (selector) {
-              const indicators = selector.getAttribute("t-indicator");
-              document.querySelectorAll(indicators).forEach((indicator) => {
-                indicator.hidden = true;
-                indicator.classList.add("tetra-indicator-" + this.component_id);
-              });
-            }
+            const elementsWithIndicator = [this.$el, ...Array.from(this.$el.querySelectorAll("[t-indicator]"))];
+            elementsWithIndicator.forEach((el) => {
+              const indicators = el.getAttribute("t-indicator");
+              if (indicators) {
+                document.querySelectorAll(indicators).forEach((indicator) => {
+                  if (indicator.getAttribute("hidden") === null) {
+                    indicator.hidden = true;
+                  }
+                  indicator.classList.add("tetra-indicator-" + this.component_id);
+                });
+              }
+            });
           };
           addClassToExternalIndicators();
           this.$el.addEventListener("tetra:component-updated", addClassToExternalIndicators);
           const handleRequestEvent = (event, isBefore) => {
             const triggerEl = event.detail.triggerEl || event.target;
-            triggerEl.classList.toggle("tetra-request", isBefore);
+            const requestId = event.detail.requestId;
+            if (!this.$el.contains(triggerEl) && this.$el !== triggerEl) return;
+            if (!this.__activeRequests) {
+              this.__activeRequests = /* @__PURE__ */ new Map();
+            }
+            if (isBefore) {
+              let triggerSelector = "";
+              if (triggerEl.id) {
+                triggerSelector = "#" + triggerEl.id;
+              }
+              this.__activeRequests.set(requestId, {
+                triggerSelector,
+                indicatorSelector: triggerEl.getAttribute("t-indicator")
+              });
+            } else {
+              this.__activeRequests.delete(requestId);
+            }
+            const updateElementState = (el, reqId, isStart) => {
+              if (!el.__activeRequests) el.__activeRequests = /* @__PURE__ */ new Set();
+              if (isStart) el.__activeRequests.add(reqId);
+              else el.__activeRequests.delete(reqId);
+              return el.__activeRequests.size > 0;
+            };
+            const hasActive = updateElementState(triggerEl, requestId, isBefore);
+            triggerEl.classList.toggle("tetra-request", hasActive);
             const selector = triggerEl.getAttribute("t-indicator");
-            if (selector && triggerEl.querySelectorAll(selector).length === 0) {
-              document.querySelectorAll(".tetra-indicator-" + this.component_id).forEach((el) => {
-                el.hidden = !isBefore;
+            if (selector) {
+              const localIndicators = Array.from(this.$el.querySelectorAll(selector));
+              const globalIndicators = Array.from(document.querySelectorAll(".tetra-indicator-" + this.component_id));
+              const allIndicators = new Set(localIndicators);
+              globalIndicators.forEach((el) => {
+                if (el.matches(selector)) {
+                  allIndicators.add(el);
+                }
+              });
+              allIndicators.forEach((el) => {
+                const active = updateElementState(el, requestId, isBefore);
+                if (active) {
+                  el.removeAttribute("hidden");
+                  el.hidden = false;
+                } else {
+                  el.setAttribute("hidden", "");
+                  el.hidden = true;
+                }
               });
             }
           };
+          const reapplyLoadingState = () => {
+            if (!this.__activeRequests || this.__activeRequests.size === 0) return;
+            this.__activeRequests.forEach((info, reqId) => {
+              if (info.triggerSelector) {
+                const triggers = this.$el.querySelectorAll(info.triggerSelector);
+                triggers.forEach((el) => {
+                  if (!el.__activeRequests) el.__activeRequests = /* @__PURE__ */ new Set();
+                  el.__activeRequests.add(reqId);
+                  el.classList.add("tetra-request");
+                });
+              }
+              if (info.indicatorSelector) {
+                const localIndicators = Array.from(this.$el.querySelectorAll(info.indicatorSelector));
+                const globalIndicators = Array.from(document.querySelectorAll(".tetra-indicator-" + this.component_id));
+                const allIndicators = new Set(localIndicators);
+                globalIndicators.forEach((el) => {
+                  if (el.matches(info.indicatorSelector)) {
+                    allIndicators.add(el);
+                  }
+                });
+                allIndicators.forEach((el) => {
+                  if (!el.__activeRequests) el.__activeRequests = /* @__PURE__ */ new Set();
+                  el.__activeRequests.add(reqId);
+                  el.removeAttribute("hidden");
+                  el.hidden = false;
+                });
+              }
+            });
+          };
           this.$el.addEventListener("tetra:before-request", (event) => handleRequestEvent(event, true));
           this.$el.addEventListener("tetra:after-request", (event) => handleRequestEvent(event, false));
+          this.$el.addEventListener("tetra:component-updated", reapplyLoadingState);
         },
         destroy() {
           this.$dispatch("tetra:child-component-destroy", { component: this });
@@ -548,14 +621,17 @@
         payload.headers["Content-Type"] = "application/json";
       }
       const triggerEl = component.$event ? component.$event.target : component.$el;
+      const requestId = Math.random().toString(36).substring(2, 15);
       component.$dispatch("tetra:before-request", {
         component,
-        triggerEl
+        triggerEl,
+        requestId
       });
       const response = await fetch(methodEndpoint, payload);
       component.$dispatch("tetra:after-request", {
         component,
-        triggerEl
+        triggerEl,
+        requestId
       });
       return await this.handleServerMethodResponse(response, component);
     },
