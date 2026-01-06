@@ -12,6 +12,13 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.7] - 2026-01-06
+### Added
+- DownloadButton demo component
+- accept dynamic root tags in components (like `<{{ tag }}>) in checks
+
+### Removed
+- remove `ViewMixin` from public API - it's not worth all the problems it creates.
 
 ## [0.6.6] - 2026-01-05
 ### Added
