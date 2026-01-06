@@ -316,7 +316,7 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         super().__init__()  # call init without kwargs.
         self.request = _request
         self.attrs = _attrs or {}
-        self._context = _context
+        self._context = _context or {}
         self._slots = _slots
         # FIXME: it could lead to mismatching component ids if it is recreated after
         #  page reloading - test this for channels/long-lasting websocket connections
