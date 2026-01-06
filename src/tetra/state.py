@@ -23,7 +23,7 @@ from .utils import isclassmethod, NamedTemporaryUploadedFile
 from .templates import InlineOrigin
 
 if TYPE_CHECKING:
-    from tetra.components import Component
+    from tetra.components import BasicComponent, Component
 
 
 class StateException(Exception):
@@ -324,7 +324,7 @@ keys_to_remove_from_context = [
 ]
 
 
-def encode_component(component) -> str:
+def encode_component(component: "BasicComponent") -> str:
     """Serializes a component with its server state into a pickled state token."""
     fernet = _get_fernet_for_request(component.request)
 
