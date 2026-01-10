@@ -37,6 +37,6 @@ build: npm build-js
 	uv build
 
 # https://packaging.python.org/en/latest/tutorials/packaging-projects/#uploading-your-project-to-pypi
-publish-prod:
+publish:
 	uv publish
 
