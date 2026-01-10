@@ -26,6 +26,11 @@ if TYPE_CHECKING:
     from tetra.components import BasicComponent, Component
 
 
+# Global flags to avoid circular imports
+loading_libraries = False
+find_libraries_done = False
+
+
 class StateException(Exception):
     pass
 

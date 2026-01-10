@@ -20,17 +20,17 @@ from .utils import (
 
 logger = logging.getLogger(__name__)
 
-find_libraries_done = False
-
 # TODO: put that in a more global scope
 components_module_names = ["components", "tetra_components"]
 
 
 def find_component_libraries():
     """Finds libraries in component modules of all installed django apps."""
-    global find_libraries_done
-    if find_libraries_done:
+    from . import state
+
+    if state.find_libraries_done:
         return
+    state.loading_libraries = True
     importlib.invalidate_caches()
     for components_module_name in components_module_names:
         for app_config in [
@@ -148,7 +148,11 @@ def find_component_libraries():
                 # if the module just is not present, just ignore it - this just means
                 # that this app does not have a "components" package, which is ok.
 
-    find_libraries_done = True
+    state.find_libraries_done = True
+    state.loading_libraries = False
+    from .components.base import BasicComponentMetaClass
+
+    BasicComponentMetaClass.compile_all_templates()
 
 
 def resolve_component(context, name: str) -> Component:

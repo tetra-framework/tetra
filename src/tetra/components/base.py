@@ -221,13 +221,27 @@ class BasicComponentMetaClass(type):
     _library = None
     _app = None
     _name = None
+    _to_compile = []
 
     def __new__(mcls, name, bases, attrs):
+        from tetra.state import loading_libraries
+
         newcls = super().__new__(mcls, name, bases, attrs)
         mcls._name = camel_case_to_underscore(newcls.__name__)
         if "__abstract__" not in attrs or attrs["__abstract__"] is False:
-            newcls._template = make_template(newcls)
+            if loading_libraries:
+                # postpone template compiling to time when all libraries are loaded
+                mcls._to_compile.append(newcls)
+            else:
+                newcls._template = make_template(newcls)
         return newcls
+
+    @classmethod
+    def compile_all_templates(mcls):
+        while mcls._to_compile:
+            cls = mcls._to_compile.pop(0)
+            if not hasattr(cls, "_template"):
+                cls._template = make_template(cls)
 
 
 class RenderDataMode(Enum):

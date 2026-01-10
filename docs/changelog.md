@@ -18,6 +18,9 @@ title: Changelog
   specific button's action is running. When a button finishes its task, only its indicator turns off, while other
   buttons' indicators keep running if their tasks are still in progress.
 
+### Fixed
+- postpone template compiling to time when all libraries are loaded, so component referrals of not yet loaded components work.
+
 ## [0.6.7] - 2026-01-06
 ### Added
 - DownloadButton demo component
