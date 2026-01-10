@@ -49,6 +49,16 @@ def current_app():
 
 @pytest.fixture
 def component_locator(page: Page, live_server):
+    """This fixture is a helper that renders and locates your component in
+    playwright.
+
+    Use it in conjunction with tetra.tests.views.render_component_view and make sure
+    your tests' urls.py includes a line like:
+
+    ```python
+    urlpatterns = [ path("", include("tetra.tests.urls")) ]
+    ```
+    """
     test_ui = Library("test_ui", "main")
 
     def _component_locator(component_cls, **kwargs):

@@ -1,4 +1,4 @@
-from apps.main.helpers import render_component_tag
+from tetra.helpers import render_component_tag
 from tetra import Library, Component
 from utils import extract_component_tag
 

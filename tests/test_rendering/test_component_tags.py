@@ -9,7 +9,7 @@ from apps.main.components.default import (
     SimpleBasicComponentWithCSS,
 )
 from utils import extract_component_tag
-from apps.main.helpers import render_component_tag
+from tetra.helpers import render_component_tag
 
 from tetra.exceptions import ComponentNotFound
 

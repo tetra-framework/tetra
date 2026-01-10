@@ -4,7 +4,6 @@ import logging
 from django.http import HttpResponseNotFound, HttpResponseBadRequest, HttpResponse
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
-from tetra.types import ComponentData
 from . import Library
 from .utils import from_json, NamedTemporaryFileUploadHandler
 

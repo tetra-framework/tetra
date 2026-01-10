@@ -5,7 +5,7 @@ import pytest
 from tetra import public, Library, Component
 from utils import extract_component_tag
 from apps.main.components.default import ComponentWithPublic
-from apps.main.helpers import render_component_tag
+from tetra.helpers import render_component_tag
 
 
 def test_public_decorator_is_replaced_with_actual_method_or_attribute(tetra_request):

@@ -1,6 +1,6 @@
 import pytest
 
-from apps.main.helpers import render_component_tag
+from tetra.helpers import render_component_tag
 from tetra import Library, BasicComponent
 
 

@@ -1,7 +1,7 @@
 from sourcetypes import django_html
 
 from tetra import Library, BasicComponent
-from apps.main.helpers import render_component_tag
+from tetra.helpers import render_component_tag
 from utils import extract_component_tag
 
 attrs = Library("attrs", "main")

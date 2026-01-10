@@ -1,5 +1,5 @@
 from utils import extract_component_tag
-from apps.main.helpers import render_component_tag
+from tetra.helpers import render_component_tag
 
 
 def test_component_with_default_slot(tetra_request):
