@@ -341,7 +341,13 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
             return filename, 0
         with open(filename, "r") as f:
             source = f.read()
-        start = source.index(cls.template)
+        try:
+            start = source.index(cls.template)
+        except ValueError:
+            # If the template is not found exactly, it might be due to
+            # indentation or other formatting changes if the component
+            # was defined dynamically.
+            return filename, comp_start
         line = source[:start].count("\n") + 1
         return filename, line
 
@@ -709,6 +715,16 @@ class ComponentMetaClass(BasicComponentMetaClass):
         newcls = super().__new__(mcls, name, bases, attrs)
         newcls._public_methods = public_methods
         newcls._public_properties = public_properties
+        # Reset registration info inherited from base classes
+        if "_library" in attrs:
+            newcls._library = attrs["_library"]
+        else:
+            newcls._library = None
+
+        if "_name" in attrs:
+            newcls._name = attrs["_name"]
+        else:
+            newcls._name = None
         return newcls
 
 
@@ -984,6 +1000,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     @property
     def client(self) -> CallbackList:
+        if self._callback_queue is None:
+            self._callback_queue = CallbackList()
         return self._callback_queue
 
     def set_load_args(self, *args, **kwargs) -> None:

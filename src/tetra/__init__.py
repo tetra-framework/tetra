@@ -3,7 +3,15 @@
 from .components import BasicComponent, Component, public
 from .library import Library
 
-__all__: list[str] = ["BasicComponent", "Component", "public", "Library"]
+__all__: list[str] = [
+    "BasicComponent",
+    "Component",
+    "public",
+    "Library",
+    "Router",
+    "Link",
+    "Redirect",
+]
 
 try:
     import channels  # noqa
@@ -14,6 +22,17 @@ except ImportError:
 
 
 def __getattr__(name):
+    if name in ("Router", "Link", "Redirect"):
+        from tetra.router import Redirect
+        from tetra.router import Link
+        from tetra.router import Router
+
+        if name == "Router":
+            return Router
+        if name == "Link":
+            return Link
+        if name == "Redirect":
+            return Redirect
     if name == "ReactiveComponent":
         try:
             import channels  # noqa

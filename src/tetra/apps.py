@@ -30,6 +30,16 @@ class TetraConfig(AppConfig):
         from .component_register import find_component_libraries
         from tetra import default_settings, checks  # noqa
         from django.conf import settings
+        from .library import Library
+        from tetra.router import Redirect
+        from tetra.router import Link
+        from tetra.router import Router
+
+        # Register router components in the default library
+        default_lib = Library("default", "tetra")
+        default_lib.register(Router)
+        default_lib.register(Link)
+        default_lib.register(Redirect)
 
         for name in dir(default_settings):
             if name.isupper() and not hasattr(settings, name):

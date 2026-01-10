@@ -289,6 +289,8 @@ class ComponentNode(template.Node):
                         f"Unable to resolve dynamic component: '{self.component_name}'"
                     )
             component_class = c
+            if isinstance(component_class, str):
+                component_class = resolve_component(context, component_class)
         else:
             component_class = resolve_component(context, self.component_name)
 
