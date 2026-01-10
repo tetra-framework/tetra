@@ -37,7 +37,7 @@ Homepage = "https://tetraframework.com"
 Documentation = "https://tetra.readthedocs.io"
 Repository = "https://github.com/tetra-framework/tetra"
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "twine>=6.2",
     "packaging>=25.0",
@@ -50,8 +50,6 @@ dev = [
     "black>=25.12",
     "python-dateutil~=2.8",
     "beautifulsoup4~=4.14",
-    "tetra[demo]", # include all the demo packages too
-    "tetra[doc]",
     "pytest-playwright",
     "channels",
     "channels-redis",
@@ -66,7 +64,13 @@ doc = [
     "mkdocs-mermaid2-plugin~=1.2",
     "mkdocs-panzoom-plugin~=0.4"
 ]
+reactive = [
+    "channels",
+    "channels-redis",
+]
 
+[tool.uv]
+package = true
 
 [tool.setuptools.dynamic]
 version = {attr = "tetra.__version__"}

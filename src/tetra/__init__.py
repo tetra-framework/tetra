@@ -3,16 +3,30 @@
 from .components import BasicComponent, Component, public
 from .library import Library
 
-__all__: list = []
+__all__: list[str] = ["BasicComponent", "Component", "public", "Library"]
 
 try:
-    # if channels is available, ReactiveComponent can be imported, so try it
-    # and fail silently if it does not work.
-    from tetra.components.reactive import ReactiveComponent
+    import channels  # noqa
 
-    __all__ += [ReactiveComponent]
+    __all__.append("ReactiveComponent")
 except ImportError:
     pass
+
+
+def __getattr__(name):
+    if name == "ReactiveComponent":
+        try:
+            import channels  # noqa
+        except ImportError:
+            raise ImportError(
+                "ReactiveComponent requires 'channels' to be installed. "
+                "Please install it with: pip install channels"
+            ) from None
+        from .components.reactive import ReactiveComponent
+
+        return ReactiveComponent
+    raise AttributeError(f"module {__name__} has no attribute {name}")
+
 
 __version__ = "0.6.8"
 __version_info__ = tuple([num for num in __version__.split(".")])
