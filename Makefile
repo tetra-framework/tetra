@@ -10,8 +10,7 @@ setup-dev:
 	playwright install
 
 npm:
-	cd tests
-	test -d node_modules || npm install
+	test -d tests/node_modules || cd tests && npm install
 
 test: npm
 	uvx pytest
