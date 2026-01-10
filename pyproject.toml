@@ -53,6 +53,7 @@ dev = [
     "pytest-playwright",
     "channels",
     "channels-redis",
+    "mypy>=1.19.0",
     "daphne"
 ]
 doc = [
