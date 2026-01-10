@@ -13,7 +13,7 @@ npm:
 	test -d tests/node_modules || cd tests && npm install
 
 test: npm
-	uvx pytest
+	uv run pytest tests
 
 #coverage:
 #	coverage run -m pytest
