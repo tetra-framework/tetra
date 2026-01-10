@@ -3,6 +3,7 @@ import os
 import pkgutil
 
 from django.apps import apps
+from django.conf import settings
 import importlib
 from django.template import Template
 import inspect
@@ -17,11 +18,9 @@ from .utils import (
     unsupported_modules,
     is_abstract,
 )
+from .constants import COMPONENT_MODULE_NAMES
 
 logger = logging.getLogger(__name__)
-
-# TODO: put that in a more global scope
-components_module_names = ["components", "tetra_components"]
 
 
 def find_component_libraries():
@@ -32,7 +31,9 @@ def find_component_libraries():
         return
     state.loading_libraries = True
     importlib.invalidate_caches()
-    for components_module_name in components_module_names:
+    for components_module_name in getattr(
+        settings, "TETRA_COMPONENTS_MODULE_NAMES", COMPONENT_MODULE_NAMES
+    ):
         for app_config in [
             a
             for a in apps.get_app_configs()
