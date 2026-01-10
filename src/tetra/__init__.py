@@ -14,6 +14,5 @@ try:
 except ImportError:
     pass
 
-__all__ += [BasicComponent, Component, public, Library]
-__version__ = "0.6.7"
+__version__ = "0.6.8"
 __version_info__ = tuple([num for num in __version__.split(".")])
