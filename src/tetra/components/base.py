@@ -845,9 +845,9 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             component._context = _context
         if _slots:
             component._slots = _slots
-        if len(args) > 0:
+        if args:
             component._load_args = args
-        if len(kwargs) > 0:
+        if kwargs:
             component._load_kwargs = kwargs
         component._recall_load()
 
