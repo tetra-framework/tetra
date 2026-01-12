@@ -16,7 +16,6 @@ class InlineTemplate(Template):
         ret["top"] += line_offset
         ret["bottom"] += line_offset
         ret["line"] += line_offset
-        ret["top"] += line_offset
         ret["message"] = re.sub(
             r"(line )(\d+)(:)",
             lambda m: f"{m.group(1)}{int(m.group(2))+line_offset}{m.group(3)}",
