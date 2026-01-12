@@ -9,10 +9,7 @@ setup-dev:
 	uv sync --extra dev
 	playwright install
 
-npm:
-	cd tests &&	test -d node_modules || npm install
-
-test: npm
+test:
 	uv run pytest tests
 
 #coverage:
@@ -32,7 +29,7 @@ doc-dev:
 build-js:
 	scripts/build_js.sh
 
-build: npm build-js
+build: build-js
 	rm -rf ./dist/
 	uv build
 

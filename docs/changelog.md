@@ -12,12 +12,14 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.7.0] - unreleased
+## [0.7.0] - 2026-01-13
 ### Added
 - `AppRouter` and `Link` component for dynamic routing/navigation within a container.
 - Support for trailing slashes in routes when Django's `APPEND_SLASH` is enabled.
 - Support for optional arguments in Router `load` method.
 - New routing documentation and comprehensive tests.
+- Bundle esbuild within Tetra (auto-download), remove npm dependency.
+- rename decorator `@public.subscribe` to `@public.listen` for consistency.
 
 ### Fixed
 - Memory leak bug when watching files recursively in root directory.

@@ -288,3 +288,6 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# esbuild binaries
+/src/tetra/bin/esbuild-*

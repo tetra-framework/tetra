@@ -5,3 +5,4 @@ prune .github
 exclude  mkdocs.yml
 exclude .readthedocs.yaml
 exclude tests/*
+exclude src/tetra/bin/esbuild*

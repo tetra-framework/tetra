@@ -5,13 +5,13 @@ import subprocess
 import json
 import warnings
 from collections import defaultdict
-from typing import Self, Optional
+from typing import Self
 
 from django.apps import AppConfig, apps
-from django.conf import settings
 from django.templatetags.static import static
 from django.utils.functional import cached_property
 
+from .conf import get_setting, get_esbuild_path
 from .components.base import BasicComponentMetaClass, ComponentMetaClass
 from .exceptions import LibraryError
 from .utils import camel_case_to_underscore
@@ -196,7 +196,7 @@ class Library:
         # TODO: check if source has changed and only build if it has
         print(f"# Building {self.display_name}")
         library_cache_path = os.path.join(
-            self.app.path, settings.TETRA_FILE_CACHE_DIR_NAME, self.name
+            self.app.path, get_setting("TETRA_FILE_CACHE_DIR_NAME"), self.name
         )
         file_out_path = os.path.join(
             self.app.path, "static", self.app.label, "tetra", self.name
@@ -208,9 +208,10 @@ class Library:
         os.makedirs(file_out_path)
 
         # Also clear from STATIC_ROOT if it exists
-        if hasattr(settings, "STATIC_ROOT") and settings.STATIC_ROOT:
+        static_root = get_setting("STATIC_ROOT")
+        if static_root:
             static_root_path = os.path.join(
-                settings.STATIC_ROOT, self.app.label, "tetra", self.name
+                static_root, self.app.label, "tetra", self.name
             )
             if os.path.exists(static_root_path):
                 shutil.rmtree(static_root_path)
@@ -263,8 +264,8 @@ class Library:
                 f.write("\n".join(main_scripts))
 
             esbuild_ret = subprocess.run(
-                [settings.TETRA_ESBUILD_PATH, out_file_path]
-                + settings.TETRA_ESBUILD_JS_ARGS
+                [get_esbuild_path(), out_file_path]
+                + get_setting("TETRA_ESBUILD_JS_ARGS")
                 + [f"--outdir={target_path}", f"--metafile={meta_file_path}"]
             )
 
@@ -320,8 +321,8 @@ class Library:
                 f.write("\n".join(main_imports))
 
             esbuild_ret = subprocess.run(
-                [settings.TETRA_ESBUILD_PATH, out_file_path]
-                + settings.TETRA_ESBUILD_CSS_ARGS
+                [get_esbuild_path(), out_file_path]
+                + get_setting("TETRA_ESBUILD_CSS_ARGS")
                 + [
                     f"--outdir={target_path}",
                     # These three lines below are a work around so that urls to images

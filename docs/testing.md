@@ -4,7 +4,7 @@ title: Testing
 
 # Testing
 
-Testing Tetra is done using pytest. Make sure you have npm (or yarn etc.) installed, Tetra needs `esbuild` and `chromium webdriver` for building the frontend components before testing.
+Testing Tetra is done using pytest. Tetra uses its bundled `esbuild` for building frontend components during tests.
 
 ```bash
 make setup

@@ -28,5 +28,45 @@ fi
 cd "$project_dir"
 
 
-tests/node_modules/.bin/esbuild src/tetra/js/tetra.js --bundle --sourcemap --target=chrome80,firefox73,safari13,edge80 --outfile=src/tetra/static/tetra/js/tetra.js
-tests/node_modules/.bin/esbuild src/tetra/js/tetra.js --bundle --minify --sourcemap --target=chrome80,firefox73,safari13,edge80 --outfile=src/tetra/static/tetra/js/tetra.min.js
+# Determine the bundled esbuild path
+system=$(uname -s)
+machine=$(uname -m)
+plat_key=""
+
+if [[ "$system" == "Linux" ]]; then
+    if [[ "$machine" == "x86_64" ]]; then
+        plat_key="linux-x64"
+    elif [[ "$machine" == "aarch64" || "$machine" == "arm64" ]]; then
+        plat_key="linux-arm64"
+    fi
+elif [[ "$system" == "Darwin" ]]; then
+    if [[ "$machine" == "x86_64" ]]; then
+        plat_key="darwin-x64"
+    elif [[ "$machine" == "arm64" ]]; then
+        plat_key="darwin-arm64"
+    fi
+elif [[ "$system" == "MINGW"* || "$system" == "MSYS"* || "$system" == "CYGWIN"* ]]; then
+    if [[ "$machine" == "x86_64" ]]; then
+        plat_key="windows-x64"
+    elif [[ "$machine" == "ARM64" ]]; then
+        plat_key="windows-arm64"
+    fi
+fi
+
+if [[ -n "$plat_key" ]]; then
+    if [[ "$system" == "MINGW"* || "$system" == "MSYS"* || "$system" == "CYGWIN"* ]]; then
+        esbuild_bin="src/tetra/bin/esbuild.exe-$plat_key"
+    else
+        esbuild_bin="src/tetra/bin/esbuild-$plat_key"
+    fi
+fi
+
+if [[ ! -f "$esbuild_bin" ]]; then
+    # Fallback to system esbuild
+    esbuild_bin="esbuild"
+fi
+
+echo "Using esbuild at: $esbuild_bin"
+
+"$esbuild_bin" src/tetra/js/tetra.js --bundle --sourcemap --target=chrome80,firefox73,safari13,edge80 --outfile=src/tetra/static/tetra/js/tetra.js
+"$esbuild_bin" src/tetra/js/tetra.js --bundle --minify --sourcemap --target=chrome80,firefox73,safari13,edge80 --outfile=src/tetra/static/tetra/js/tetra.min.js

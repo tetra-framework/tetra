@@ -67,14 +67,11 @@ urlpatterns = [
 
 ## Installing esbuild
 
-Tetra requires [esbuild](https://esbuild.github.io), this is used to build your components' JavaScript/CSS into packages, and create sourcemaps so that you can trace errors back to your source Python files. The easiest way to install esbuild is via [Node.js](https://nodejs.org) [npm](https://www.npmjs.com), in the root of your Django project (the directory where `./manage.py` is located):
+Tetra requires [esbuild](https://esbuild.github.io), this is used to build your components' JavaScript/CSS into packages, and create sourcemaps so that you can trace errors back to your source Python files.
 
-```
-$ npm init  # If you don't already have a npm package.json and ./node_modules directory
-$ npm install esbuild
-```
+Tetra comes bundled with esbuild binaries for the most common platforms (Linux, macOS and Windows on x64 and ARM64). It will automatically detect your platform and use the bundled binary.
 
-By default, Tetra will expect the esbuild binary to be available as `[projectroot]/node_modules/.bin/esbuild`. If you have it installed in a different location you can set `TETRA_ESBUILD_PATH` in your Django `settings.py` file to the correct path.
+If you are on an unsupported platform, or want to use a different version of esbuild, you can install it manually (e.g. via `npm install esbuild`) and set `TETRA_ESBUILD_PATH` in your Django `settings.py` file to the correct path.
 
 ## Modify base template
 

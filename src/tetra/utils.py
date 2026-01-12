@@ -12,6 +12,7 @@ from typing import Any, AnyStr
 from dateutil import parser as datetime_parser
 from django.apps import apps
 from django.conf import settings
+from .conf import get_setting
 from django.contrib.messages.storage.base import Message
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.uploadedfile import UploadedFile
@@ -158,7 +159,7 @@ class NamedTemporaryUploadedFile(UploadedFile):
             # create a temporary file that is NOT deleted after closing.
             temp_file = tempfile.NamedTemporaryFile(
                 suffix=".upload" + ext,
-                dir=Path(settings.MEDIA_ROOT) / settings.TETRA_TEMP_UPLOAD_PATH,
+                dir=Path(settings.MEDIA_ROOT) / get_setting("TETRA_TEMP_UPLOAD_PATH"),
                 delete=False,
             )
 
@@ -462,7 +463,7 @@ def cleanup_temp_uploads(max_age_hours=24) -> int:
     Returns:
         The number of files deleted.
     """
-    temp_dir = Path(settings.MEDIA_ROOT) / settings.TETRA_TEMP_UPLOAD_PATH
+    temp_dir = Path(settings.MEDIA_ROOT) / get_setting("TETRA_TEMP_UPLOAD_PATH")
     count = 0
     if not temp_dir.exists() and temp_dir != settings.MEDIA_ROOT:
         return 0

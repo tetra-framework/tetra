@@ -28,8 +28,7 @@ class TetraConfig(AppConfig):
 
     def ready(self):
         from .component_register import find_component_libraries
-        from tetra import default_settings, checks  # noqa
-        from django.conf import settings
+        from tetra import checks  # noqa
         from .library import Library
         from tetra.router import Redirect
         from tetra.router import Link
@@ -40,23 +39,6 @@ class TetraConfig(AppConfig):
         default_lib.register(Router)
         default_lib.register(Link)
         default_lib.register(Redirect)
-
-        for name in dir(default_settings):
-            if name.isupper() and not hasattr(settings, name):
-                setattr(settings, name, getattr(default_settings, name))
-
-        if not hasattr(settings, "TETRA_ESBUILD_PATH"):
-            bin_name = "esbuild"
-            if os.name == "nt":
-                bin_name = "esbuild.cmd"
-            if settings.BASE_DIR:
-                setattr(
-                    settings,
-                    "TETRA_ESBUILD_PATH",
-                    Path(settings.BASE_DIR) / "node_modules" / ".bin" / bin_name,
-                )
-            else:
-                setattr(settings, "TETRA_ESBUILD_PATH", None)
 
         find_component_libraries()
         autoreload_started.connect(watch_extra_files)
