@@ -75,8 +75,10 @@ class Link(Component):
     label = ""
     active_class = "active"
 
+    # language=html
     template = """
     <a
+        {% ... attrs %}
         href="{{ to }}"
         @click.prevent="click()"
         :class="{ '{{ active_class }}': window.location.pathname === '{{ to }}' }"
@@ -85,7 +87,7 @@ class Link(Component):
     </a>
     """
 
-    def load(self, to="#", label="", active_class="active"):
+    def load(self, to="#", label="", active_class="active", *args, **kwargs):
         self.to = to
         self.label = label
         self.active_class = active_class
