@@ -3,7 +3,12 @@
 from .components import BasicComponent, Component, public
 from .library import Library
 
-__all__: list[str] = ["BasicComponent", "Component", "public", "Library"]
+__all__: list[str] = [
+    "BasicComponent",
+    "Component",
+    "public",
+    "Library",
+]
 
 try:
     import channels  # noqa

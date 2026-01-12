@@ -123,11 +123,23 @@ class Library:
         def dec(cls: BasicComponentMetaClass):
             if hasattr(cls, "_library") and cls._library:
                 if cls._library is not self:
-                    raise LibraryError(
-                        f"Error registering component '{component_cls.__name__}' to "
-                        f"library {self.display_name}, at it is "
-                        f"already registered to library {cls._library.display_name}."
-                    )
+                    # If this is a subclass of an already registered component,
+                    # we need to make sure we don't just inherit the library
+                    # and name.
+                    if (
+                        cls.__name__ == component_cls.__name__
+                        and cls.__module__ == component_cls.__module__
+                    ):
+                        # This IS the same class, check if it was registered to a different library
+                        if cls._library is not self:
+                            raise LibraryError(
+                                f"Error registering component '{component_cls.__name__}' to "
+                                f"library {self.display_name}, as it is "
+                                f"already registered to library {cls._library.display_name}."
+                            )
+                    else:
+                        # This is a subclass, we can register it to a new library
+                        pass
                 else:
                     logger.warning(
                         f"Component class {component_cls.__name__} is already "
