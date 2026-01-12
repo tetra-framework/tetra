@@ -14,7 +14,7 @@ def watch_extra_files(sender, *args, **kwargs):
     watch = sender.extra_files.add
     for app_name, library in Library.registry.items():
         for lib_name, library_info in library.items():
-            if library_info:
+            if library_info and library_info.path:
                 # watch for html, js, and css files
                 watch_list = glob(f"{library_info.path}/**/*.*", recursive=True)
                 for file in watch_list:
