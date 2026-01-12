@@ -8,9 +8,6 @@ __all__: list[str] = [
     "Component",
     "public",
     "Library",
-    "Router",
-    "Link",
-    "Redirect",
 ]
 
 try:
@@ -22,17 +19,6 @@ except ImportError:
 
 
 def __getattr__(name):
-    if name in ("Router", "Link", "Redirect"):
-        from tetra.router import Redirect
-        from tetra.router import Link
-        from tetra.router import Router
-
-        if name == "Router":
-            return Router
-        if name == "Link":
-            return Link
-        if name == "Redirect":
-            return Redirect
     if name == "ReactiveComponent":
         try:
             import channels  # noqa
