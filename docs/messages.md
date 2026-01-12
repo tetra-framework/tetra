@@ -23,13 +23,13 @@ This shows a Bootstrap bell icon whenever a new message has arrived, instantly. 
 <div @tetra:new-message="show_message($event.details)"></div>
 ```
 
-Since Tetra provides a [@public.subscribe modifier](components.md#subscribe), you can even react on the server on that:
+Since Tetra provides a [@public.listen](components.md#listen) modifieruv build, you can even react on the server on that:
 ```python
 from django.contrib.messages import Message
 
 class MyComponent(Component):
     
-    @public.subscribe("tetra:new-message")
+    @public.listen("tetra:new-message")
     def message_added(self, message:Message):
         ...
 ```

@@ -25,7 +25,6 @@ title: Changelog
 - Improved handling of conditional node branches for `{% slot %}` tags.
 - Safely patch `Template.compile_nodelist` to preserve the original method.
 
-
 ## [0.6.10] - 2026-01-10
 ### Added
 - Configurable component module names via settings and constants.

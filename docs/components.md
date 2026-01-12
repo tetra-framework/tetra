@@ -119,18 +119,18 @@ When the `.watch` decorator is applied, the method receives three parameters:
 * `old_value`: The old value of the attribute before the change. You can make comparisons here.
 * `attr`: The name of the attribute. This is needed if the method is watching more than one attribute.
 
-### .subscribe
+### .listen
 
 Add this if the method should be subscribed to a JavaScript event which is fired in the component (or one of its children and bubbles up).
 
 ```python
 class MyComponent(Component):
     ...
-    @public.subscribe("keyup.shift.enter")
+    @public.listen("keyup.shift.enter")
     def shift_enter_pressed(self, event_detail):
         ... # do something
 
-    @public.subscribe("keyup.f9.window")  # this attaches the event listener to the global <html> element
+    @public.listen("keyup.f9.window")  # this attaches the event listener to the global <html> element
     def fc9_pressed(self, event_detail):
         ... # do something
 
@@ -140,7 +140,7 @@ Tetra automatically adds `@<event>=<yourmethod>($event.detail)` to the root elem
 
 You can even attach the event listener globally by using `.window` or `.document`, see [Alpine.js docs](https://alpinejs.dev/directives/on#window).
 
-The method always receives the *event detail* as a single parameter. 
+The method always receives the *event detail* as a single parameter.
 
 
 ### .debounce
@@ -480,7 +480,7 @@ class MyComponent(Component):
     }
     """
 ```
-Tetra also provides a convenient event subscription shortcut: The [`@public.subscribe("event_name")` decorator](#.subscribe):
+Tetra also provides a convenient event subscription shortcut: The [`@public.listen("event_name")` decorator](#.listen):
 
 You can use all event modifiers [supported by Alpine](https://alpinejs.dev/directives/on#the-event-object), or even subscribe to "global" events by using Alpine's `.window` or `.document` modifiers:
 

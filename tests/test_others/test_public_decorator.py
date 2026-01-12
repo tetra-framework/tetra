@@ -20,12 +20,12 @@ def test_public_decorator_is_replaced_with_actual_method_or_attribute(tetra_requ
 default = Library("default", "main")
 
 
-def test_subscribe_with_wrong_arguments():
+def test_listen_with_wrong_arguments():
     with pytest.raises(ValueError):
 
         @default.register
-        class ComponentWithPublicSubscribe(Component):
-            @public.subscribe("keyup.enter")
+        class ComponentWithPublicListen(Component):
+            @public.listen("keyup.enter")
             def do_something(self) -> str:  # should have event_detail as param
                 pass
 
@@ -33,20 +33,18 @@ def test_subscribe_with_wrong_arguments():
 
 
 @default.register
-class ComponentWithPublicSubscribe(Component):
+class ComponentWithPublicListen(Component):
 
-    @public.subscribe("keyup.enter")
+    @public.listen("keyup.enter")
     def do_something(self, event_detail) -> str:
         pass
 
     template = """<div id='component' {% ... attrs %}></div>"""
 
 
-def test_public_subscribe_renders_attrs(tetra_request):
-    """Checks if a @public.subscribe decorator renders the attr correctly."""
-    content = render_component_tag(
-        tetra_request, "{% ComponentWithPublicSubscribe / %}"
-    )
+def test_public_listen_renders_attrs(tetra_request):
+    """Checks if a @public.listen decorator renders the attr correctly."""
+    content = render_component_tag(tetra_request, "{% ComponentWithPublicListen / %}")
     component = extract_component_tag(content)
     assert component.has_attr("@keyup.enter")
     assert component.attrs["@keyup.enter"] == "do_something($event.detail)"

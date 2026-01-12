@@ -4,6 +4,7 @@ import importlib
 import os
 from datetime import datetime, date, time
 from decimal import Decimal
+from warnings import deprecated
 
 from copy import copy
 from typing import Optional, Self, Any
@@ -646,7 +647,12 @@ class Public(metaclass=PublicMeta):
         self._throttle_leading = leading
         return self
 
+    @deprecated("@public.subscribe is deprecated. Use @public.listen instead.")
     def do_subscribe(self, event) -> Self:
+        """Deprecated. Use do_listen instead."""
+        return self.do_listen(event)
+
+    def do_listen(self, event) -> Self:
         """Keeps track of the event for a dynamic event subscription of the component."""
         self._event_subscriptions.append(event)
         return self
@@ -659,7 +665,7 @@ tracing_component_load = WeakKeyDictionary()
 
 
 class ComponentMetaClass(BasicComponentMetaClass):
-    def __new__(mcls, name, bases, attrs):
+    def __new__(mcls, name, bases, attrs) -> BasicComponentMetaClass:
         public_methods: list[dict[str, Any]] = list(
             itertools.chain.from_iterable(
                 base._public_methods
@@ -704,7 +710,7 @@ class ComponentMetaClass(BasicComponentMetaClass):
                         pcount = param_count(fn)
                         if pcount != 1:
                             raise ValueError(
-                                f"Event subscriber method '{attr_name}' has wrong "
+                                f"Event listener method '{attr_name}' has wrong "
                                 f"number of arguments. Expected 2 (self, "
                                 f"event_detail), but got {pcount}."
                             )
@@ -744,10 +750,10 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         "_temp_files",
         "_is_directory_component",
     ]
-    _excluded_load_props_from_saved_state = []
+    _excluded_load_props_from_saved_state: list[str] = []
     _loaded_children_state = None
-    _load_args = []
-    _load_kwargs = {}
+    _load_args: list[str] = []
+    _load_kwargs: dict[str, Any] = {}
     _resumed_from_state_data: ComponentData
     # _temp_files is an internal dict to track which data attributes are files.
     _temp_files: dict[str, UploadedFile] = {}
