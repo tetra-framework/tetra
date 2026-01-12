@@ -4,9 +4,6 @@ from collections import defaultdict
 import re
 
 
-original_template_compile_nodelist = Template.compile_nodelist
-
-
 class InlineTemplate(Template):
     """Represents an "inline" template string within a component."""
 
@@ -35,14 +32,30 @@ class InlineOrigin(Origin):
 
 
 def new_template_compile_nodelist(self):
-    nodelist = original_template_compile_nodelist(self)
-    self.blocks_by_key = {}
-    annotate_nodelist(self, nodelist, [])
+    nodelist = Template._tetra_original_compile_nodelist(self)
+    if not hasattr(self, "blocks_by_key"):
+        self.blocks_by_key = {}
+        annotate_nodelist(self, nodelist, [])
     return nodelist
 
 
+new_template_compile_nodelist._tetra_patched = True  # type: ignore[attr-defined]
+
+
 def monkey_patch_template():
-    Template.compile_nodelist = new_template_compile_nodelist
+    """
+    Patch the `Template` class to replace its `compile_nodelist` method with a custom function.
+
+    This function modifies the behavior of Django's `Template` class to use a new custom-defined
+    `new_template_compile_nodelist` for compiling the nodelist. It ensures the patch is applied only
+    once by checking the presence of a custom `_tetra_patched` attribute. Additionally, it preserves
+    the original `compile_nodelist` method by storing it in an attribute
+    `_tetra_original_compile_nodelist` if it hasn't been stored already.
+    """
+    if not getattr(Template.compile_nodelist, "_tetra_patched", False):
+        if not hasattr(Template, "_tetra_original_compile_nodelist"):
+            Template._tetra_original_compile_nodelist = Template.compile_nodelist
+        Template.compile_nodelist = new_template_compile_nodelist
 
 
 def annotate_nodelist(template, nodelist, path, memo=None):
