@@ -826,6 +826,17 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             )
 
         component.request = request
+        # Set default values for attributes if they don't exist
+        for attr, default in [
+            ("_context", {}),
+            ("attrs", {}),
+            ("_temp_files", {}),
+            ("_slots", None),
+        ]:
+            if not hasattr(component, attr):
+                setattr(component, attr, default)
+
+        # Override with provided values if given
         if key:
             component.key = key
         if _attrs:
