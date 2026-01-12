@@ -1,7 +1,14 @@
 import re
 
+from django.conf import settings
 from sourcetypes import django_html
 from tetra import Component, public
+
+
+def ensure_trailing_slash(path):
+    if settings.APPEND_SLASH:
+        return path if path.endswith("/") else path + "/"
+    return path
 
 
 class Router(Component):
@@ -45,6 +52,8 @@ class Router(Component):
             self.current_component = ""
 
     def _match_route(self, path):
+        path = ensure_trailing_slash(path)
+
         # Exact match
         if path in self.routes:
             return self.routes[path]
