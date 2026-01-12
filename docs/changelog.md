@@ -12,11 +12,42 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.8] - unreleased
+## [0.7.0] - unreleased
+### Added
+- `AppRouter` and `Link` component for dynamic routing/navigation within a container.
+- Support for trailing slashes in routes when Django's `APPEND_SLASH` is enabled.
+- Support for optional arguments in Router `load` method.
+- New routing documentation and comprehensive tests.
+
+### Fixed
+- Memory leak bug when watching files recursively in root directory.
+- Ensure all attributes are set when unpickling a component.
+- Improved handling of conditional node branches for `{% slot %}` tags.
+- Safely patch `Template.compile_nodelist` to preserve the original method.
+
+
+## [0.6.10] - 2026-01-10
+### Added
+- Configurable component module names via settings and constants.
+- `mypy` added to dev dependencies.
+- Tests for importing Tetra without `channels` and `ReactiveComponent` handling.
+
+
+## [0.6.9] - 2026-01-10
+### Fixed
+- Ensure Tetra is importable without `channels` when no `ReactiveComponent` is used.
+- `npm install` in Makefile.
+
+### Changed
+- Use `uv run` for tests in Makefile.
+- Use `publish` instead of `publish-prod` in Makefile.
+
+## [0.6.8] - 2026-01-10
 ### Added
 - Loading indicators for buttons now work independently. Each button has its own indicator that only shows while that
   specific button's action is running. When a button finishes its task, only its indicator turns off, while other
   buttons' indicators keep running if their tasks are still in progress.
+- Refactored pytest fixtures and test views to be reusable in other packages that use Tetra.
 
 ### Fixed
 - postpone template compiling to time when all libraries are loaded, so component referrals of not yet loaded components work.
