@@ -27,7 +27,7 @@ class Router(Component):
         @tetra:navigate.window="navigate($event.detail.path)"
     >
         {% if current_component %}
-            {% component "=current_component" / %}
+            {% component =current_component / %}
         {% else %}
             {% slot "default" %}{% endslot %}
         {% endif %}
