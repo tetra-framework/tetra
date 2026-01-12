@@ -45,21 +45,35 @@ def monkey_patch_template():
     Template.compile_nodelist = new_template_compile_nodelist
 
 
-def annotate_nodelist(template, nodelist, path):
+def annotate_nodelist(template, nodelist, path, memo=None):
     from .templatetags.tetra import ComponentNode
 
-    if nodelist:
+    if memo is None:
+        memo = set()
+
+    # Recursively annotate nodes, blocks, and component subtrees
+    if nodelist and id(nodelist) not in memo:
+        memo.add(id(nodelist))
         node_type_counter = defaultdict(int)
         for node in nodelist:
             if isinstance(node, BlockNode):
                 node_key = f"block:{node.name}:{node_type_counter['block:'+node.name]}"
                 node._path_key = "/".join([*path, node_key])
                 template.blocks_by_key[node._path_key] = node
-                annotate_nodelist(template, node.nodelist, [*path, node_key])
+                annotate_nodelist(template, node.nodelist, [*path, node_key], memo)
                 node_type_counter["block:" + node.name] += 1
             elif isinstance(node, ComponentNode):
-                node_key = f"comp:{node.component_name}:{node_type_counter['block:'+node.component_name]}"
-                annotate_nodelist(template, node.nodelist, [*path, node_key])
+                node_key = f"comp:{node.component_name}:{node_type_counter['comp:'+node.component_name]}"
+                annotate_nodelist(template, node.nodelist, [*path, node_key], memo)
                 node_type_counter["comp:" + node.component_name] += 1
             elif hasattr(node, "nodelist"):
-                annotate_nodelist(template, node.nodelist, path)
+                annotate_nodelist(template, node.nodelist, path, memo)
+            elif hasattr(node, "branches"):
+                # Handle nodes like IfNode that have multiple branches
+                for branch in node.branches:
+                    annotate_nodelist(template, branch[1], path, memo)
+            elif hasattr(node, "nodelist_true"):
+                # Handle IfNode in older Django versions or other nodes with nodelist_true/false
+                annotate_nodelist(template, node.nodelist_true, path, memo)
+                if hasattr(node, "nodelist_false"):
+                    annotate_nodelist(template, node.nodelist_false, path, memo)
