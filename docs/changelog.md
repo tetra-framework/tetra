@@ -12,6 +12,14 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-01-14
+### Added
+- Incremental build support for libraries. Tetra now detects changes in component source files (Python, JS, and CSS) and skips `esbuild` if no changes are detected.
+- Added `--force` flag to `tetrabuild` management command (via `build` function update) to bypass incremental build check and perform a full rebuild.
+
+### Changed
+- Improved `STATIC_ROOT` management during builds: it is now only cleared when `force=True` is used, while individual library directories are still cleaned when they are rebuilt.
+
 ## [0.7.0] - 2026-01-13
 ### Added
 - `AppRouter` and `Link` component for dynamic routing/navigation within a container.

@@ -192,15 +192,63 @@ class Library:
         """Check if the library contains the given component name."""
         return component_name in self.components
 
-    def build(self):
-        # TODO: check if source has changed and only build if it has
-        print(f"# Building {self.display_name}")
+    def build(self, force=False):
         library_cache_path = os.path.join(
             self.app.path, get_setting("TETRA_FILE_CACHE_DIR_NAME"), self.name
         )
         file_out_path = os.path.join(
             self.app.path, "static", self.app.label, "tetra", self.name
         )
+        meta_path = os.path.join(library_cache_path, "build_meta.json")
+
+        # Get current state of source files
+        current_state = {}
+        for component_name, component_cls in self.components.items():
+            py_filename, _, _ = component_cls.get_source_location()
+            if py_filename and os.path.exists(py_filename):
+                current_state[py_filename] = os.path.getmtime(py_filename)
+
+            for ext in ["js", "css"]:
+                ext_path = component_cls._get_component_file_path_with_extension(ext)
+                if ext_path and os.path.exists(ext_path):
+                    current_state[ext_path] = os.path.getmtime(ext_path)
+
+        # Check if we can skip build
+        if not force and os.path.exists(meta_path) and os.path.exists(file_out_path):
+            try:
+                with open(meta_path, "r") as f:
+                    saved_state = json.load(f)
+                if saved_state == current_state:
+                    # Check if expected output files exist
+                    js_filename_path = f"{self.js_path}.filename"
+                    styles_filename_path = f"{self.styles_path}.filename"
+
+                    has_js = any(c.has_script() for c in self.components.values())
+                    has_styles = any(c.has_styles() for c in self.components.values())
+
+                    js_ok = not has_js or (
+                        os.path.exists(js_filename_path)
+                        and os.path.exists(
+                            os.path.join(
+                                file_out_path, open(js_filename_path).read().strip()
+                            )
+                        )
+                    )
+                    styles_ok = not has_styles or (
+                        os.path.exists(styles_filename_path)
+                        and os.path.exists(
+                            os.path.join(
+                                file_out_path, open(styles_filename_path).read().strip()
+                            )
+                        )
+                    )
+
+                    if js_ok and styles_ok:
+                        return
+            except Exception as e:
+                print(f"Incremental build check failed: {e}")
+
+        print(f"# Building {self.display_name}")
 
         # Clear existing files to prevent old versions
         if os.path.exists(file_out_path):
@@ -217,11 +265,24 @@ class Library:
                 shutil.rmtree(static_root_path)
 
         if os.path.exists(library_cache_path):
-            shutil.rmtree(library_cache_path)
-        os.makedirs(library_cache_path)
+            # We don't rmtree the whole cache path because it might contain build_meta.json
+            for item in os.listdir(library_cache_path):
+                if item == "build_meta.json":
+                    continue
+                item_path = os.path.join(library_cache_path, item)
+                if os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
+                else:
+                    os.remove(item_path)
+        else:
+            os.makedirs(library_cache_path)
 
         self.build_js(library_cache_path, file_out_path)
         self.build_styles(library_cache_path, file_out_path)
+
+        # Save current state
+        with open(meta_path, "w") as f:
+            json.dump(current_state, f)
 
     def build_js(self, library_cache_path, target_path):
         main_imports = []

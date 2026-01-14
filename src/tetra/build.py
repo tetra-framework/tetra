@@ -6,11 +6,9 @@ from django.conf import settings
 from tetra import Library
 
 
-def build(libs_to_build):
-    # TODO: only build files if code has changed
-
+def build(libs_to_build, force=False):
     # Clear old static files before building
-    if hasattr(settings, "STATIC_ROOT") and settings.STATIC_ROOT:
+    if force and hasattr(settings, "STATIC_ROOT") and settings.STATIC_ROOT:
         tetra_pattern = os.path.join(settings.STATIC_ROOT, "*/tetra/")
         for tetra_dir in glob.glob(tetra_pattern):
             if os.path.exists(tetra_dir):
@@ -20,7 +18,7 @@ def build(libs_to_build):
     print("Tetra: Building Javascript and CSS")
     print(" - Libraries: %s" % ",".join(o.display_name for o in libs_to_build))
     for lib in libs_to_build:
-        lib.build()
+        lib.build(force=force)
 
 
 def runserver_build():
