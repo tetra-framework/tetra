@@ -26,11 +26,11 @@ classifiers = [
 ]
 dependencies = [
     "cryptography>=37.0.1",
-    "Django>=3.2.0",
+    "django>=5.2.3",
     "python-dateutil>=2.8.2",
     "sourcetypes>=0.0.4",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 
 [project.urls]
 Homepage = "https://tetraframework.com"
@@ -39,7 +39,6 @@ Repository = "https://github.com/tetra-framework/tetra"
 
 [dependency-groups]
 dev = [
-    "twine>=6.2",
     "packaging>=25.0",
     "pkginfo>=1.12",
     "pytest~=9.0",
