@@ -1323,7 +1323,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
     """
 
     __abstract__ = True
-    form_class: type[forms.BaseForm] = None
+    form_class: Optional[type[forms.ModelForm]] = None
     form_submitted: bool = False
     form_errors: dict = {}  # TODO: make protected + include in render context
     _form: Form = None
@@ -1607,10 +1607,10 @@ class ModelFormComponent(FormComponent, metaclass=ModelFormComponentMetaClass):
     """
 
     __abstract__ = True
-    form_class: type(forms.ModelForm) = None
+    form_class: Optional[type[forms.ModelForm]] = None
     model: ModelBase = None
     object: models.Model = None
-    fields: list[str] = None
+    fields: Optional[list[str]] = None
     _context_object_name = None  # TODO
     _excluded_props_from_saved_state = (
         FormComponent._excluded_props_from_saved_state
