@@ -290,5 +290,6 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-# esbuild binaries
+# Tetra
+.tetracache/
 /src/tetra/bin/esbuild-*
