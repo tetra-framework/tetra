@@ -56,7 +56,7 @@ dev = [
     "mypy>=1.19.0",
     "daphne"
 ]
-doc = [
+docs = [
     "mkdocs~=1.6",
     "mkdocs-material~=9.7",
     "pymdown-extensions~=10.19",
