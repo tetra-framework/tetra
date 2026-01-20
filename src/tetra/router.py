@@ -1,4 +1,5 @@
 import re
+from typing import Optional
 
 from django.conf import settings
 from sourcetypes import django_html
@@ -16,9 +17,9 @@ class Router(Component):
     A component that manages navigation and dynamic component switching.
     """
 
-    routes = {}  # Map of path patterns to component names.
-    current_component = public("")
-    current_path = public("")
+    routes: dict[str, str] = {}  # Map of path patterns to component names.
+    current_component: str = public("")
+    current_path: str = public("")
 
     # language=html
     template: django_html = """
@@ -34,7 +35,7 @@ class Router(Component):
     </div>
     """
 
-    def load(self):
+    def load(self, *args, **kwargs):
         if not self.current_component:
             self.navigate(self.request.path, push=False)
 
@@ -45,13 +46,9 @@ class Router(Component):
 
         self.current_path = path
         component_name = self._match_route(path)
+        self.current_component = component_name or ""
 
-        if component_name:
-            self.current_component = component_name
-        else:
-            self.current_component = ""
-
-    def _match_route(self, path):
+    def _match_route(self, path) -> str:
         path = ensure_trailing_slash(path)
 
         # Exact match
@@ -63,7 +60,7 @@ class Router(Component):
             if re.match(f"^{pattern}$", path):
                 return component_name
 
-        return None
+        return ""
 
 
 class Link(Component):
@@ -71,12 +68,12 @@ class Link(Component):
     A component for navigating between routes.
     """
 
-    to = ""
-    label = ""
-    active_class = "active"
+    to: str = ""
+    label: str = ""
+    active_class: str = "active"
 
     # language=html
-    template = """
+    template: django_html = """
     <a
         {% ... attrs %}
         href="{{ to }}"
@@ -102,11 +99,11 @@ class Redirect(Component):
     A component that redirects to another path when rendered.
     """
 
-    to = ""
+    to: str = ""
 
-    template = "<div></div>"
+    template: django_html = "<div></div>"
 
-    def load(self, to):
+    def load(self, to: str, *args, **kwargs):
         self.to = to
 
     def render(self, *args, **kwargs):
