@@ -58,6 +58,7 @@ from ..utils import (
     param_names_exist,
     param_count,
     has_single_root,
+    NamedTemporaryUploadedFile,
 )
 from ..types import ComponentData
 from ..state import encode_component, decode_component
@@ -877,14 +878,33 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             # if the data type is a file, try to find the file by its path
             elif issubclass(AttributeType, UploadedFile):
                 if state_value:
+                    # if the file was reconstructed from the client data (which
+                    # doesn't contain the temp_path anymore), recover the temp_path
+                    # from the original state (decoded from the encrypted token)
+                    if getattr(state_value, "_reconstructed", False):
+                        original_value = getattr(component, key, None)
+                        if isinstance(original_value, NamedTemporaryUploadedFile):
+                            # reuse the original file handle.
+                            state_value.file = original_value.file
+                        else:
+                            # if the file is not in the original state, it means it
+                            # was not uploaded by this user in a previous request.
+                            state_value = None
+
+                    if not state_value:
+                        continue
+
                     # the value (temp file path) from the saved component client state
                     # could be stale, as the file could be already saved as permanent
                     # file in MEDIA_ROOT/* somewhere using submit() in another session.
                     # Then the state's file_path is wrong. in this case,
                     # delete this state!
-                    if not os.path.exists(state_value.file.name):
+                    if not state_value.file or not os.path.exists(
+                        state_value.file.name
+                    ):
                         component_state["data"][key] = None
-                        del component._temp_files[key]
+                        if key in component._temp_files:
+                            del component._temp_files[key]
 
                 else:
                     # if there is no valid file in the request, it means the file was

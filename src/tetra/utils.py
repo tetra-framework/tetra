@@ -144,6 +144,7 @@ class NamedTemporaryUploadedFile(UploadedFile):
         charset: str | None,
         content_type_extra: dict[str, str] | None = None,
         temp_path: str = None,
+        create_file: bool = True,
     ):
         _, ext = os.path.splitext(name)
         temp_file = None
@@ -155,7 +156,7 @@ class NamedTemporaryUploadedFile(UploadedFile):
             except (FileNotFoundError, OSError) as e:
                 logger.warning(f"Could not open temporary file {temp_path}: {e}")
 
-        if not temp_file:
+        if not temp_file and create_file:
             # create a temporary file that is NOT deleted after closing.
             temp_file = tempfile.NamedTemporaryFile(
                 suffix=".upload" + ext,
@@ -314,12 +315,6 @@ class TetraJSONEncoder(json.JSONEncoder):
                 "content_type": (
                     obj.content_type if hasattr(obj, "content_type") else None
                 ),
-                "temp_path": (
-                    obj.temporary_file_path()
-                    if hasattr(obj, "temporary_file_path")
-                    and callable(obj.temporary_file_path)
-                    else None
-                ),
             }
         elif isinstance(obj, Message):
             try:
@@ -376,13 +371,16 @@ class TetraJSONDecoder(json.JSONDecoder):
         elif _type == "set":
             return set(obj["value"])
         elif _type == "file":
-            return NamedTemporaryUploadedFile(
+            file = NamedTemporaryUploadedFile(
                 name=obj["name"],
                 size=obj["size"],
                 content_type=obj["content_type"],
-                temp_path=obj["temp_path"],
+                temp_path=obj.get("temp_path"),
                 charset=settings.DEFAULT_CHARSET,
+                create_file=False,
             )
+            file._reconstructed = True
+            return file
         elif _type == "message":
             message = Message(
                 message=obj["message"],
