@@ -174,6 +174,7 @@
           this.component_id = this.$el.getAttribute("tetra-component-id");
           this.$dispatch("tetra:child-component-init", { component: this });
           this.__initServerWatchers();
+          this.__initStores();
           if (window.__tetra_useWebsockets && this.$el.hasAttribute("tetra-reactive")) {
             Tetra.ensureWebSocketConnection();
             const group = this.$el.getAttribute("tetra-subscription");
@@ -421,6 +422,77 @@
             }
           });
         },
+        __initStores() {
+          if (!this.__serverStores) return;
+          Object.entries(this.__serverStores).forEach(([propName, storePath]) => {
+            const parts = storePath.split(".");
+            const storeName = parts[0];
+            const propertyPath = parts.slice(1);
+            if (!Alpine.store(storeName)) {
+              Alpine.store(storeName, {});
+            }
+            const getStoreValue = () => {
+              let val = Alpine.store(storeName);
+              for (const part of propertyPath) {
+                if (val === void 0 || val === null || typeof val !== "object") return void 0;
+                val = val[part];
+              }
+              return val;
+            };
+            const setStoreValue = (value) => {
+              if (propertyPath.length === 0) {
+                if (Alpine.store(storeName) !== value) {
+                  Alpine.store(storeName, value);
+                }
+              } else {
+                let obj = Alpine.store(storeName);
+                for (let i = 0; i < propertyPath.length - 1; i++) {
+                  const part = propertyPath[i];
+                  if (!(part in obj) || typeof obj[part] !== "object") obj[part] = {};
+                  obj = obj[part];
+                }
+                const lastPart = propertyPath[propertyPath.length - 1];
+                if (obj[lastPart] !== value) {
+                  obj[lastPart] = value;
+                }
+              }
+            };
+            let prevStoreVal = getStoreValue();
+            Alpine.effect(() => {
+              const storeVal = getStoreValue();
+              if (storeVal !== prevStoreVal && storeVal !== void 0) {
+                prevStoreVal = storeVal;
+                if (this[propName] !== storeVal) {
+                  this.__isSyncingFromStore = propName;
+                  this[propName] = storeVal;
+                  this.$nextTick(() => {
+                    if (this.__isSyncingFromStore === propName) {
+                      this.__isSyncingFromStore = null;
+                    }
+                  });
+                }
+              }
+            });
+            this.$watch(propName, (value) => {
+              console.log(`COMP_SYNC: ${propName} value=${value}, __isSyncingFromStore=${this.__isSyncingFromStore}`);
+              if (this.__isSyncingFromStore !== propName) {
+                const currentStoreVal = getStoreValue();
+                if (currentStoreVal !== value) {
+                  setStoreValue(value);
+                  prevStoreVal = value;
+                }
+              }
+            });
+            this.$nextTick(() => {
+              const initialStoreVal = getStoreValue();
+              if (initialStoreVal !== void 0) {
+                this[propName] = initialStoreVal;
+              } else {
+                setStoreValue(this[propName]);
+              }
+            });
+          });
+        },
         __childComponents: {},
         __rootBind: {
           ["@tetra:child-component-init"](event) {
@@ -476,6 +548,7 @@
             __destroyInner: destroy,
             __serverMethods: serverMethods,
             __serverProperties: serverProperties,
+            __serverStores: initialData == null ? void 0 : initialData.__serverStores,
             ...initialData || {},
             ...script_rest,
             ...Tetra.makeServerMethods(serverMethods),
@@ -490,6 +563,9 @@
       component.__serverProperties.forEach((key) => {
         data[key] = component[key];
       });
+      if (component.__serverStores) {
+        data["__serverStores"] = component.__serverStores;
+      }
       const r = {
         encrypted: component.__state,
         data,

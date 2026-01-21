@@ -209,6 +209,7 @@ const Tetra = {
         this.$dispatch('tetra:child-component-init', {component:  this});
         // Set component ID attribute on DOM element for targeting
         this.__initServerWatchers();
+        this.__initStores();
 
         // Auto-subscribe if component is reactive
         if (window.__tetra_useWebsockets && this.$el.hasAttribute('tetra-reactive')) {
@@ -496,6 +497,93 @@ const Tetra = {
           }
         })
       },
+      __initStores() {
+        if (!this.__serverStores) return;
+
+        Object.entries(this.__serverStores).forEach(([propName, storePath]) => {
+          const parts = storePath.split('.');
+          const storeName = parts[0];
+          const propertyPath = parts.slice(1);
+
+          // Initialize store if it doesn't exist
+          if (!Alpine.store(storeName)) {
+            Alpine.store(storeName, {});
+          }
+
+          const getStoreValue = () => {
+            let val = Alpine.store(storeName);
+            for (const part of propertyPath) {
+              if (val === undefined || val === null || typeof val !== 'object') return undefined;
+              val = val[part];
+            }
+            return val;
+          };
+
+          const setStoreValue = (value) => {
+            if (propertyPath.length === 0) {
+              if (Alpine.store(storeName) !== value) {
+                Alpine.store(storeName, value);
+              }
+            } else {
+              let obj = Alpine.store(storeName);
+              for (let i = 0; i < propertyPath.length - 1; i++) {
+                const part = propertyPath[i];
+                if (!(part in obj) || typeof obj[part] !== 'object') obj[part] = {};
+                obj = obj[part];
+              }
+              const lastPart = propertyPath[propertyPath.length - 1];
+              if (obj[lastPart] !== value) {
+                obj[lastPart] = value;
+              }
+            }
+          };
+
+          // Track previous store value to detect actual store changes
+          let prevStoreVal = getStoreValue();
+
+          // Two-way sync: Store -> Component
+          Alpine.effect(() => {
+            const storeVal = getStoreValue();
+
+            // Only update component if the STORE value actually changed
+            if (storeVal !== prevStoreVal && storeVal !== undefined) {
+              prevStoreVal = storeVal;
+              if (this[propName] !== storeVal) {
+                this.__isSyncingFromStore = propName;
+                this[propName] = storeVal;
+                this.$nextTick(() => {
+                  if (this.__isSyncingFromStore === propName) {
+                    this.__isSyncingFromStore = null;
+                  }
+                });
+              }
+            }
+          });
+
+          // Two-way sync: Component -> Store
+          this.$watch(propName, (value) => {
+            console.log(`COMP_SYNC: ${propName} value=${value}, __isSyncingFromStore=${this.__isSyncingFromStore}`);
+            if (this.__isSyncingFromStore !== propName) {
+              const currentStoreVal = getStoreValue();
+              if (currentStoreVal !== value) {
+                setStoreValue(value);
+                prevStoreVal = value; // Update tracking after successful store update
+              }
+            }
+          });
+
+          // Initial sync from store if store has value, else from component to store
+          // We use $nextTick for shared stores to let the first component initialize the store.
+          this.$nextTick(() => {
+            const initialStoreVal = getStoreValue();
+            if (initialStoreVal !== undefined) {
+              this[propName] = initialStoreVal;
+            } else {
+              setStoreValue(this[propName]);
+            }
+          });
+        });
+      },
       __childComponents: {},
       __rootBind: {
         ['@tetra:child-component-init'](event) {
@@ -554,6 +642,7 @@ const Tetra = {
             __destroyInner: destroy,
             __serverMethods: serverMethods,
             __serverProperties: serverProperties,
+            __serverStores: initialData?.__serverStores,
             ...(initialData || {}),
             ...script_rest,
             ...Tetra.makeServerMethods(serverMethods),
@@ -569,6 +658,9 @@ const Tetra = {
     component.__serverProperties.forEach((key) => {
       data[key] = component[key]
     })
+    if (component.__serverStores) {
+      data["__serverStores"] = component.__serverStores;
+    }
     const r = {
       encrypted: component.__state,
       data: data,

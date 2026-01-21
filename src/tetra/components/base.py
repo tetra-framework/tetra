@@ -569,6 +569,7 @@ class Public(metaclass=PublicMeta):
         self._throttle_trailing = None
         self._throttle_leading = None
         self._event_subscriptions: list[str] = []
+        self._store_name = None
         self.obj = None
         self.__call__(obj)
 
@@ -599,6 +600,7 @@ class Public(metaclass=PublicMeta):
                 if obj._event_subscriptions
                 else self._event_subscriptions
             )
+            self._store_name = obj._store_name if obj._store_name else self._store_name
             self.obj = obj.obj if obj.obj else self.obj
 
         elif isinstance(obj, FunctionType):
@@ -658,6 +660,11 @@ class Public(metaclass=PublicMeta):
         self._event_subscriptions.append(event)
         return self
 
+    def do_store(self, store_name: str) -> Self:
+        """Syncs the property with an Alpine.js store."""
+        self._store_name = store_name
+        return self
+
 
 public = Public
 
@@ -681,6 +688,11 @@ class ComponentMetaClass(BasicComponentMetaClass):
                 if hasattr(base, "_public_properties")
             )
         )
+        public_stores: dict[str, str] = {}
+        for base in bases:
+            if hasattr(base, "_public_stores"):
+                public_stores.update(base._public_stores)
+
         for attr_name, attr_value in attrs.items():
 
             if isinstance(attr_value, Public):
@@ -719,9 +731,13 @@ class ComponentMetaClass(BasicComponentMetaClass):
                     public_methods.append(pub_met)
                 else:
                     public_properties.append(attr_name)
+                    if attr_value._store_name:
+                        public_stores[attr_name] = attr_value._store_name
+
         newcls = super().__new__(mcls, name, bases, attrs)
         newcls._public_methods = public_methods
         newcls._public_properties = public_properties
+        newcls._public_stores = public_stores
         # Reset registration info inherited from base classes
         if "_library" in attrs:
             newcls._library = attrs["_library"]
@@ -1088,6 +1104,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         """
         data = self._data()
         data["__state"] = self._encoded_state()
+        if hasattr(self, "_public_stores") and self._public_stores:
+            data["__serverStores"] = self._public_stores
         return data
 
     def _add_self_attrs_to_context(self, context) -> None:

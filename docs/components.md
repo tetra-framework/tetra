@@ -119,6 +119,28 @@ When the `.watch` decorator is applied, the method receives three parameters:
 * `old_value`: The old value of the attribute before the change. You can make comparisons here.
 * `attr`: The name of the attribute. This is needed if the method is watching more than one attribute.
 
+### .store
+
+Public attributes can be synced with an Alpine.js global store using `.store("storeName.propertyName")`. This allows multiple components to share the same data via a global store, while still having access to it on the server.
+
+``` python
+class MyComponent(Component):
+    # This property is automatically synced with Alpine.store('settings').theme
+    theme = public("light").store("settings.theme")
+
+    @public
+    def toggle_theme(self):
+        self.theme = "dark" if self.theme == "light" else "light"
+
+class OtherComponent(Component):
+    official_theme = public("light").store("settings.theme")
+```
+
+The synchronization is bidirectional:
+*   Changing `self.theme` on the server (during a public method call) will update the Alpine store in the browser.
+*   Changing `Alpine.store('settings').theme` in JavaScript will update the component's `theme` attribute in the browser, which will be sent to the server on the next public method call.
+*   If the store or the property within the store doesn't exist, Tetra will initialize it.
+
 ### .listen
 
 Add this if the method should be subscribed to a JavaScript event which is fired in the component (or one of its children and bubbles up).
