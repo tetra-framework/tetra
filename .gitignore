@@ -4,6 +4,7 @@ Thumbs.db
 
 # Tetra
 __tetracache__/
+src/tetra/bin
 
 # PYTHON:
 # Byte-compiled / optimized / DLL files
