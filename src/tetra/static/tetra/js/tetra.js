@@ -474,7 +474,6 @@
               }
             });
             this.$watch(propName, (value) => {
-              console.log(`COMP_SYNC: ${propName} value=${value}, __isSyncingFromStore=${this.__isSyncingFromStore}`);
               if (this.__isSyncingFromStore !== propName) {
                 const currentStoreVal = getStoreValue();
                 if (currentStoreVal !== value) {
@@ -483,14 +482,14 @@
                 }
               }
             });
-            this.$nextTick(() => {
-              const initialStoreVal = getStoreValue();
-              if (initialStoreVal !== void 0) {
-                this[propName] = initialStoreVal;
-              } else {
-                setStoreValue(this[propName]);
-              }
-            });
+            const initialStoreVal = getStoreValue();
+            if (initialStoreVal !== void 0) {
+              this[propName] = initialStoreVal;
+              prevStoreVal = initialStoreVal;
+            } else {
+              setStoreValue(this[propName]);
+              prevStoreVal = this[propName];
+            }
           });
         },
         __childComponents: {},

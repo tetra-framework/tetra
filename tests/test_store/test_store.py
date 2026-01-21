@@ -8,7 +8,7 @@ ui = Library("ui", "main")
 @ui.register
 class StoreComponent(Component):
     # theme is synced with Alpine.store('settings').theme
-    theme = public("light").store("settings.theme")
+    theme = public("light").store("settings")
 
     @public
     def toggle_theme(self):
@@ -83,7 +83,8 @@ def test_store_sync_frontend_to_backend(component_locator, page: Page):
 
 @ui.register
 class NestedStoreComponent(Component):
-    val = public("orig").store("myapp.settings.nested.value")
+    # Using explicit nested path - property name must match attribute name
+    val = public("orig").store("myapp.settings.nested.val")
 
     @public
     def set_val(self, new_val):
@@ -105,25 +106,25 @@ def test_nested_store_sync(component_locator, page: Page):
 
     # Initial state
     page.wait_for_timeout(1000)
-    assert page.evaluate("Alpine.store('myapp').settings.nested.value") == "orig"
+    assert page.evaluate("Alpine.store('myapp').settings.nested.val") == "orig"
 
     component.locator("#set-btn").click()
 
     # Wait for update
     page.wait_for_timeout(1000)
-    assert page.evaluate("Alpine.store('myapp').settings.nested.value") == "new-val"
+    assert page.evaluate("Alpine.store('myapp').settings.nested.val") == "new-val"
 
 
 @ui.register
 class MultiComponentStoreA(Component):
-    val = public("initialA").store("shared.val")
+    val = public("initialA").store("shared")
     # language=html
     template = '<div id="compA" x-text="val"></div>'
 
 
 @ui.register
 class MultiComponentStoreB(Component):
-    val = public("initialB").store("shared.val")
+    val = public("initialB").store("shared")
     # language=html
     template = '<div id="compB" x-text="val"></div>'
 
@@ -157,3 +158,92 @@ def test_multi_component_store_init(page: Page, live_server):
     # compB inits -> initialStoreVal is "initialA" -> compB.val = "initialA"
     # So "initialA" should win.
     assert storeVal == "initialA"
+
+
+@ui.register
+class ExplicitPathComponent(Component):
+    """Test that explicit full paths still work for backward compatibility."""
+
+    setting = public("explicit").store("config.setting")
+    # language=html
+    template = '<div id="explicit-comp" x-text="setting"></div>'
+
+
+@pytest.mark.playwright
+def test_explicit_store_path(component_locator, page: Page):
+    """Test that the explicit full path syntax still works."""
+
+    component = component_locator(ExplicitPathComponent)
+
+    page.wait_for_timeout(1000)
+
+    # Check component and store are synced
+    assert (
+        page.evaluate("Alpine.$data(document.querySelector('#explicit-comp')).setting")
+        == "explicit"
+    )
+    assert page.evaluate("Alpine.store('config').setting") == "explicit"
+
+
+@ui.register
+class ExplicitLongPathComponent(Component):
+    """Component with full long store paths."""
+
+    baz = public("light").store("foo.bar.baz")
+    theme_enabled = public(True).store("app.config.theme.enabled")
+
+    template = '<div id="explicit-long-path"></div>'
+
+
+@pytest.mark.playwright
+def test_explicit_long_store_path(component_locator, page: Page):
+    """Test that the explicit full path syntax still works with longer paths."""
+
+    component = component_locator(ExplicitLongPathComponent)
+
+    page.wait_for_timeout(1000)
+
+    # Check component and store are synced
+    assert (
+        page.evaluate("Alpine.$data(document.querySelector('#explicit-long-path')).baz")
+        == "light"
+    )
+    assert page.evaluate("Alpine.store('app').config.theme") == {"enabled": True}
+    assert page.evaluate("Alpine.store('app').config.theme.enabled") == True
+@ui.register
+class InitValueComponent1(Component):
+    """Test that explicit full paths still work for backward compatibility."""
+
+    setting = public("first init value").store("init_value_order")
+    # language=html
+    template = '<div id="explicit-comp" x-text="setting"></div>'
+
+
+@ui.register
+class InitValueComponent2(Component):
+    """Test that explicit full paths still work for backward compatibility."""
+
+    setting = public("second init value").store("init_value_order")
+    # language=html
+    template = '<div id="explicit-comp" x-text="setting"></div>'
+
+
+@pytest.mark.playwright
+def test_init_value_order(page: Page, live_server):
+    """Test that the init value order is preserved - first component's value should win."""
+    from django.urls import reverse
+
+    # Render both components on the same page, in order
+    component_tag = "{% ui.InitValueComponent1 / %}{% ui.InitValueComponent2 / %}"
+
+    page.goto(
+        live_server.url
+        + reverse("render_component_view")
+        + f"?component_tag={component_tag}"
+    )
+
+    page.wait_for_timeout(1000)
+
+    # The first component to initialize should set the store value
+    # and the second component should adopt that value
+    assert page.evaluate("Alpine.store('init_value_order').setting") == "first init value"

@@ -562,7 +562,6 @@ const Tetra = {
 
           // Two-way sync: Component -> Store
           this.$watch(propName, (value) => {
-            console.log(`COMP_SYNC: ${propName} value=${value}, __isSyncingFromStore=${this.__isSyncingFromStore}`);
             if (this.__isSyncingFromStore !== propName) {
               const currentStoreVal = getStoreValue();
               if (currentStoreVal !== value) {
@@ -572,16 +571,19 @@ const Tetra = {
             }
           });
 
-          // Initial sync from store if store has value, else from component to store
-          // We use $nextTick for shared stores to let the first component initialize the store.
-          this.$nextTick(() => {
-            const initialStoreVal = getStoreValue();
-            if (initialStoreVal !== undefined) {
-              this[propName] = initialStoreVal;
-            } else {
-              setStoreValue(this[propName]);
-            }
-          });
+          // Initial sync: Check if store already has a value
+          const initialStoreVal = getStoreValue();
+          if (initialStoreVal !== undefined) {
+            // Store already has a value (set by another component)
+            // Update component to match the store immediately
+            this[propName] = initialStoreVal;
+            prevStoreVal = initialStoreVal;
+          } else {
+            // Store doesn't have a value yet
+            // Initialize it with this component's value
+            setStoreValue(this[propName]);
+            prevStoreVal = this[propName];
+          }
         });
       },
       __childComponents: {},

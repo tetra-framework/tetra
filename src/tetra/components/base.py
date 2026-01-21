@@ -732,7 +732,22 @@ class ComponentMetaClass(BasicComponentMetaClass):
                 else:
                     public_properties.append(attr_name)
                     if attr_value._store_name:
-                        public_stores[attr_name] = attr_value._store_name
+                        store_path = attr_value._store_name
+                        # If store path doesn't include property path, append attribute name
+                        if "." not in store_path:
+                            store_path = f"{store_path}.{attr_name}"
+                        # else:
+                        #     # If explicit dotted path is provided, validate that the property name matches
+                        #     parts = store_path.split('.')
+                        #     property_name = parts[-1]
+                        #     if property_name != attr_name:
+                        #         raise AttributeError(
+                        #             f"Store property name '{property_name}' in .store('{store_path}') "
+                        #             f"does not match attribute name '{attr_name}'. "
+                        #             f"Either use .store('{'.'.join(parts[:-1])}') to auto-infer the property name, "
+                        #             f"or use .store('{'.'.join(parts[:-1])}.{attr_name}') to match the attribute name."
+                        #         )
+                        public_stores[attr_name] = store_path
 
         newcls = super().__new__(mcls, name, bases, attrs)
         newcls._public_methods = public_methods
