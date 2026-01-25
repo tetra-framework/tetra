@@ -142,8 +142,9 @@ class Library:
                         pass
                 else:
                     logger.warning(
-                        f"Component class {component_cls.__name__} is already "
-                        f"registered to library {cls._library}."
+                        f"The app {self.app} is trying to register the "
+                        f"'{component_cls.__name__}' component, which is already "
+                        f"registered to library {cls._library}. "
                         f"Ignoring second registration."
                     )
                     return cls
