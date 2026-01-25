@@ -12,6 +12,13 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3] - 2026-01-21
+### Fixed
+- Another fix (try?) for file upload vulnerabilities: don't include uploaded file names to form.data when invalid form is rendered. This one is tricky.
+
+## [0.7.2] - 2026-01-20
+Fixed: improve file handling security and add tests for file upload vulnerabilities
+
 ## [0.7.1] - 2026-01-14
 ### Added
 - Incremental build support for libraries. Tetra now detects changes in component source files (Python, JS, and CSS) and skips `esbuild` if no changes are detected.
