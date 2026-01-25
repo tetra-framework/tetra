@@ -1384,10 +1384,24 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
 
     def get_form_kwargs(self):
         """Return the keyword arguments for instantiating the form."""
+        # Exclude file fields from data dict to prevent file information leaking
+        # into rendered HTML. File fields should only be in the files dict.
+        # We check the form's base_fields to identify which fields are FileFields.
+        file_field_names = {
+            name
+            for name, field in self.form_class.base_fields.items()
+            if isinstance(field, FileField)
+        }
+        # TODO: better include this directly into ._data()?
+        data = {
+            key: value
+            for key, value in self._data().items()
+            if key not in file_field_names
+        }
         kwargs = {
             # "initial": self.get_form_initial(), # TODO?
             # "prefix": self.get_prefix(), # TODO?
-            "data": self._data(),
+            "data": data,
             "files": self._temp_files,
         }
         return kwargs
