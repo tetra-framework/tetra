@@ -4,7 +4,7 @@ import importlib
 import os
 from datetime import datetime, date, time
 from decimal import Decimal
-from warnings import deprecated
+import warnings
 
 from copy import copy
 from typing import Optional, Self, Any
@@ -648,9 +648,12 @@ class Public(metaclass=PublicMeta):
         self._throttle_leading = leading
         return self
 
-    @deprecated("@public.subscribe is deprecated. Use @public.listen instead.")
     def do_subscribe(self, event) -> Self:
         """Deprecated. Use do_listen instead."""
+        warnings.warn(
+            "@public.subscribe is deprecated. Use @public.listen instead.",
+            DeprecationWarning,
+        )
         return self.do_listen(event)
 
     def do_listen(self, event) -> Self:
