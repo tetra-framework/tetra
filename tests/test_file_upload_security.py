@@ -78,7 +78,6 @@ def test_reproduce_file_leak():
     # Check if it renders the filename in the form
     rendered = resumed_comp.render()
     assert "user_a_private.txt" not in rendered
-    print("\nSUCCESS: User B CANNOT see User A's file name anymore!")
 
 
 @pytest.mark.django_db
