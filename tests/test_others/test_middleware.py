@@ -1,13 +1,26 @@
-from django.http import HttpRequest, QueryDict
+from django.http import HttpRequest, QueryDict, HttpResponse
 from django.test import RequestFactory
-from tetra.middleware import TetraDetails
+from django.contrib.messages import add_message, constants
+from django.contrib.sessions.middleware import SessionMiddleware
+from tetra.middleware import TetraDetails, TetraMiddleware
+from tetra import Library
+from tetra.components.base import Component
+from unittest.mock import Mock, patch
 
 import pytest
+import json
 
 
 @pytest.fixture
 def request_factory():
     return RequestFactory()
+
+
+@pytest.fixture
+def middleware():
+    """Create a TetraMiddleware instance with a mock get_response"""
+    get_response = Mock(return_value=HttpResponse("<html><body>test</body></html>"))
+    return TetraMiddleware(get_response)
 
 
 def test_tetra_details_bool_false(request_factory):
@@ -134,3 +147,182 @@ def test_add_query(request_factory):
         tetra_details.current_url
         == "http://testserver/test/?foo=bar&baz=qux&another=qui"
     )
+
+
+# Tests for middleware efficiency optimization
+
+
+def test_middleware_fast_path_without_tetra_components(request_factory):
+    """Non-Tetra requests should use fast path and skip CSRF token generation"""
+    request = request_factory.get("/")
+    response = HttpResponse("<html><body>test</body></html>", content_type="text/html")
+
+    get_response = Mock(return_value=response)
+    middleware = TetraMiddleware(get_response)
+
+    with patch("tetra.middleware.get_token") as mock_get_token:
+        result = middleware(request)
+
+        # get_token should NOT be called for non-Tetra requests
+        mock_get_token.assert_not_called()
+        assert result == response
+
+
+def test_middleware_full_path_with_tetra_components(request_factory):
+    """Tetra requests should use full path and generate CSRF token"""
+    request = request_factory.get("/")
+    response = HttpResponse(
+        "<html><head><!-- tetra scripts placeholder123 --><!-- tetra styles placeholder456 --></head><body>test</body></html>",
+        content_type="text/html"
+    )
+
+    # Simulate that Tetra components were used
+    request.tetra_components_used = {Mock()}
+    request.tetra_scripts_placeholder_string = b"<!-- tetra scripts placeholder123 -->"
+    request.tetra_scripts_placeholder_include_alpine = False
+    request.tetra_styles_placeholder_string = b"<!-- tetra styles placeholder456 -->"
+
+    get_response = Mock(return_value=response)
+    middleware = TetraMiddleware(get_response)
+
+    with patch("tetra.middleware.get_token", return_value="test-csrf-token"):
+        with patch("tetra.middleware.render_scripts", return_value="<script>mocked</script>"):
+            with patch("tetra.middleware.render_styles", return_value="<style>mocked</style>"):
+                result = middleware(request)
+
+                # Result should be processed response
+                assert result is not None
+                assert isinstance(result, HttpResponse)
+
+
+@pytest.mark.django_db
+def test_middleware_messages_processed_on_fast_path(request_factory):
+    """Messages should be processed even on fast path (non-Tetra requests)"""
+    from django.contrib.messages.middleware import MessageMiddleware
+
+    request = request_factory.get("/")
+
+    # Add session and message support
+    session_middleware = SessionMiddleware(lambda r: None)
+    session_middleware.process_request(request)
+    request.session.save()
+
+    message_middleware = MessageMiddleware(lambda r: None)
+    message_middleware.process_request(request)
+
+    # Add a message
+    add_message(request, constants.INFO, "Test message")
+
+    response = HttpResponse("<html><body>test</body></html>", content_type="text/html")
+    get_response = Mock(return_value=response)
+    middleware = TetraMiddleware(get_response)
+
+    result = middleware(request)
+
+    # Check that T-Messages header was added
+    assert "T-Messages" in result.headers
+    messages = json.loads(result.headers["T-Messages"])
+    assert len(messages) == 1
+    assert messages[0]["message"] == "Test message"
+
+
+@pytest.mark.django_db
+def test_middleware_messages_have_uid(request_factory):
+    """Messages should have UIDs attached on both fast and full paths"""
+    from django.contrib.messages.middleware import MessageMiddleware
+
+    request = request_factory.get("/")
+
+    # Add session and message support
+    session_middleware = SessionMiddleware(lambda r: None)
+    session_middleware.process_request(request)
+    request.session.save()
+
+    message_middleware = MessageMiddleware(lambda r: None)
+    message_middleware.process_request(request)
+
+    # Add messages
+    add_message(request, constants.INFO, "Message 1")
+    add_message(request, constants.WARNING, "Message 2")
+
+    response = HttpResponse("<html><body>test</body></html>", content_type="text/html")
+    get_response = Mock(return_value=response)
+    middleware = TetraMiddleware(get_response)
+
+    result = middleware(request)
+
+    # Check messages have UIDs
+    messages = json.loads(result.headers["T-Messages"])
+    assert len(messages) == 2
+    assert "uid" in messages[0]
+    assert "uid" in messages[1]
+    assert messages[0]["uid"] != messages[1]["uid"]
+
+
+def test_middleware_skips_file_response(request_factory):
+    """FileResponse should be returned immediately without processing"""
+    from django.http import FileResponse
+    import io
+
+    request = request_factory.get("/")
+    file_content = io.BytesIO(b"file content")
+    response = FileResponse(file_content)
+
+    get_response = Mock(return_value=response)
+    middleware = TetraMiddleware(get_response)
+
+    result = middleware(request)
+
+    # Should return the FileResponse as-is
+    assert result == response
+    assert not hasattr(result, "headers") or "T-Messages" not in result.headers
+
+
+def test_middleware_creates_tetra_details_on_every_request(request_factory):
+    """TetraDetails should be created on every request (lightweight operation)"""
+    request = request_factory.get("/")
+    response = HttpResponse("<html><body>test</body></html>")
+
+    get_response = Mock(return_value=response)
+    middleware = TetraMiddleware(get_response)
+
+    middleware(request)
+
+    # TetraDetails should be attached to request
+    assert hasattr(request, "tetra")
+    assert isinstance(request.tetra, TetraDetails)
+
+
+def test_middleware_fast_path_skips_content_manipulation(request_factory):
+    """Fast path should not search for placeholder strings"""
+    request = request_factory.get("/")
+    original_content = b"<html><body>test</body></html>"
+    response = HttpResponse(original_content, content_type="text/html")
+
+    get_response = Mock(return_value=response)
+    middleware = TetraMiddleware(get_response)
+
+    result = middleware(request)
+
+    # Content should remain unchanged
+    assert result.content == original_content
+
+
+@pytest.mark.django_db
+def test_middleware_no_messages_no_header(request_factory):
+    """If there are no messages, T-Messages header should not be added"""
+    request = request_factory.get("/")
+
+    # Add session support but don't add any messages
+    session_middleware = SessionMiddleware(lambda r: None)
+    session_middleware.process_request(request)
+    request.session.save()
+
+    response = HttpResponse("<html><body>test</body></html>")
+    get_response = Mock(return_value=response)
+    middleware = TetraMiddleware(get_response)
+
+    result = middleware(request)
+
+    # T-Messages header should not be present
+    assert "T-Messages" not in result.headers

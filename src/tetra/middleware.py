@@ -185,24 +185,53 @@ class TetraMiddleware:
             return self._sync_call(request)
 
     async def __acall__(self, request):
-        csrf_token = get_token(request)
+        # Lightweight initialization - only create TetraDetails
         request.tetra = TetraDetails(request)
-        # Add WebSocket availability to request
         request.tetra._websockets_available = self._websocket_available
 
         response = await self.get_response(request)
-        return self._process_response(request, response, csrf_token)
+
+        # Only do expensive processing if Tetra components were actually used
+        if hasattr(request, "tetra_components_used") and request.tetra_components_used:
+            csrf_token = get_token(request)
+            return self._process_response(request, response, csrf_token)
+
+        # Fast path for non-Tetra requests - only handle messages
+        return self._process_messages_only(request, response)
 
     def _sync_call(self, request):
-        csrf_token = get_token(request)
+        # Lightweight initialization - only create TetraDetails
         request.tetra = TetraDetails(request)
-        # Add WebSocket availability to request
         request.tetra._websockets_available = self._websocket_available
 
         response = self.get_response(request)
-        return self._process_response(request, response, csrf_token)
+
+        # Only do expensive processing if Tetra components were actually used
+        if hasattr(request, "tetra_components_used") and request.tetra_components_used:
+            csrf_token = get_token(request)
+            return self._process_response(request, response, csrf_token)
+
+        # Fast path for non-Tetra requests - only handle messages
+        return self._process_messages_only(request, response)
+
+    def _process_messages_only(self, request, response):
+        """Fast path for non-Tetra requests - only process Django messages."""
+        if isinstance(response, FileResponse):
+            return response
+
+        messages: list[Message] = []
+        for message in get_messages(request):
+            if not hasattr(message, "uid"):
+                message.uid = str(uuid.uuid4())
+            messages.append(message)
+
+        if messages:
+            response.headers["T-Messages"] = json.dumps(messages, cls=TetraJSONEncoder)
+
+        return response
 
     def _process_response(self, request, response, csrf_token):
+        """Full processing for Tetra requests - includes script/style injection."""
         messages: list[Message] = []
 
         if isinstance(response, FileResponse):

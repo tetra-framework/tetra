@@ -12,6 +12,11 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-01-26
+### Changed
+- Enhanced middleware efficiency by implementing a fast path for non-Tetra requests, including tests.
+- BasicComponents now don't use a Metaclass anymore, but `__init_subclass__()`
+
 ## [0.7.3] - 2026-01-25
 ### Fixed
 - Another fix (try?) for file upload vulnerabilities: don't include uploaded file names to form.data when invalid form is rendered. This one is tricky.
