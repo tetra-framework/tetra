@@ -2,9 +2,8 @@ import pytest
 from django.apps import apps
 from tetra.component_register import find_component_libraries
 from tetra.library import Library
-from tetra.components.base import BasicComponentMetaClass
+from tetra.components.base import BasicComponent
 import tetra.state
-from tetra import BasicComponent
 
 
 def test_interdependent_components_manual_simulation():
@@ -12,14 +11,11 @@ def test_interdependent_components_manual_simulation():
     Simulates the interdependent component loading without re-scanning the whole project.
     We define classes inside the test to ensure they are defined while loading_libraries=True.
     """
-    import tetra.state
-    from tetra import Library, BasicComponent
-    from tetra.components.base import BasicComponentMetaClass
 
     # Save original state
     orig_loading = tetra.state.loading_libraries
-    orig_to_compile = BasicComponentMetaClass._to_compile
-    BasicComponentMetaClass._to_compile = []
+    orig_to_compile = BasicComponent._to_compile
+    BasicComponent._to_compile = []
 
     try:
         tetra.state.loading_libraries = True
@@ -45,14 +41,14 @@ def test_interdependent_components_manual_simulation():
         test_lib.register(SimulationChild)
 
         # Both should be in _to_compile and NOT have _template yet
-        assert SimulationChild in BasicComponentMetaClass._to_compile
-        assert SimulationParent in BasicComponentMetaClass._to_compile
+        assert SimulationChild in BasicComponent._to_compile
+        assert SimulationParent in BasicComponent._to_compile
         assert not hasattr(SimulationChild, "_template")
         assert not hasattr(SimulationParent, "_template")
 
         # Now finalize loading
         tetra.state.loading_libraries = False
-        BasicComponentMetaClass.compile_all_templates()
+        BasicComponent._compile_all_templates()
 
         # Now they should have templates
         assert hasattr(SimulationChild, "_template")
@@ -82,7 +78,7 @@ def test_interdependent_components_manual_simulation():
     finally:
         # Restore original state
         tetra.state.loading_libraries = orig_loading
-        BasicComponentMetaClass._to_compile = orig_to_compile
+        BasicComponent._to_compile = orig_to_compile
         # Clean up the library from registry to avoid side effects
         if "main" in Library.registry and "test_simulation" in Library.registry["main"]:
             del Library.registry["main"]["test_simulation"]

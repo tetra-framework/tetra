@@ -12,7 +12,7 @@ from django.templatetags.static import static
 from django.utils.functional import cached_property
 
 from .conf import get_setting, get_esbuild_path
-from .components.base import BasicComponentMetaClass, ComponentMetaClass
+from .components.base import ComponentMetaClass, BasicComponent, Component
 from .exceptions import LibraryError
 from .utils import camel_case_to_underscore
 
@@ -47,9 +47,7 @@ class Library:
 
         # Initialize only if this is a new instance
         if not hasattr(self, "components"):
-            self.components: dict[str, BasicComponentMetaClass | ComponentMetaClass] = (
-                {}
-            )
+            self.components: dict[str, type[BasicComponent] | ComponentMetaClass] = {}
             self.name = name
             self.path = path
             self.app: AppConfig = app
@@ -113,14 +111,14 @@ class Library:
 
     def register(
         self,
-        component_cls: BasicComponentMetaClass | ComponentMetaClass,
+        component_cls: type[BasicComponent] | type[Component],
         name: str | None = None,
     ):
         if not name:
             name = component_cls.__name__
         underscore_name = camel_case_to_underscore(name)
 
-        def dec(cls: BasicComponentMetaClass):
+        def dec(cls: type[BasicComponent]):
             if hasattr(cls, "_library") and cls._library:
                 if cls._library is not self:
                     # If this is a subclass of an already registered component,

@@ -10,7 +10,7 @@ from django.contrib.sessions.backends.cache import SessionStore
 from playwright.sync_api import Page
 
 from tetra import Library
-from tetra.components.base import BasicComponentMetaClass
+from tetra.components.base import BasicComponent
 from tetra.middleware import TetraDetails
 
 # These pytest fixtures may be usable in apps that use Tetra, so they are provided in a
@@ -125,7 +125,7 @@ def component_render(client):
     """Fixture that renders a component class for testing"""
     test_ui = Library("test_ui", "main")
 
-    def _component_render(component_cls: BasicComponentMetaClass, **kwargs):
+    def _component_render(component_cls: type[BasicComponent], **kwargs):
         if not hasattr(component_cls, "_library") or component_cls._library is None:
             component_cls = test_ui.register(component_cls)
             test_ui.build()

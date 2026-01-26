@@ -151,9 +151,8 @@ def find_component_libraries():
 
     state.find_libraries_done = True
     state.loading_libraries = False
-    from .components.base import BasicComponentMetaClass
 
-    BasicComponentMetaClass.compile_all_templates()
+    BasicComponent._compile_all_templates()
 
 
 def resolve_component(context, name: str) -> Component:

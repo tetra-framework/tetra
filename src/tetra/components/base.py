@@ -219,33 +219,6 @@ def make_template(cls) -> Template:
     return template
 
 
-class BasicComponentMetaClass(type):
-    _library = None
-    _app = None
-    _name = None
-    _to_compile = []
-
-    def __new__(mcls, name, bases, attrs):
-        from tetra.state import loading_libraries
-
-        newcls = super().__new__(mcls, name, bases, attrs)
-        mcls._name = camel_case_to_underscore(newcls.__name__)
-        if "__abstract__" not in attrs or attrs["__abstract__"] is False:
-            if loading_libraries:
-                # postpone template compiling to time when all libraries are loaded
-                mcls._to_compile.append(newcls)
-            else:
-                newcls._template = make_template(newcls)
-        return newcls
-
-    @classmethod
-    def compile_all_templates(mcls):
-        while mcls._to_compile:
-            cls = mcls._to_compile.pop(0)
-            if not hasattr(cls, "_template"):
-                cls._template = make_template(cls)
-
-
 class RenderDataMode(Enum):
     """The mode how to render the component's data."""
 
@@ -254,13 +227,30 @@ class RenderDataMode(Enum):
     UPDATE = 2  # update component data with new data from server
 
 
-class BasicComponent(metaclass=BasicComponentMetaClass):
+class BasicComponent:
     __abstract__ = True
     style: str = ""
     component_id: Optional[str] = None
     _is_resumed_from_state = False
     _is_directory_component: bool = False
     _template: Template
+    _to_compile = []
+    _name = None
+    _library = None
+    _app = None
+
+    def __init_subclass__(cls, **kwargs):
+        from tetra.state import loading_libraries
+
+        super().__init_subclass__(**kwargs)
+        cls._name = camel_case_to_underscore(cls.__name__)
+
+        if "__abstract__" not in cls.__dict__ or cls.__dict__["__abstract__"] is False:
+            if loading_libraries:
+                # postpone template compiling to time when all libraries are loaded
+                cls._to_compile.append(cls)
+            else:
+                cls._template = make_template(cls)
 
     def __init__(
         self,
@@ -284,6 +274,13 @@ class BasicComponent(metaclass=BasicComponentMetaClass):
         #  page reloading - test this for channels/long-lasting websocket connections
         self.component_id = self.get_component_id()
         self._call_load(*args, **kwargs)
+
+    @classmethod
+    def _compile_all_templates(mcls):
+        while mcls._to_compile:
+            cls = mcls._to_compile.pop(0)
+            if not hasattr(cls, "_template"):
+                cls._template = make_template(cls)
 
     def get_component_id(self) -> str:
         """Creates a unique, reproducible, session-persistent component id.
@@ -668,8 +665,8 @@ public = Public
 tracing_component_load = WeakKeyDictionary()
 
 
-class ComponentMetaClass(BasicComponentMetaClass):
-    def __new__(mcls, name, bases, attrs) -> BasicComponentMetaClass:
+class ComponentMetaClass(type):
+    def __new__(mcls, name, bases, attrs):
         public_methods: list[dict[str, Any]] = list(
             itertools.chain.from_iterable(
                 base._public_methods
