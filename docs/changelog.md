@@ -12,6 +12,10 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - unreleased
+### Changed
+- delegate rendering of components to  `BaseRenderer` and `ComponentRenderer` classes
+
 ## [0.8.0] - 2026-01-26
 ### Changed
 - Enhanced middleware efficiency by implementing a fast path for non-Tetra requests, including tests.

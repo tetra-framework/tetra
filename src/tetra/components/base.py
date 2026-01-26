@@ -227,6 +227,93 @@ class RenderDataMode(Enum):
     UPDATE = 2  # update component data with new data from server
 
 
+class BaseRenderer:
+    def __init__(self, component: "BasicComponent"):
+        self.component = component
+
+    def render(self, **kwargs) -> SafeString:
+        self.component.recalculate_attrs(component_method_finished=True)
+        context = self.component.get_context_data()
+
+        with context.render_context.push_state(
+            self.component._template, isolated_context=True
+        ):
+            if self.component._slots:
+                if BLOCK_CONTEXT_KEY not in context.render_context:
+                    context.render_context[BLOCK_CONTEXT_KEY] = BlockContext()
+                block_context = context.render_context[BLOCK_CONTEXT_KEY]
+                block_context.add_blocks(self.component._slots)
+
+            if context.template is None:
+                with context.bind_template(self.component._template):
+                    html = self.component._template._render(context)
+            else:
+                html = self.component._template._render(context)
+
+        return mark_safe(html)
+
+
+class ComponentRenderer(BaseRenderer):
+    def render(self, mode=RenderDataMode.INIT, **kwargs) -> SafeString:
+        if hasattr(thread_local, "_tetra_render_mode"):
+            mode = thread_local._tetra_render_mode
+            set_thread_local = False
+        else:
+            thread_local._tetra_render_mode = mode
+            set_thread_local = True
+
+        html = super().render(**kwargs)
+
+        if set_thread_local:
+            del thread_local._tetra_render_mode
+
+        tag_name = re.match(r"^\s*(<!--.*-->)?\s*<\w+", html)
+        if not tag_name:
+            if not re.match(r"^\s*{%\s*extends", self.component._template.source):
+                raise ComponentError(
+                    f"Error in {self.component.__class__.__name__}: The component's template is "
+                    "not enclosed in HTML tags."
+                )
+            tag_name = re.search(r"<\w+", html)
+            if not tag_name:
+                raise ComponentError(
+                    f"Error in {self.component.__class__.__name__}: The component's rendered "
+                    "template is not enclosed in HTML tags."
+                )
+
+        tag_name_end = tag_name.end(0)
+        extra_tags = self.component.get_extra_tags()
+
+        if self.component.key:
+            extra_tags.update({"key": self.component.key})
+
+        if mode == RenderDataMode.UPDATE and self.component._is_resumed_from_state:
+            data_json = escape(to_json(self.component._render_data()))
+            old_data_json = escape(to_json(self.component._resumed_from_state_data))
+            extra_tags.update({"x-data": ""})
+            extra_tags.update({"x-data-update": data_json})
+            extra_tags.update({"x-data-update-old": old_data_json})
+        elif mode == RenderDataMode.MAINTAIN:
+            extra_tags.update({"x-data": ""})
+            extra_tags.update({"x-data-maintain": ""})
+        else:
+            data_json = escapejs(to_json(self.component._render_data()))
+            extra_tags.update(
+                {"x-data": f"{self.component.full_component_name()}('{data_json}')"}
+            )
+
+        for method_data in self.component._public_methods:
+            if "event_subscriptions" in method_data:
+                for event in method_data["event_subscriptions"]:
+                    extra_tags.update(
+                        {f"@{event}": f'{method_data["name"]}($event.detail)'}
+                    )
+
+        tags_strings = [f"{key}=\"{value or ''}\"" for key, value in extra_tags.items()]
+        html = f'{html[:tag_name_end]} {" ".join(tags_strings)} {html[tag_name_end:]}'
+        return mark_safe(html)
+
+
 class BasicComponent:
     __abstract__ = True
     style: str = ""
@@ -270,6 +357,7 @@ class BasicComponent:
         self.attrs = _attrs or {}
         self._context = _context or {}
         self._slots = _slots
+        self.renderer = BaseRenderer(self)
         # FIXME: it could lead to mismatching component ids if it is recreated after
         #  page reloading - test this for channels/long-lasting websocket connections
         self.component_id = self.get_component_id()
@@ -479,24 +567,8 @@ class BasicComponent:
         context.update(kwargs)
         return context
 
-    def render(self) -> SafeString:
-        self.recalculate_attrs(component_method_finished=True)
-        context = self.get_context_data()
-
-        with context.render_context.push_state(self._template, isolated_context=True):
-            if self._slots:
-                if BLOCK_CONTEXT_KEY not in context.render_context:
-                    context.render_context[BLOCK_CONTEXT_KEY] = BlockContext()
-                block_context = context.render_context[BLOCK_CONTEXT_KEY]
-                block_context.add_blocks(self._slots)
-
-            if context.template is None:
-                with context.bind_template(self._template):
-                    html = self._template._render(context)
-            else:
-                html = self._template._render(context)
-
-        return mark_safe(html)
+    def render(self, **kwargs) -> SafeString:
+        return self.renderer.render(**kwargs)
 
     def recalculate_attrs(self, component_method_finished: bool):
         """Hook for code that should be run before and after user interactions with
@@ -763,6 +835,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     def __init__(self, _request, key=None, *args, **kwargs) -> None:
         super().__init__(_request, *args, **kwargs)
         self.key = key if key is not None else self.full_component_name()
+        self.renderer = ComponentRenderer(self)
 
     @classmethod
     def from_state(
@@ -856,6 +929,12 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             component._load_args = args
         if kwargs:
             component._load_kwargs = kwargs
+
+        if isinstance(component, Component):
+            component.renderer = ComponentRenderer(component)
+        else:
+            component.renderer = BaseRenderer(component)
+
         component._recall_load()
 
         # get data from client and populate component attributes with it
@@ -1072,6 +1151,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
+        if "renderer" in state:
+            del state["renderer"]
         for key in (
             self._excluded_props_from_saved_state
             + self._excluded_load_props_from_saved_state
@@ -1098,7 +1179,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         else:
             context["_loaded_children_state"] = None
 
-    def render(self, mode=RenderDataMode.INIT) -> SafeString:
+    def render(self, mode=RenderDataMode.INIT, **kwargs) -> SafeString:
         """Renders the component's HTML.
 
         It makes the following decisions based on the given mode:
@@ -1109,66 +1190,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         - If mode is RenderDataMode.UPDATE, the client will be instructed to replace
             the existing `x-data` with new data from the server state
         """
-        if hasattr(thread_local, "_tetra_render_mode"):
-            mode = thread_local._tetra_render_mode
-            set_thread_local = False
-        else:
-            thread_local._tetra_render_mode = mode
-            set_thread_local = True
-        html = super().render()
-        if set_thread_local:
-            del thread_local._tetra_render_mode
-        tag_name = re.match(r"^\s*(<!--.*-->)?\s*<\w+", html)
-        if not tag_name:
-            # If there is an extends tag, the rendered HTML might not start with
-            # a tag if it's just blocks being filled. However, Tetra components
-            # are expected to have a root element.
-            # When extending, the root element should be in the base template.
-            # But the regex check is on the *rendered* html.
-            if not re.match(r"^\s*{%\s*extends", self._template.source):
-                raise ComponentError(
-                    f"Error in {self.__class__.__name__}: The component's template is "
-                    "not enclosed in HTML tags."
-                )
-            # If it is an extends template, we should probably find the first tag
-            # in the rendered output, which might have come from the base template.
-            tag_name = re.search(r"<\w+", html)
-            if not tag_name:
-                raise ComponentError(
-                    f"Error in {self.__class__.__name__}: The component's rendered "
-                    "template is not enclosed in HTML tags."
-                )
-
-        tag_name_end = tag_name.end(0)
-
-        extra_tags = self.get_extra_tags()
-
-        if self.key:
-            extra_tags.update({"key": self.key})
-        if mode == RenderDataMode.UPDATE and self._is_resumed_from_state:
-            data_json = escape(to_json(self._render_data()))
-            old_data_json = escape(to_json(self._resumed_from_state_data))
-            extra_tags.update({"x-data": ""})
-            extra_tags.update({"x-data-update": data_json})
-            extra_tags.update({"x-data-update-old": old_data_json})
-        elif mode == RenderDataMode.MAINTAIN:
-            extra_tags.update({"x-data": ""})
-            extra_tags.update({"x-data-maintain": ""})
-        else:
-            data_json = escapejs(to_json(self._render_data()))
-            extra_tags.update(
-                {"x-data": f"{self.full_component_name()}('{data_json}')"}
-            )
-
-        for method_data in self._public_methods:
-            if "event_subscriptions" in method_data:
-                for event in method_data["event_subscriptions"]:
-                    extra_tags.update(
-                        {f"@{event}": f'{method_data["name"]}($event.detail)'}
-                    )
-        tags_strings = [f"{key}=\"{value or ''}\"" for key, value in extra_tags.items()]
-        html = f'{html[:tag_name_end]} {" ".join(tags_strings)} {html[tag_name_end:]}'
-        return mark_safe(html)
+        return self.renderer.render(mode=mode, **kwargs)
 
     def update_html(self, include_state=False) -> None:
         """Updates the component's HTML.
