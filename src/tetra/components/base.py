@@ -7,8 +7,8 @@ from decimal import Decimal
 import warnings
 
 from copy import copy
-from typing import Optional, Self, Any
-from types import FunctionType, NoneType
+from typing import Optional, Self, Any, get_origin, get_args, Union
+from types import FunctionType, NoneType, UnionType
 from enum import Enum
 import inspect
 import re
@@ -737,6 +737,16 @@ public = Public
 tracing_component_load = WeakKeyDictionary()
 
 
+def is_subclass_of(hint, target_class) -> bool:
+    """Check if a type hint is or contains a subclass of target_class."""
+    if isinstance(hint, type) and issubclass(hint, target_class):
+        return True
+    origin = get_origin(hint)
+    if origin is UnionType or origin is Union:
+        return any(is_subclass_of(arg, target_class) for arg in get_args(hint))
+    return False
+
+
 class ComponentMetaClass(type):
     def __new__(mcls, name, bases, attrs):
         public_methods: list[dict[str, Any]] = list(
@@ -791,6 +801,7 @@ class ComponentMetaClass(type):
                     public_methods.append(pub_met)
                 else:
                     public_properties.append(attr_name)
+
         newcls = super().__new__(mcls, name, bases, attrs)
         newcls._public_methods = public_methods
         newcls._public_properties = public_properties
@@ -804,6 +815,69 @@ class ComponentMetaClass(type):
             newcls._name = attrs["_name"]
         else:
             newcls._name = None
+
+        # Handle Pydantic model creation here, AFTER newcls is created and fully populated.
+        # This ensures that dynamic attributes from e.g., FormComponentMetaClass are
+        # available in newcls._public_properties and newcls.__annotations__.
+        if not attrs.get("__abstract__", False):
+            from pydantic import create_model, ConfigDict
+
+            public_fields = {}
+            for prop in newcls._public_properties:
+                # Get type hint if available
+                hint = Any
+                # Check newcls.__annotations__ which includes all hints resolved for this class
+                if (
+                    hasattr(newcls, "__annotations__")
+                    and prop in newcls.__annotations__
+                ):
+                    hint = newcls.__annotations__[prop]
+                else:
+                    # Fallback to MRO
+                    for base in newcls.__mro__:
+                        if (
+                            hasattr(base, "__annotations__")
+                            and prop in base.__annotations__
+                        ):
+                            hint = base.__annotations__[prop]
+                            break
+
+                # Wrap the hint in Optional for UploadedFile
+                if hint is not Any and hint is not NoneType:
+                    try:
+                        if hint is UploadedFile or (
+                            isinstance(hint, type) and issubclass(hint, UploadedFile)
+                        ):
+                            hint = Optional[hint]
+                    except TypeError:
+                        pass
+
+                # Use default value from newcls.
+                # If the property is in the current class's attrs, it's the default.
+                # If it's inherited, we use Ellipsis (...) to indicate it's required
+                # if it has no default in the hierarchy.
+                if prop in attrs:
+                    default_value = attrs[prop]
+                    if isinstance(default_value, Public):
+                        default_value = default_value.obj
+                else:
+                    # Check if any base has a default value
+                    default_value = ...
+                    for base in newcls.__mro__:
+                        if prop in base.__dict__:
+                            default_value = base.__dict__[prop]
+                            if isinstance(default_value, Public):
+                                default_value = default_value.obj
+                            break
+
+                public_fields[prop] = (hint, default_value)
+
+            newcls._StateModel = create_model(
+                f"{name}State",
+                **public_fields,
+                __config__=ConfigDict(arbitrary_types_allowed=True),
+            )
+
         return newcls
 
 
@@ -836,6 +910,12 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         super().__init__(_request, *args, **kwargs)
         self.key = key if key is not None else self.full_component_name()
         self.renderer = ComponentRenderer(self)
+
+    def _get_state_adapter(self):
+        # Created once per class, not per instance
+        from pydantic import TypeAdapter
+
+        return TypeAdapter(self._StateModel)
 
     @classmethod
     def from_state(
@@ -945,17 +1025,26 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
             # if client data type is a model, try to see the value in the
             # recovered data as Model.pk and get the model again.
-            if issubclass(AttributeType, Model):
+            if is_subclass_of(AttributeType, Model):
                 if state_value:
                     # FIXME: this hits the database, before the actual (and probably
                     #  different) value is set via e.g. the load() method.
                     #  Find a way to only load the model when needed.
-                    state_value = AttributeType.objects.get(pk=state_value)
+                    if isinstance(AttributeType, type) and issubclass(
+                        AttributeType, Model
+                    ):
+                        state_value = AttributeType.objects.get(pk=state_value)
+                    else:
+                        # If it's a Union/Optional, we need to find the Model class
+                        for arg in get_args(AttributeType):
+                            if isinstance(arg, type) and issubclass(arg, Model):
+                                state_value = arg.objects.get(pk=state_value)
+                                break
                 else:
                     state_value = None  # or attr_type.objects.none()
 
             # if the data type is a file, try to find the file by its path
-            elif issubclass(AttributeType, UploadedFile):
+            elif is_subclass_of(AttributeType, UploadedFile):
                 if state_value:
                     # if the file was reconstructed from the client data (which
                     # doesn't contain the temp_path anymore), recover the temp_path
@@ -1147,6 +1236,9 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         return extra_tags
 
     def _encoded_state(self) -> str:
+        # Validates and serializes the current __dict__ values
+        data = self._data()
+        self._get_state_adapter().validate_python(data)
         return encode_component(self)
 
     def __getstate__(self) -> dict[str, Any]:
@@ -1342,8 +1434,10 @@ class FormComponentMetaClass(ComponentMetaClass):
                 initial = field.initial
                 # try to read the type of the component attribute from the form field
                 python_type = get_python_type_from_form_field(field, initial)
-
-                # logger.debug(f"  {field_name} -> {python_type}")
+                # Form fields should always be Optional because they can be None
+                # or empty initially, and Django's form validation handles the
+                # "required" check, not the component state.
+                python_type = Optional[python_type]
                 dct[field_name] = public(initial)
                 dct["__annotations__"][field_name] = python_type
         return super().__new__(cls, name, bases, dct)

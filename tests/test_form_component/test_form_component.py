@@ -6,6 +6,7 @@ from django import forms
 from django.forms import Form
 from django.urls import reverse
 
+from typing import Optional
 from playwright.sync_api import Page, expect
 
 from tetra import Library
@@ -93,15 +94,18 @@ def test_form_gains_form_attributes(tetra_request):
 def test_form_knows_type_annotations(tetra_request):
     """Confirm that the PersonComponent receives attributes from its associated form
     fields."""
+    # Form fields should always be Optional because they can be None
+    # or empty initially, and Django's form validation handles the
+    # "required" check, not the component state.
 
     c = PersonComponent(tetra_request)
-    assert c.__annotations__["name"] == str
-    assert c.__annotations__["age"] == int
-    assert c.__annotations__["email"] == str
-    assert c.__annotations__["dob"] == date
-    assert c.__annotations__["weight"] == float
-    assert c.__annotations__["website"] == str
-    assert c.__annotations__["lucky"] == bool
+    assert c.__annotations__["name"] == Optional[str]
+    assert c.__annotations__["age"] == Optional[int]
+    assert c.__annotations__["email"] == Optional[str]
+    assert c.__annotations__["dob"] == Optional[date]
+    assert c.__annotations__["weight"] == Optional[float]
+    assert c.__annotations__["website"] == Optional[str]
+    assert c.__annotations__["lucky"] == Optional[bool]
 
 
 class FormWithInitialData(forms.Form):

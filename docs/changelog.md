@@ -15,6 +15,7 @@ title: Changelog
 ## [0.8.1] - unreleased
 ### Changed
 - delegate rendering of components to  `BaseRenderer` and `ComponentRenderer` classes
+- more robust schemata state validation using Pydantic's TypeAdapters for component attributes
 
 ## [0.8.0] - 2026-01-26
 ### Changed
