@@ -57,7 +57,7 @@ def render_styles(request):
     return render_to_string("lib_styles.html", {"libs": libs})
 
 
-def render_scripts(request, csrf_token):
+def render_scripts(request, csrf_token, messages=None):
     """Render Tetra JavaScript with WebSocket support detection"""
     websockets_supported = check_websocket_support()
     has_reactive_components = apps.get_app_config("tetra").has_reactive_components
@@ -77,6 +77,9 @@ def render_scripts(request, csrf_token):
             "include_alpine": request.tetra_scripts_placeholder_include_alpine,
             "csrf_token": csrf_token,
             "debug": settings.DEBUG,
+            "messages": (
+                json.dumps(messages, cls=TetraJSONEncoder) if messages else None
+            ),
             # even if we support it - there are no reactive components in use,
             # so disable support: it only generates overhead.
             "use_websockets": has_reactive_components and websockets_supported,

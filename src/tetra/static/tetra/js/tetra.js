@@ -9,6 +9,18 @@
       if (window.__tetra_useWebsockets) {
         this.ensureWebSocketConnection();
       }
+      if (window.__tetra_messages) {
+        this.handleInitialMessages(window.__tetra_messages);
+        delete window.__tetra_messages;
+      }
+    },
+    handleInitialMessages(messages) {
+      messages.forEach((message) => {
+        document.dispatchEvent(new CustomEvent("tetra:new-message", {
+          detail: message,
+          bubbles: true
+        }));
+      });
     },
     $static() {
       return (path) => {
@@ -66,14 +78,13 @@
       let messageType;
       let payload;
       let metadata = {};
-      if (data.protocol === "tetra-1.0") {
-        messageType = data.type;
-        payload = data.payload;
-        metadata = data.metadata || {};
-      } else {
-        messageType = data.type;
-        payload = data;
+      if (data.protocol !== "tetra-1.0") {
+        console.warn("Invalid or missing Tetra protocol in WebSocket message:", data);
+        return;
       }
+      messageType = data.type;
+      payload = data.payload;
+      metadata = data.metadata || {};
       switch (messageType) {
         case "subscription.response":
           this.handleSubscriptionResponse(payload);
@@ -566,33 +577,27 @@
         let styles = [];
         let messages = [];
         let callbacks = [];
-        if (respData.protocol === "tetra-1.0") {
-          success = respData.success;
-          if (respData.payload) {
-            result = respData.payload.result;
-          }
-          if (respData.metadata) {
-            js = respData.metadata.js || [];
-            styles = respData.metadata.styles || [];
-            messages = respData.metadata.messages || [];
-            callbacks = respData.metadata.callbacks || [];
-          }
-          if (!success && respData.error) {
-            console.error(`Tetra method error [${respData.error.code}]: ${respData.error.message}`);
-            document.dispatchEvent(new CustomEvent("tetra:method-error", {
-              detail: {
-                component,
-                error: respData.error
-              }
-            }));
-          }
-        } else {
-          success = respData.success;
-          result = respData.result;
-          js = respData.js || [];
-          styles = respData.styles || [];
-          callbacks = respData.callbacks || [];
-          messages = Tetra.jsonDecode(response.headers.get("T-Messages")) || [];
+        if (respData.protocol !== "tetra-1.0") {
+          throw new Error("Invalid or missing Tetra protocol in server response");
+        }
+        success = respData.success;
+        if (respData.payload) {
+          result = respData.payload.result;
+        }
+        if (respData.metadata) {
+          js = respData.metadata.js || [];
+          styles = respData.metadata.styles || [];
+          messages = respData.metadata.messages || [];
+          callbacks = respData.metadata.callbacks || [];
+        }
+        if (!success && respData.error) {
+          console.error(`Tetra method error [${respData.error.code}]: ${respData.error.message}`);
+          document.dispatchEvent(new CustomEvent("tetra:method-error", {
+            detail: {
+              component,
+              error: respData.error
+            }
+          }));
         }
         if (messages) {
           messages.forEach((message) => {

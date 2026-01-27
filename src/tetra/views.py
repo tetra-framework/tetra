@@ -65,16 +65,8 @@ def _component_method(
                 for key in request.FILES:
                     component_state["data"][key] = request.FILES[key]
         else:
-            # Fallback for old protocol during transition or if not matching
-            # (Though we might want to be strict)
-            if request.content_type == "multipart/form-data":
-                component_state = from_json(request.POST["component_state"])
-                for key in request.FILES:
-                    component_state["data"][key] = request.FILES[key]
-            elif request.content_type == "application/json" and request.body:
-                component_state = from_json(request.body.decode())
-            else:
-                return HttpResponseBadRequest()
+            logger.error("Invalid or missing Tetra protocol in payload")
+            return HttpResponseBadRequest()
 
     except (json.decoder.JSONDecodeError, KeyError) as e:
         logger.error(e)

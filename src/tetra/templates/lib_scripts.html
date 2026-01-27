@@ -4,6 +4,9 @@
   window.__tetra_csrfToken = '{{ csrf_token }}';
   window.__tetra_staticRoot = '{% get_static_prefix %}';
   window.__tetra_useWebsockets = {{ use_websockets|yesno:"true,false" }};
+  {% if messages %}
+  window.__tetra_messages = {{ messages|safe }};
+  {% endif %}
 </script>
 {% endif %}
 {% for lib in libs %}

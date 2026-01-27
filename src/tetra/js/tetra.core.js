@@ -9,6 +9,23 @@ const Tetra = {
     if(window.__tetra_useWebsockets) {
       this.ensureWebSocketConnection();
     }
+    // Handle initial messages passed from the server
+    if (window.__tetra_messages) {
+      this.handleInitialMessages(window.__tetra_messages);
+      delete window.__tetra_messages;
+    }
+  },
+  handleInitialMessages(messages) {
+    // We need to wait for Alpine components to be ready before dispatching events to them.
+    // However, since we use 'defer' for tetra.js and Alpine, they should be ready around the same time.
+    // To be safe, we can use Alpine.nextTick or a small timeout if needed, but 
+    // usually dispatching on document should work if components listen there.
+    messages.forEach((message) => {
+      document.dispatchEvent(new CustomEvent('tetra:new-message', {
+        detail: message,
+        bubbles: true
+      }));
+    });
   },
   $static() {
     return (path) => {
@@ -84,15 +101,14 @@ const Tetra = {
     let payload;
     let metadata = {};
 
-    if (data.protocol === "tetra-1.0") {
-      messageType = data.type;
-      payload = data.payload;
-      metadata = data.metadata || {};
-    } else {
-      // Fallback for old protocol
-      messageType = data.type;
-      payload = data;
+    if (data.protocol !== "tetra-1.0") {
+      console.warn('Invalid or missing Tetra protocol in WebSocket message:', data);
+      return;
     }
+
+    messageType = data.type;
+    payload = data.payload;
+    metadata = data.metadata || {};
 
     switch (messageType) {
       case 'subscription.response':
@@ -657,35 +673,29 @@ const Tetra = {
       let messages = [];
       let callbacks = [];
 
-      if (respData.protocol === "tetra-1.0") {
-        success = respData.success;
-        if (respData.payload) {
-          result = respData.payload.result;
-        }
-        if (respData.metadata) {
-          js = respData.metadata.js || [];
-          styles = respData.metadata.styles || [];
-          messages = respData.metadata.messages || [];
-          callbacks = respData.metadata.callbacks || [];
-        }
-        if (!success && respData.error) {
-          console.error(`Tetra method error [${respData.error.code}]: ${respData.error.message}`);
-          // Emit event for custom error handling
-          document.dispatchEvent(new CustomEvent('tetra:method-error', {
-            detail: {
-              component: component,
-              error: respData.error
-            }
-          }));
-        }
-      } else {
-        // Fallback for old protocol (deprecated)
-        success = respData.success;
-        result = respData.result;
-        js = respData.js || [];
-        styles = respData.styles || [];
-        callbacks = respData.callbacks || [];
-        messages = Tetra.jsonDecode(response.headers.get('T-Messages')) || [];
+      if (respData.protocol !== "tetra-1.0") {
+        throw new Error('Invalid or missing Tetra protocol in server response');
+      }
+
+      success = respData.success;
+      if (respData.payload) {
+        result = respData.payload.result;
+      }
+      if (respData.metadata) {
+        js = respData.metadata.js || [];
+        styles = respData.metadata.styles || [];
+        messages = respData.metadata.messages || [];
+        callbacks = respData.metadata.callbacks || [];
+      }
+      if (!success && respData.error) {
+        console.error(`Tetra method error [${respData.error.code}]: ${respData.error.message}`);
+        // Emit event for custom error handling
+        document.dispatchEvent(new CustomEvent('tetra:method-error', {
+          detail: {
+            component: component,
+            error: respData.error
+          }
+        }));
       }
 
       // handle Django messages and emit "tetra:new-message" for each one

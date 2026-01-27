@@ -59,7 +59,7 @@ Django knows only three attributes: `message:str`, `level:int` and `extra_tags:s
 
 In Django, there is no UID in messages. You could change your Message/Storage type by using `settings.MESSAGE_STORAGE`, but this is not necessary. We need the UID of each message only on the client.
 
-So each message gets an UID during the middleware transition, so it can be displayed and deleted individually.  Just make sure to include the MessageMiddleware, and TetraMiddleware. The messages are transported via a special `T-Messages` response header.
+So each message gets an UID during the middleware transition, so it can be displayed and deleted individually. Just make sure to include the MessageMiddleware and TetraMiddleware.
 
 #### The `.dismissible` attribute: a special case
 

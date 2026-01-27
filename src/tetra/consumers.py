@@ -207,11 +207,13 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
 
     async def subscription_response(self, event) -> None:
         """Handle confirmation of subscription"""
-        # If it's already a protocol message, send as is (assuming it's formatted correctly)
+        # If it's already a protocol message, send as is
         if event.get("protocol") == "tetra-1.0":
             await self.send_json(event)
         else:
-            # Wrap legacy event
+            # All messages should now be wrapped via _send_unified_message
+            # but we keep this as a safeguard for dispatcher-sent messages
+            # that haven't been updated to the new structure yet.
             type = event.pop("type")
             await self._send_unified_message(type, event)
 

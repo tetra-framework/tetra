@@ -223,11 +223,10 @@ def test_middleware_messages_processed_on_fast_path(request_factory):
 
     result = middleware(request)
 
-    # Check that T-Messages header was added
-    assert "T-Messages" in result.headers
-    messages = json.loads(result.headers["T-Messages"])
-    assert len(messages) == 1
-    assert messages[0]["message"] == "Test message"
+    # Check that messages were injected into HTML
+    assert b"window.__tetra_messages =" in result.content
+    assert b"Test message" in result.content
+    assert "T-Messages" not in result.headers
 
 
 @pytest.mark.django_db
@@ -255,12 +254,11 @@ def test_middleware_messages_have_uid(request_factory):
 
     result = middleware(request)
 
-    # Check messages have UIDs
-    messages = json.loads(result.headers["T-Messages"])
-    assert len(messages) == 2
-    assert "uid" in messages[0]
-    assert "uid" in messages[1]
-    assert messages[0]["uid"] != messages[1]["uid"]
+    # Check messages have UIDs in the injected script
+    assert b"Message 1" in result.content
+    assert b"Message 2" in result.content
+    assert b'"uid":' in result.content
+    assert "T-Messages" not in result.headers
 
 
 def test_middleware_skips_file_response(request_factory):

@@ -219,6 +219,7 @@ class TetraMiddleware:
         if isinstance(response, FileResponse):
             return response
 
+        # If it's a Tetra protocol response, messages are already included
         if (
             "Content-Type" in response.headers
             and "application/json" in response.headers["Content-Type"]
@@ -231,6 +232,7 @@ class TetraMiddleware:
             except (json.JSONDecodeError, TypeError):
                 pass
 
+        # Standard Django request
         messages: list[Message] = []
         for message in get_messages(request):
             if not hasattr(message, "uid"):
@@ -238,7 +240,18 @@ class TetraMiddleware:
             messages.append(message)
 
         if messages:
-            response.headers["T-Messages"] = json.dumps(messages, cls=TetraJSONEncoder)
+            if (
+                "Content-Type" in response.headers
+                and "text/html" in response.headers["Content-Type"]
+            ):
+                # For standard HTML, inject as a small script at the end of body
+                content = response.content.decode()
+                script = f"<script>window.__tetra_messages = {json.dumps(messages, cls=TetraJSONEncoder)};</script>"
+                if "</body>" in content:
+                    content = content.replace("</body>", f"{script}</body>")
+                else:
+                    content += script
+                response.content = content.encode()
 
         return response
 
@@ -261,19 +274,13 @@ class TetraMiddleware:
             except (json.JSONDecodeError, TypeError):
                 pass
 
+        messages: list[Message] = []
         if not is_tetra_1_0:
-            messages: list[Message] = []
+            # Fallback for standard HTML responses that use Tetra components
             for message in get_messages(request):
-                # monkey patch an uid into the Message class to ensure it has a unique ID
-                # if it doesn't have one already
                 if not hasattr(message, "uid"):
                     message.uid = str(uuid.uuid4())
                 messages.append(message)
-            if messages:
-                # Put the messages list into the T-Messages header
-                response.headers["T-Messages"] = json.dumps(
-                    messages, cls=TetraJSONEncoder
-                )
 
         if (
             "Content-Type" not in response.headers
@@ -306,7 +313,7 @@ class TetraMiddleware:
             content = response.content
             content = content.replace(
                 request.tetra_scripts_placeholder_string,
-                render_scripts(request, csrf_token).encode(),
+                render_scripts(request, csrf_token, messages=messages).encode(),
             )
             content = content.replace(
                 request.tetra_styles_placeholder_string, render_styles(request).encode()

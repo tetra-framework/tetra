@@ -217,7 +217,3 @@ Errors use a standardized structure within the unified protocol response. When `
 
 The client-side driver emits a `tetra:method-error` CustomEvent when such a response is received, allowing for global or component-specific error handling.
 
----
-
-## 6. History & Status
-Starting with Tetra 0.8.1, the HTTP method calls have been unified into a JSON-based, unified protocol. 

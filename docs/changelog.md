@@ -19,7 +19,8 @@ title: Changelog
 ### Changed
 - delegate rendering of components to `BaseRenderer` and `ComponentRenderer` classes
 - more robust schemata state validation using Pydantic's TypeAdapters for component attributes
-- Implementation of the **Tetra Unified Protocol (Phase 1 & 2)** for both HTTP method calls and WebSockets. This unifies communication into a consistent JSON envelope, moving metadata like Django messages from headers into the response body. Removed `T-Response` headers in favor of the unified protocol.
+- Implementation of the **Tetra Unified Protocol (Phase 1 & 2)** for both HTTP method calls and WebSockets. This unifies communication into a consistent JSON envelope, moving metadata like Django messages from headers into the response body. Removed `T-Response` and `T-Messages` headers in favor of the unified protocol and inline script injection.
+- Removed all fallbacks and support for the legacy communication protocol.
 
 ## [0.8.0] - 2026-01-26
 ### Changed
@@ -202,8 +203,8 @@ Fixed: improve file handling security and add tests for file upload vulnerabilit
 - `recalculate_attrs()` method for calculated updates to attributes before and after component methods
 - `request.tetra` helper for *current_url*, *current_abs_path* and *url_query_params*, like in HTMX
 - add life cycle Js events when updating/removing etc. components
-- add a T-Response header that only is available in Tetra responses.
-- Integration of Django messages into Tetra, using T-Messages response header
+- add a special response indicator for Tetra responses.
+- Integration of Django messages into Tetra.
 - `<!-- HTML comments -->` at begin of components are possible now
 
 ### Removed
