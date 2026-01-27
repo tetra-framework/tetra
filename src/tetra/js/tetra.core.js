@@ -437,6 +437,9 @@ const Tetra = {
       },
       _handleAutofocus() {
         this.$nextTick(() => {
+          if (!this.$root) {
+            return;
+          }
           const focus_el = this.$root.querySelector("[autofocus]");
           if (focus_el) {
             focus_el.focus();

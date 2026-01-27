@@ -370,6 +370,9 @@
         },
         _handleAutofocus() {
           this.$nextTick(() => {
+            if (!this.$root) {
+              return;
+            }
             const focus_el = this.$root.querySelector("[autofocus]");
             if (focus_el) {
               focus_el.focus();
@@ -684,13 +687,13 @@
       var previous = 0;
       if (!options) options = {};
       var later = function() {
-        previous = options.leading === false ? 0 : now();
+        previous = options.leading === false ? 0 : Date.now();
         timeout = null;
         result = func.apply(context, args);
         if (!timeout) context = args = null;
       };
       var throttled = function() {
-        var _now = (/* @__PURE__ */ new Date()).getTime();
+        var _now = Date.now();
         if (!previous && options.leading === false) previous = _now;
         var remaining = wait - (_now - previous);
         context = this;
