@@ -809,14 +809,14 @@ const Tetra = {
     if (!options) options = {};
 
     var later = function() {
-      previous = options.leading === false ? 0 : now();
+      previous = options.leading === false ? 0 : Date.now();
       timeout = null;
       result = func.apply(context, args);
       if (!timeout) context = args = null;
     };
 
     var throttled = function() {
-      var _now = new Date().getTime();
+      var _now = Date.now();
       if (!previous && options.leading === false) previous = _now;
       var remaining = wait - (_now - previous);
       context = this;
