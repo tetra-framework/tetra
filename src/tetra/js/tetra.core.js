@@ -668,11 +668,18 @@ const Tetra = {
           messages = respData.metadata.messages || [];
           callbacks = respData.metadata.callbacks || [];
         }
-      } else {
-        // Fallback for old protocol
-        if (response.headers.get('T-Response') !== "true") {
-          throw new Error("Response is not a Tetra response. Please check the server implementation.")
+        if (!success && respData.error) {
+          console.error(`Tetra method error [${respData.error.code}]: ${respData.error.message}`);
+          // Emit event for custom error handling
+          document.dispatchEvent(new CustomEvent('tetra:method-error', {
+            detail: {
+              component: component,
+              error: respData.error
+            }
+          }));
         }
+      } else {
+        // Fallback for old protocol (deprecated)
         success = respData.success;
         result = respData.result;
         js = respData.js || [];
@@ -716,7 +723,9 @@ const Tetra = {
         }
         return result;
       } else {
-        // TODO: better errors
+        if (respData.error) {
+          throw new Error(`Error processing public method: ${respData.error.message}`);
+        }
         throw new Error('Error processing public method');
       }
     } else {

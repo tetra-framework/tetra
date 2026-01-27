@@ -19,7 +19,7 @@ title: Changelog
 ### Changed
 - delegate rendering of components to `BaseRenderer` and `ComponentRenderer` classes
 - more robust schemata state validation using Pydantic's TypeAdapters for component attributes
-- Implementation of the **Tetra Unified Protocol (Phase 1 & 2)** for both HTTP method calls and WebSockets. This unifies communication into a consistent JSON envelope, moving metadata like Django messages from headers into the response body.
+- Implementation of the **Tetra Unified Protocol (Phase 1 & 2)** for both HTTP method calls and WebSockets. This unifies communication into a consistent JSON envelope, moving metadata like Django messages from headers into the response body. Removed `T-Response` headers in favor of the unified protocol.
 
 ## [0.8.0] - 2026-01-26
 ### Changed

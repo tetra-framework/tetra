@@ -392,3 +392,69 @@ def test_middleware_no_messages_no_header(request_factory):
 
     # T-Messages header should not be present
     assert "T-Messages" not in result.headers
+
+
+class ErrorComponent(Component):
+    template = "<div></div>"
+
+    @public
+    def raise_error(self):
+        raise ValueError("Test error message")
+
+
+@pytest.mark.django_db
+def test_unified_protocol_error_handling(rf):
+    """Test unified protocol error handling when a method raises an exception."""
+    from tetra import Library
+    from tetra.views import component_method
+    from tetra.state import encode_component
+    from django.contrib.auth.models import AnonymousUser
+    from django.contrib.messages.middleware import MessageMiddleware
+
+    # Setup request
+    request = rf.post(
+        "/tetra/main/test_lib/ErrorComponent/raise_error",
+        data={},
+        content_type="application/json",
+    )
+    SessionMiddleware(lambda r: None).process_request(request)
+    request.session.save()
+    MessageMiddleware(lambda r: None).process_request(request)
+    request.user = AnonymousUser()
+
+    # Create library and register component
+    lib = Library("test_lib", app="main")
+    lib.register(ErrorComponent)
+
+    # Prepare unified protocol request
+    encrypted_state = encode_component(ErrorComponent(request))
+    request_envelope = {
+        "protocol": "tetra-1.0",
+        "id": "req-123",
+        "type": "call",
+        "payload": {
+            "component_id": "test-comp-id",
+            "method": "raise_error",
+            "args": [],
+            "state": {},
+            "encrypted_state": encrypted_state,
+            "children_state": [],
+        },
+    }
+    request._body = json.dumps(request_envelope).encode("utf-8")
+    request.csrf_processing_done = True
+    request.tetra_components_used = {ErrorComponent}
+
+    # Mock the Library registry
+    with patch.object(Library, "registry", {"main": {"test_lib": lib}}):
+        response = component_method(
+            request, "main", "test_lib", "error_component", "raise_error"
+        )
+
+        # Check response from view
+        assert response.status_code == 500
+        resp_data = json.loads(response.content)
+        assert resp_data["protocol"] == "tetra-1.0"
+        assert resp_data["success"] is False
+        assert resp_data["error"]["code"] == "ValueError"
+        assert resp_data["error"]["message"] == "Test error message"

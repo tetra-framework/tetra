@@ -1336,46 +1336,60 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     def _call_public_method(
         self, request, method_name, children_state, *args
     ) -> JsonResponse | FileResponse:
-        self._loaded_children_state = children_state
-        self._callback_queue = CallbackList()
-        result = getattr(self, method_name)(*args)
-        callbacks = self._callback_queue.serialize()
-        self._callback_queue = None
-        libs = list(
-            set(component._library for component in request.tetra_components_used)
-        )
+        try:
+            self._loaded_children_state = children_state
+            self._callback_queue = CallbackList()
+            result = getattr(self, method_name)(*args)
+            callbacks = self._callback_queue.serialize()
+            self._callback_queue = None
+            libs = list(
+                set(component._library for component in request.tetra_components_used)
+            )
 
-        # if the response is a FileResponse, we directly return the result.
-        if isinstance(result, FileResponse):
-            result.headers["T-Response"] = "true"
-            result.as_attachment = True
-            return result
-        else:
-            # Collect Django messages
-            messages = []
-            for message in get_messages(request):
-                if not hasattr(message, "uid"):
-                    import uuid
+            # if the response is a FileResponse, we directly return the result.
+            if isinstance(result, FileResponse):
+                result.as_attachment = True
+                return result
+            else:
+                # Collect Django messages
+                messages = []
+                for message in get_messages(request):
+                    if not hasattr(message, "uid"):
+                        import uuid
 
-                    message.uid = str(uuid.uuid4())
-                messages.append(message)
+                        message.uid = str(uuid.uuid4())
+                    messages.append(message)
 
+                return JsonResponse(
+                    {
+                        "protocol": "tetra-1.0",
+                        "type": "call.response",
+                        "success": True,
+                        "payload": {
+                            "result": result,
+                        },
+                        "metadata": {
+                            "styles": [lib.styles_url for lib in libs],
+                            "js": [lib.js_url for lib in libs],
+                            "messages": messages,
+                            "callbacks": callbacks,
+                        },
+                    },
+                    encoder=TetraJSONEncoder,
+                )
+        except Exception as e:
+            logger.exception("Error calling public method %s", method_name)
             return JsonResponse(
                 {
                     "protocol": "tetra-1.0",
                     "type": "call.response",
-                    "success": True,
-                    "payload": {
-                        "result": result,
-                    },
-                    "metadata": {
-                        "styles": [lib.styles_url for lib in libs],
-                        "js": [lib.js_url for lib in libs],
-                        "messages": messages,
-                        "callbacks": callbacks,
+                    "success": False,
+                    "error": {
+                        "code": e.__class__.__name__,
+                        "message": str(e),
                     },
                 },
-                encoder=TetraJSONEncoder,
+                status=500,
             )
 
     @public

@@ -161,5 +161,63 @@ Tetra relies on "state-ful" communication where the client sends its current kno
 
 ---
 
-## 5. Unified Protocol
+## 5. Specialized Responses
+
+### 5.1 FileResponse
+When a component method returns a Django `FileResponse`, Tetra returns the file directly to the browser.
+- **Headers**: 
+    - `Content-Disposition: attachment; filename="..."`
+- **Behavior**: The client-side driver detects the `attachment` disposition and triggers a browser download.
+
+### 5.2 Redirects
+Redirects are handled via the `_redirect` callback in the `metadata.callbacks` list.
+```json
+{
+  "metadata": {
+    "callbacks": [
+      {
+        "callback": ["_redirect"],
+        "args": ["/new-url"]
+      }
+    ]
+  }
+}
+```
+
+### 5.3 Asset Injection
+Styles and scripts required by the components are included in the `metadata`.
+- `metadata.js`: List of URLs to JavaScript files to be loaded.
+- `metadata.styles`: List of URLs to CSS files to be loaded.
+The client-side driver ensures these are loaded exactly once before applying other updates.
+
+---
+
+## 6. Error Handling
+
+Errors use a standardized structure within the unified protocol response. When `success` is `false`, an `error` object is provided.
+
+```json
+{
+  "protocol": "tetra-1.0",
+  "id": "req-123",
+  "success": false,
+  "error": {
+    "code": "ValueError",
+    "message": "Invalid input provided"
+  },
+  "metadata": {
+    "messages": [],
+    "callbacks": []
+  }
+}
+```
+
+- `code`: The exception class name or a specific error code.
+- `message`: A human-readable error message.
+
+The client-side driver emits a `tetra:method-error` CustomEvent when such a response is received, allowing for global or component-specific error handling.
+
+---
+
+## 6. History & Status
 Starting with Tetra 0.8.1, the HTTP method calls have been unified into a JSON-based, unified protocol. 

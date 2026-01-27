@@ -577,10 +577,16 @@
             messages = respData.metadata.messages || [];
             callbacks = respData.metadata.callbacks || [];
           }
-        } else {
-          if (response.headers.get("T-Response") !== "true") {
-            throw new Error("Response is not a Tetra response. Please check the server implementation.");
+          if (!success && respData.error) {
+            console.error(`Tetra method error [${respData.error.code}]: ${respData.error.message}`);
+            document.dispatchEvent(new CustomEvent("tetra:method-error", {
+              detail: {
+                component,
+                error: respData.error
+              }
+            }));
           }
+        } else {
           success = respData.success;
           result = respData.result;
           js = respData.js || [];
@@ -620,6 +626,9 @@
           }
           return result;
         } else {
+          if (respData.error) {
+            throw new Error(`Error processing public method: ${respData.error.message}`);
+          }
           throw new Error("Error processing public method");
         }
       } else {
