@@ -48,6 +48,7 @@ from django.http import JsonResponse, HttpRequest, FileResponse, HttpResponse
 from django.urls import reverse
 from django.template.loaders.filesystem import Loader as FileSystemLoader
 
+from django.contrib.messages import get_messages
 from ..exceptions import ComponentError
 from ..middleware import TetraHttpRequest
 from ..utils import (
@@ -1350,18 +1351,30 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             result.as_attachment = True
             return result
         else:
-            # TODO: error handling
-            # TODO: use TetraMessage for this, for more consistence!
+            # Collect Django messages
+            messages = []
+            for message in get_messages(request):
+                if not hasattr(message, "uid"):
+                    import uuid
+
+                    message.uid = str(uuid.uuid4())
+                messages.append(message)
+
             return JsonResponse(
                 {
-                    "styles": [lib.styles_url for lib in libs],
-                    "js": [lib.js_url for lib in libs],
+                    "protocol": "tetra-1.0",
                     "success": True,
-                    "result": result,
-                    "callbacks": callbacks,
+                    "payload": {
+                        "result": result,
+                    },
+                    "metadata": {
+                        "styles": [lib.styles_url for lib in libs],
+                        "js": [lib.js_url for lib in libs],
+                        "messages": messages,
+                        "callbacks": callbacks,
+                    },
                 },
                 encoder=TetraJSONEncoder,
-                headers={"T-Response": "true"},
             )
 
     @public

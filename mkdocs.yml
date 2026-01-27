@@ -54,6 +54,7 @@ nav:
     - state-security.md
     - magic-static.md
   - Additional topics:
+    - protocol_specification.md
     - request.md
     - messages.md
     - events.md

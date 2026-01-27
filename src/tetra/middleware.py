@@ -219,6 +219,18 @@ class TetraMiddleware:
         if isinstance(response, FileResponse):
             return response
 
+        if (
+            "Content-Type" in response.headers
+            and "application/json" in response.headers["Content-Type"]
+            and hasattr(response, "content")
+        ):
+            try:
+                content = json.loads(response.content)
+                if isinstance(content, dict) and content.get("protocol") == "tetra-1.0":
+                    return response
+            except (json.JSONDecodeError, TypeError):
+                pass
+
         messages: list[Message] = []
         for message in get_messages(request):
             if not hasattr(message, "uid"):
@@ -232,23 +244,36 @@ class TetraMiddleware:
 
     def _process_response(self, request, response, csrf_token):
         """Full processing for Tetra requests - includes script/style injection."""
-        messages: list[Message] = []
-
         if isinstance(response, FileResponse):
             return response
 
-        for message in get_messages(request):
-            # FIXME: maybe use a more efficient data structure for large number of
-            #  messages
+        # Check if this is a Tetra protocol 1.0 response
+        is_tetra_1_0 = False
+        if (
+            "Content-Type" in response.headers
+            and "application/json" in response.headers["Content-Type"]
+            and hasattr(response, "content")
+        ):
+            try:
+                content = json.loads(response.content)
+                if isinstance(content, dict) and content.get("protocol") == "tetra-1.0":
+                    is_tetra_1_0 = True
+            except (json.JSONDecodeError, TypeError):
+                pass
 
-            # monkey patch an uid into the Message class to ensure it has a unique ID
-            # if it doesn't have one already
-            if not hasattr(message, "uid"):
-                message.uid = str(uuid.uuid4())
-            messages.append(message)
-        if messages:
-            # Put the messages list into the T-Messages header
-            response.headers["T-Messages"] = json.dumps(messages, cls=TetraJSONEncoder)
+        if not is_tetra_1_0:
+            messages: list[Message] = []
+            for message in get_messages(request):
+                # monkey patch an uid into the Message class to ensure it has a unique ID
+                # if it doesn't have one already
+                if not hasattr(message, "uid"):
+                    message.uid = str(uuid.uuid4())
+                messages.append(message)
+            if messages:
+                # Put the messages list into the T-Messages header
+                response.headers["T-Messages"] = json.dumps(
+                    messages, cls=TetraJSONEncoder
+                )
 
         if (
             "Content-Type" not in response.headers

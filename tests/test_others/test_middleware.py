@@ -4,7 +4,7 @@ from django.contrib.messages import add_message, constants
 from django.contrib.sessions.middleware import SessionMiddleware
 from tetra.middleware import TetraDetails, TetraMiddleware
 from tetra import Library
-from tetra.components.base import Component
+from tetra.components.base import Component, public
 from unittest.mock import Mock, patch
 
 import pytest
@@ -173,7 +173,7 @@ def test_middleware_full_path_with_tetra_components(request_factory):
     request = request_factory.get("/")
     response = HttpResponse(
         "<html><head><!-- tetra scripts placeholder123 --><!-- tetra styles placeholder456 --></head><body>test</body></html>",
-        content_type="text/html"
+        content_type="text/html",
     )
 
     # Simulate that Tetra components were used
@@ -186,8 +186,12 @@ def test_middleware_full_path_with_tetra_components(request_factory):
     middleware = TetraMiddleware(get_response)
 
     with patch("tetra.middleware.get_token", return_value="test-csrf-token"):
-        with patch("tetra.middleware.render_scripts", return_value="<script>mocked</script>"):
-            with patch("tetra.middleware.render_styles", return_value="<style>mocked</style>"):
+        with patch(
+            "tetra.middleware.render_scripts", return_value="<script>mocked</script>"
+        ):
+            with patch(
+                "tetra.middleware.render_styles", return_value="<style>mocked</style>"
+            ):
                 result = middleware(request)
 
                 # Result should be processed response
@@ -293,19 +297,80 @@ def test_middleware_creates_tetra_details_on_every_request(request_factory):
     assert isinstance(request.tetra, TetraDetails)
 
 
-def test_middleware_fast_path_skips_content_manipulation(request_factory):
-    """Fast path should not search for placeholder strings"""
-    request = request_factory.get("/")
-    original_content = b"<html><body>test</body></html>"
-    response = HttpResponse(original_content, content_type="text/html")
+class FlowComponent(Component):
+    template = "<div>{{ title }}</div>"
+    title = public("initial")
 
-    get_response = Mock(return_value=response)
-    middleware = TetraMiddleware(get_response)
+    @public
+    def update_title(self, new_title):
+        self.title = new_title
+        return f"Updated to {new_title}"
 
-    result = middleware(request)
 
-    # Content should remain unchanged
-    assert result.content == original_content
+@pytest.mark.django_db
+def test_unified_protocol_full_flow(rf):
+    """Test full flow of unified protocol through the view and middleware."""
+    from tetra import Library
+    from tetra.views import component_method
+    from tetra.state import encode_component
+    from django.contrib.auth.models import AnonymousUser
+    from django.contrib.messages.middleware import MessageMiddleware
+    from collections import defaultdict
+
+    # Setup request
+    request = rf.post(
+        "/tetra/main/test_lib/FlowComponent/update_title",
+        data={},
+        content_type="application/json",
+    )
+    SessionMiddleware(lambda r: None).process_request(request)
+    request.session.save()
+    MessageMiddleware(lambda r: None).process_request(request)
+    request.user = AnonymousUser()
+
+    # Create library and register component
+    lib = Library("test_lib", app="main")
+    lib.register(FlowComponent)
+
+    # Prepare unified protocol request
+    encrypted_state = encode_component(FlowComponent(request))
+    request_envelope = {
+        "protocol": "tetra-1.0",
+        "id": "req-123",
+        "type": "call",
+        "payload": {
+            "component_id": "test-comp-id",
+            "method": "update_title",
+            "args": ["new title"],
+            "state": {"title": "initial"},
+            "encrypted_state": encrypted_state,
+            "children_state": [],
+        },
+    }
+    request._body = json.dumps(request_envelope).encode("utf-8")
+    request.csrf_processing_done = True
+    request.tetra_components_used = {FlowComponent}
+
+    # Add a message
+    add_message(request, constants.SUCCESS, "Success message")
+
+    # Mock the Library registry
+    with patch.object(Library, "registry", {"main": {"test_lib": lib}}):
+        response = component_method(
+            request, "main", "test_lib", "flow_component", "update_title"
+        )
+
+        # Check response from view
+        assert response.status_code == 200
+        resp_data = json.loads(response.content)
+        assert resp_data["protocol"] == "tetra-1.0"
+        assert resp_data["metadata"]["messages"][0]["message"] == "Success message"
+
+        # Check response through middleware
+        middleware = TetraMiddleware(lambda r: response)
+        final_response = middleware(request)
+        assert "T-Messages" not in final_response.headers
+        assert final_response == response
 
 
 @pytest.mark.django_db

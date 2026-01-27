@@ -39,19 +39,44 @@ def _component_method(
     try:
         # check if request includes multipart/form-data files
         if request.content_type == "multipart/form-data":
-            component_state = from_json(request.POST["component_state"])
-            # get files too and add them to the component state
-            for key in request.FILES:
-                component_state["data"][key] = request.FILES[key]
-
+            payload = from_json(request.POST["tetra_payload"])
         # if the request is application-data/json, we need to decode it ourselves
         elif request.content_type == "application/json" and request.body:
-            component_state = from_json(request.body.decode())
+            payload = from_json(request.body.decode())
         else:
             logger.error("Unsupported content type: %s", request.content_type)
             return HttpResponseBadRequest()
 
-    except json.decoder.JSONDecodeError as e:
+        # Extract component state from unified protocol payload
+        if (
+            isinstance(payload, dict)
+            and payload.get("protocol") == "tetra-1.0"
+            and "payload" in payload
+        ):
+            inner_payload = payload["payload"]
+            component_state = {
+                "encrypted": inner_payload.get("encrypted_state"),
+                "data": inner_payload.get("state"),
+                "children": inner_payload.get("children_state"),
+                "args": inner_payload.get("args"),
+            }
+            # Add files to the component state
+            if request.content_type == "multipart/form-data":
+                for key in request.FILES:
+                    component_state["data"][key] = request.FILES[key]
+        else:
+            # Fallback for old protocol during transition or if not matching
+            # (Though we might want to be strict)
+            if request.content_type == "multipart/form-data":
+                component_state = from_json(request.POST["component_state"])
+                for key in request.FILES:
+                    component_state["data"][key] = request.FILES[key]
+            elif request.content_type == "application/json" and request.body:
+                component_state = from_json(request.body.decode())
+            else:
+                return HttpResponseBadRequest()
+
+    except (json.decoder.JSONDecodeError, KeyError) as e:
         logger.error(e)
         return HttpResponseBadRequest()
 

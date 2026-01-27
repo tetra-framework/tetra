@@ -628,16 +628,6 @@ const Tetra = {
 
   async handleServerMethodResponse(response, component) {
     if (response.status === 200) {
-      if (response.headers.get('T-Response') !== "true") {
-        throw new Error("Response is not a Tetra response. Please check the server implementation.")
-      }
-      // handle Django messages and emit "tetra:new-message" for each one, so components can react on that individually
-      const messages = Tetra.jsonDecode(response.headers.get('T-Messages'));
-      if (messages) {
-        messages.forEach((message, index) => {
-          component.$dispatch('tetra:new-message', message)
-        })
-      }
       const cd = response.headers.get('Content-Disposition')
       if (cd?.startsWith("attachment")) {
         const a = document.createElement('a')
@@ -646,24 +636,64 @@ const Tetra = {
         a.click()
         a.remove()
         return;
-
       }
-      const respData = Tetra.jsonDecode(await response.text());
-      if (respData.success) {
+
+      const responseText = await response.text();
+      const respData = Tetra.jsonDecode(responseText);
+
+      let success = false;
+      let result = null;
+      let js = [];
+      let styles = [];
+      let messages = [];
+      let callbacks = [];
+
+      if (respData.protocol === "tetra-1.0") {
+        success = respData.success;
+        if (respData.payload) {
+          result = respData.payload.result;
+        }
+        if (respData.metadata) {
+          js = respData.metadata.js || [];
+          styles = respData.metadata.styles || [];
+          messages = respData.metadata.messages || [];
+          callbacks = respData.metadata.callbacks || [];
+        }
+      } else {
+        // Fallback for old protocol
+        if (response.headers.get('T-Response') !== "true") {
+          throw new Error("Response is not a Tetra response. Please check the server implementation.")
+        }
+        success = respData.success;
+        result = respData.result;
+        js = respData.js || [];
+        styles = respData.styles || [];
+        callbacks = respData.callbacks || [];
+        messages = Tetra.jsonDecode(response.headers.get('T-Messages')) || [];
+      }
+
+      // handle Django messages and emit "tetra:new-message" for each one
+      if (messages) {
+        messages.forEach((message) => {
+          component.$dispatch('tetra:new-message', message)
+        })
+      }
+
+      if (success) {
         let loadingResources = [];
-        respData.js.forEach(src => {
+        js.forEach(src => {
           if (!document.querySelector(`script[src="${CSS.escape(src)}"]`)) {
             loadingResources.push(Tetra.loadScript(src));
           }
         })
-        respData.styles.forEach(src => {
+        styles.forEach(src => {
           if (!document.querySelector(`link[href="${CSS.escape(src)}"]`)) {
             loadingResources.push(Tetra.loadStyles(src));
           }
         })
         await Promise.all(loadingResources);
-        if (respData.callbacks) {
-          respData.callbacks.forEach((item) => {
+        if (callbacks) {
+          callbacks.forEach((item) => {
             // iterate down path to callback
             let obj = component;
             item.callback.forEach((name, i) => {
@@ -671,12 +701,11 @@ const Tetra = {
                 obj[name](...item.args);
               } else {
                 obj = obj[name];
-                console.log(name, obj)
               }
             })
           })
         }
-        return respData.result;
+        return result;
       } else {
         // TODO: better errors
         throw new Error('Error processing public method');
@@ -687,9 +716,25 @@ const Tetra = {
   },
 
   async callServerMethod(component, methodName, methodEndpoint, args) {
+    const requestId = Math.random().toString(36).substring(2, 15);
     let component_state = Tetra.getStateWithChildren(component);
     component_state.args = args || [];
-    let payload = {
+
+    const requestEnvelope = {
+      protocol: "tetra-1.0",
+      id: requestId,
+      type: "call",
+      payload: {
+        component_id: component.$el.getAttribute('tetra-component-id'),
+        method: methodName,
+        args: component_state.args,
+        state: component_state.data,
+        encrypted_state: component_state.encrypted,
+        children_state: component_state.children
+      }
+    };
+
+    let fetchPayload = {
       method: 'POST',
       headers: {
         'T-Request': "true",
@@ -707,7 +752,8 @@ const Tetra = {
         hasFiles = true;
         // A file is not uploaded anyway, as the browser automatically deletes the data if submitted within a JSON.
         // On the server, only an empty {} will arrive, so we can set it to {} anyway.
-        component_state.data[key] = {};
+        // In the protocol, we keep the original state, but when sending we might need to adjust.
+        requestEnvelope.payload.state[key] = {};
         formData.append(key, value);
         // TODO: prevent re-uploading of files that are already uploaded.
       }
@@ -715,20 +761,19 @@ const Tetra = {
 
     // check if FormData has *any* entry - and if not, send JSON request
     if (hasFiles) {
-      formData.append('component_state', Tetra.jsonEncode(component_state));
-      payload.body = formData;
+      formData.append('tetra_payload', Tetra.jsonEncode(requestEnvelope));
+      fetchPayload.body = formData;
     } else {
-      payload.body = Tetra.jsonEncode(component_state)
-      payload.headers['Content-Type'] = 'application/json'
+      fetchPayload.body = Tetra.jsonEncode(requestEnvelope)
+      fetchPayload.headers['Content-Type'] = 'application/json'
     }
     const triggerEl = component.$event ? component.$event.target : component.$el;
-    const requestId = Math.random().toString(36).substring(2, 15);
     component.$dispatch('tetra:before-request', {
       component: component,
       triggerEl: triggerEl,
       requestId: requestId
     });
-    const response = await fetch(methodEndpoint, payload);
+    const response = await fetch(methodEndpoint, fetchPayload);
     component.$dispatch('tetra:after-request', {
       component: component,
       triggerEl: triggerEl,

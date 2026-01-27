@@ -542,15 +542,6 @@
     },
     async handleServerMethodResponse(response, component) {
       if (response.status === 200) {
-        if (response.headers.get("T-Response") !== "true") {
-          throw new Error("Response is not a Tetra response. Please check the server implementation.");
-        }
-        const messages = Tetra.jsonDecode(response.headers.get("T-Messages"));
-        if (messages) {
-          messages.forEach((message, index) => {
-            component.$dispatch("tetra:new-message", message);
-          });
-        }
         const cd = response.headers.get("Content-Disposition");
         if (cd == null ? void 0 : cd.startsWith("attachment")) {
           const a = document.createElement("a");
@@ -560,34 +551,67 @@
           a.remove();
           return;
         }
-        const respData = Tetra.jsonDecode(await response.text());
-        if (respData.success) {
+        const responseText = await response.text();
+        const respData = Tetra.jsonDecode(responseText);
+        let success = false;
+        let result = null;
+        let js = [];
+        let styles = [];
+        let messages = [];
+        let callbacks = [];
+        if (respData.protocol === "tetra-1.0") {
+          success = respData.success;
+          if (respData.payload) {
+            result = respData.payload.result;
+          }
+          if (respData.metadata) {
+            js = respData.metadata.js || [];
+            styles = respData.metadata.styles || [];
+            messages = respData.metadata.messages || [];
+            callbacks = respData.metadata.callbacks || [];
+          }
+        } else {
+          if (response.headers.get("T-Response") !== "true") {
+            throw new Error("Response is not a Tetra response. Please check the server implementation.");
+          }
+          success = respData.success;
+          result = respData.result;
+          js = respData.js || [];
+          styles = respData.styles || [];
+          callbacks = respData.callbacks || [];
+          messages = Tetra.jsonDecode(response.headers.get("T-Messages")) || [];
+        }
+        if (messages) {
+          messages.forEach((message) => {
+            component.$dispatch("tetra:new-message", message);
+          });
+        }
+        if (success) {
           let loadingResources = [];
-          respData.js.forEach((src) => {
+          js.forEach((src) => {
             if (!document.querySelector(`script[src="${CSS.escape(src)}"]`)) {
               loadingResources.push(Tetra.loadScript(src));
             }
           });
-          respData.styles.forEach((src) => {
+          styles.forEach((src) => {
             if (!document.querySelector(`link[href="${CSS.escape(src)}"]`)) {
               loadingResources.push(Tetra.loadStyles(src));
             }
           });
           await Promise.all(loadingResources);
-          if (respData.callbacks) {
-            respData.callbacks.forEach((item) => {
+          if (callbacks) {
+            callbacks.forEach((item) => {
               let obj = component;
               item.callback.forEach((name, i) => {
                 if (i === item.callback.length - 1) {
                   obj[name](...item.args);
                 } else {
                   obj = obj[name];
-                  console.log(name, obj);
                 }
               });
             });
           }
-          return respData.result;
+          return result;
         } else {
           throw new Error("Error processing public method");
         }
@@ -596,9 +620,23 @@
       }
     },
     async callServerMethod(component, methodName, methodEndpoint, args) {
+      const requestId = Math.random().toString(36).substring(2, 15);
       let component_state = Tetra.getStateWithChildren(component);
       component_state.args = args || [];
-      let payload = {
+      const requestEnvelope = {
+        protocol: "tetra-1.0",
+        id: requestId,
+        type: "call",
+        payload: {
+          component_id: component.$el.getAttribute("tetra-component-id"),
+          method: methodName,
+          args: component_state.args,
+          state: component_state.data,
+          encrypted_state: component_state.encrypted,
+          children_state: component_state.children
+        }
+      };
+      let fetchPayload = {
         method: "POST",
         headers: {
           "T-Request": "true",
@@ -612,25 +650,24 @@
       for (const [key, value] of Object.entries(component_state.data)) {
         if (value instanceof File) {
           hasFiles = true;
-          component_state.data[key] = {};
+          requestEnvelope.payload.state[key] = {};
           formData.append(key, value);
         }
       }
       if (hasFiles) {
-        formData.append("component_state", Tetra.jsonEncode(component_state));
-        payload.body = formData;
+        formData.append("tetra_payload", Tetra.jsonEncode(requestEnvelope));
+        fetchPayload.body = formData;
       } else {
-        payload.body = Tetra.jsonEncode(component_state);
-        payload.headers["Content-Type"] = "application/json";
+        fetchPayload.body = Tetra.jsonEncode(requestEnvelope);
+        fetchPayload.headers["Content-Type"] = "application/json";
       }
       const triggerEl = component.$event ? component.$event.target : component.$el;
-      const requestId = Math.random().toString(36).substring(2, 15);
       component.$dispatch("tetra:before-request", {
         component,
         triggerEl,
         requestId
       });
-      const response = await fetch(methodEndpoint, payload);
+      const response = await fetch(methodEndpoint, fetchPayload);
       component.$dispatch("tetra:after-request", {
         component,
         triggerEl,

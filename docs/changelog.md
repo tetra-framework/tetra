@@ -13,9 +13,13 @@ title: Changelog
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.8.1] - unreleased
+### Fixed
+- Fixed `TypeError` in `_handleAutofocus` when `this.$root` is undefined (e.g. if the component was removed from the DOM before the next tick).
+
 ### Changed
-- delegate rendering of components to  `BaseRenderer` and `ComponentRenderer` classes
+- delegate rendering of components to `BaseRenderer` and `ComponentRenderer` classes
 - more robust schemata state validation using Pydantic's TypeAdapters for component attributes
+- Implementation of the **Tetra Unified Protocol (Phase 1)** for HTTP method calls. This unifies HTTP and WebSocket communication into a consistent JSON envelope, moving metadata like Django messages from headers into the response body.
 
 ## [0.8.0] - 2026-01-26
 ### Changed
