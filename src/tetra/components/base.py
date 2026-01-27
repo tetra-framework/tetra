@@ -1363,6 +1363,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             return JsonResponse(
                 {
                     "protocol": "tetra-1.0",
+                    "type": "call.response",
                     "success": True,
                     "payload": {
                         "result": result,

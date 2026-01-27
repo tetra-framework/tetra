@@ -54,16 +54,18 @@ async def test_auto_subscriptions(tetra_ws_communicator):
         "broadcast", status="subscribed", message="test broadcast"
     )
     response = await communicator.receive_json_from()
+    assert response["protocol"] == "tetra-1.0"
     assert response["type"] == "subscription.response"
-    assert response["group"] == "broadcast"
+    assert response["payload"]["group"] == "broadcast"
 
     # Test session group
     await ComponentDispatcher.subscription_response(
         f"session.{session_key}", status="subscribed", message="test session"
     )
     response = await communicator.receive_json_from()
+    assert response["protocol"] == "tetra-1.0"
     assert response["type"] == "subscription.response"
-    assert response["group"] == f"session.{session_key}"
+    assert response["payload"]["group"] == f"session.{session_key}"
 
 
 @pytest.mark.django_db
@@ -75,9 +77,10 @@ async def test_subscribe(tetra_ws_communicator):
     await communicator.send_json_to({"type": "subscribe", "group": group_name})
 
     response = await communicator.receive_json_from()
+    assert response["protocol"] == "tetra-1.0"
     assert response["type"] == "subscription.response"
-    assert response["group"] == group_name
-    assert response["status"] == "subscribed"
+    assert response["payload"]["group"] == group_name
+    assert response["payload"]["status"] == "subscribed"
 
 
 @pytest.mark.django_db
@@ -90,16 +93,18 @@ async def test_subscribe_unsubscribe(tetra_ws_communicator):
     # Subscribe
     await communicator.send_json_to({"type": "subscribe", "group": group_name})
     response = await communicator.receive_json_from()
+    assert response["protocol"] == "tetra-1.0"
     assert response["type"] == "subscription.response"
-    assert response["group"] == group_name
-    assert response["status"] == "subscribed"
+    assert response["payload"]["group"] == group_name
+    assert response["payload"]["status"] == "subscribed"
 
     # Unsubscribe
     await communicator.send_json_to({"type": "unsubscribe", "group": group_name})
     response = await communicator.receive_json_from()
+    assert response["protocol"] == "tetra-1.0"
     assert response["type"] == "subscription.response"
-    assert response["group"] == group_name
-    assert response["status"] == "unsubscribed"
+    assert response["payload"]["group"] == group_name
+    assert response["payload"]["status"] == "unsubscribed"
 
 
 @pytest.mark.django_db
@@ -112,16 +117,18 @@ async def test_resubscribed(tetra_ws_communicator):
     # Subscribe
     await communicator.send_json_to({"type": "subscribe", "group": group_name})
     response = await communicator.receive_json_from()
+    assert response["protocol"] == "tetra-1.0"
     assert response["type"] == "subscription.response"
-    assert response["group"] == group_name
-    assert response["status"] == "subscribed"
+    assert response["payload"]["group"] == group_name
+    assert response["payload"]["status"] == "subscribed"
 
     # Subscribe to same group again
     await communicator.send_json_to({"type": "subscribe", "group": group_name})
     response = await communicator.receive_json_from()
+    assert response["protocol"] == "tetra-1.0"
     assert response["type"] == "subscription.response"
-    assert response["group"] == group_name
-    assert response["status"] == "resubscribed"
+    assert response["payload"]["group"] == group_name
+    assert response["payload"]["status"] == "resubscribed"
 
 
 @pytest.mark.django_db
@@ -159,9 +166,10 @@ async def test_component_update_data_handler(tetra_ws_communicator):
     await ComponentDispatcher.update_data(group_name, {"title": "New Title"})
 
     response = await communicator.receive_json_from()
+    assert response["protocol"] == "tetra-1.0"
     assert response["type"] == "component.update_data"
-    assert response["group"] == group_name
-    assert response["data"] == {"title": "New Title"}
+    assert response["payload"]["group"] == group_name
+    assert response["payload"]["data"] == {"title": "New Title"}
 
     # Clean up registry
     del subscription.registry[group_name]
@@ -182,9 +190,10 @@ async def test_component_remove_handler(tetra_ws_communicator):
     await ComponentDispatcher.component_remove(group_name, "comp_123")
 
     response = await communicator.receive_json_from()
+    assert response["protocol"] == "tetra-1.0"
     assert response["type"] == "component.remove"
-    assert response["group"] == group_name
-    assert response["component_id"] == "comp_123"
+    assert response["payload"]["group"] == group_name
+    assert response["payload"]["component_id"] == "comp_123"
 
 
 @pytest.mark.django_db
@@ -204,9 +213,10 @@ async def test_notify_handler(tetra_ws_communicator):
     await ComponentDispatcher.notify(group_name, "tetra:test-event", {"foo": "bar"})
 
     response = await communicator.receive_json_from()
+    assert response["protocol"] == "tetra-1.0"
     assert response["type"] == "notify"
-    assert response["event_name"] == "tetra:test-event"
-    assert response["data"] == {"foo": "bar"}
+    assert response["payload"]["event_name"] == "tetra:test-event"
+    assert response["payload"]["data"] == {"foo": "bar"}
 
 
 @pytest.mark.django_db
@@ -217,12 +227,11 @@ async def test_handle_subscribe_missing_group(tetra_ws_communicator):
     await communicator.send_json_to({"type": "subscribe", "group": None})
 
     response = await communicator.receive_json_from()
-    assert response == {
-        "type": "subscription.response",
-        "group": None,
-        "status": "error",
-        "message": "Invalid group name",
-    }
+    assert response["protocol"] == "tetra-1.0"
+    assert response["type"] == "subscription.response"
+    assert response["payload"]["group"] is None
+    assert response["payload"]["status"] == "error"
+    assert response["payload"]["message"] == "Invalid group name"
 
 
 @pytest.mark.django_db
@@ -234,12 +243,11 @@ async def test_handle_subscribe_unauthorized_group(tetra_ws_communicator):
     await communicator.send_json_to({"type": "subscribe", "group": unauthorized_group})
 
     response = await communicator.receive_json_from()
-    assert response == {
-        "type": "subscription.response",
-        "group": unauthorized_group,
-        "status": "error",
-        "message": "Unauthorized",
-    }
+    assert response["protocol"] == "tetra-1.0"
+    assert response["type"] == "subscription.response"
+    assert response["payload"]["group"] == unauthorized_group
+    assert response["payload"]["status"] == "error"
+    assert response["payload"]["message"] == "Unauthorized"
 
 
 @pytest.mark.django_db
@@ -251,12 +259,14 @@ async def test_handle_subscribe_any_session_group(tetra_ws_communicator):
     await communicator.send_json_to({"type": "subscribe", "group": unauthorized_group})
 
     response = await communicator.receive_json_from()
-    assert response == {
-        "type": "subscription.response",
-        "group": unauthorized_group,
-        "status": "error",
-        "message": "No manually joining of session groups allowed.",
-    }
+    assert response["protocol"] == "tetra-1.0"
+    assert response["type"] == "subscription.response"
+    assert response["payload"]["group"] == unauthorized_group
+    assert response["payload"]["status"] == "error"
+    assert (
+        response["payload"]["message"]
+        == "No manually joining of session groups allowed."
+    )
 
 
 @pytest.mark.django_db
@@ -270,9 +280,11 @@ async def test_handle_subscribe_own_session_group(tetra_ws_communicator):
     )
 
     response = await tetra_ws_communicator.receive_json_from()
-    assert response == {
-        "type": "subscription.response",
-        "group": own_session_group,
-        "status": "error",
-        "message": "No manually joining of session groups allowed.",
-    }
+    assert response["protocol"] == "tetra-1.0"
+    assert response["type"] == "subscription.response"
+    assert response["payload"]["group"] == own_session_group
+    assert response["payload"]["status"] == "error"
+    assert (
+        response["payload"]["message"]
+        == "No manually joining of session groups allowed."
+    )

@@ -5,7 +5,7 @@ This document formalizes the communication protocol between Tetra's client-side 
 
 The protocol is inspired by **JSON-RPC 2.0** but adapted to support Tetra's specific requirements for state management, server-side callbacks, and UI metadata (styles/scripts).
 
-Current Status: **Phase 1 (HTTP Method Calls) Implemented.**
+Current Status: **Phase 1 (HTTP) and Phase 2 (WebSockets) Implemented.**
 
 ---
 
@@ -21,12 +21,12 @@ Current Status: **Phase 1 (HTTP Method Calls) Implemented.**
     - `T-Current-URL`: The current URL of the page in the browser.
 
 ### 1.2 WebSockets (Real-time)
-- **Protocol:** JSON-based messages over WebSocket.
+- **Protocol:** JSON-based messages over WebSocket using the Unified Protocol envelope.
 - **Endpoint:** `/ws/tetra/`
 
 ---
 
-## 2. Request Structure
+## 2. Request Structure (Client to Server)
 
 ### 2.1 Component Method Call (HTTP)
 A request to execute a public method on a component.
@@ -51,41 +51,36 @@ A request to execute a public method on a component.
 - `id`: Unique request identifier (for matching responses).
 - `type`: Message type (currently `"call"`).
 - `payload`: Object containing request-specific data.
-  - `component_id`: Unique ID of the component.
-  - `method`: Name of the public method to call.
-  - `args`: List of positional arguments.
-  - `state`: Current serialized state of the component.
-  - `encrypted_state`: Encrypted state for security/integrity.
-  - `children_state`: Serialized state of child components.
 
 ### 2.2 WebSocket Messages (Client to Server)
-Commonly used for subscriptions.
 
 #### Subscribe
 ```json
 {
   "type": "subscribe",
-  "group": "my-update-group",
-  "component_id": "comp-unique-id",
-  "component_class": "MyComponent",
-  "auto_update": true
+  "group": "my-update-group"
+}
+```
+
+#### Unsubscribe
+```json
+{
+  "type": "unsubscribe",
+  "group": "my-update-group"
 }
 ```
 
 ---
 
-## 3. Response Structure
+## 3. Response Structure (Server to Client)
 
-Tetra is primarily an **HTML-over-the-wire** framework. While the protocol uses JSON for structure and metadata, the primary payload for UI updates is usually rendered HTML.
-
-### 3.1 Success Response (HTTP)
-Returned after a successful method call.
+Every message from the server follows a consistent top-level structure.
 
 ```json
 {
   "protocol": "tetra-1.0",
   "id": "req-123",
-  "success": true,
+  "type": "call.response",
   "payload": {
     "result": "Success message"
   },
@@ -105,50 +100,50 @@ Returned after a successful method call.
 }
 ```
 
-- `payload.result`: The return value of the server-side method.
-- `metadata.callbacks`: This is the primary mechanism for "HTML-over-the-wire". The server instructs the client to call specific internal methods with the new HTML or state as arguments.
-- `metadata.messages`: Django messages to be displayed on the client.
-- `metadata.js` / `metadata.styles`: Dynamic asset injection.
+### 3.2 WebSocket Messages (Server to Client)
 
-### 3.2 Error Response (HTTP)
-Returned when a method call fails.
+#### Subscription Response
+Standardizes the response to subscription/unsubscription requests.
 
 ```json
 {
   "protocol": "tetra-1.0",
-  "id": "req-123",
-  "success": false,
-  "error": {
-    "code": "method_not_found",
-    "message": "Public method 'private_func' not found or not public.",
-    "details": {}
-  }
+  "type": "subscription.response",
+  "payload": {
+    "group": "my-update-group",
+    "status": "subscribed",
+    "message": ""
+  },
+  "metadata": {}
 }
 ```
 
-### 3.3 WebSocket Messages (Server to Client)
-
-#### Component Update (HTML or Data)
-Standardizes real-time updates to also use callbacks for consistency with HTTP responses.
+#### Component Update
+Standardizes real-time updates to also use the unified envelope.
 
 ```json
 {
-  "type": "component.callback",
-  "group": "my-update-group",
-  "callback": {
-    "method": "_updateHtml",
-    "args": ["<div>New real-time content</div>"]
-  }
+  "protocol": "tetra-1.0",
+  "type": "component.update_data",
+  "payload": {
+    "group": "my-update-group",
+    "data": { "title": "New Title" }
+  },
+  "metadata": {}
 }
 ```
 
 #### Notify
 ```json
 {
+  "protocol": "tetra-1.0",
   "type": "notify",
-  "group": "my-group",
-  "event_name": "custom-event",
-  "data": {}
+  "payload": {
+    "group": "my-group",
+    "event_name": "tetra:custom-event",
+    "data": {}
+  },
+  "metadata": {}
 }
 ```
 
@@ -166,16 +161,5 @@ Tetra relies on "state-ful" communication where the client sends its current kno
 
 ---
 
-## 5. Unified Protocol (Phase 1)
-As of Tetra 0.8.1, the HTTP method calls have been unified into this JSON-based protocol. This migration moved metadata that was previously in headers into the JSON response body.
-
-- **Old `T-Messages` header**: Now in `metadata.messages`
-- **Old `T-Response` header**: Replaced by checking the `protocol` field.
-- **Old `T-Location` / `T-Redirect` headers**: Now handled via callbacks (e.g., `_redirect` or `_pushUrl`).
-
-## 6. Benefits of Formalization
-1. **Consistency**: HTTP and WebSockets use the same structured envelope for updates.
-2. **Language Agnostic**: Easier to write clients in React, Vue, or even mobile apps.
-3. **Type Safety**: Protocol can be defined with JSON Schema or TypeScript interfaces.
-4. **Extensibility**: Versioning via the `protocol` field allows for future breaking changes without breaking old clients.
-5. **Debuggability**: Structured error codes and messages make it easier to diagnose issues.
+## 5. Unified Protocol
+Starting with Tetra 0.8.1, the HTTP method calls have been unified into a JSON-based, unified protocol. 

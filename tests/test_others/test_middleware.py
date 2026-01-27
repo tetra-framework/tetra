@@ -364,6 +364,7 @@ def test_unified_protocol_full_flow(rf):
         assert response.status_code == 200
         resp_data = json.loads(response.content)
         assert resp_data["protocol"] == "tetra-1.0"
+        assert resp_data["type"] == "call.response"
         assert resp_data["metadata"]["messages"][0]["message"] == "Success message"
 
         # Check response through middleware

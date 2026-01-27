@@ -63,25 +63,32 @@
       return matchingEls.map((el) => Alpine.$data(el));
     },
     handleWebsocketMessage(data) {
-      const dataType = data.type;
-      switch (dataType) {
+      let messageType;
+      let payload;
+      let metadata = {};
+      if (data.protocol === "tetra-1.0") {
+        messageType = data.type;
+        payload = data.payload;
+        metadata = data.metadata || {};
+      } else {
+        messageType = data.type;
+        payload = data;
+      }
+      switch (messageType) {
         case "subscription.response":
-          this.handleSubscriptionResponse(data);
+          this.handleSubscriptionResponse(payload);
           break;
         case "notify":
-          this.handleGroupNotify(data);
+          this.handleGroupNotify(payload);
           break;
         case "component.update_data":
-          this.handleComponentUpdateData(data);
+          this.handleComponentUpdateData(payload);
           break;
-        // case 'component.reload':
-        //   this.handleComponentReload(data);
-        //   break;
         case "component.remove":
-          this.handleComponentRemove(data);
+          this.handleComponentRemove(payload);
           break;
         default:
-          console.warn("Unknown WebSocket message type:", dataType, ":", data);
+          console.warn("Unknown WebSocket message type:", messageType, ":", data);
       }
     },
     handleSubscriptionResponse(event) {

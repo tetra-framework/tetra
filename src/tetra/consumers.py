@@ -107,17 +107,30 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
                 f"Unknown message type received via websocket: {message_type}"
             )
 
+    async def _send_unified_message(
+        self, message_type: str, payload: dict, metadata: dict | None = None
+    ) -> None:
+        """Send a message using the unified Tetra protocol."""
+        await self.send_json(
+            {
+                "protocol": "tetra-1.0",
+                "type": message_type,
+                "payload": payload,
+                "metadata": metadata or {},
+            }
+        )
+
     async def _handle_subscribe(self, data: dict[str, str]) -> None:
         """Handles subscription requests to named groups."""
         group_name = data.get("group", "")
         if not group_name:
-            await self.send_json(
+            await self._send_unified_message(
+                "subscription.response",
                 {
-                    "type": "subscription.response",
                     "group": group_name,
                     "status": "error",
                     "message": "Invalid group name",
-                }
+                },
             )
             return
 
@@ -135,13 +148,9 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
                     f"Unauthorized access to group {group_name} by user "
                     f"{user_id} blocked."
                 )
-                await self.send_json(
-                    {
-                        "type": "subscription.response",
-                        "group": group_name,
-                        "status": "error",
-                        "message": "Unauthorized",
-                    }
+                await self._send_unified_message(
+                    "subscription.response",
+                    {"group": group_name, "status": "error", "message": "Unauthorized"},
                 )
                 return
         if group_name.startswith("session."):
@@ -152,34 +161,34 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
                 f"Unauthorized access to group {group_name} by session "
                 f"{self.session.session_key if self.session else None} blocked."
             )
-            await self.send_json(
+            await self._send_unified_message(
+                "subscription.response",
                 {
-                    "type": "subscription.response",
                     "group": group_name,
                     "status": "error",
                     "message": "No manually joining of session groups allowed.",
-                }
+                },
             )
         # check if we already subscribed to this group - if so, send "resubscribed"
         if group_name in self.subscribed_groups:
-            await self.send_json(
+            await self._send_unified_message(
+                "subscription.response",
                 {
-                    "type": "subscription.response",
                     "group": group_name,
                     "status": "resubscribed",
-                }
+                },
             )
             return
 
         # Join channel group
         await self.channel_layer.group_add(group_name, self.channel_name)
         self.subscribed_groups.add(group_name)
-        await self.send_json(
+        await self._send_unified_message(
+            "subscription.response",
             {
-                "type": "subscription.response",
                 "group": group_name,
                 "status": "subscribed",
-            }
+            },
         )
 
     async def _handle_unsubscribe(self, data: dict[str, str]) -> None:
@@ -188,17 +197,23 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         if group_name in self.subscribed_groups:
             await self.channel_layer.group_discard(group_name, self.channel_name)
             self.subscribed_groups.remove(group_name)
-            await self.send_json(
+            await self._send_unified_message(
+                "subscription.response",
                 {
-                    "type": "subscription.response",
                     "group": group_name,
                     "status": "unsubscribed",
-                }
+                },
             )
 
     async def subscription_response(self, event) -> None:
         """Handle confirmation of subscription"""
-        await self.send_json(event)
+        # If it's already a protocol message, send as is (assuming it's formatted correctly)
+        if event.get("protocol") == "tetra-1.0":
+            await self.send_json(event)
+        else:
+            # Wrap legacy event
+            type = event.pop("type")
+            await self._send_unified_message(type, event)
 
     async def component_update_data(self, event) -> None:
         """Handle component data update
@@ -211,7 +226,11 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         components = subscription.registry.get(group_name, [])
         for c in components:
             if all(key in c._public_properties for key in event["data"].keys()):
-                await self.send_json(event)
+                # Wrap in unified protocol
+                await self._send_unified_message(
+                    "component.update_data",
+                    {"group": event["group"], "data": event["data"]},
+                )
             else:
                 raise ComponentError(
                     f"No matching components found for "
@@ -224,8 +243,10 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
 
     async def component_remove(self, event) -> None:
         """Handle component removal"""
-        await self.send_json(event)
+        type = event.pop("type")
+        await self._send_unified_message(type, event)
 
     async def notify(self, event) -> None:
         """Handle notification"""
-        await self.send_json(event)
+        type = event.pop("type")
+        await self._send_unified_message(type, event)

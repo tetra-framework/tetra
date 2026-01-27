@@ -79,31 +79,40 @@ const Tetra = {
   handleWebsocketMessage(data) {
     // This function centrally handles incoming websocket data and dispatches it to the
     // corresponding methods, if necessary.
-    const dataType = data.type;
+    
+    let messageType;
+    let payload;
+    let metadata = {};
 
-    switch (dataType) {
+    if (data.protocol === "tetra-1.0") {
+      messageType = data.type;
+      payload = data.payload;
+      metadata = data.metadata || {};
+    } else {
+      // Fallback for old protocol
+      messageType = data.type;
+      payload = data;
+    }
+
+    switch (messageType) {
       case 'subscription.response':
-        this.handleSubscriptionResponse(data);
+        this.handleSubscriptionResponse(payload);
         break;
 
       case 'notify':
-        this.handleGroupNotify(data);
+        this.handleGroupNotify(payload);
         break;
 
       case 'component.update_data':
-        this.handleComponentUpdateData(data);
+        this.handleComponentUpdateData(payload);
         break;
 
-        // case 'component.reload':
-        //   this.handleComponentReload(data);
-        //   break;
-
       case 'component.remove':
-        this.handleComponentRemove(data);
+        this.handleComponentRemove(payload);
         break;
 
       default:
-        console.warn('Unknown WebSocket message type:', dataType,":", data);
+        console.warn('Unknown WebSocket message type:', messageType, ":", data);
     }
   },
   handleSubscriptionResponse(event){
