@@ -110,7 +110,7 @@ def test_nested_counter_components(component_locator):
     counter1_content.locator(".btn-increment").click()
     # Wait for the text to change from "0" to "1"
     counter1_content.locator('.count-value:has-text("1")').wait_for(
-        state="visible", timeout=2000
+        state="visible"
     )
     assert counter1_content.locator(".count-value").text_content() == "1"
     assert counter1_content.locator(".sum-value").text_content() == "1"
@@ -118,7 +118,7 @@ def test_nested_counter_components(component_locator):
     counter1_content.locator(".btn-increment").click()
     # Wait for the text to change from "1" to "2"
     counter1_content.locator('.count-value:has-text("2")').wait_for(
-        state="visible", timeout=2000
+        state="visible"
     )
     assert counter1_content.locator(".count-value").text_content() == "2"
     assert counter1_content.locator(".sum-value").text_content() == "2"
@@ -126,21 +126,21 @@ def test_nested_counter_components(component_locator):
     # Test Counter 2: Increment once
     counter2_content.locator(".btn-increment").click()
     counter2_content.locator('.count-value:has-text("1")').wait_for(
-        state="visible", timeout=2000
+        state="visible"
     )
     assert counter2_content.locator(".count-value").text_content() == "1"
 
     # Test Counter 3: Increment once
     counter3_content.locator(".btn-increment").click()
     counter3_content.locator('.count-value:has-text("1")').wait_for(
-        state="visible", timeout=2000
+        state="visible"
     )
     assert counter3_content.locator(".count-value").text_content() == "1"
 
     # Test decrement on Counter 1
     counter1_content.locator(".btn-decrement").click()
     counter1_content.locator('.count-value:has-text("1")').wait_for(
-        state="visible", timeout=2000
+        state="visible"
     )
     assert counter1_content.locator(".count-value").text_content() == "1"
     assert counter1_content.locator(".sum-value").text_content() == "1"
@@ -148,14 +148,14 @@ def test_nested_counter_components(component_locator):
     # Test decrement on Counter 2
     counter2_content.locator(".btn-decrement").click()
     counter2_content.locator('.count-value:has-text("0")').wait_for(
-        state="visible", timeout=2000
+        state="visible"
     )
     assert counter2_content.locator(".count-value").text_content() == "0"
 
     # Test decrement on Counter 3
     counter3_content.locator(".btn-decrement").click()
     counter3_content.locator('.count-value:has-text("0")').wait_for(
-        state="visible", timeout=2000
+        state="visible"
     )
     assert counter3_content.locator(".count-value").text_content() == "0"
 
@@ -176,7 +176,7 @@ def test_nested_counter_independence(component_locator):
     for i in range(3):
         counter_a_content.locator(".btn-increment").click()
         counter_a_content.locator(f'.count-value:has-text("{i+1}")').wait_for(
-            state="visible", timeout=2000
+            state="visible"
         )
 
     # Verify counter-a is at 3
@@ -190,7 +190,7 @@ def test_nested_counter_independence(component_locator):
     for i in range(5):
         counter_c_content.locator(".btn-increment").click()
         counter_c_content.locator(f'.count-value:has-text("{i+1}")').wait_for(
-            state="visible", timeout=2000
+            state="visible"
         )
 
     # Verify counter-c is at 5
@@ -203,11 +203,11 @@ def test_nested_counter_independence(component_locator):
     # Decrement counter-b twice
     counter_b_content.locator(".btn-decrement").click()
     counter_b_content.locator('.count-value:has-text("-1")').wait_for(
-        state="visible", timeout=2000
+        state="visible"
     )
     counter_b_content.locator(".btn-decrement").click()
     counter_b_content.locator('.count-value:has-text("-2")').wait_for(
-        state="visible", timeout=2000
+        state="visible"
     )
 
     # Verify counter-b is at -2

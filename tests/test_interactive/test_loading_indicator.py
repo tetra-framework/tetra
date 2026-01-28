@@ -12,12 +12,12 @@ class ConcurrentLoadingIndicatorComponent(Component):
 
     @public
     def slow_method_1(self):
-        time.sleep(1)
+        time.sleep(0.1)
         return "Done 1"
 
     @public
     def slow_method_2(self):
-        time.sleep(2)
+        time.sleep(0.2)
         return "Done 2"
 
     template = """
@@ -93,7 +93,7 @@ def test_concurrent_loading_indicators(page, component_locator):
 
     # Wait for the first button to finish its request
     component.locator("#button_1:not(.tetra-request)").wait_for(
-        state="visible", timeout=3000
+        state="visible", timeout=1000
     )
 
     # THIS IS THE IMPORTANT PART: The spinner might be hidden now because the first
@@ -106,7 +106,7 @@ def test_concurrent_loading_indicators(page, component_locator):
 
     # Wait for second button to finish
     component.locator("#button_2:not(.tetra-request)").wait_for(
-        state="visible", timeout=3500
+        state="visible", timeout=1000
     )
     # Then, the spinner must be hidden
     assert spinner.is_hidden()

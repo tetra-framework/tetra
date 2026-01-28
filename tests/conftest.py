@@ -82,8 +82,8 @@ def page(browser: Browser) -> Generator[Page, Page, None]:
     # Here comes a fancy hack:
     # If debugging tests (e.g. using PyCharm, should work in VSCode too),
     # deactivate the timeout, as it makes breakpoints impossible to use. As default
-    # else use 3s, this should suffice for even file uploads locally.
-    page.set_default_timeout(1000 * 60 if "pydevd" in sys.modules else 3000)
+    # else use 1s, this should suffice for local tests.
+    page.set_default_timeout(1000 * 60 if "pydevd" in sys.modules else 1000)
     yield page
     context.close()
 
