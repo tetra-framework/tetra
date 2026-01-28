@@ -113,5 +113,5 @@ While you might want to use a common [Django .gitignore file like from gitignore
 ```
 # Tetra
 __tetracache__/
-**/static/*/tetra/*
+**/static/*/tetra/**
 ```

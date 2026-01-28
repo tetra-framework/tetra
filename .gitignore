@@ -290,4 +290,4 @@ dist
 # Tetra
 __tetracache__/
 /src/tetra/bin/esbuild-*
-**/static/*/tetra/*
+**/static/*/tetra/**
