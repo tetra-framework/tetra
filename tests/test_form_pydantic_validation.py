@@ -50,6 +50,11 @@ def test_form_pydantic_validation():
     comp._encoded_state()
 
 
+from django.db.models.fields.files import FieldFile
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import models
+
+
 class AccountType(TextChoices):
     PERSON = "person"
     BUSINESS = "business"
@@ -85,4 +90,41 @@ def test_form_enum_choice_pydantic_validation():
 
     # Setting it to another Enum member
     comp.account_type = AccountType.BUSINESS
+    comp._encoded_state()
+
+
+class FileForm(forms.Form):
+    identity_proof = forms.FileField(required=False)
+
+
+@my_lib.register
+class FileFormComponent(FormComponent):
+    form_class = FileForm
+    template = "<div></div>"
+
+
+class MockModel(models.Model):
+    file = models.FileField(upload_to="test/")
+
+    class Meta:
+        app_label = "test_form_pydantic"
+
+
+@pytest.mark.django_db
+def test_form_file_field_pydantic_validation():
+    request = get_request_with_session()
+    comp = FileFormComponent(request)
+
+    # Initial value is None
+    assert comp.identity_proof is None
+    comp._encoded_state()
+
+    # SimpleUploadedFile
+    comp.identity_proof = SimpleUploadedFile("test.txt", b"hello")
+    comp._encoded_state()
+
+    # FieldFile
+    instance = MockModel()
+    ff = FieldFile(instance, MockModel._meta.get_field("file"), "test.txt")
+    comp.identity_proof = ff
     comp._encoded_state()

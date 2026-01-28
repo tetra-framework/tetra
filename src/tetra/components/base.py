@@ -21,6 +21,7 @@ from django import forms
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files import File
 from django.core.files.uploadedfile import UploadedFile
+from django.db.models.fields.files import FieldFile
 from django.db import models
 from django.db.models import Model
 from django.db.models.base import ModelBase
@@ -1426,8 +1427,8 @@ def get_python_type_from_form_field(field, initial) -> type:
         forms.URLField: str,
         forms.CharField: str,
         forms.ChoiceField: str,
-        forms.FileField: UploadedFile,
-        forms.ImageField: UploadedFile,
+        forms.ImageField: UploadedFile | FieldFile | File,
+        forms.FileField: UploadedFile | FieldFile | File,
     }
 
     # Check for ModelChoiceField first (special case)
