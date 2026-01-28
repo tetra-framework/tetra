@@ -2,10 +2,6 @@
 .DS_Store
 Thumbs.db
 
-# Tetra
-__tetracache__/
-src/tetra/bin
-
 # PYTHON:
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -292,5 +288,6 @@ dist
 .pnp.*
 
 # Tetra
-.tetracache/
+__tetracache__/
 /src/tetra/bin/esbuild-*
+**/static/*/tetra/*

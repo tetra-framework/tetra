@@ -94,7 +94,7 @@ If you are using [VS Code](https://code.visualstudio.com) you can use the [Pytho
 
 ## Running the dev server
 
-Finally, run the Django development server command as usual. When your files are modified it will rebuild your JS and CSS:
+Finally, run the Django development server command as usual. When your files are modified, it will rebuild your JS and CSS:
 
 ```
 $ python manage.py runserver
@@ -113,5 +113,5 @@ While you might want to use a common [Django .gitignore file like from gitignore
 ```
 # Tetra
 __tetracache__/
-/**/static/*/tetra/**
+**/static/*/tetra/*
 ```
