@@ -1434,6 +1434,11 @@ def get_python_type_from_form_field(field, initial) -> type:
     if isinstance(field, ModelChoiceField):
         return field.queryset.model
 
+    # Fallback: try to infer from initial value
+    if initial is not None:
+        if isinstance(initial, Enum):
+            return type(initial)
+
     # Check against field type map
     for field_class, python_type in field_type_map.items():
         if isinstance(field, field_class):
@@ -1446,7 +1451,11 @@ def get_python_type_from_form_field(field, initial) -> type:
     else:
         # Infer type from field class
         initial = field.to_python(initial or "")
-        return type(initial) if initial is not None else NoneType
+        if initial is not None:
+            if isinstance(initial, Enum):
+                return type(initial)
+            return type(initial)
+        return NoneType
 
 
 class FormComponentMetaClass(ComponentMetaClass):

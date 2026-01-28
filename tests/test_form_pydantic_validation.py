@@ -1,4 +1,7 @@
 import pytest
+from enum import Enum
+
+from django.db.models import TextChoices
 from pydantic import ValidationError
 from django import forms
 from tetra import Library, public
@@ -44,4 +47,42 @@ def test_form_pydantic_validation():
     comp._encoded_state()
 
     comp.name = None
+    comp._encoded_state()
+
+
+class AccountType(TextChoices):
+    PERSON = "person"
+    BUSINESS = "business"
+
+
+class EnumChoiceForm(forms.Form):
+    account_type = forms.ChoiceField(
+        choices=[(tag.value, tag.name) for tag in AccountType],
+        initial=AccountType.PERSON,
+    )
+
+
+@my_lib.register
+class EnumChoiceFormComponent(FormComponent):
+    form_class = EnumChoiceForm
+    template = "<div></div>"
+
+
+@pytest.mark.django_db
+def test_form_enum_choice_pydantic_validation():
+    request = get_request_with_session()
+    comp = EnumChoiceFormComponent(request)
+
+    # Initial value is AccountType.PERSON
+    assert comp.account_type == AccountType.PERSON
+
+    # This should NOT raise ValidationError
+    comp._encoded_state()
+
+    # Setting it to the value should also work (Pydantic coercion)
+    comp.account_type = "business"
+    comp._encoded_state()
+
+    # Setting it to another Enum member
+    comp.account_type = AccountType.BUSINESS
     comp._encoded_state()
