@@ -15,6 +15,7 @@ title: Changelog
 ## [0.8.1] - unreleased
 ### Fixed
 - Fixed `TypeError` in `_handleAutofocus` when `this.$root` is undefined (e.g. if the component was removed from the DOM before the next tick).
+- Make client side redirects faster: don't render the component DOM before redirecting. 
 
 ### Changed
 - delegate rendering of components to `BaseRenderer` and `ComponentRenderer` classes

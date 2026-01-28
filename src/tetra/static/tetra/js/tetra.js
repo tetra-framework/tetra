@@ -589,6 +589,13 @@
           styles = respData.metadata.styles || [];
           messages = respData.metadata.messages || [];
           callbacks = respData.metadata.callbacks || [];
+          const redirectCallback = callbacks.find(
+            (item) => item.callback && item.callback.length === 1 && item.callback[0] === "_redirect"
+          );
+          if (redirectCallback && redirectCallback.args && redirectCallback.args.length > 0) {
+            document.location = redirectCallback.args[0];
+            return;
+          }
         }
         if (!success && respData.error) {
           console.error(`Tetra method error [${respData.error.code}]: ${respData.error.message}`);
