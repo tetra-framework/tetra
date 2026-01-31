@@ -20,10 +20,13 @@ class About(Component):
 
 
 @library.register
-class MyRouter(Router):
+class ClassRouter(Router):
     routes = {
-        "/": "test_router.Home",
-        "/about/": "test_router.About",
+        "/": Home,
+        "/about/": About,
+        "/re/(?P<id>\\d+)/": About,
+        "/re-str/(?P<id>\\d+)/": "test_router.About",
+        "/string-route/": "test_router.Home",
     }
 
 
@@ -38,7 +41,7 @@ def _get_request(path):
 
 def test_router_initial_render_home():
     request = _get_request("/")
-    router = MyRouter(request)
+    router = ClassRouter(request)
     html = router.render()
     assert "Home" in html
     assert router.current_component == "test_router.Home"
@@ -46,7 +49,7 @@ def test_router_initial_render_home():
 
 def test_router_initial_render_about():
     request = _get_request("/about/")
-    router = MyRouter(request)
+    router = ClassRouter(request)
     html = router.render()
     assert "About" in html
     assert router.current_component == "test_router.About"
@@ -54,11 +57,44 @@ def test_router_initial_render_about():
 
 def test_router_navigate():
     request = _get_request("/")
-    router = MyRouter(request)
+    router = ClassRouter(request)
     router.navigate("/about/", push=False)
     html = router.render()
     assert "About" in html
     assert router.current_component == "test_router.About"
+
+
+def test_class_router_regex_match():
+    request = _get_request("/re/123/")
+    router = ClassRouter(request)
+    html = router.render()
+    assert "About" in html
+    assert router.current_component == "test_router.About"
+
+
+def test_class_router_regex_match_str():
+    request = _get_request("/re-str/123/")
+    router = ClassRouter(request)
+    html = router.render()
+    assert "About" in html
+    assert router.current_component == "test_router.About"
+
+
+def test_class_router_string_route():
+    request = _get_request("/string-route/")
+    router = ClassRouter(request)
+    html = router.render()
+    assert "Home" in html
+    assert router.current_component == "test_router.Home"
+
+
+def test_router_no_match():
+    request = _get_request("/non-existent/")
+    router = ClassRouter(request)
+    html = router.render()
+    assert "Home" not in html
+    assert "About" not in html
+    assert router.current_component == ""
 
 
 def test_link_render():

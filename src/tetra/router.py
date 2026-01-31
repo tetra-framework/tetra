@@ -3,7 +3,7 @@ from typing import Optional
 
 from django.conf import settings
 from sourcetypes import django_html
-from tetra import Component, public
+from tetra import Component, public, BasicComponent
 
 
 def ensure_trailing_slash(path):
@@ -17,7 +17,9 @@ class Router(Component):
     A component that manages navigation and dynamic component switching.
     """
 
-    routes: dict[str, str] = {}  # Map of path patterns to component names.
+    # Map of path patterns to components.
+    routes: dict[str, str | type[BasicComponent]] = {}
+
     current_component: str = public("")
     current_path: str = public("")
 
@@ -53,12 +55,17 @@ class Router(Component):
 
         # Exact match
         if path in self.routes:
-            return self.routes[path]
+            component = self.routes[path]
+            if isinstance(component, str):
+                return component
+            return f"{component._library.name}.{component.__name__}"
 
         # Regex match
-        for pattern, component_name in self.routes.items():
+        for pattern, component in self.routes.items():
             if re.match(f"^{pattern}$", path):
-                return component_name
+                if isinstance(component, str):
+                    return component
+                return f"{component._library.name}.{component.__name__}"
 
         return ""
 
