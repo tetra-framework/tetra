@@ -155,9 +155,14 @@
       }));
     },
     handleComponentUpdateData(event) {
-      const { type, group, data } = event;
+      const { group, data, sender_id } = event;
       const components = this._get_components_by_subscribe_group(group);
-      components.forEach((component) => component._updateData(data));
+      components.forEach((component) => {
+        if (sender_id && component.__activeRequests && component.__activeRequests.has(sender_id)) {
+          return;
+        }
+        component._updateData(data);
+      });
     },
     handleComponentRemove(event) {
       const { type, group, component_id } = event;
@@ -234,10 +239,17 @@
               }
               this.__activeRequests.set(requestId, {
                 triggerSelector,
-                indicatorSelector: triggerEl.getAttribute("t-indicator")
+                indicatorSelector: triggerEl.getAttribute("t-indicator"),
+                completed: false
               });
             } else {
-              this.__activeRequests.delete(requestId);
+              const request = this.__activeRequests.get(requestId);
+              if (request) {
+                request.completed = true;
+              }
+              setTimeout(() => {
+                this.__activeRequests.delete(requestId);
+              }, 5e3);
             }
             const updateElementState = (el, reqId, isStart) => {
               if (!el.__activeRequests) el.__activeRequests = /* @__PURE__ */ new Set();
@@ -272,6 +284,7 @@
           const reapplyLoadingState = () => {
             if (!this.__activeRequests || this.__activeRequests.size === 0) return;
             this.__activeRequests.forEach((info, reqId) => {
+              if (info.completed) return;
               if (info.triggerSelector) {
                 const triggers = this.$el.querySelectorAll(info.triggerSelector);
                 triggers.forEach((el) => {
@@ -776,7 +789,8 @@
         triggerEl,
         requestId
       });
-      return await this.handleServerMethodResponse(response, component);
+      const result = await this.handleServerMethodResponse(response, component);
+      return result;
     },
     jsonReplacer(key, value) {
       if (value instanceof Date) {

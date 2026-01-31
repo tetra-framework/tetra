@@ -47,7 +47,9 @@ class ComponentDispatcher:
         )
 
     @staticmethod
-    async def update_data(group: str, data: dict | None = None) -> None:
+    async def update_data(
+        group: str, data: dict | None = None, sender_id: str | None = None
+    ) -> None:
         """
         Sends data updates to public properties of all components that are subscribed to
         WebSocket connections in a group.
@@ -61,6 +63,7 @@ class ComponentDispatcher:
            data: Dictionary containing the data to be sent to group members.
                 IMPORTANT: All keys in this dict must match the components'
                 public_properties names.
+           sender_id: Unique identifier of the request that triggered this update.
         """
         channel_layer = get_channel_layer()
         await channel_layer.group_send(
@@ -69,17 +72,21 @@ class ComponentDispatcher:
                 "type": "component.update_data",
                 "group": group,
                 "data": data or {},
+                "sender_id": sender_id,
             },
         )
 
     @staticmethod
-    async def component_remove(group: str, component_id: str) -> None:
+    async def component_remove(
+        group: str, component_id: str, sender_id: str | None = None
+    ) -> None:
         """
         Send component removal notification to all WebSocket connections in a group.
 
         Args:
             group: WebSocket group name to send the removal notification to
             component_id: Unique identifier of the component to be removed
+            sender_id: Unique identifier of the request that triggered this update.
         """
         channel_layer = get_channel_layer()
         await channel_layer.group_send(
@@ -88,6 +95,7 @@ class ComponentDispatcher:
                 "type": "component.remove",
                 "group": group,
                 "component_id": component_id,
+                "sender_id": sender_id,
             },
         )
 

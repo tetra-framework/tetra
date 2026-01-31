@@ -1,3 +1,5 @@
+from contextvars import ContextVar
+from datetime import datetime
 import datetime
 import inspect
 import json
@@ -35,6 +37,11 @@ from tetra.types import ComponentData
 unsupported_modules = ["tetra", "wagtail.documents", "wagtail.images"]
 
 logger = logging.getLogger(__name__)
+
+
+# Context variable to store the current request ID.
+# This is used to prevent double updates in reactive components.
+request_id: ContextVar[str | None] = ContextVar("request_id", default=None)
 
 
 def camel_case_to_underscore(value: str):

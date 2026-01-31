@@ -3,6 +3,7 @@ from django.db.models.base import Model
 from django.db.models.signals import post_save, post_delete
 from asgiref.sync import async_to_sync
 from .dispatcher import ComponentDispatcher
+from .utils import request_id
 
 
 class ReactiveModel(models.Model):
@@ -62,12 +63,18 @@ class ReactiveModel(models.Model):
     def _handle_tetra_save(cls, sender, instance, created, **kwargs):
         channel = instance.get_tetra_channel()
         data = instance.get_tetra_update_data()
-        async_to_sync(ComponentDispatcher.update_data)(channel, data)
+        sender_id = request_id.get()
+        async_to_sync(ComponentDispatcher.update_data)(
+            channel, data, sender_id=sender_id
+        )
 
     @classmethod
     def _handle_tetra_delete(cls, sender, instance, **kwargs):
         channel = instance.get_tetra_channel()
-        async_to_sync(ComponentDispatcher.component_remove)(channel, {})
+        sender_id = request_id.get()
+        async_to_sync(ComponentDispatcher.component_remove)(
+            channel, "", sender_id=sender_id
+        )
 
     def get_tetra_channel(self) -> str:
         """Returns the channel name to be used for this model instance."""

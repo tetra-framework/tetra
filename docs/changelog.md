@@ -15,6 +15,7 @@ title: Changelog
 ## [0.8.2] - 2026-01-31
 ### Added
 - **Reactive Models**: Introduced `ReactiveModel` to enable automatic WebSocket updates when Django models are saved or deleted.
+- Add support for a request sender id to filter server-side change events.
 
 ### Fixed
 - Fixed signal connection reliability for `ReactiveModel` across various inheritance scenarios.

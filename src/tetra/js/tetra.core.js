@@ -187,11 +187,21 @@ const Tetra = {
     }));
   },
   handleComponentUpdateData(event) {
-    const { type, group, data } = event;
+    const { group, data, sender_id } = event;
     const components = this._get_components_by_subscribe_group(group);
     // iter through components and update their data fields
-    components.forEach(component => component._updateData(data));
-
+    components.forEach((component) => {
+      // Skip update if this component is currently waiting for a response
+      // from the request that triggered this server-side change.
+      if (
+        sender_id &&
+        component.__activeRequests &&
+        component.__activeRequests.has(sender_id)
+      ) {
+        return;
+      }
+      component._updateData(data);
+    });
   },
   handleComponentRemove(event) {
     const { type, group, component_id } = event;
@@ -291,10 +301,19 @@ const Tetra = {
             }
             this.__activeRequests.set(requestId, {
               triggerSelector: triggerSelector,
-              indicatorSelector: triggerEl.getAttribute('t-indicator')
+              indicatorSelector: triggerEl.getAttribute('t-indicator'),
+              completed: false,
             });
           } else {
-            this.__activeRequests.delete(requestId);
+            const request = this.__activeRequests.get(requestId);
+            if (request) {
+              request.completed = true;
+            }
+            // We keep it in the map for a short while after the request is "completed"
+            // to allow handleComponentUpdateData to catch late-arriving WS messages.
+            setTimeout(() => {
+              this.__activeRequests.delete(requestId);
+            }, 5000);
           }
 
           const updateElementState = (el, reqId, isStart) => {
@@ -336,6 +355,10 @@ const Tetra = {
           if (!this.__activeRequests || this.__activeRequests.size === 0) return;
 
           this.__activeRequests.forEach((info, reqId) => {
+            // ONLY reapply if the request is NOT yet completed.
+            // If it is completed, it's only in the Map to block WS updates.
+            if (info.completed) return;
+
             if (info.triggerSelector) {
               const triggers = this.$el.querySelectorAll(info.triggerSelector);
               triggers.forEach(el => {
@@ -910,7 +933,17 @@ const Tetra = {
       triggerEl: triggerEl,
       requestId: requestId
     })
-    return await this.handleServerMethodResponse(response, component);
+    const result = await this.handleServerMethodResponse(response, component);
+
+    // If the request was successful, we might have already updated the data via
+    // the HTTP response. We keep the requestId in __activeRequests until now
+    // to ensure handleComponentUpdateData can filter it out if it arrives
+    // around the same time.
+    // However, the 'tetra:after-request' event already removed it from
+    // __activeRequests in the default Alpine mixin (if not overridden).
+    // Actually, looking at the code, tetra:after-request IS what removes it.
+
+    return result;
   },
 
   jsonReplacer(key, value) {

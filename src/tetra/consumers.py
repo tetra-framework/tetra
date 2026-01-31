@@ -232,13 +232,23 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         # created during the HTTP request.
         await self._send_unified_message(
             "component.update_data",
-            {"group": event["group"], "data": event["data"]},
+            {
+                "group": event["group"],
+                "data": event["data"],
+                "sender_id": event.get("sender_id"),
+            },
         )
 
     async def component_remove(self, event) -> None:
         """Handle component removal"""
-        type = event.pop("type")
-        await self._send_unified_message(type, event)
+        await self._send_unified_message(
+            "component.remove",
+            {
+                "group": event["group"],
+                "component_id": event["component_id"],
+                "sender_id": event.get("sender_id"),
+            },
+        )
 
     async def notify(self, event) -> None:
         """Handle notification"""

@@ -5,7 +5,7 @@ from django.http import HttpResponseNotFound, HttpResponseBadRequest, HttpRespon
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
 from . import Library
-from .utils import from_json, NamedTemporaryFileUploadHandler
+from .utils import from_json, NamedTemporaryFileUploadHandler, request_id
 
 
 logger = logging.getLogger(__name__)
@@ -46,6 +46,10 @@ def _component_method(
         else:
             logger.error("Unsupported content type: %s", request.content_type)
             return HttpResponseBadRequest()
+
+        # Extract request ID and store it in context variable
+        if isinstance(payload, dict) and payload.get("id"):
+            request_id.set(payload["id"])
 
         # Extract component state from unified protocol payload
         if (
