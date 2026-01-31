@@ -224,24 +224,16 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         with the type "component.update_data". It checks if the component has matching fields
         and if so, sends the message to the client via websocket.
         """
-        group_name = event["group"]
-        components = subscription.registry.get(group_name, [])
-        for c in components:
-            if all(key in c._public_properties for key in event["data"].keys()):
-                # Wrap in unified protocol
-                await self._send_unified_message(
-                    "component.update_data",
-                    {"group": event["group"], "data": event["data"]},
-                )
-            else:
-                raise ComponentError(
-                    f"No matching components found for "
-                    f"channel group data {event['data'].keys()} in '{group_name}'."
-                )
-        if not components:
-            logger.warning(
-                f"No matching component found for channel group {group_name}."
-            )
+
+        # Always send the update to the client. The client-side Tetra.js will
+        # find the matching components and update them.
+        # Filtering on the server side is problematic because the WebSocket
+        # worker might not have access to the component instances that were
+        # created during the HTTP request.
+        await self._send_unified_message(
+            "component.update_data",
+            {"group": event["group"], "data": event["data"]},
+        )
 
     async def component_remove(self, event) -> None:
         """Handle component removal"""

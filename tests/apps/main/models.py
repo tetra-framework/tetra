@@ -1,4 +1,5 @@
 from django.db import models
+from tetra.models import ReactiveModel
 
 
 class SimpleModel(models.Model):
@@ -9,6 +10,13 @@ class SimpleModel(models.Model):
 
     def __repr__(self):
         return f"<SimpleModel: {self.name}, {self.created_at}>"
+
+
+class WatchableModel(ReactiveModel):
+    name = models.CharField(max_length=100)
+
+    class Tetra:
+        fields = "__all__"
 
 
 class AwareDateTimeModel(models.Model):

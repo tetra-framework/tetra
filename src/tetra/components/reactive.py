@@ -23,7 +23,10 @@ class ReactiveComponent(Component):
         super().__init_subclass__(**kwargs)
 
         # set a global flag to indicate that reactive components are in use
-        apps.get_app_config("tetra").has_reactive_components = True
+        from ..utils import check_websocket_support
+
+        if check_websocket_support():
+            apps.get_app_config("tetra").has_reactive_components = True
 
     def __init__(self, *args, **kwargs):
         if "subscribe" in kwargs:

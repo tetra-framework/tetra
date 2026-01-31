@@ -12,11 +12,19 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - 2026-01-31
+### Added
+- **Reactive Models**: Introduced `ReactiveModel` to enable automatic WebSocket updates when Django models are saved or deleted.
+
+### Fixed
+- Fixed signal connection reliability for `ReactiveModel` across various inheritance scenarios.
+- Ensured WebSocket scripts are only included when both reactive components/models are used and WebSocket support is detected.
+
 ## [0.8.1] - 2026-01-31
 ### Fixed
-- fixed `TypeError` in `_handleAutofocus` when `this.$root` is undefined (e.g. if the component was removed from the DOM before the next tick).
-- support enums (TextChoices, IntChoices!) and FileFields in pydantic validation.
-- make client side redirects faster: don't render the component DOM before redirecting. 
+- Fixed `TypeError` in `_handleAutofocus` when `this.$root` is undefined (e.g. if the component was removed from the DOM before the next tick).
+- Support enums (TextChoices, IntChoices!) and FileFields in pydantic validation.
+- Make client side redirects faster: don't render the component DOM before redirecting. 
 
 ### Added
 - allow component classes in `routes` 
