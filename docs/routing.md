@@ -14,18 +14,19 @@ The `Router` component is responsible for matching the current URL path to a spe
 
 ### Usage
 
-To use the router, create a subclass of `Router` and define its `routes` attribute. The `routes` dictionary maps URL path patterns to the full names of the components you want to render.
+To use the router, create a subclass of `Router` and define its `routes` attribute. The `routes` dictionary maps URL path patterns to the full names of the components you want to render, or do a component class.
 
 ```python
 from tetra import Router, Library
+from my_app.components import About
 
-library = Library("my_app")
+library = Library("library", "my_app")
 
 @library.register
 class MyRouter(Router):
     routes = {
         "/": "my_app.Home",
-        "/about": "my_app.About",
+        "/about": About,
         "/user/(?P<id>\\d+)": "my_app.UserProfile",
     }
 ```
@@ -38,6 +39,12 @@ Then, include your router in a Django template:
 {% MyRouter / %}
 ```
 
+You can also define a default content rendered when no route matches:
+```html
+{% MyRouter %}
+  <p>We did not find anything there!</p>
+{% /MyRouter %}
+```
 ### Route Matching
 
 The router supports both exact string matches and regular expressions:
