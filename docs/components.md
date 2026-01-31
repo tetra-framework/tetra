@@ -119,6 +119,46 @@ When the `.watch` decorator is applied, the method receives three parameters:
 * `old_value`: The old value of the attribute before the change. You can make comparisons here.
 * `attr`: The name of the attribute. This is needed if the method is watching more than one attribute.
 
+### .store
+
+Public attributes can be synced with an Alpine.js global store using `.store("storeName")`. This allows multiple components to share the same data via a global store, while still having access to it on the server.
+
+The property name in the store is automatically inferred from the attribute name. For example, `theme = public("light").store("settings")` will sync with `Alpine.store('settings').theme`.
+
+Stores are created automatically when they are first used. If two or more components share the same store name, Tetra will create a single store for them. 
+
+!!! note
+    When multiple components with different initial values share the same Alpine store property, the first component that uses a store will initialize it (`public("light")`). Subsequent components will use the same store, but their init values are ignored. So either make sure all use the same init value or take care of the loading order of the components.
+
+``` python
+class MyComponent(Component):
+    # This property is automatically synced with Alpine.store('settings').theme
+    # Property name is inferred from attribute name
+    theme = public("light").store("settings")
+
+    @public
+    def toggle_theme(self):
+        self.theme = "dark" if self.theme == "light" else "light"
+
+class OtherComponent(Component):
+    # Also syncs with Alpine.store('settings').theme
+    theme = public("light").store("settings")
+```
+
+You can also explicitly specify the full path for nested stores, if you want to use another name for the component attribute:
+
+``` python
+class MyComponent(Component):
+    # Explicitly specify the full path: Alpine.store('app').config.theme.enabled
+    theme_enabled = public(True).store("app.config.theme.enabled")
+    
+```
+
+The synchronization is bidirectional:
+*   Changing `self.theme` on the server (during a public method call) will update the Alpine store in the browser.
+*   Changing `Alpine.store('settings').theme` in JavaScript will update the component's `theme` attribute in the browser, which will be sent to the server on the next public method call.
+*   If the store or the property within the store doesn't exist, Tetra will initialize it.
+
 ### .listen
 
 Add this if the method should be subscribed to a JavaScript event which is fired in the component (or one of its children and bubbles up).
