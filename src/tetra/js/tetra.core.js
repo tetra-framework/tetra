@@ -434,7 +434,26 @@ const Tetra = {
         this.$dispatch('tetra:component-updated', { component: this });
       },
       _updateData(data) {
+        let activeEl = document.activeElement;
+        let focusedModel = null;
+        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT') && this.$el.contains(activeEl)) {
+          // Check if the focused element is bound to a model
+          focusedModel = activeEl.getAttribute('x-model');
+          if (!focusedModel) {
+            // also check for x-model on parent elements, up to the component root
+            let el = activeEl.parentElement;
+            while (el && el !== this.$el && !focusedModel) {
+              focusedModel = el.getAttribute('x-model');
+              el = el.parentElement;
+            }
+          }
+        }
+
         for (const key in data) {
+          if (focusedModel === key) {
+            console.debug(`Skipping update for focused field: ${key}`);
+            continue;
+          }
           this[key] = data[key];
         }
         // this._handleAutofocus(); // TODO: evaluate if this would make sense too
