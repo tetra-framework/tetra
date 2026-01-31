@@ -95,6 +95,8 @@ Next, we create a `TodoItem` component.
 class TodoItem(Component):
     title = public("")
     done = public(False)
+    # this is internal: 
+    todo = None  
 
     def load(self, todo, *args, **kwargs):
         self.todo = todo

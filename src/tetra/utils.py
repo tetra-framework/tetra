@@ -110,7 +110,7 @@ def check_websocket_support() -> bool:
 
         __websockets_support = has_channels and has_asgi_app and has_channel_layer
         if __websockets_support:
-            logger.info("WebSocket support detected")
+            logger.info("WebSocket support detected: channels/ASGI available.")
         else:
             logger.info("WebSocket support not detected")
         return __websockets_support
