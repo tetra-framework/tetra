@@ -12,7 +12,7 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.1] - unreleased
+## [0.8.1] - 2026-01-31
 ### Fixed
 - fixed `TypeError` in `_handleAutofocus` when `this.$root` is undefined (e.g. if the component was removed from the DOM before the next tick).
 - support enums (TextChoices, IntChoices!) and FileFields in pydantic validation.
