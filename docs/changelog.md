@@ -18,6 +18,9 @@ title: Changelog
 - support enums (TextChoices, IntChoices!) and FileFields in pydantic validation.
 - make client side redirects faster: don't render the component DOM before redirecting. 
 
+### Added
+- allow component classes in `routes` 
+
 ### Changed
 - delegate rendering of components to `BaseRenderer` and `ComponentRenderer` classes
 - more robust schemata state validation using Pydantic's TypeAdapters for component attributes
