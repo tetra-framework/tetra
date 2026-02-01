@@ -446,23 +446,6 @@
           this.$dispatch("tetra:component-before-remove", { component: this });
           this.$root.remove();
         },
-        // _addComponent(html, position = 'append') {
-        //   this.$dispatch('tetra:component-before-add', { component: this, html: html, position: position });
-        //   let targetEl = this.$el;
-        //   const container = this.$el.querySelector('[tetra-container]');
-        //   if (container) {
-        //     targetEl = container;
-        //   }
-        //
-        //   if (position === 'append') {
-        //     targetEl.insertAdjacentHTML('beforeend', html);
-        //   } else if (position === 'prepend') {
-        //     targetEl.insertAdjacentHTML('afterbegin', html);
-        //   } else {
-        //     targetEl.insertAdjacentHTML(position, html);
-        //   }
-        //   this.$dispatch('tetra:component-added', { component: this });
-        // },
         _replaceComponent(html) {
           this.__isUpdating = true;
           this.$dispatch("tetra:component-before-remove", { component: this });
