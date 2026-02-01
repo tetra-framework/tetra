@@ -50,6 +50,6 @@ class ReactiveComponent(Component):
 
     @public(update=False)
     def remove_component(self):
-        async_to_sync(ComponentDispatcher.component_remove)(
+        async_to_sync(ComponentDispatcher.component_removed)(
             self.get_subscription(), self.component_id
         )

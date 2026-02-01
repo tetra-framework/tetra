@@ -16,6 +16,7 @@ title: Changelog
 ### Added
 - **Reactive Models**: Introduced `ReactiveModel` to enable automatic WebSocket updates when Django models are saved or deleted.
 - Add support for a request sender id to filter server-side change events.
+- **Component Addition via WebSocket**: Added `ComponentDispatcher.component_add` and client-side support for adding components dynamically via WebSockets.
 
 ### Fixed
 - Fixed signal connection reliability for `ReactiveModel` across various inheritance scenarios.

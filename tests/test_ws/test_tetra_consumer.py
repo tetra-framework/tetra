@@ -163,7 +163,7 @@ async def test_component_update_data_handler(tetra_ws_communicator):
     await communicator.receive_json_from()
 
     # Trigger component_update_data via dispatcher
-    await ComponentDispatcher.update_data(group_name, {"title": "New Title"})
+    await ComponentDispatcher.data_updated(group_name, {"title": "New Title"})
 
     response = await communicator.receive_json_from()
     assert response["protocol"] == "tetra-1.0"
@@ -187,13 +187,61 @@ async def test_component_remove_handler(tetra_ws_communicator):
     await communicator.receive_json_from()
 
     # Trigger component_remove via dispatcher
-    await ComponentDispatcher.component_remove(group_name, "comp_123")
+    await ComponentDispatcher.component_removed(group_name, "comp_123")
 
     response = await communicator.receive_json_from()
     assert response["protocol"] == "tetra-1.0"
     assert response["type"] == "component.removed"
     assert response["payload"]["group"] == group_name
     assert response["payload"]["component_id"] == "comp_123"
+
+
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_component_remove_with_target_group_handler(tetra_ws_communicator):
+    """Test the component_remove event handler with target_group."""
+    communicator = tetra_ws_communicator
+
+    group_name = "remove-group"
+    # Subscribe
+    await communicator.send_json_to({"type": "subscribe", "group": group_name})
+    await communicator.receive_json_from()
+
+    # Trigger component_remove via dispatcher with target_group
+    await ComponentDispatcher.component_removed(
+        group_name, target_group="target-item-group"
+    )
+
+    response = await communicator.receive_json_from()
+    assert response["protocol"] == "tetra-1.0"
+    assert response["type"] == "component.removed"
+    assert response["payload"]["group"] == group_name
+    assert response["payload"]["target_group"] == "target-item-group"
+
+
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_component_add_handler(tetra_ws_communicator):
+    """Test the component_add event handler."""
+    communicator = tetra_ws_communicator
+    component_id = "new-component-id-124"
+    group_name = "add-group"
+    target_group = "target-item-group"
+    # Subscribe
+    await communicator.send_json_to({"type": "subscribe", "group": group_name})
+    await communicator.receive_json_from()
+
+    # Trigger component_add via dispatcher
+    await ComponentDispatcher.component_created(
+        group_name, component_id=component_id, target_group=target_group
+    )
+
+    response = await communicator.receive_json_from()
+    assert response["protocol"] == "tetra-1.0"
+    assert response["type"] == "component.created"
+    assert response["payload"]["group"] == group_name
+    assert response["payload"]["target_group"] == target_group
+    assert response["payload"]["component_id"] == component_id
 
 
 @pytest.mark.django_db

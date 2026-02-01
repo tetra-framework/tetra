@@ -16,18 +16,18 @@ def test_request_id_tracking():
     # But it's easier to mock at the level of the ReactiveModel's post_save handler call
 
     with patch(
-        "tetra.dispatcher.ComponentDispatcher.update_data", new_callable=AsyncMock
-    ) as mock_update_data:
+        "tetra.dispatcher.ComponentDispatcher.data_updated", new_callable=AsyncMock
+    ) as mock_data_updated:
         # 1. Test that without a request context, sender_id is None
         request_id.set(None)
         obj.name = "Changed 1"
         obj.save()
 
         # Check call
-        assert mock_update_data.call_count == 1
-        assert mock_update_data.call_args[1].get("sender_id") is None
+        assert mock_data_updated.call_count == 1
+        assert mock_data_updated.call_args[1].get("sender_id") is None
 
-        mock_update_data.reset_mock()
+        mock_data_updated.reset_mock()
 
         # 2. Test that with a request context (simulated), sender_id is passed
         test_id = "test-request-id-123"
@@ -36,8 +36,8 @@ def test_request_id_tracking():
         obj.name = "Changed 2"
         obj.save()
 
-        assert mock_update_data.call_count == 1
-        assert mock_update_data.call_args[1].get("sender_id") == test_id
+        assert mock_data_updated.call_count == 1
+        assert mock_data_updated.call_args[1].get("sender_id") == test_id
 
 
 @pytest.mark.django_db

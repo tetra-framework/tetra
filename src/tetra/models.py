@@ -25,6 +25,7 @@ class ReactiveModel(models.Model):
     class Meta:
         abstract = True
 
+    # used to resolve version conflicts by concurrent client updates
     model_version = models.PositiveBigIntegerField(default=0)
 
     __tetra_config: type = None
@@ -72,7 +73,13 @@ class ReactiveModel(models.Model):
 
     @classmethod
     def _handle_tetra_save(cls, sender, instance, created, **kwargs):
-        channel = instance.get_tetra_channel()
+        """
+        Handle save event for Tetra model instances, updating the instance and collection channels.
+
+        This is called both on `create` and `update`.
+        """
+        instance_channel = instance.get_tetra_instance_channel()
+        collection_channel = instance.get_tetra_collection_channel()
         data = instance.get_tetra_update_data()
         # Always include model_version for deduplication
         data["model_version"] = instance.model_version
@@ -83,39 +90,77 @@ class ReactiveModel(models.Model):
             loop = None
 
         if loop and loop.is_running():
-            loop.create_task(
-                ComponentDispatcher.update_data(channel, data, sender_id=sender_id)
-            )
+            if created:
+                loop.create_task(
+                    ComponentDispatcher.component_created(
+                        collection_channel, data=data, sender_id=sender_id
+                    )
+                )
+            else:
+                loop.create_task(
+                    ComponentDispatcher.data_updated(
+                        instance_channel, data, sender_id=sender_id
+                    )
+                )
         else:
-            async_to_sync(ComponentDispatcher.update_data)(
-                channel, data, sender_id=sender_id
-            )
+
+            if created:
+                async_to_sync(ComponentDispatcher.component_created)(
+                    collection_channel, data=data, sender_id=sender_id
+                )
+            else:
+                async_to_sync(ComponentDispatcher.data_updated)(
+                    instance_channel, data, sender_id=sender_id
+                )
 
     @classmethod
     def _handle_tetra_delete(cls, sender, instance, **kwargs):
-        channel = instance.get_tetra_channel()
+        """
+        Handle delete event for Tetra model instances, removing the instance and collection channels.
+        """
+        channel = instance.get_tetra_instance_channel()
+        collection_channel = instance.get_tetra_collection_channel()
         sender_id = request_id.get()
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
             loop = None
 
+        # Send data to the collection channel and the instance channel
         if loop and loop.is_running():
             loop.create_task(
-                ComponentDispatcher.component_remove(
+                ComponentDispatcher.component_removed(
                     channel, component_id=None, sender_id=sender_id
                 )
             )
+            loop.create_task(
+                ComponentDispatcher.component_removed(
+                    collection_channel, target_group=channel, sender_id=sender_id
+                )
+            )
         else:
-            async_to_sync(ComponentDispatcher.component_remove)(
+            async_to_sync(ComponentDispatcher.component_removed)(
                 channel, component_id=None, sender_id=sender_id
             )
+            async_to_sync(ComponentDispatcher.component_removed)(
+                collection_channel, target_group=channel, sender_id=sender_id
+            )
 
-    def get_tetra_channel(self) -> str:
-        """Returns the channel name to be used for this model instance."""
-        # Generates "model.<model_name>.<pk>"
-        app_label = self._meta.app_label
-        return f"{app_label}.{self._meta.model_name}.{self.pk}"
+    def get_tetra_instance_channel(self) -> str:
+        """Returns the channel name to be used for this model instance.
+
+        Returns:
+            as default "{app_label}.{model_name}.{pk}"
+        """
+        return f"{self._meta.app_label}.{self._meta.model_name}.{self.pk}"
+
+    def get_tetra_collection_channel(self) -> str:
+        """Returns the channel name for the collection of this model type.
+
+        Returns:
+            as default "{app_label}.{model_name}"
+        """
+        return f"{self._meta.app_label}.{self._meta.model_name}"
 
     def get_tetra_update_data(self):
         """Returns the data to be sent to components."""

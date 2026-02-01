@@ -8,21 +8,29 @@ from django.db import models
 
 @pytest.mark.django_db
 def test_reactive_model_mixin_save():
-    with patch(
-        "tetra.dispatcher.ComponentDispatcher.update_data", new_callable=AsyncMock
-    ) as mock_update_data:
+    with (
+        patch(
+            "tetra.dispatcher.ComponentDispatcher.data_updated", new_callable=AsyncMock
+        ) as mock_data_updated,
+        patch(
+            "tetra.dispatcher.ComponentDispatcher.component_created",
+            new_callable=AsyncMock,
+        ) as mock_component_created,
+    ):
         # Create instance
         obj = WatchableModel.objects.create(name="Test")
 
-        # Check if update_data was called
-        # It should be called once for model.watchablemodel.{pk}
-        assert mock_update_data.call_count == 1
+        # Check if component_created was called once for the collection
+        assert mock_component_created.call_count == 1
+        assert mock_component_created.call_args[0][0] == "main.watchablemodel"
 
-        calls = mock_update_data.call_args_list
-        group = calls[0].args[0]
-        assert group == f"main.watchablemodel.{obj.pk}"
-        # WatchableModel now has fields = "__all__"
-        assert calls[0].args[1]["name"] == "Test"
+        # Now update it
+        obj.name = "Updated"
+        obj.save()
+
+        # Check if data_updated was called once for the instance
+        assert mock_data_updated.call_count == 1
+        assert mock_data_updated.call_args[0][0] == f"main.watchablemodel.{obj.pk}"
 
 
 def test_metaclass_conflict():
@@ -56,17 +64,23 @@ def test_reactive_model_mixin_delete():
     pk = obj.pk
 
     with patch(
-        "tetra.dispatcher.ComponentDispatcher.component_remove", new_callable=AsyncMock
+        "tetra.dispatcher.ComponentDispatcher.component_removed", new_callable=AsyncMock
     ) as mock_remove:
         obj.delete()
 
-        # Check if component_remove was called
-        assert mock_remove.call_count == 1
+        # Check if component_removed was called twice:
+        # 1. for instance channel
+        # 2. for collection channel with target_group
+        assert mock_remove.call_count == 2
 
         calls = mock_remove.call_args_list
-        group = calls[0].args[0]
-        assert group == f"main.watchablemodel.{pk}"
+        # Call 1: instance channel
+        assert calls[0].args[0] == f"main.watchablemodel.{pk}"
         assert calls[0].kwargs["component_id"] is None
+
+        # Call 2: collection channel with target_group
+        assert calls[1].args[0] == "main.watchablemodel"
+        assert calls[1].kwargs["target_group"] == f"main.watchablemodel.{pk}"
 
 
 @pytest.mark.django_db
@@ -78,22 +92,36 @@ def test_reactive_model_mixin():
             app_label = "main"
             managed = False
 
-    with patch(
-        "tetra.dispatcher.ComponentDispatcher.update_data", new_callable=AsyncMock
-    ) as mock_update_data:
+    with (
+        patch(
+            "tetra.dispatcher.ComponentDispatcher.data_updated", new_callable=AsyncMock
+        ) as mock_data_updated,
+        patch(
+            "tetra.dispatcher.ComponentDispatcher.component_created",
+            new_callable=AsyncMock,
+        ) as mock_component_created,
+    ):
         # Instead of creating a real object, we use a mock that looks like the model
         obj = DecoratedModel(name="Test", pk=1)
         DecoratedModel._handle_tetra_save(DecoratedModel, obj, created=True)
 
-        assert mock_update_data.call_count == 1
-        group = mock_update_data.call_args[0][0]
-        assert group == "main.decoratedmodel.1"
+        assert mock_data_updated.call_count == 0  # created=True calls component_created
+        assert mock_component_created.call_count == 1
+        group = mock_component_created.call_args[0][0]
+        assert group == "main.decoratedmodel"
 
     with patch(
-        "tetra.dispatcher.ComponentDispatcher.component_remove", new_callable=AsyncMock
+        "tetra.dispatcher.ComponentDispatcher.component_removed", new_callable=AsyncMock
     ) as mock_remove:
         DecoratedModel._handle_tetra_delete(DecoratedModel, obj)
-        assert mock_remove.call_count == 1
+        # Should be called twice (instance and collection)
+        assert mock_remove.call_count == 2
+        assert mock_remove.call_args_list[0].args[0] == "main.decoratedmodel.1"
+        assert mock_remove.call_args_list[1].args[0] == "main.decoratedmodel"
+        assert (
+            mock_remove.call_args_list[1].kwargs["target_group"]
+            == "main.decoratedmodel.1"
+        )
 
 
 @pytest.mark.django_db
@@ -101,7 +129,7 @@ def test_reactive_model_mixin_custom_channel():
     class CustomDecoratedModel(ReactiveModel, models.Model):
         name = models.CharField(max_length=100)
 
-        def get_tetra_channel(self):
+        def get_tetra_instance_channel(self):
             return "custom_channel"
 
         class Meta:
@@ -109,13 +137,15 @@ def test_reactive_model_mixin_custom_channel():
             managed = False
 
     with patch(
-        "tetra.dispatcher.ComponentDispatcher.update_data", new_callable=AsyncMock
-    ) as mock_update_data:
+        "tetra.dispatcher.ComponentDispatcher.data_updated", new_callable=AsyncMock
+    ) as mock_data_updated:
         obj = CustomDecoratedModel(name="Test", pk=1)
-        CustomDecoratedModel._handle_tetra_save(CustomDecoratedModel, obj, created=True)
+        CustomDecoratedModel._handle_tetra_save(
+            CustomDecoratedModel, obj, created=False
+        )
 
-        assert mock_update_data.call_count == 1
-        group = mock_update_data.call_args[0][0]
+        assert mock_data_updated.call_count == 1
+        group = mock_data_updated.call_args[0][0]
         assert group == "custom_channel"
 
 
@@ -133,16 +163,18 @@ def test_reactive_model_fields_filtering():
             managed = False
 
     with patch(
-        "tetra.dispatcher.ComponentDispatcher.update_data", new_callable=AsyncMock
-    ) as mock_update_data:
+        "tetra.dispatcher.ComponentDispatcher.component_created", new_callable=AsyncMock
+    ) as mock_component_created:
         obj = FilteredModel(name="TestUser", password="secretpassword", pk=1)
         FilteredModel._handle_tetra_save(FilteredModel, obj, created=True)
 
-        assert mock_update_data.call_count == 1
-        # Check that only 'name' is in the data, and 'password' is excluded
-        data = mock_update_data.call_args[0][1]
+        assert mock_component_created.call_count == 1
+        # Check that only 'name' and 'id' are in the data, and 'password' is excluded
+        data = mock_component_created.call_args[1]["data"]
         assert "name" in data
         assert data["name"] == "TestUser"
+        assert "id" in data
+        assert data["id"] == 1
         assert "password" not in data
 
 
@@ -160,16 +192,18 @@ def test_reactive_model_mixin_fields_filtering():
             managed = False
 
     with patch(
-        "tetra.dispatcher.ComponentDispatcher.update_data", new_callable=AsyncMock
-    ) as mock_update_data:
+        "tetra.dispatcher.ComponentDispatcher.component_created", new_callable=AsyncMock
+    ) as mock_component_created:
         obj = DecoratedFilteredModel(name="Test", secret="hush", pk=1)
         DecoratedFilteredModel._handle_tetra_save(
             DecoratedFilteredModel, obj, created=True
         )
 
-        assert mock_update_data.call_count == 1
-        data = mock_update_data.call_args[0][1]
+        assert mock_component_created.call_count == 1
+        data = mock_component_created.call_args[1]["data"]
         assert "name" in data
+        assert "id" in data
+        assert data["id"] == 1
         assert "secret" not in data
 
 
@@ -187,11 +221,11 @@ def test_reactive_model_all_fields():
             managed = False
 
     with patch(
-        "tetra.dispatcher.ComponentDispatcher.update_data", new_callable=AsyncMock
-    ) as mock_update_data:
+        "tetra.dispatcher.ComponentDispatcher.component_created", new_callable=AsyncMock
+    ) as mock_component_created:
         obj = AllFieldsModel(name="All", age=30, pk=1)
         AllFieldsModel._handle_tetra_save(AllFieldsModel, obj, created=True)
 
-        assert mock_update_data.call_count == 1
-        data = mock_update_data.call_args[0][1]
+        assert mock_component_created.call_count == 1
+        data = mock_component_created.call_args[1]["data"]
         assert data == {"id": 1, "name": "All", "age": 30, "model_version": 0}

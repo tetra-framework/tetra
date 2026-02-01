@@ -28,7 +28,7 @@ async def test_group_removal_multiple_components():
         await communicator.receive_json_from()
 
         # Trigger removal for the group
-        await ComponentDispatcher.component_remove(group)
+        await ComponentDispatcher.component_removed(group)
 
         # Receive the message
         msg = await communicator.receive_json_from(timeout=1)

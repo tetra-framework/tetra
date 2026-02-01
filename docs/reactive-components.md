@@ -58,130 +58,111 @@ If you don't add a `ProtocolTypeRouter` wrapper, your websockets won't work. How
 To make a component reactive, simply inherit from `ReactiveComponent` instead of `Component`:
 
 ```python
-import random
 from tetra.components import ReactiveComponent, public
 from .models import BreakingNews
 
 
 class NewsTicker(ReactiveComponent):
-    breaking_news: list = []
+    headline = public("")
     # this component always subscribes to one channel: "news.updates"
     subscription = "news.updates"
 
     def load(self, *args, **kwargs) -> None:
         # Fetch the latest news headline from database
-        self.breaking_news = BreakingNews.objects.all()
-        # get random item from BreakingNews
-        self.headline = random.choice(self.breaking_news).title    
+        news = BreakingNews.objects.order_by('?').first()
+        if news:
+            self.headline = news.title
 ```
 
+## Reactive Models
 
-## Channel subscriptions
+You can make your Django models reactive by inheriting from `ReactiveModel`. This automatically sends WebSocket notifications when a model instance is saved or deleted.
 
-Tetra keeps track of each `ReactiveComponent` that subscribed to a channel group. When sending push notifications to a group, you can refer to that component by its `component_id` again.
+See [Reactive Models](reactive-models.md) for more information.
 
-A `ReactiveComponent` that is rendered on a page in the context of an authenticated user with the id 7 has joined the groups `{app_label}.{model_name}.7`, `session.jyox98seevk9dll9fy8cyb7wspdnyala` and `broadcast`.
+## Component Dispatcher
 
-These groups can be used to dispatch component notifications to 
-
-* **one specific user**: No matter where the user is connected, all sessions on all devices are reached. This is especially useful for user messages, list updates etc. Default group name is `{app_label}.{model_name}.{user_id}` (e.g. `auth.user.7`).
-* **one session**: This is just for one website user (even not authenticated), *at one device, but maybe multiple opened tabs*. Useful for updates that should not be visible on other devices, like unsaved data in a form.
-* **everyone**: the `broadcast` group reaches ALL connected devices. Don't overuse this. It's helpful for global status updates, anonymous new tickers, or system alerts ("Warning! Shutdown planned in 2 minutes.")
-
-You can manually add other subscriptions, with three flavours:
-
-### Subscriptions
-
-Define channels to subscribe to by overriding `get_subscriptions()`:
-
-```python
-class NewsTicker(ReactiveComponent):
-    subscription = "news.updates"
-    
-    # or dynamically:
-    def get_subscriptions(self):
-        return "news.headline"
-```
-
-This component, when initialized at the client, subscribes via websockets to the given channel and listens to it from then on.
-Data updates or removal requests that come in are executed by Tetra automatically.
-
-### Dynamic subscriptions
-
-Subscribe and unsubscribe programmatically:
-
-```python
-class DynamicChatComponent(ReactiveComponent):
-    _current_room_name = "general"
-
-    @public
-    def current_room(self):
-        return self._current_room_name
-
-    @public
-    def change_room(self, room_name):
-        # stop listening to messages in old room
-        self.client._unsubscribe(f"chat.room.{self._current_room_name}")
-
-        # Subscribe to new room
-        self._current_room_name = room_name
-        self.client._subscribe(f"chat.room.{room_name}")
-```
-
-### Template subscriptions
-
-You can also specify subscriptions directly in templates:
-
-```django
-{% ChatComponent subscribe="chat.room.general" %}
-```
-
-The subscribed group can of course be a variable, too:
-
-```django
-{% ChatComponent subscribe=person.room %}
-```
-
-
-## Sending data to clients
-
-Generally, websocket data are sent asynchronously. Tetra provides a `ComponentDispatcher` class to simplify that often used task.
-It provides methods for component data updates, notifications, component removal requests, etc.
-
-
-Use `ComponentDispatcher`'s utility functions to push messages from anywhere in your Django app:
+Use `ComponentDispatcher` to push updates from anywhere in your Django application (e.g., in views, tasks, or signals).
 
 ```python
 from tetra.dispatcher import ComponentDispatcher
 from asgiref.sync import async_to_sync
 
-# async:
-async def send_message():
-    # update the public data of any component
-    await ComponentDispatcher.update_data("chat.room.hprc", data={
-        "message": "Hello Mat, this is Fred Wesley! "
-                   "I'd like to reconfirm our appointment in "
-                   "Munich tomorrow. We'll see us at the "
-                   "hotel."
-    })
+# Async:
+await ComponentDispatcher.data_updated("chat.room.general", data={
+    "message": "Hello world!"
+})
 
-# or sync:
-def send_message():
-    # update the public data of any component
-    async_to_sync(ComponentDispatcher.update_data)("chat.room.hprc",
-        data={
-            "message": "..."
-        })
+# Sync:
+async_to_sync(ComponentDispatcher.data_updated)("chat.room.general", data={
+    "message": "Hello world!"
+})
 ```
 
-!!! warning
-    Make absolutely sure that the data you are sending is a dict with keys that match your target components' public properties. They will be updated with that data on the client.
+## Channel subscriptions
 
-The `ComponentDispatcher` does NOT change the server state of the components.
-You have two ways of saving the sent data permanently:
+Tetra automatically manages WebSocket groups for common scenarios.
 
-* Save the data on the server, then send it to the client. This is normally done for model "changed" signals: after a model change, send the data out to all clients.
-* When the data is meant to be transient, just send it to the client and let it decide if it wants to save it again using the normal Tetra component methods.
+When a user connects, they are auto-subscribed to:
+- **User group**: `auth.user.{user_id}` (e.g. `auth.user.7`). Reaches all sessions for a specific user.
+- **Session group**: `session.{session_key}`. Reaches all tabs in a single browser session.
+- **Broadcast group**: `broadcast`. Reaches every connected client. Don't overuse this. It's helpful for global status updates, anonymous news tickers, or system alerts ("Warning! Shutdown planned in 2 minutes.")
+
+
+### Subscriptions
+Define the channel a component should listen to by setting the `subscription` attribute or overriding `get_subscription()`:
+
+```python
+class NewsTicker(ReactiveComponent):
+    # Fixed subscription
+    subscription = "news.updates"
+    
+    # Or dynamically:
+    def get_subscription(self):
+        return f"news.{self.category}"
+```
+
+### Manual updates and notifications
+You can push custom data or trigger events on the client:
+
+#### Updating public properties
+```python
+await ComponentDispatcher.data_updated("news.updates", data={"headline": "Breaking News!"})
+```
+This updates the matching public property on all components subscribed to the group.
+
+#### Sending notifications
+```python
+await ComponentDispatcher.notify("broadcast", "tetra:alert", {"message": "System shutdown in 5m"})
+```
+This dispatches a custom event on the client that components can listen to using `@public.listen`.
+
+### Adding and removing components
+
+#### Dynamic list updates
+When using `ReactiveModel`, Tetra automatically handles list updates via the collection channel. You can also trigger this manually:
+
+```python
+# Triggers a component refresh on the parent component (that listens on "demo.todo")
+# Each TodoItem listens on "demo.todo.{pk}"
+await ComponentDispatcher.component_created("demo.todo", data={"id": 123})
+```
+
+#### Removing components
+To remove a specific component by its ID:
+```python
+await ComponentDispatcher.component_removed(group="todos", component_id="tk_1")
+```
+
+To remove all components subscribed to a specific *target group* (e.g., removing one ToDo item from a list):
+```python
+# Notifies "demo.todo" to remove components subscribed to "demo.todo.234"
+await ComponentDispatcher.component_removed(
+    group="demo.todo",
+    target_group="demo.todo.234"
+)
+```
+The *group* is the channel name the message is sent to. You can select the component to delete by *component_id* or *target_group*.
 
 
 ## Channel group naming conventions

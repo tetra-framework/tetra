@@ -249,6 +249,20 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
             {
                 "group": event["group"],
                 "component_id": event.get("component_id"),
+                "target_group": event.get("target_group"),
+                "sender_id": event.get("sender_id"),
+            },
+        )
+
+    async def component_created(self, event) -> None:
+        """Handle component addition"""
+        await self._send_unified_message(
+            "component.created",
+            {
+                "group": event["group"],
+                "data": event.get("data"),
+                "component_id": event.get("component_id"),
+                "target_group": event.get("target_group"),
                 "sender_id": event.get("sender_id"),
             },
         )

@@ -8,14 +8,14 @@ def test_autokey_persistence():
         del _tetra_component_count.count
 
     k1 = get_next_autokey()
-    assert k1 == "__autokey_1"
+    assert k1 == "tk_1"
     k2 = get_next_autokey()
-    assert k2 == "__autokey_2"
+    assert k2 == "tk_2"
 
     # Simulate second request in same thread
     # The counter stays at 2!
     k3 = get_next_autokey()
-    assert k3 == "__autokey_3"
+    assert k3 == "tk_3"
 
 
 def test_autokey_reset_needed():

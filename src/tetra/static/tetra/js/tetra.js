@@ -98,6 +98,9 @@
         case "component.removed":
           this.handleComponentRemove(payload);
           break;
+        case "component.created":
+          this.handleComponentCreated(payload);
+          break;
         default:
           console.warn("Unknown WebSocket message type:", messageType, ":", data);
       }
@@ -161,11 +164,15 @@
         if (sender_id && component.__activeRequests && component.__activeRequests.has(sender_id)) {
           return;
         }
-        component._updateData(data);
+        if (data && Object.keys(data).length > 0) {
+          component._updateData(data);
+        } else {
+          component._refresh();
+        }
       });
     },
     handleComponentRemove(event) {
-      const { type, group, component_id, sender_id } = event;
+      const { type, group, component_id, target_group, sender_id } = event;
       if (component_id) {
         const component = this._get_component_by_id(component_id);
         if (component && component._removeComponent) {
@@ -176,6 +183,18 @@
         }
         return;
       }
+      if (target_group) {
+        const components2 = this._get_components_by_subscribe_group(target_group);
+        components2.forEach((component) => {
+          if (component && component._removeComponent) {
+            if (sender_id && component.__activeRequests && component.__activeRequests.has(sender_id)) {
+              return;
+            }
+            component._removeComponent();
+          }
+        });
+        return;
+      }
       const components = this._get_components_by_subscribe_group(group);
       components.forEach((component) => {
         if (component && component._removeComponent) {
@@ -183,6 +202,20 @@
             return;
           }
           component._removeComponent();
+        }
+      });
+    },
+    handleComponentCreated(event) {
+      const { group, data, component_id, target_group, sender_id } = event;
+      const components = this._get_components_by_subscribe_group(group);
+      components.forEach((component) => {
+        if (sender_id && component.__activeRequests && component.__activeRequests.has(sender_id)) {
+          return;
+        }
+        if (typeof component._refresh === "function") {
+          component._refresh();
+        } else {
+          component._updateHtml();
         }
       });
     },
@@ -413,6 +446,23 @@
           this.$dispatch("tetra:component-before-remove", { component: this });
           this.$root.remove();
         },
+        // _addComponent(html, position = 'append') {
+        //   this.$dispatch('tetra:component-before-add', { component: this, html: html, position: position });
+        //   let targetEl = this.$el;
+        //   const container = this.$el.querySelector('[tetra-container]');
+        //   if (container) {
+        //     targetEl = container;
+        //   }
+        //
+        //   if (position === 'append') {
+        //     targetEl.insertAdjacentHTML('beforeend', html);
+        //   } else if (position === 'prepend') {
+        //     targetEl.insertAdjacentHTML('afterbegin', html);
+        //   } else {
+        //     targetEl.insertAdjacentHTML(position, html);
+        //   }
+        //   this.$dispatch('tetra:component-added', { component: this });
+        // },
         _replaceComponent(html) {
           this.__isUpdating = true;
           this.$dispatch("tetra:component-before-remove", { component: this });
@@ -732,6 +782,7 @@
         const respData = Tetra.jsonDecode(responseText);
         let success = false;
         let result = null;
+        let html = null;
         let js = [];
         let styles = [];
         let messages = [];
@@ -742,6 +793,7 @@
         success = respData.success;
         if (respData.payload) {
           result = respData.payload.result;
+          html = respData.payload.html;
         }
         if (respData.metadata) {
           js = respData.metadata.js || [];
@@ -783,6 +835,9 @@
             }
           });
           await Promise.all(loadingResources);
+          if (html) {
+            component._updateHtml(html);
+          }
           if (callbacks) {
             callbacks.forEach((item) => {
               let obj = component;

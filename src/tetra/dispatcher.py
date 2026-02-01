@@ -47,7 +47,7 @@ class ComponentDispatcher:
         )
 
     @staticmethod
-    async def update_data(
+    async def data_updated(
         group: str, data: dict | None = None, sender_id: str | None = None
     ) -> None:
         """
@@ -57,7 +57,7 @@ class ComponentDispatcher:
         Args:
            group: WebSocket group name to send the update to. This can be a normal
                 group name or the predefined ones:
-                * `user.{user_id}`
+                * `auth.user.{user_id}` # or custom user model, if applicable
                 * `session.{session_key}`
                 * `broadcast`
            data: Dictionary containing the data to be sent to group members.
@@ -77,8 +77,11 @@ class ComponentDispatcher:
         )
 
     @staticmethod
-    async def component_remove(
-        group: str, component_id: str | None = None, sender_id: str | None = None
+    async def component_removed(
+        group: str,
+        component_id: str | None = None,
+        target_group: str | None = None,
+        sender_id: str | None = None,
     ) -> None:
         """
         Send component removal notification to all WebSocket connections in a group.
@@ -86,6 +89,7 @@ class ComponentDispatcher:
         Args:
             group: WebSocket group name to send the removal notification to
             component_id: Unique identifier of the component to be removed
+            target_group: WebSocket group name of components to be removed
             sender_id: Unique identifier of the request that triggered this update.
         """
         channel_layer = get_channel_layer()
@@ -95,6 +99,38 @@ class ComponentDispatcher:
                 "type": "component.removed",
                 "group": group,
                 "component_id": component_id,
+                "target_group": target_group,  # TODO: rename to remove_id?
+                "sender_id": sender_id,
+            },
+        )
+
+    @staticmethod
+    async def component_created(
+        group: str,
+        data: dict | None = None,
+        component_id: str | None = None,
+        target_group: str | None = None,
+        sender_id: str | None = None,
+    ) -> None:
+        """
+        Send component addition notification to all WebSocket connections in a group.
+
+        Args:
+            group: WebSocket group name to send the addition notification to
+            data: Optional data associated with the new component
+            component_id: Unique identifier of the component to be added
+            target_group: WebSocket group name of components to be added
+            sender_id: Unique identifier of the request that triggered this update.
+        """
+        channel_layer = get_channel_layer()
+        await channel_layer.group_send(
+            group,
+            {
+                "type": "component.created",
+                "group": group,
+                "data": data or {},
+                "component_id": component_id,
+                "target_group": target_group,
                 "sender_id": sender_id,
             },
         )

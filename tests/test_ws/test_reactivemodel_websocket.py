@@ -252,68 +252,57 @@ async def test_component_remove_deduplication_scenario(tetra_ws_communicator):
 
 @pytest.mark.django_db
 @pytest.mark.asyncio
-async def test_multiple_clients_receive_updates(tetra_ws_communicator):
-    """
-    Test that when one client updates a model, other clients receive the update.
-    Only the originating client should skip the WebSocket update.
-    """
-    from channels.testing import WebsocketCommunicator
-    from django.contrib.sessions.backends.db import SessionStore
-    from django.contrib.auth.models import AnonymousUser
-    from tetra.consumers import TetraConsumer
+async def test_reactivemodel_creation_sends_created_to_collection(
+    tetra_ws_communicator,
+):
+    """Test that creating a ReactiveModel sends component.created to collection channel."""
+    collection_group = "main.watchablemodel"
 
-    # Create second client
-    session2 = SessionStore()
-    session2.create()
+    await tetra_ws_communicator.send_json_to(
+        {"type": "subscribe", "group": collection_group}
+    )
+    await tetra_ws_communicator.receive_json_from()
 
-    scope2 = {
-        "type": "websocket",
-        "session": session2,
-        "user": AnonymousUser(),
-        "path": "/ws/tetra/",
-    }
+    # Create new model
+    WatchableModel.objects.create(name="New Item")
 
-    communicator2 = WebsocketCommunicator(TetraConsumer.as_asgi(), "/ws/tetra/")
-    communicator2.scope.update(scope2)
-    connected, _ = await communicator2.connect()
-    assert connected
+    # Give async task time to complete
+    await asyncio.sleep(0.1)
 
-    try:
-        # Create model and both clients subscribe
-        obj = WatchableModel.objects.create(name="Multi Client")
-        group_name = f"main.watchablemodel.{obj.pk}"
+    # Should receive component.created via WebSocket
+    refresh_message = await tetra_ws_communicator.receive_json_from()
+    assert refresh_message["type"] == "component.created"
+    assert refresh_message["payload"]["group"] == collection_group
+    assert refresh_message["payload"]["data"]["name"] == "New Item"
 
-        await tetra_ws_communicator.send_json_to(
-            {"type": "subscribe", "group": group_name}
-        )
-        await tetra_ws_communicator.receive_json_from()
 
-        await communicator2.send_json_to({"type": "subscribe", "group": group_name})
-        await communicator2.receive_json_from()
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_reactivemodel_deletion_sends_remove_to_collection(tetra_ws_communicator):
+    """Test that deleting a ReactiveModel sends component.removed to collection channel with target_group."""
+    collection_group = "main.watchablemodel"
 
-        # Client 1 updates with sender_id
-        client1_request_id = "client1-request"
-        request_id.set(client1_request_id)
+    await tetra_ws_communicator.send_json_to(
+        {"type": "subscribe", "group": collection_group}
+    )
+    await tetra_ws_communicator.receive_json_from()
 
-        try:
-            obj.name = "Multi Update"
-            obj.save()
+    # Create model
+    obj = WatchableModel.objects.create(name="To Delete from Collection")
+    pk = obj.pk
+    instance_channel = f"main.watchablemodel.{pk}"
 
-            # Give async task time to complete
-            await asyncio.sleep(0.1)
+    # Drain the refresh message from creation
+    await tetra_ws_communicator.receive_json_from()
 
-            # Both clients receive the update
-            update1 = await tetra_ws_communicator.receive_json_from()
-            update2 = await communicator2.receive_json_from()
+    # Delete the model
+    obj.delete()
 
-            # Both have same sender_id
-            assert update1["payload"]["sender_id"] == client1_request_id
-            assert update2["payload"]["sender_id"] == client1_request_id
+    # Give async task time to complete
+    await asyncio.sleep(0.1)
 
-            # Client 1 should skip (has active request), Client 2 should process
-            # The sender_id allows client-side to make this distinction
-
-        finally:
-            request_id.set(None)
-    finally:
-        await communicator2.disconnect()
+    # Should receive removal message on collection channel
+    remove_message = await tetra_ws_communicator.receive_json_from()
+    assert remove_message["type"] == "component.removed"
+    assert remove_message["payload"]["group"] == collection_group
+    assert remove_message["payload"]["target_group"] == instance_channel

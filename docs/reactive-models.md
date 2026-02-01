@@ -1,12 +1,14 @@
 # Reactive Models
 
-Reactive models in Tetra provide a seamless way to synchronize your database changes with the client-side UI in real-time. By inheriting from `ReactiveModel`, your models automatically notify subscribed components whenever an instance is saved or deleted.
+Reactive models in Tetra provide a seamless way to synchronize your database changes with the client-side UI in real-time. By inheriting from `ReactiveModel`, your models automatically notify subscribed components whenever an instance is saved, created, or deleted.
 
 ## Overview
 
 When a `ReactiveModel` is updated on the server:
-- A `post_save` signal triggers a `component.data_updated` message to the model's WebSocket channel.
-- A `post_delete` signal triggers a `component.removed` message.
+- A `post_save` signal triggers a notification.
+    - If created: `component.created` is sent to the **collection channel** (e.g., "demo.todo").
+    - If updated: `component.data_updated` is sent to the **instance channel** (e.g., "demo.todo.236").
+- A `post_delete` signal triggers a `component.removed` message to both channels.
 - Subscribed Tetra [ReactiveComponents](reactive-components.md) receive these messages and update their UI automatically.
 
 ## Usage
@@ -24,62 +26,70 @@ class TodoItem(ReactiveModel):
 
     class Tetra:
         # Only these fields will be sent over the WebSocket
-        fields = ["title", "done"]
+        fields = ["title", "done", "model_version"]
 ```
+Note that the *PK* of the model will always be included.
+
+`ReactiveModel`s automatically include a `model_version` field to handle concurrency and deduplication of updates.
 
 ### Configuration with the `Tetra` class
 
 The inner `Tetra` class configures the reactive behavior:
 
 *   **`fields`**: A list of field names to be sent to the client on updates. 
-    *   For security, it defaults to an empty list (only triggering a refresh of public properties without sending field data).
+    *   For security, it defaults to an empty list (only triggering a `_refresh()` on the client).
     *   Use `"__all__"` to send all model fields (use with caution!).
+    *   The primary key (`id`) is always included.
+
+## Model Channels
+
+`ReactiveModel` defines two default channels for each instance:
+
+### Instance Channel
+Used for updates to a specific record. Default: `{app_label}.{model_name}.{pk}` (e.g., `main.todoitem.1`).
+Get it via: `instance.get_tetra_instance_channel()`.
+
+### Collection Channel
+Used for notifications about new or deleted records in a collection. Default: `{app_label}.{model_name}` (e.g., `main.todoitem`).
+Get it via: `instance.get_tetra_collection_channel()`.
 
 ## Subscribing to Models
 
-In your `ReactiveComponent`, you can subscribe to a specific model instance or a general model channel.
+In your `ReactiveComponent`, you can subscribe to these channels:
 
 ### Subscribing to a specific instance
-
-The default channel for a model instance is `{app_label}.{model_name}.{pk}`.
-
 ```python
 class TodoDetail(ReactiveComponent):
-    todo_id = public()
-
-    def load(self, todo_id):
-        self.todo = TodoItem.objects.get(pk=todo_id)
-        self.title = self.todo.title
+    def load(self, todo):
+        self.todo = todo
+        self.title = todo.title
 
     def get_subscription(self):
-        # Subscribe to this specific todo item
-        return f"main.todoitem.{self.todo.id}"
+        return self.todo.get_tetra_instance_channel()
 ```
 
-When the `TodoItem` is saved, `TodoDetail` will automatically receive the updated `title` (if it's in `Tetra.fields`).
-
-### Subscribing in templates
-
-You can also use the `subscribe` argument in the component tag:
-
-```html
-{% TodoDetail todo_id=item.id subscribe="main.todoitem."|add:item.id %}
+### Subscribing to a collection
+```python
+class TodoList(ReactiveComponent):
+    subscription = "main.todoitem"
+    
+    def load(self):
+        self.todos = TodoItem.objects.all()
 ```
+When a new `TodoItem` is created, `TodoList` will automatically call its `_updatHtml()` method on all its clients, which re-render the components from the server.
 
 ## Custom Channels
 
-You can override `get_tetra_channel()` on your model to customize the WebSocket group name. This is useful for filtering updates, for example, by user or project.
+You can override `get_tetra_instance_channel()` or `get_tetra_collection_channel()` on your model to customize the WebSocket group names.
 
 ```python
 class ProjectTask(ReactiveModel):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    title = models.CharField(max_length=200)
 
-    class Tetra:
-        fields = ["title"]
+    def get_tetra_instance_channel(self):
+        return f"project.{self.project_id}.task.{self.pk}"
 
-    def get_tetra_channel(self):
-        # Notify all components interested in this project
+    def get_tetra_collection_channel(self):
         return f"project.{self.project_id}.tasks"
 ```
 
