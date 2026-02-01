@@ -10,8 +10,8 @@ from django.db import models
 def test_reactive_model_mixin_save():
     with (
         patch(
-            "tetra.dispatcher.ComponentDispatcher.data_updated", new_callable=AsyncMock
-        ) as mock_data_updated,
+            "tetra.dispatcher.ComponentDispatcher.data_changed", new_callable=AsyncMock
+        ) as mock_data_changed,
         patch(
             "tetra.dispatcher.ComponentDispatcher.component_created",
             new_callable=AsyncMock,
@@ -28,9 +28,9 @@ def test_reactive_model_mixin_save():
         obj.name = "Updated"
         obj.save()
 
-        # Check if data_updated was called once for the instance
-        assert mock_data_updated.call_count == 1
-        assert mock_data_updated.call_args[0][0] == f"main.watchablemodel.{obj.pk}"
+        # Check if data_changed was called once for the instance
+        assert mock_data_changed.call_count == 1
+        assert mock_data_changed.call_args[0][0] == f"main.watchablemodel.{obj.pk}"
 
 
 def test_metaclass_conflict():
@@ -94,8 +94,8 @@ def test_reactive_model_mixin():
 
     with (
         patch(
-            "tetra.dispatcher.ComponentDispatcher.data_updated", new_callable=AsyncMock
-        ) as mock_data_updated,
+            "tetra.dispatcher.ComponentDispatcher.data_changed", new_callable=AsyncMock
+        ) as mock_data_changed,
         patch(
             "tetra.dispatcher.ComponentDispatcher.component_created",
             new_callable=AsyncMock,
@@ -105,7 +105,7 @@ def test_reactive_model_mixin():
         obj = DecoratedModel(name="Test", pk=1)
         DecoratedModel._handle_tetra_save(DecoratedModel, obj, created=True)
 
-        assert mock_data_updated.call_count == 0  # created=True calls component_created
+        assert mock_data_changed.call_count == 0  # created=True calls component_created
         assert mock_component_created.call_count == 1
         group = mock_component_created.call_args[0][0]
         assert group == "main.decoratedmodel"
@@ -137,15 +137,15 @@ def test_reactive_model_mixin_custom_channel():
             managed = False
 
     with patch(
-        "tetra.dispatcher.ComponentDispatcher.data_updated", new_callable=AsyncMock
-    ) as mock_data_updated:
+        "tetra.dispatcher.ComponentDispatcher.data_changed", new_callable=AsyncMock
+    ) as mock_data_changed:
         obj = CustomDecoratedModel(name="Test", pk=1)
         CustomDecoratedModel._handle_tetra_save(
             CustomDecoratedModel, obj, created=False
         )
 
-        assert mock_data_updated.call_count == 1
-        group = mock_data_updated.call_args[0][0]
+        assert mock_data_changed.call_count == 1
+        group = mock_data_changed.call_args[0][0]
         assert group == "custom_channel"
 
 
