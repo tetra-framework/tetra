@@ -11,12 +11,11 @@ If not stated otherwise, all events have the actual component as `component` pay
 
 ### `tetra:before-request`
 
-This event fires after a component method has completed — whether the request was successful (even if the response includes an HTTP error like 404) or if a network error occurred. It can be used alongside `tetra:before-request` to implement custom behavior around the full request lifecycle, such as showing or hiding a loading indicator.
-
+This event is triggered before a component method is called. It can be used to implement loading indicators or prepare the UI for a pending server action.
 
 ### `tetra:after-request`
 
-This event is triggered before a component method is called.
+This event fires after a component method request has completed — whether the request was successful or if a network error occurred. It can be used alongside `tetra:before-request` to hide loading indicators.
 
 ### `tetra:child-component-init`
 
