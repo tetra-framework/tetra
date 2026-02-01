@@ -12,7 +12,7 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.4] – unreleased
+## [0.8.4] – 2026-02-01
 ### Fixed
 - Fix error where another client could keep a stale component when two components are deleted locally.
 
