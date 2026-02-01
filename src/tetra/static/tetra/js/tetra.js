@@ -13,6 +13,9 @@
         this.handleInitialMessages(window.__tetra_messages);
         delete window.__tetra_messages;
       }
+      if (!Alpine.store("tetra_subscriptions")) {
+        Alpine.store("tetra_subscriptions", {});
+      }
     },
     handleInitialMessages(messages) {
       messages.forEach((message) => {
@@ -66,13 +69,9 @@
       return Alpine.$data(componentEl);
     },
     _get_components_by_subscribe_group(group) {
-      const componentEls = document.querySelectorAll("[tetra-subscription]");
-      const matchingEls = Array.from(componentEls).filter((el) => {
-        const subscribeAttr = el.getAttribute("tetra-subscription");
-        const topics = subscribeAttr.split(",").map((t) => t.trim());
-        return topics.includes(group);
-      });
-      return matchingEls.map((el) => Alpine.$data(el));
+      const store = Alpine.store("tetra_subscriptions");
+      const componentIds = store[group] || [];
+      return componentIds.map((id) => this._get_component_by_id(id)).filter((c) => c !== void 0);
     },
     handleWebsocketMessage(data) {
       let messageType;
@@ -92,10 +91,10 @@
         case "notify":
           this.handleGroupNotify(payload);
           break;
-        case "component.update_data":
+        case "component.data_updated":
           this.handleComponentUpdateData(payload);
           break;
-        case "component.remove":
+        case "component.removed":
           this.handleComponentRemove(payload);
           break;
         default:
@@ -165,14 +164,26 @@
       });
     },
     handleComponentRemove(event) {
-      const { type, group, component_id } = event;
-      const component = this._get_component_by_id(component_id);
-      if (component && component._removeComponent) {
-        component._removeComponent();
-      } else {
-        component.remove();
-        console.debug("Element with ID ${component_id} not identified as Alpine component, just removed it anyway.");
+      const { type, group, component_id, sender_id } = event;
+      if (component_id) {
+        const component = this._get_component_by_id(component_id);
+        if (component && component._removeComponent) {
+          if (sender_id && component.__activeRequests && component.__activeRequests.has(sender_id)) {
+            return;
+          }
+          component._removeComponent();
+          return;
+        }
       }
+      const components = this._get_components_by_subscribe_group(group);
+      components.forEach((component) => {
+        if (component && component._removeComponent) {
+          if (sender_id && component.__activeRequests && component.__activeRequests.has(sender_id)) {
+            return;
+          }
+          component._removeComponent();
+        }
+      });
     },
     sendWebSocketMessage(message) {
       if (!this.ws) {
@@ -317,8 +328,8 @@
         },
         destroy() {
           this.$dispatch("tetra:child-component-destroy", { component: this });
-          if (this.__subscribedGroups) {
-            this.__subscribedGroups.forEach((group) => {
+          if (!this.__isUpdating && this.__subscribedGroups) {
+            [...this.__subscribedGroups].forEach((group) => {
               this._unsubscribe(group);
             });
           }
@@ -328,6 +339,7 @@
         },
         // Tetra built ins:
         _updateHtml(html) {
+          this.__isUpdating = true;
           Alpine.morph(this.$root, html, {
             updating(el, toEl, childrenOnly, skip) {
               if (toEl.hasAttribute && toEl.hasAttribute("x-data-maintain") && el.hasAttribute && el.hasAttribute("x-data")) {
@@ -349,11 +361,43 @@
             },
             lookahead: true
           });
+          this.__isUpdating = false;
+          if (window.__tetra_useWebsockets && this.$el.hasAttribute("tetra-reactive")) {
+            const group = this.$el.getAttribute("tetra-subscription");
+            const currentTopics = group ? group.split(",").map((t) => t.trim()) : [];
+            const oldTopics = this.__subscribedGroups ? Array.from(this.__subscribedGroups) : [];
+            oldTopics.forEach((topic) => {
+              if (!currentTopics.includes(topic)) {
+                this._unsubscribe(topic);
+              }
+            });
+            currentTopics.forEach((topic) => {
+              if (!this.__subscribedGroups || !this.__subscribedGroups.has(topic)) {
+                this._subscribe(topic);
+              }
+            });
+          }
           this._handleAutofocus();
           this.$dispatch("tetra:component-updated", { component: this });
         },
         _updateData(data) {
+          let activeEl = document.activeElement;
+          let focusedModel = null;
+          if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.tagName === "SELECT") && this.$el.contains(activeEl)) {
+            focusedModel = activeEl.getAttribute("x-model");
+            if (!focusedModel) {
+              let el = activeEl.parentElement;
+              while (el && el !== this.$el && !focusedModel) {
+                focusedModel = el.getAttribute("x-model");
+                el = el.parentElement;
+              }
+            }
+          }
           for (const key in data) {
+            if (focusedModel === key) {
+              console.debug(`Skipping update for focused field: ${key}`);
+              continue;
+            }
             this[key] = data[key];
           }
           this.$dispatch("tetra:component-data-updated", { component: this });
@@ -369,9 +413,11 @@
           this.$root.remove();
         },
         _replaceComponent(html) {
+          this.__isUpdating = true;
           this.$dispatch("tetra:component-before-remove", { component: this });
           this.$root.insertAdjacentHTML("afterend", html);
           this.$root.remove();
+          this.__isUpdating = false;
           this.$dispatch("tetra:component-updated", { component: this });
           this._handleAutofocus();
         },
@@ -416,23 +462,48 @@
           if (!this.__subscribedGroups) {
             this.__subscribedGroups = /* @__PURE__ */ new Set();
           }
-          this.__subscribedGroups.add(groupName);
-          return Tetra.sendWebSocketMessage({
-            type: "subscribe",
-            group: groupName,
-            component_id: this.component_id,
-            component_class: this.componentName,
-            auto_update: autoUpdate
+          const store = Alpine.store("tetra_subscriptions");
+          const topics = groupName.split(",").map((t) => t.trim());
+          topics.forEach((topic) => {
+            this.__subscribedGroups.add(topic);
+            if (!store[topic]) {
+              store[topic] = [];
+            }
+            if (!store[topic].includes(this.component_id)) {
+              const isFirst = store[topic].length === 0;
+              store[topic].push(this.component_id);
+              if (isFirst) {
+                Tetra.sendWebSocketMessage({
+                  type: "subscribe",
+                  group: topic,
+                  component_id: this.component_id,
+                  component_class: this.componentName,
+                  auto_update: autoUpdate
+                });
+              }
+            }
           });
         },
         _unsubscribe(groupName) {
-          if (this.__subscribedGroups) {
-            this.__subscribedGroups.delete(groupName);
-          }
-          return Tetra.sendWebSocketMessage({
-            type: "unsubscribe",
-            group: groupName,
-            component_id: this.component_id
+          if (!this.__subscribedGroups) return;
+          const store = Alpine.store("tetra_subscriptions");
+          const topics = groupName.split(",").map((t) => t.trim());
+          topics.forEach((topic) => {
+            this.__subscribedGroups.delete(topic);
+            if (store[topic]) {
+              const index = store[topic].indexOf(this.component_id);
+              if (index > -1) {
+                store[topic].splice(index, 1);
+                if (store[topic].length === 0) {
+                  delete store[topic];
+                  Tetra.sendWebSocketMessage({
+                    type: "unsubscribe",
+                    group: topic,
+                    component_id: this.component_id
+                  });
+                }
+              }
+            }
           });
         },
         _notifyGroup(groupName, eventName, data) {

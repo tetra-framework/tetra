@@ -245,7 +245,7 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
             "component.removed",
             {
                 "group": event["group"],
-                "component_id": event["component_id"],
+                "component_id": event.get("component_id"),
                 "sender_id": event.get("sender_id"),
             },
         )

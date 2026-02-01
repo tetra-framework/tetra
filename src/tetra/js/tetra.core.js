@@ -14,6 +14,11 @@ const Tetra = {
       this.handleInitialMessages(window.__tetra_messages);
       delete window.__tetra_messages;
     }
+
+    // Initialize global subscription store
+    if (!Alpine.store('tetra_subscriptions')) {
+      Alpine.store('tetra_subscriptions', {});
+    }
   },
   handleInitialMessages(messages) {
     // We need to wait for Alpine components to be ready before dispatching events to them.
@@ -81,17 +86,9 @@ const Tetra = {
   },
   _get_components_by_subscribe_group(group) {
     // Find all components by subscribe topic and return them
-    // Find all elements with tetra-subscription attribute
-    const componentEls = document.querySelectorAll('[tetra-subscription]');
-
-    // Filter to only those that contain the topic as a separate value
-    const matchingEls = Array.from(componentEls).filter(el => {
-      const subscribeAttr = el.getAttribute('tetra-subscription');
-      const topics = subscribeAttr.split(',').map(t => t.trim());
-      return topics.includes(group);
-    });
-
-    return matchingEls.map(el => Alpine.$data(el));
+    const store = Alpine.store('tetra_subscriptions');
+    const componentIds = store[group] || [];
+    return componentIds.map(id => this._get_component_by_id(id)).filter(c => c !== undefined);
   },
   handleWebsocketMessage(data) {
     // This function centrally handles incoming websocket data and dispatches it to the
@@ -204,19 +201,39 @@ const Tetra = {
     });
   },
   handleComponentRemove(event) {
-    const { type, group, component_id } = event;
+    const { type, group, component_id, sender_id } = event;
 
-    const component = this._get_component_by_id(component_id)
+    if (component_id) {
+      const component = this._get_component_by_id(component_id)
 
-    if (component && component._removeComponent) {
-      component._removeComponent();
-    } else {
-      // Fallback: just remove the element using JavaScript.
-      // This does not dispatch the `tetra:component-before-remove` event,
-      // but at least the component vanishes... :-)
-      component.remove();
-      console.debug("Element with ID ${component_id} not identified as Alpine component, just removed it anyway.");
+      if (component && component._removeComponent) {
+        if (
+          sender_id &&
+          component.__activeRequests &&
+          component.__activeRequests.has(sender_id)
+        ) {
+          return;
+        }
+        component._removeComponent();
+      }
+      return;
     }
+
+    // Fallback: If no component_id is provided, find all components 
+    // subscribed to the group and remove them.
+    const components = this._get_components_by_subscribe_group(group);
+    components.forEach(component => {
+      if (component && component._removeComponent) {
+        if (
+          sender_id &&
+          component.__activeRequests &&
+          component.__activeRequests.has(sender_id)
+        ) {
+          return;
+        }
+        component._removeComponent();
+      }
+    });
   },
   sendWebSocketMessage(message) {
     if (!this.ws) {
@@ -396,8 +413,8 @@ const Tetra = {
         this.$dispatch('tetra:child-component-destroy', {component:  this});
 
         // Unsubscribe from all group when component is destroyed
-        if (this.__subscribedGroups) {
-          this.__subscribedGroups.forEach(group => {
+        if (!this.__isUpdating && this.__subscribedGroups) {
+          [...this.__subscribedGroups].forEach(group => {
             this._unsubscribe(group);
           });
         }
@@ -408,6 +425,7 @@ const Tetra = {
       },
       // Tetra built ins:
       _updateHtml(html) {
+        this.__isUpdating = true;
         Alpine.morph(this.$root, html, {
           updating(el, toEl, childrenOnly, skip) {
             if (toEl.hasAttribute && toEl.hasAttribute('x-data-maintain') && el.hasAttribute && el.hasAttribute('x-data')) {
@@ -430,6 +448,29 @@ const Tetra = {
           },
           lookahead: true
         });
+        this.__isUpdating = false;
+
+        // Check for subscription changes after morphing
+        if (window.__tetra_useWebsockets && this.$el.hasAttribute('tetra-reactive')) {
+          const group = this.$el.getAttribute('tetra-subscription');
+          const currentTopics = group ? group.split(',').map(t => t.trim()) : [];
+          const oldTopics = this.__subscribedGroups ? Array.from(this.__subscribedGroups) : [];
+          
+          // Unsubscribe from topics that are no longer present
+          oldTopics.forEach(topic => {
+            if (!currentTopics.includes(topic)) {
+              this._unsubscribe(topic);
+            }
+          });
+          
+          // Subscribe to new topics
+          currentTopics.forEach(topic => {
+            if (!this.__subscribedGroups || !this.__subscribedGroups.has(topic)) {
+              this._subscribe(topic);
+            }
+          });
+        }
+
         this._handleAutofocus();
         this.$dispatch('tetra:component-updated', { component: this });
       },
@@ -472,9 +513,11 @@ const Tetra = {
         this.$root.remove();
       },
       _replaceComponent(html) {
+        this.__isUpdating = true;
         this.$dispatch('tetra:component-before-remove', { component: this });
         this.$root.insertAdjacentHTML('afterend', html);
         this.$root.remove();
+        this.__isUpdating = false;
         this.$dispatch('tetra:component-updated', { component: this });
         this._handleAutofocus();
       },
@@ -521,26 +564,56 @@ const Tetra = {
           this.__subscribedGroups = new Set();
         }
 
-        this.__subscribedGroups.add(groupName);
-
-        return Tetra.sendWebSocketMessage({
-          type: 'subscribe',
-          group: groupName,
-          component_id: this.component_id,
-          component_class: this.componentName,
-          auto_update: autoUpdate
+        const store = Alpine.store('tetra_subscriptions');
+        const topics = groupName.split(',').map(t => t.trim());
+        
+        topics.forEach(topic => {
+          this.__subscribedGroups.add(topic);
+          
+          if (!store[topic]) {
+            store[topic] = [];
+          }
+          
+          if (!store[topic].includes(this.component_id)) {
+            const isFirst = store[topic].length === 0;
+            store[topic].push(this.component_id);
+            
+            if (isFirst) {
+              Tetra.sendWebSocketMessage({
+                type: 'subscribe',
+                group: topic,
+                component_id: this.component_id,
+                component_class: this.componentName,
+                auto_update: autoUpdate
+              });
+            }
+          }
         });
       },
 
       _unsubscribe(groupName) {
-        if (this.__subscribedGroups) {
-          this.__subscribedGroups.delete(groupName);
-        }
+        if (!this.__subscribedGroups) return;
 
-        return Tetra.sendWebSocketMessage({
-          type: 'unsubscribe',
-          group: groupName,
-          component_id: this.component_id
+        const store = Alpine.store('tetra_subscriptions');
+        const topics = groupName.split(',').map(t => t.trim());
+
+        topics.forEach(topic => {
+          this.__subscribedGroups.delete(topic);
+          
+          if (store[topic]) {
+            const index = store[topic].indexOf(this.component_id);
+            if (index > -1) {
+              store[topic].splice(index, 1);
+              if (store[topic].length === 0) {
+                delete store[topic];
+                Tetra.sendWebSocketMessage({
+                  type: 'unsubscribe',
+                  group: topic,
+                  component_id: this.component_id
+                });
+              }
+            }
+          }
         });
       },
 

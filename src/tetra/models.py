@@ -84,7 +84,7 @@ class ReactiveModel(models.Model):
         channel = instance.get_tetra_channel()
         sender_id = request_id.get()
         async_to_sync(ComponentDispatcher.component_remove)(
-            channel, "", sender_id=sender_id
+            channel, component_id=None, sender_id=sender_id
         )
 
     def get_tetra_channel(self) -> str:

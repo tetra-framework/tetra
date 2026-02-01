@@ -78,7 +78,7 @@ class ComponentDispatcher:
 
     @staticmethod
     async def component_remove(
-        group: str, component_id: str, sender_id: str | None = None
+        group: str, component_id: str | None = None, sender_id: str | None = None
     ) -> None:
         """
         Send component removal notification to all WebSocket connections in a group.
