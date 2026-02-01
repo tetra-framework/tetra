@@ -17,7 +17,7 @@ $ uv pip install tetra
 If you want to have reactive components as well, you have to install channels and an ASGI capable server like Daphne too. Have a look at [Reactive Components](reactive-components.md) how to get started with them.
 
 !!! warning
-    As Tetra is still being developed it has only been tested with Python 3.10-3.12, we intend to support all officially supported Python versions at the time of v1.0.0.
+    As Tetra is still being developed it has only been tested with Python 3.12-3.13, we intend to support all officially supported Python versions at the time of v1.0.0.
 
 ## Initial configuration
 

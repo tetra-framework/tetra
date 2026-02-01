@@ -28,6 +28,11 @@ A list of module names that contain components in your apps.
 Defaults to `["components", "tetra_components"]`
 
 
-## others
+## `TETRA_ESBUILD_PATH`
 
-`TETRA_ESBUILD_CSS_ARGS` and `TETRA_ESBUILD_JS_ARGS` are used internally. Please look at the code if you really want to change these.
+The path to the `esbuild` binary. By default, Tetra will try to find `esbuild` in your `PATH`. If you have installed `esbuild` via `npm` in your project root, you can set this to `os.path.join(BASE_DIR, "node_modules", ".bin", "esbuild")`.
+
+
+## `TETRA_ESBUILD_CSS_ARGS` and `TETRA_ESBUILD_JS_ARGS`
+
+These are used to pass additional arguments to the `esbuild` process for CSS and JS respectively. They should be lists of strings. Default is `[]`.

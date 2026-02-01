@@ -1,4 +1,4 @@
-from tetra import Component---
+---
 title: Tetra requests
 ---
 # Tetra requests
@@ -8,7 +8,7 @@ Tetra requests are modified by `TetraMiddleware`, and spiked with a few helpful 
 !!! note
     Make sure you have `tetra.middleware.TetraMiddleware` in your `settings.MIDDLEWARE`
 
-Tetra keeps a track of which components have been used on a page. It then injects the component's CSS and JavaScript into the page. You mark where this is to happen with the `{% tetra_styles %}` and `{% tetra_scripts %}` tags. See [Javascript and JS](include-js-css.md) for details.
+Tetra keeps a track of which components have been used on a page. It then injects the component's CSS and JavaScript into the page. You mark where this is to happen with the `{% tetra_styles %}` and `{% tetra_scripts %}` tags. See [Javascript and CSS](include-js-css.md) for details.
 
 ## request.tetra
 
@@ -30,7 +30,7 @@ class MyComponent(Component):
 #### current_url
 
 Within a Tetra component's method call, Django's `request.build_absolute_uri()` holds the internal *URL of the component method* 
-(the AJAX URL), which is often not what you want: sometimes you want the URL of the main page. The `request.tetra.current_url` provides the real url of the browser window:. 
+(the AJAX URL), which is often not what you want: sometimes you want the URL of the main page. The `request.tetra.current_url` provides the real url of the browser window: 
 
 ```python
 >>> self.request.build_absolute_uri()

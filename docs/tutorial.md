@@ -83,7 +83,7 @@ Then there is the template; this uses the standard Django template language. You
 - An Alpine.js `@keyup.enter` event listener is attached to the input, calling our `add_todo` public method when the user presses enter within the input.
 - Another `@click` event listener is attached to the button, also calling our `add_todo` public method.
 - A standard Django template `for` loop iterates through any 'to do' items loaded to the private `todos` attribute (see our `load` method above).
-- We use the Tetra `@` component template tag to display the `to_do_item` component. We pass it a `todo` model instance as an argument, and a `key` argument set to the `todo.id`. It is  important to "key" components in loops so that when morphing the DOM they are correctly identified and updated.
+- We use the Tetra component template tag to display the `TodoItem` component. We pass it a `todo` model instance as an argument, and a `key` argument set to the `todo.id`. It is  important to "key" components in loops so that when morphing the DOM they are correctly identified and updated.
 - The `TodoItem` component tag can optionally take nested block content. However, in this example this is not necessary, and therefore we "close" the tag with a forward slash `/` much like with xml tags. Without explicitly closing the tag the template parser would expect a `{% /TodoItem %}` closing tag.
 
 
@@ -188,7 +188,7 @@ Note that our `inputDeleteUp` method below calls `this.delete_item()` -  this is
     """
 ```
 
-Next, we define some CSS styles for the component as the multiline Python string attribute `styles`. This again uses a `css` type annotation for syntax highlighting. Styles for all components in a library are bundled together using esbuild, and again source maps are generated, mapping back to the original Python source code.
+Next, we define some CSS styles for the component as the multiline Python string attribute `style`. This again uses a `css` type annotation for syntax highlighting. Styles for all components in a library are bundled together using esbuild, and again source maps are generated, mapping back to the original Python source code.
 
 ``` python
     style: css = """

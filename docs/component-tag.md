@@ -84,7 +84,7 @@ You have to explicitly use `component` as tag here, and place a `=` character be
 
 ## Passing Arguments
 
-Both positional and keyword arguments can be passed to a component via the `@` tag. These are passed to the `load` method of the component:
+Both positional and keyword arguments can be passed to a component via the `component` tag. These are passed to the `load` method of the component:
 
 ``` python
 class MyComponent(Component):
@@ -126,7 +126,7 @@ It is also possible to explicitly pass all template context to a component with 
 !!! warning
     This should be used sparingly as the whole template context will be saved with the component's saved (encrypted) state, and sent to the client, see [state security](state-security.md).
 
-In general, if the value is something that is needed for the component to function (and be available to methods or be "public") it should be generally passed as an *argument* [(see above)](#passing-attributes). Passing context is ideal for composing your components with inner content passed down from an outer template (see [passing slots](slots.md)).
+In general, if the value is something that is needed for the component to function (and be available to methods or be "public") it should be generally passed as an *argument* [(see above)](#passing-arguments). Passing context is ideal for composing your components with inner content passed down from an outer template (see [passing slots](slots.md)).
 
 When context is passed using the `_extra_context` class attribute, you can always override these variables in the component tag:
 

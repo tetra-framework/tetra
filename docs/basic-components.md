@@ -16,7 +16,7 @@ Supported features:
 
 - `load` method
 - `template`
-- `styles`
+- `style`
 - Private methods and attributes
 
 ``` python

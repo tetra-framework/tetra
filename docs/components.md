@@ -387,9 +387,9 @@ class MyComponent(Component):
     """
 ```
 
-## CSS Styles
+## CSS Style
 
-The `styles` attribute holds the CSS for your component.
+The `style` attribute holds the CSS for your component.
 
 You can use the `css` type annotation for syntax highlighting in VS Code.
 
