@@ -126,23 +126,22 @@ class ReactiveModel(models.Model):
         # which triggers a refresh of public properties on the client.
 
         config = self.__tetra_config
+        data = {"id": self.pk}
         if not config:
-            return {}
+            return data
 
         fields = getattr(config, "fields", [])
 
         if fields == "__all__":
             # Send all model fields
-            data = {}
             for field in self._meta.fields:
                 data[field.name] = getattr(self, field.name)
             return data
 
         if fields:
-            data = {}
             for field_name in fields:
                 if hasattr(self, field_name):
                     data[field_name] = getattr(self, field_name)
             return data
 
-        return {}
+        return data
