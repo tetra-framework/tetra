@@ -66,7 +66,7 @@ def test_reactive_model_mixin_delete():
         calls = mock_remove.call_args_list
         group = calls[0].args[0]
         assert group == f"main.watchablemodel.{pk}"
-        assert calls[0].args[1] == ""
+        assert calls[0].kwargs["component_id"] is None
 
 
 @pytest.mark.django_db

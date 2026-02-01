@@ -16,7 +16,7 @@ class ReactiveComponent(Component):
     notifications."""
 
     __abstract__ = True
-    group_subscription: str = ""
+    subscription: str = ""
 
     def __init_subclass__(cls, **kwargs):
         """Initialize the reactive component."""
@@ -28,31 +28,14 @@ class ReactiveComponent(Component):
         if check_websocket_support():
             apps.get_app_config("tetra").has_reactive_components = True
 
-    def __init__(self, *args, **kwargs):
-        if "subscribe" in kwargs:
-            if self.group_subscription:
-                raise ValueError(
-                    "Subscriptions cannot be defined in both component and template."
-                )
-            self.group_subscription = kwargs["subscribe"].strip()
-        super().__init__(*args, **kwargs)
-
-        # register the component with the channel layer
-        # this is a list that can be queried for all reactive components to determine
-        # their public_properties when sending data over websockets.
-        group_name = self.group_subscription
-        if not self.group_subscription in registry:
-            registry[group_name] = [self]
-        else:
-            registry[group_name].append(self)
-
     def get_extra_tags(self) -> dict[str, str | None]:
         extra_tags = super().get_extra_tags()
         extra_tags["tetra-reactive"] = ""
 
-        # Add subscribe channel groups as data attribute
-        if self.group_subscription:
-            extra_tags["tetra-subscription"] = self.group_subscription
+        # Add subscribe channel group as data attribute
+        subscription = self.get_subscription()
+        if subscription:
+            extra_tags["tetra-subscription"] = subscription
 
         return extra_tags
 
@@ -63,7 +46,7 @@ class ReactiveComponent(Component):
         component is created. Per default, it is evaluated once at initialization,
         not with every component cycle's load().
         """
-        return self.group_subscription
+        return self.subscription
 
     @public(update=False)
     def remove_component(self):

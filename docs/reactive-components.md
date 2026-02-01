@@ -66,7 +66,7 @@ from .models import BreakingNews
 class NewsTicker(ReactiveComponent):
     breaking_news: list = []
     # this component always subscribes to one channel: "news.updates"
-    group_subscription = "news.updates"
+    subscription = "news.updates"
 
     def load(self, *args, **kwargs) -> None:
         # Fetch the latest news headline from database
@@ -90,16 +90,21 @@ These groups can be used to dispatch component notifications to
 
 You can manually add other subscriptions, with three flavours:
 
-### Static subscriptions
+### Subscriptions
 
-Define channels to subscribe to using the `subscribe` attribute:
+Define channels to subscribe to by overriding `get_subscriptions()`:
 
 ```python
 class NewsTicker(ReactiveComponent):
-    group_subscription = "news.headline"
+    subscription = "news.updates"
+    
+    # or dynamically:
+    def get_subscriptions(self):
+        return "news.headline"
 ```
 
-These component, when initialized at the client, subscribes via websockets to the given channel and listen to it from then on.
+This component, when initialized at the client, subscribes via websockets to the given channel and listens to it from then on.
+Data updates or removal requests that come in are executed by Tetra automatically.
 
 ### Dynamic subscriptions
 
