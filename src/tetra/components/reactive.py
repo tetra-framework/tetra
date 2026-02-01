@@ -39,6 +39,16 @@ class ReactiveComponent(Component):
 
         return extra_tags
 
+    def _pre_load(self, *args, subscribe: str = "", **kwargs):
+        """Handle subscription parameter before calling load().
+
+        The subscribe parameter can be passed from the template to dynamically
+        set the subscription group for this component instance.
+        """
+        if subscribe:
+            self.subscription = subscribe
+        super()._pre_load(*args, **kwargs)
+
     def get_subscription(self) -> str:
         """Returns the subscribed group for this component.
 

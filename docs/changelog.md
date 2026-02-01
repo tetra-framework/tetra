@@ -15,9 +15,11 @@ title: Changelog
 ## [0.8.4] – 2026-02-01
 ### Fixed
 - Fix error where another client could keep a stale component when two components are deleted locally.
+- Fix `ReactiveComponent` subscription by template tag attr
 
 ### Changed
-- Rename `component.data_updated` to `component.data_changed` across backend and frontend
+- Rename `component.data_updated` to `component.data_changed` message type and Dispatcher/TetraConsumer method
+  across backend and frontend
 
 ## [0.8.3] – 2026-02-01
 ### Added
