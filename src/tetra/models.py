@@ -23,6 +23,8 @@ class ReactiveModel(models.Model):
     class Meta:
         abstract = True
 
+    model_version = models.PositiveBigIntegerField(default=0)
+
     __tetra_config: type = None
 
     def __init_subclass__(cls: type[Model], **kwargs):
@@ -59,10 +61,19 @@ class ReactiveModel(models.Model):
             cls._handle_tetra_delete, sender=cls, dispatch_uid=uid_delete
         )
 
+    def save(self, *args, **kwargs):
+        """Override save to auto-increment model_version"""
+        # Increment version on every save
+        if self.pk:  # Only increment if updating existing object
+            self.model_version += 1
+        super().save(*args, **kwargs)
+
     @classmethod
     def _handle_tetra_save(cls, sender, instance, created, **kwargs):
         channel = instance.get_tetra_channel()
         data = instance.get_tetra_update_data()
+        # Always include model_version for deduplication
+        data["model_version"] = instance.model_version
         sender_id = request_id.get()
         async_to_sync(ComponentDispatcher.update_data)(
             channel, data, sender_id=sender_id
