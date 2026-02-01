@@ -375,7 +375,7 @@ const Tetra = {
             // to allow handleComponentUpdateData to catch late-arriving WS messages.
             setTimeout(() => {
               this.__activeRequests.delete(requestId);
-            }, 5000);
+            }, 500);
           }
 
           const updateElementState = (el, reqId, isStart) => {
