@@ -98,7 +98,7 @@ class ReactiveModel(models.Model):
                 )
             else:
                 loop.create_task(
-                    ComponentDispatcher.data_updated(
+                    ComponentDispatcher.data_changed(
                         instance_channel, data, sender_id=sender_id
                     )
                 )
@@ -109,7 +109,7 @@ class ReactiveModel(models.Model):
                     collection_channel, data=data, sender_id=sender_id
                 )
             else:
-                async_to_sync(ComponentDispatcher.data_updated)(
+                async_to_sync(ComponentDispatcher.data_changed)(
                     instance_channel, data, sender_id=sender_id
                 )
 

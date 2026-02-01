@@ -7,7 +7,7 @@ Reactive models in Tetra provide a seamless way to synchronize your database cha
 When a `ReactiveModel` is updated on the server:
 - A `post_save` signal triggers a notification.
     - If created: `component.created` is sent to the **collection channel** (e.g., "demo.todo").
-    - If updated: `component.data_updated` is sent to the **instance channel** (e.g., "demo.todo.236").
+    - If updated: `component.data_changed` is sent to the **instance channel** (e.g., "demo.todo.236").
 - A `post_delete` signal triggers a `component.removed` message to both channels.
 - Subscribed Tetra [ReactiveComponents](reactive-components.md) receive these messages and update their UI automatically.
 

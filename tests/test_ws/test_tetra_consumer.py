@@ -163,11 +163,11 @@ async def test_component_update_data_handler(tetra_ws_communicator):
     await communicator.receive_json_from()
 
     # Trigger component_update_data via dispatcher
-    await ComponentDispatcher.data_updated(group_name, {"title": "New Title"})
+    await ComponentDispatcher.data_changed(group_name, {"title": "New Title"})
 
     response = await communicator.receive_json_from()
     assert response["protocol"] == "tetra-1.0"
-    assert response["type"] == "component.data_updated"
+    assert response["type"] == "component.data_changed"
     assert response["payload"]["group"] == group_name
     assert response["payload"]["data"] == {"title": "New Title"}
 

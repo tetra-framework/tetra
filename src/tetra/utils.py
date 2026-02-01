@@ -531,7 +531,7 @@ class TetraWsResponse:
     def component_update_data(group: str, data: dict) -> dict[str, Any]:
         return {
             group: {
-                "type": "component.data_updated",
+                "type": "component.data_changed",
                 "group": group,
                 "data": data,
             },
