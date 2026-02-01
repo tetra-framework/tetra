@@ -73,6 +73,15 @@ thread_local = local()
 
 logger = logging.getLogger(__name__)
 
+_tetra_component_count = local()
+
+
+def get_next_autokey():
+    if not hasattr(_tetra_component_count, "count"):
+        _tetra_component_count.count = 0
+    _tetra_component_count.count += 1
+    return f"__autokey_{_tetra_component_count.count}"
+
 
 def make_template(cls) -> Template:
     """Create a template from a component class.
@@ -347,6 +356,7 @@ class BasicComponent:
         _attrs: dict[str, Any] | None = None,
         _context: dict[str, Any] | RequestContext | None = None,
         _slots=None,
+        key: str | None = None,
         *args,
         **kwargs,
     ) -> None:
@@ -357,6 +367,12 @@ class BasicComponent:
         super().__init__()  # call init without kwargs.
         self.request = _request
         self.attrs = _attrs or {}
+        if key is not None:
+            self.attrs["key"] = key
+
+        if "key" not in self.attrs:
+            self.attrs["key"] = get_next_autokey()
+
         self._context = _context or {}
         self._slots = _slots
         self.renderer = BaseRenderer(self)
@@ -939,8 +955,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     key = public(None)
 
     def __init__(self, _request, key=None, *args, **kwargs) -> None:
-        super().__init__(_request, *args, **kwargs)
-        self.key = key if key is not None else self.full_component_name()
+        super().__init__(_request, key=key, *args, **kwargs)
+        self.key = self.attrs.get("key")
         self.renderer = ComponentRenderer(self)
 
     def _get_state_adapter(self):
