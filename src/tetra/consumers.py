@@ -155,6 +155,7 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
                     {"group": group_name, "status": "error", "message": "Unauthorized"},
                 )
                 return
+
         if group_name.startswith("session."):
             # you cannot manually subscribe to a session group.
             # While we could check against the current valid session key, it is way
@@ -171,6 +172,8 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
                     "message": "No manually joining of session groups allowed.",
                 },
             )
+            return
+
         # check if we already subscribed to this group - if so, send "resubscribed"
         if group_name in self.subscribed_groups:
             await self._send_unified_message(
