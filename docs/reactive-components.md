@@ -108,12 +108,12 @@ from tetra.dispatcher import ComponentDispatcher
 from asgiref.sync import async_to_sync
 
 # Async:
-await ComponentDispatcher.data_updated("chat.room.general", data={
+await ComponentDispatcher.data_changed("chat.room.general", data={
     "message": "Hello world!"
 })
 
 # Sync:
-async_to_sync(ComponentDispatcher.data_updated)("chat.room.general", data={
+async_to_sync(ComponentDispatcher.data_changed)("chat.room.general", data={
     "message": "Hello world!"
 })
 ```
@@ -156,8 +156,9 @@ class NewsTicker(ReactiveComponent):
 You can push custom data or trigger events on the client:
 
 #### Updating public properties
+
 ```python
-await ComponentDispatcher.data_updated("news.updates", data={"headline": "Breaking News!"})
+await ComponentDispatcher.data_changed("news.updates", data={"headline": "Breaking News!"})
 ```
 This updates the matching public property on all components subscribed to the group.
 

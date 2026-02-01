@@ -215,11 +215,11 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         else:
             raise ProtocolError("Invalid protocol version")
 
-    async def component_data_updated(self, event) -> None:
+    async def component_data_changed(self, event) -> None:
         """Handle component data update
 
         This method is automatically called when a message is sent via group_send
-        with the type "component.data_updated". It checks if the component has matching fields
+        with the type "component.data_changed". It checks if the component has matching fields
         and if so, sends the message to the client via websocket.
         """
 
@@ -229,7 +229,7 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         # worker might not have access to the component instances that were
         # created during the HTTP request.
         await self._send_unified_message(
-            "component.data_updated",
+            "component.data_changed",
             {
                 "group": event["group"],
                 "data": event["data"],

@@ -47,7 +47,7 @@ class ComponentDispatcher:
         )
 
     @staticmethod
-    async def data_updated(
+    async def data_changed(
         group: str, data: dict | None = None, sender_id: str | None = None
     ) -> None:
         """
@@ -69,7 +69,7 @@ class ComponentDispatcher:
         await channel_layer.group_send(
             group,
             {
-                "type": "component.data_updated",
+                "type": "component.data_changed",
                 "group": group,
                 "data": data or {},
                 "sender_id": sender_id,

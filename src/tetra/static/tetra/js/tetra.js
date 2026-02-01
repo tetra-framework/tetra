@@ -94,11 +94,11 @@
         case "notify":
           this.handleGroupNotify(payload);
           break;
-        case "component.data_updated":
-          this.handleComponentUpdateData(payload);
+        case "component.data_changed":
+          this.handleComponentDataChanged(payload);
           break;
         case "component.removed":
-          this.handleComponentRemove(payload);
+          this.handleComponentRemoved(payload);
           break;
         case "component.created":
           this.handleComponentCreated(payload);
@@ -159,7 +159,7 @@
         }
       }));
     },
-    handleComponentUpdateData(event) {
+    handleComponentDataChanged(event) {
       const { group, data, sender_id } = event;
       const components = this._get_components_by_subscribe_group(group);
       if (components.length === 0) {
@@ -182,7 +182,7 @@
         }
       });
     },
-    handleComponentRemove(event) {
+    handleComponentRemoved(event) {
       const { type, group, component_id, target_group, sender_id } = event;
       if (component_id) {
         const component = this._get_component_by_id(component_id);

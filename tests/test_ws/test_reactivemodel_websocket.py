@@ -35,7 +35,7 @@ async def test_reactivemodel_save_sends_websocket_update(tetra_ws_communicator):
     # Should receive update via WebSocket
     update_message = await tetra_ws_communicator.receive_json_from()
     assert update_message["protocol"] == "tetra-1.0"
-    assert update_message["type"] == "component.data_updated"
+    assert update_message["type"] == "component.data_changed"
     assert update_message["payload"]["group"] == group_name
     assert update_message["payload"]["data"]["name"] == "Updated"
 

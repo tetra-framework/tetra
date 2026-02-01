@@ -16,6 +16,9 @@ title: Changelog
 ### Fixed
 - Fix error where another client could keep a stale component when two components are deleted locally.
 
+### Changed
+- Rename `component.data_updated` to `component.data_changed` across backend and frontend
+
 ## [0.8.3] – 2026-02-01
 ### Added
 - **Component Addition via WebSocket**: Added `ComponentDispatcher.component_created` and client-side support for adding components dynamically via WebSockets.
