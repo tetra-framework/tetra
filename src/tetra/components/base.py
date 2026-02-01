@@ -1133,7 +1133,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     @classmethod
     def _component_url(cls, method_name) -> str:
         return reverse(
-            "tetra_public_component_method",
+            "tetra:public_component_method",
             args=[cls._library.app.label, cls._library.name, cls._name, method_name],
         )
 

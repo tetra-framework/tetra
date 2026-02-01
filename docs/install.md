@@ -62,7 +62,7 @@ urlpatterns = [
     # Add the Tetra app urls:
     # These include the endpoints that your components will connect to when 
     # calling public methods.
-    path('tetra/', include('tetra.urls')),
+    path('__tetra__/', include('tetra.urls')),
     # Also ensure you have setup static files for development:
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 ```
