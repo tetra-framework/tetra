@@ -238,8 +238,12 @@ async def test_handle_subscribe_missing_group(tetra_ws_communicator):
 @pytest.mark.asyncio
 async def test_handle_subscribe_unauthorized_group(tetra_ws_communicator):
     communicator = tetra_ws_communicator
+    from django.contrib.auth import get_user_model
 
-    unauthorized_group = "user.999"  # Assuming our user ID is not 999
+    user_model = get_user_model()
+    user_prefix = f"{user_model._meta.app_label}.{user_model._meta.model_name}"
+
+    unauthorized_group = f"{user_prefix}.999"  # Assuming our user ID is not 999
     await communicator.send_json_to({"type": "subscribe", "group": unauthorized_group})
 
     response = await communicator.receive_json_from()
@@ -248,6 +252,28 @@ async def test_handle_subscribe_unauthorized_group(tetra_ws_communicator):
     assert response["payload"]["group"] == unauthorized_group
     assert response["payload"]["status"] == "error"
     assert response["payload"]["message"] == "Unauthorized"
+
+
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_handle_subscribe_old_user_prefix_fails(tetra_ws_communicator):
+    """Test that the old hardcoded 'user.' prefix is no longer treated as a user group (or at least doesn't pass the unauthorized check if it's not the real prefix)."""
+    communicator = tetra_ws_communicator
+
+    # If the real prefix is e.g. 'auth.user', then 'user.1' should just be treated as a normal group
+    # or fail if it's not registered. Currently we don't have a registry check fully implemented.
+    # But it definitely shouldn't be caught by the user_prefix check.
+
+    group_name = "user.1"
+    await communicator.send_json_to({"type": "subscribe", "group": group_name})
+
+    response = await communicator.receive_json_from()
+    assert response["protocol"] == "tetra-1.0"
+    assert response["type"] == "subscription.response"
+    assert response["payload"]["group"] == group_name
+    # Since it's not a user group anymore, it should just succeed subscribing as a normal group
+    # (unless there's other validation)
+    assert response["payload"]["status"] == "subscribed"
 
 
 @pytest.mark.django_db

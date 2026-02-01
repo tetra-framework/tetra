@@ -209,11 +209,18 @@ class TetraMiddleware:
         return self._process_messages_only(request, response)
 
     def _sync_call(self, request):
+        # Reset component counter for each request to ensure stable sequential IDs
+        reset_autokey_count()
+
         # Lightweight initialization - only create TetraDetails
         request.tetra = TetraDetails(request)
         request.tetra._websockets_available = self._websocket_available
 
-        response = self.get_response(request)
+        try:
+            response = self.get_response(request)
+        finally:
+            # Clear request ID after processing
+            clear_request_id()
 
         # Only do expensive processing if Tetra components were actually used
         if hasattr(request, "tetra_components_used") and request.tetra_components_used:

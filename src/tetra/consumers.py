@@ -1,6 +1,7 @@
 import logging
 
 from typing import Set
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser, AbstractUser
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.contrib.sessions.backends.file import SessionStore
@@ -34,6 +35,8 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         self.session: SessionStore | None = None
         self.component_id: str | None = None
         self.subscribed_groups: Set[str] = set()
+        user_model = get_user_model()
+        self.user_prefix = f"{user_model._meta.app_label}.{user_model._meta.model_name}"
 
     async def connect(self) -> None:
         """
@@ -57,11 +60,11 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         self.user = self.scope.get("user", AnonymousUser())
         if self.user.is_authenticated:
             await self.channel_layer.group_add(
-                f"user.{self.user.id}", self.channel_name
+                f"{self.user_prefix}.{self.user.id}", self.channel_name
             )
-            self.subscribed_groups.add(f"user.{self.user.id}")
+            self.subscribed_groups.add(f"{self.user_prefix}.{self.user.id}")
             logger.debug(
-                f"Subscribed '{self.channel_name}' to 'user.{self.user.id}' group."
+                f"Subscribed '{self.channel_name}' to '{self.user_prefix}.{self.user.id}' group."
             )
 
         # session keys theoretically could be None in an invalid session.
@@ -136,8 +139,8 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
 
         # TODO: check if group name is valid, in a registry
 
-        if group_name.startswith("user."):
-            user_id = group_name.split(".")[1]
+        if group_name.startswith(f"{self.user_prefix}."):
+            user_id = group_name.split(".")[len(self.user_prefix.split("."))]
             # TODO: admin group instead of is_superuser
             if (
                 self.user

@@ -80,11 +80,11 @@ class NewsTicker(ReactiveComponent):
 
 Tetra keeps track of each `ReactiveComponent` that subscribed to a channel group. When sending push notifications to a group, you can refer to that component by its `component_id` again.
 
-A `ReactiveComponent` that is rendered on a page in the context of an authenticated user with the id 7 has joined the groups `user.7`, `session.jyox98seevk9dll9fy8cyb7wspdnyala` and `broadcast`.
+A `ReactiveComponent` that is rendered on a page in the context of an authenticated user with the id 7 has joined the groups `{app_label}.{model_name}.7`, `session.jyox98seevk9dll9fy8cyb7wspdnyala` and `broadcast`.
 
 These groups can be used to dispatch component notifications to 
 
-* **one specific user**: No matter where the user is connected, all sessions on all devices are reached. This is especially useful for user messages, list updates etc.
+* **one specific user**: No matter where the user is connected, all sessions on all devices are reached. This is especially useful for user messages, list updates etc. Default group name is `{app_label}.{model_name}.{user_id}` (e.g. `auth.user.7`).
 * **one session**: This is just for one website user (even not authenticated), *at one device, but maybe multiple opened tabs*. Useful for updates that should not be visible on other devices, like unsaved data in a form.
 * **everyone**: the `broadcast` group reaches ALL connected devices. Don't overuse this. It's helpful for global status updates, anonymous new tickers, or system alerts ("Warning! Shutdown planned in 2 minutes.")
 
@@ -186,16 +186,17 @@ You have two ways of saving the sent data permanently:
 
 ## Channel group naming conventions
 
-Each component *automatically* subscribes to three groups:
+Each client *automatically* subscribes to three groups:
 
-* `user.{user.id}`
+* `{app_label}.{model_name}.{user.id}` (e.g. `auth.user.7`)
 * `session.{session_key}`
 * `broadcast`
 
-Additionally, use hierarchical channel group names for better organization:
+You can additionally use you own structure for group channels, but try to be consistent.
+Use hierarchical channel group names for better organization:
 
-### User-specific
-* `user.456.notifications`
+### Model-specific subgroup
+* `auth.user.456.notifications`
 
 ### Room/group  
 * `chat.room.general`

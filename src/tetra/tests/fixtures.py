@@ -93,11 +93,23 @@ def component_locator(page: Page, live_server):
 async def tetra_ws_communicator(db) -> AsyncGenerator[WebsocketCommunicator, Any]:
     """
     Returns a WebsocketCommunicator for TetraConsumer with a valid session and
-    AnonymousUser, and closes it after usage.
+    authenticated user, and closes it after usage.
     """
-    from django.contrib.auth.models import AnonymousUser
+    from django.contrib.auth import get_user_model
     from django.contrib.sessions.backends.db import SessionStore
     from tetra.consumers import TetraConsumer
+    import uuid
+
+    user_model = get_user_model()
+    username = f"testuser_{uuid.uuid4().hex[:8]}"
+    user = user_model.objects.create(username=username)
+
+    # Re-initialize user_prefix in TetraConsumer if it was already initialized
+    # with a different user model. This is needed because TetraConsumer
+    # might have been imported before AUTH_USER_MODEL was overridden.
+    TetraConsumer.user_prefix = (
+        f"{user_model._meta.app_label}.{user_model._meta.model_name}"
+    )
 
     session = SessionStore()
     session.create()
@@ -105,7 +117,7 @@ async def tetra_ws_communicator(db) -> AsyncGenerator[WebsocketCommunicator, Any
     scope = {
         "type": "websocket",
         "session": session,
-        "user": AnonymousUser(),
+        "user": user,
         "path": "/ws/tetra/",
     }
 

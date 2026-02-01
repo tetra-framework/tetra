@@ -21,6 +21,7 @@ title: Changelog
 - Fixed signal connection reliability for `ReactiveModel` across various inheritance scenarios.
 - Ensured WebSocket scripts are only included when both reactive components/models are used and WebSocket support is detected.
 - skip updates for focused fields to preserve user input during data updates
+- use actual user model for auto-subscribe channel name, instead of "user."
 
 ## [0.8.1] - 2026-01-31
 ### Fixed
