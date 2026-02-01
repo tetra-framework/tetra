@@ -559,7 +559,7 @@ const Tetra = {
       },
 
       // Push notification methods
-      _subscribe(groupName, autoUpdate = true) {
+      _subscribe(groupName) {
         if (!this.__subscribedGroups) {
           this.__subscribedGroups = new Set();
         }
@@ -584,7 +584,6 @@ const Tetra = {
                 group: topic,
                 component_id: this.component_id,
                 component_class: this.componentName,
-                auto_update: autoUpdate
               });
             }
           }
