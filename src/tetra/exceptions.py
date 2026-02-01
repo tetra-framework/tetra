@@ -8,3 +8,9 @@ class ComponentNotFound(ComponentError):
 
 class LibraryError(Exception):
     pass
+
+
+class ProtocolError(Exception):
+    """Error in the Tetra HTTP protocol."""
+
+    pass

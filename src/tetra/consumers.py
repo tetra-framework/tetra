@@ -6,8 +6,7 @@ from django.contrib.auth.models import AnonymousUser, AbstractUser
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.contrib.sessions.backends.file import SessionStore
 
-from tetra.components import subscription
-from tetra.exceptions import ComponentError
+from tetra.exceptions import ProtocolError
 
 logger = logging.getLogger(__name__)
 
@@ -211,14 +210,10 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
     async def subscription_response(self, event) -> None:
         """Handle confirmation of subscription"""
         # If it's already a protocol message, send as is
-        if event.get("protocol") == "tetra-1.0":
+        if event.get("protocol", "") == "tetra-1.0":
             await self.send_json(event)
         else:
-            # All messages should now be wrapped via _send_unified_message
-            # but we keep this as a safeguard for dispatcher-sent messages
-            # that haven't been updated to the new structure yet.
-            type = event.pop("type")
-            await self._send_unified_message(type, event)
+            raise ProtocolError("Invalid protocol version")
 
     async def component_data_updated(self, event) -> None:
         """Handle component data update
