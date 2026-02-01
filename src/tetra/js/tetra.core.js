@@ -79,7 +79,7 @@ const Tetra = {
     // Find the component by ID and return it
     const componentEl = document.querySelector(`[tetra-component-id="${component_id}"]`);
     if (!componentEl) {
-      console.error(`AlpineJs Component with ID ${component_id} not found.`);
+      // silently return undefined if no component with that id was found.
       return;
     }
     return Alpine.$data(componentEl);
@@ -89,13 +89,16 @@ const Tetra = {
     const store = Alpine.store('tetra_subscriptions');
     const componentIds = store[group] || [];
     // Ensure we return a unique list of component data objects that actually exist in DOM
-    const components = componentIds.map(id => this._get_component_by_id(id)).filter(c => !!c && typeof c._removeComponent === 'function');
+    const components = componentIds.map(id => {
+      const c = this._get_component_by_id(id);
+      return c;
+    }).filter(c => !!c && typeof c._removeComponent === 'function');
     return [...new Set(components)];
   },
   handleWebsocketMessage(data) {
     // This function centrally handles incoming websocket data and dispatches it to the
     // corresponding methods, if necessary.
-    
+
     let messageType;
     let payload;
     let metadata = {};
@@ -192,6 +195,16 @@ const Tetra = {
   handleComponentUpdateData(event) {
     const { group, data, sender_id } = event;
     const components = this._get_components_by_subscribe_group(group);
+    if (components.length === 0) {
+        const els = document.querySelectorAll(`[tetra-subscription*="${group}"]`);
+        els.forEach(el => {
+            const component = Alpine.$data(el);
+            if (component && !components.includes(component)) {
+                components.push(component);
+            }
+        });
+    }
+
     // iter through components and update their data fields
     components.forEach((component) => {
       // Skip update if this component is currently waiting for a response
@@ -231,6 +244,15 @@ const Tetra = {
 
     if (target_group) {
       const components = this._get_components_by_subscribe_group(target_group);
+      if (components.length === 0) {
+        const els = document.querySelectorAll(`[tetra-subscription*="${target_group}"]`);
+        els.forEach(el => {
+          const component = Alpine.$data(el);
+          if (component && component._removeComponent) {
+            component._removeComponent();
+          }
+        });
+      }
       components.forEach(component => {
         if (component && component._removeComponent) {
           if (
@@ -249,6 +271,15 @@ const Tetra = {
     // Fallback: If no component_id or target_group is provided, find all 
     // components subscribed to the group and remove them.
     const components = this._get_components_by_subscribe_group(group);
+    if (components.length === 0) {
+      const els = document.querySelectorAll(`[tetra-subscription*="${group}"]`);
+      els.forEach(el => {
+        const component = Alpine.$data(el);
+        if (component && component._removeComponent) {
+          component._removeComponent();
+        }
+      });
+    }
     components.forEach(component => {
       if (component && component._removeComponent) {
         if (
@@ -622,7 +653,7 @@ const Tetra = {
           if (!store[topic].includes(this.component_id)) {
             const isFirst = store[topic].length === 0;
             store[topic].push(this.component_id);
-            
+
             if (isFirst) {
               Tetra.sendWebSocketMessage({
                 type: 'subscribe',
@@ -648,7 +679,8 @@ const Tetra = {
             const index = store[topic].indexOf(this.component_id);
             if (index > -1) {
               store[topic].splice(index, 1);
-              if (store[topic].length === 0) {
+              const isLast = store[topic].length === 0;
+              if (isLast) {
                 delete store[topic];
                 Tetra.sendWebSocketMessage({
                   type: 'unsubscribe',

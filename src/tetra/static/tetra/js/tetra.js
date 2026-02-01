@@ -63,7 +63,6 @@
     _get_component_by_id(component_id) {
       const componentEl = document.querySelector(`[tetra-component-id="${component_id}"]`);
       if (!componentEl) {
-        console.error(`AlpineJs Component with ID ${component_id} not found.`);
         return;
       }
       return Alpine.$data(componentEl);
@@ -71,7 +70,10 @@
     _get_components_by_subscribe_group(group) {
       const store = Alpine.store("tetra_subscriptions");
       const componentIds = store[group] || [];
-      const components = componentIds.map((id) => this._get_component_by_id(id)).filter((c) => !!c && typeof c._removeComponent === "function");
+      const components = componentIds.map((id) => {
+        const c = this._get_component_by_id(id);
+        return c;
+      }).filter((c) => !!c && typeof c._removeComponent === "function");
       return [...new Set(components)];
     },
     handleWebsocketMessage(data) {
@@ -160,6 +162,15 @@
     handleComponentUpdateData(event) {
       const { group, data, sender_id } = event;
       const components = this._get_components_by_subscribe_group(group);
+      if (components.length === 0) {
+        const els = document.querySelectorAll(`[tetra-subscription*="${group}"]`);
+        els.forEach((el) => {
+          const component = Alpine.$data(el);
+          if (component && !components.includes(component)) {
+            components.push(component);
+          }
+        });
+      }
       components.forEach((component) => {
         if (sender_id && component.__activeRequests && component.__activeRequests.has(sender_id)) {
           return;
@@ -185,6 +196,15 @@
       }
       if (target_group) {
         const components2 = this._get_components_by_subscribe_group(target_group);
+        if (components2.length === 0) {
+          const els = document.querySelectorAll(`[tetra-subscription*="${target_group}"]`);
+          els.forEach((el) => {
+            const component = Alpine.$data(el);
+            if (component && component._removeComponent) {
+              component._removeComponent();
+            }
+          });
+        }
         components2.forEach((component) => {
           if (component && component._removeComponent) {
             if (sender_id && component.__activeRequests && component.__activeRequests.has(sender_id)) {
@@ -196,6 +216,15 @@
         return;
       }
       const components = this._get_components_by_subscribe_group(group);
+      if (components.length === 0) {
+        const els = document.querySelectorAll(`[tetra-subscription*="${group}"]`);
+        els.forEach((el) => {
+          const component = Alpine.$data(el);
+          if (component && component._removeComponent) {
+            component._removeComponent();
+          }
+        });
+      }
       components.forEach((component) => {
         if (component && component._removeComponent) {
           if (sender_id && component.__activeRequests && component.__activeRequests.has(sender_id)) {
@@ -294,7 +323,7 @@
               }
               setTimeout(() => {
                 this.__activeRequests.delete(requestId);
-              }, 5e3);
+              }, 500);
             }
             const updateElementState = (el, reqId, isStart) => {
               if (!el.__activeRequests) el.__activeRequests = /* @__PURE__ */ new Set();
@@ -527,7 +556,8 @@
               const index = store[topic].indexOf(this.component_id);
               if (index > -1) {
                 store[topic].splice(index, 1);
-                if (store[topic].length === 0) {
+                const isLast = store[topic].length === 0;
+                if (isLast) {
                   delete store[topic];
                   Tetra.sendWebSocketMessage({
                     type: "unsubscribe",

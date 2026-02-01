@@ -12,7 +12,11 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.3] – unreleased
+## [0.8.4] – unreleased
+### Fixed
+- Fix error where another client could keep a stale component when two components are deleted locally.
+
+## [0.8.3] – 2026-02-01
 ### Added
 - **Component Addition via WebSocket**: Added `ComponentDispatcher.component_created` and client-side support for adding components dynamically via WebSockets.
 
