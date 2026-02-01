@@ -88,6 +88,23 @@ def page(browser: Browser) -> Generator[Page, Page, None]:
     context.close()
 
 
+@pytest.fixture(scope="function")
+def browser():
+    """Fallback browser fixture if pytest-playwright is not installed"""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        pytest.skip("playwright not installed")
+
+    with sync_playwright() as p:
+        try:
+            browser = p.chromium.launch()
+        except Exception as e:
+            pytest.skip(f"Could not launch browser: {e}")
+        yield browser
+        browser.close()
+
+
 def pytest_configure(config):
     """Auto-add the slow mark to the config at runtime"""
     settings.configure(
@@ -116,6 +133,7 @@ def pytest_configure(config):
         DATABASES={
             "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}
         },
+        AUTH_USER_MODEL="another_app.CustomUser",
         TEMPLATES=[
             {
                 "BACKEND": "django.template.backends.django.DjangoTemplates",

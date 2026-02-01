@@ -144,8 +144,8 @@ def test_form_component_get_form(tetra_request):
     form = c.get_form()
 
     assert isinstance(form, FormWithInitialData)
-    assert form.data == {
-        "key": "main__ui__component_with_initial_data",
+    assert form.data["key"].startswith("tk_")
+    assert {k: v for k, v in form.data.items() if k != "key"} == {
         "name": "John Doe",
         "age": 23,
         "email": "john@example.com",

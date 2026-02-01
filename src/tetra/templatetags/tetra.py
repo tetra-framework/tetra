@@ -368,7 +368,7 @@ class ComponentNode(template.Node):
                         slots[slot_name] = new_slot
 
         children_state = context.get("_loaded_children_state", None)
-        if "key" not in resolved_kwargs:
+        if "key" not in resolved_kwargs and "key" not in resolved_attrs:
             resolved_kwargs["key"] = component_class.full_component_name()
         if (
             children_state

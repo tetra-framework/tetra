@@ -22,6 +22,8 @@ title: Changelog
 - Ensured WebSocket scripts are only included when both reactive components/models are used and WebSocket support is detected.
 - skip updates for focused fields to preserve user input during data updates
 - use actual user model for auto-subscribe channel name, instead of "user."
+- fix component key generation when `key` is not explicitly provided in template tag.
+- fix test compatibility with custom user models and playwright environments.
 
 ## [0.8.1] - 2026-01-31
 ### Fixed
