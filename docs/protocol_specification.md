@@ -124,7 +124,7 @@ Standardizes real-time updates to also use the unified envelope.
 ```json
 {
   "protocol": "tetra-1.0",
-  "type": "component.update_data",
+  "type": "component.data_updated",
   "payload": {
     "group": "my-update-group",
     "data": { "title": "New Title" }

@@ -217,11 +217,11 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
             type = event.pop("type")
             await self._send_unified_message(type, event)
 
-    async def component_update_data(self, event) -> None:
+    async def component_data_updated(self, event) -> None:
         """Handle component data update
 
         This method is automatically called when a message is sent via group_send
-        with the type "component.update_data". It checks if the component has matching fields
+        with the type "component.data_updated". It checks if the component has matching fields
         and if so, sends the message to the client via websocket.
         """
 
@@ -231,7 +231,7 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         # worker might not have access to the component instances that were
         # created during the HTTP request.
         await self._send_unified_message(
-            "component.update_data",
+            "component.data_updated",
             {
                 "group": event["group"],
                 "data": event["data"],
@@ -239,10 +239,10 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
             },
         )
 
-    async def component_remove(self, event) -> None:
+    async def component_removed(self, event) -> None:
         """Handle component removal"""
         await self._send_unified_message(
-            "component.remove",
+            "component.removed",
             {
                 "group": event["group"],
                 "component_id": event["component_id"],

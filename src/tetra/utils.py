@@ -527,7 +527,7 @@ class TetraWsResponse:
     def component_update_data(group: str, data: dict) -> dict[str, Any]:
         return {
             group: {
-                "type": "component.update_data",
+                "type": "component.data_updated",
                 "group": group,
                 "data": data,
             },
@@ -536,7 +536,7 @@ class TetraWsResponse:
     @staticmethod
     def component_remove(component_id: str) -> dict[str, Any]:
         return {
-            "type": "component.remove",
+            "type": "component.removed",
             "component_id": component_id,
         }
 

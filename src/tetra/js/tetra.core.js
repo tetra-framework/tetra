@@ -119,11 +119,11 @@ const Tetra = {
         this.handleGroupNotify(payload);
         break;
 
-      case 'component.update_data':
+      case 'component.data_updated':
         this.handleComponentUpdateData(payload);
         break;
 
-      case 'component.remove':
+      case 'component.removed':
         this.handleComponentRemove(payload);
         break;
 

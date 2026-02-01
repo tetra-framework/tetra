@@ -5,8 +5,8 @@ Reactive models in Tetra provide a seamless way to synchronize your database cha
 ## Overview
 
 When a `ReactiveModel` is updated on the server:
-- A `post_save` signal triggers a `component.update_data` message to the model's WebSocket channel.
-- A `post_delete` signal triggers a `component.remove` message.
+- A `post_save` signal triggers a `component.data_updated` message to the model's WebSocket channel.
+- A `post_delete` signal triggers a `component.removed` message.
 - Subscribed Tetra [ReactiveComponents](reactive-components.md) receive these messages and update their UI automatically.
 
 ## Usage

@@ -69,7 +69,7 @@ class ComponentDispatcher:
         await channel_layer.group_send(
             group,
             {
-                "type": "component.update_data",
+                "type": "component.data_updated",
                 "group": group,
                 "data": data or {},
                 "sender_id": sender_id,
@@ -92,7 +92,7 @@ class ComponentDispatcher:
         await channel_layer.group_send(
             group,
             {
-                "type": "component.remove",
+                "type": "component.removed",
                 "group": group,
                 "component_id": component_id,
                 "sender_id": sender_id,

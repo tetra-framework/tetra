@@ -167,7 +167,7 @@ async def test_component_update_data_handler(tetra_ws_communicator):
 
     response = await communicator.receive_json_from()
     assert response["protocol"] == "tetra-1.0"
-    assert response["type"] == "component.update_data"
+    assert response["type"] == "component.data_updated"
     assert response["payload"]["group"] == group_name
     assert response["payload"]["data"] == {"title": "New Title"}
 
@@ -191,7 +191,7 @@ async def test_component_remove_handler(tetra_ws_communicator):
 
     response = await communicator.receive_json_from()
     assert response["protocol"] == "tetra-1.0"
-    assert response["type"] == "component.remove"
+    assert response["type"] == "component.removed"
     assert response["payload"]["group"] == group_name
     assert response["payload"]["component_id"] == "comp_123"
 
