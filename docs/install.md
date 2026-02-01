@@ -48,6 +48,8 @@ MIDDLEWARE = [
 ]
 ```
 
+If you are using ReactiveComponents, don't forget to set up channels. You can use [their documentation](https://channels.readthedocs.io/en/stable/installation.html) for that, or have a look at [Reactive Components](reactive-components.md).
+
 Modify your `urls.py`:
 
 ``` python

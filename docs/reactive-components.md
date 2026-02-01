@@ -24,12 +24,28 @@ INSTALLED_APPS = [
     "tetra", # must be before daphne!
     "daphne", # must be before staticfiles!
     # ... other apps
-    "channels",
+    "channels[types]", # with mypy support!
     "your_app"
 ]
 
 ASGI_APPLICATION = '<your_project>.asgi.application'
+
+...
+
+CHANNEL_LAYERS = {
+    "default": {
+        # you can use this in-memory layer for testing,
+        # but in production it won't work:
+        # "BACKEND": "channels.layers.InMemoryChannelLayer",
+        
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 ```
+
 
 Configure your ASGI application:
 
