@@ -194,4 +194,4 @@ def test_reactive_model_all_fields():
 
         assert mock_update_data.call_count == 1
         data = mock_update_data.call_args[0][1]
-        assert data == {"id": 1, "name": "All", "age": 30}
+        assert data == {"id": 1, "name": "All", "age": 30, "model_version": 0}

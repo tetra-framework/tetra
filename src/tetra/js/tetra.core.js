@@ -88,7 +88,9 @@ const Tetra = {
     // Find all components by subscribe topic and return them
     const store = Alpine.store('tetra_subscriptions');
     const componentIds = store[group] || [];
-    return componentIds.map(id => this._get_component_by_id(id)).filter(c => c !== undefined);
+    // Ensure we return a unique list of component data objects that actually exist in DOM
+    const components = componentIds.map(id => this._get_component_by_id(id)).filter(c => !!c && typeof c._removeComponent === 'function');
+    return [...new Set(components)];
   },
   handleWebsocketMessage(data) {
     // This function centrally handles incoming websocket data and dispatches it to the

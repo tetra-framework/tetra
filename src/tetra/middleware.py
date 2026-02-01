@@ -9,13 +9,15 @@ from django.http import HttpRequest, QueryDict, FileResponse
 from django.middleware.csrf import get_token
 from django.utils.functional import cached_property
 
+from .components.utils import reset_autokey_count
 from .utils import (
     render_scripts,
     render_styles,
     TetraJSONEncoder,
     check_websocket_support,
+    clear_request_id,
 )
-from asgiref.sync import iscoroutinefunction, markcoroutinefunction, sync_to_async
+from asgiref.sync import iscoroutinefunction, markcoroutinefunction
 
 
 class TetraMiddlewareException(Exception):
@@ -185,11 +187,18 @@ class TetraMiddleware:
             return self._sync_call(request)
 
     async def __acall__(self, request):
+        # Reset component counter for each request to ensure stable sequential IDs
+        reset_autokey_count()
+
         # Lightweight initialization - only create TetraDetails
         request.tetra = TetraDetails(request)
         request.tetra._websockets_available = self._websocket_available
 
-        response = await self.get_response(request)
+        try:
+            response = await self.get_response(request)
+        finally:
+            # Clear request ID after processing
+            clear_request_id()
 
         # Only do expensive processing if Tetra components were actually used
         if hasattr(request, "tetra_components_used") and request.tetra_components_used:

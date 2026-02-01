@@ -67,20 +67,12 @@ from ..state import encode_component, decode_component
 from ..templates import InlineOrigin, InlineTemplate
 
 from .callbacks import CallbackList
+from .utils import get_next_autokey, reset_autokey_count
 
 
 thread_local = local()
 
 logger = logging.getLogger(__name__)
-
-_tetra_component_count = local()
-
-
-def get_next_autokey():
-    if not hasattr(_tetra_component_count, "count"):
-        _tetra_component_count.count = 0
-    _tetra_component_count.count += 1
-    return f"__autokey_{_tetra_component_count.count}"
 
 
 def make_template(cls) -> Template:

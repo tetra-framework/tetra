@@ -71,7 +71,8 @@
     _get_components_by_subscribe_group(group) {
       const store = Alpine.store("tetra_subscriptions");
       const componentIds = store[group] || [];
-      return componentIds.map((id) => this._get_component_by_id(id)).filter((c) => c !== void 0);
+      const components = componentIds.map((id) => this._get_component_by_id(id)).filter((c) => !!c && typeof c._removeComponent === "function");
+      return [...new Set(components)];
     },
     handleWebsocketMessage(data) {
       let messageType;
@@ -172,8 +173,8 @@
             return;
           }
           component._removeComponent();
-          return;
         }
+        return;
       }
       const components = this._get_components_by_subscribe_group(group);
       components.forEach((component) => {
@@ -458,7 +459,7 @@
           });
         },
         // Push notification methods
-        _subscribe(groupName, autoUpdate = true) {
+        _subscribe(groupName) {
           if (!this.__subscribedGroups) {
             this.__subscribedGroups = /* @__PURE__ */ new Set();
           }
@@ -477,8 +478,7 @@
                   type: "subscribe",
                   group: topic,
                   component_id: this.component_id,
-                  component_class: this.componentName,
-                  auto_update: autoUpdate
+                  component_class: this.componentName
                 });
               }
             }

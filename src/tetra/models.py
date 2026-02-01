@@ -1,3 +1,5 @@
+import asyncio
+
 from django.db import models
 from django.db.models.base import Model
 from django.db.models.signals import post_save, post_delete
@@ -75,17 +77,39 @@ class ReactiveModel(models.Model):
         # Always include model_version for deduplication
         data["model_version"] = instance.model_version
         sender_id = request_id.get()
-        async_to_sync(ComponentDispatcher.update_data)(
-            channel, data, sender_id=sender_id
-        )
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            loop.create_task(
+                ComponentDispatcher.update_data(channel, data, sender_id=sender_id)
+            )
+        else:
+            async_to_sync(ComponentDispatcher.update_data)(
+                channel, data, sender_id=sender_id
+            )
 
     @classmethod
     def _handle_tetra_delete(cls, sender, instance, **kwargs):
         channel = instance.get_tetra_channel()
         sender_id = request_id.get()
-        async_to_sync(ComponentDispatcher.component_remove)(
-            channel, component_id=None, sender_id=sender_id
-        )
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            loop.create_task(
+                ComponentDispatcher.component_remove(
+                    channel, component_id=None, sender_id=sender_id
+                )
+            )
+        else:
+            async_to_sync(ComponentDispatcher.component_remove)(
+                channel, component_id=None, sender_id=sender_id
+            )
 
     def get_tetra_channel(self) -> str:
         """Returns the channel name to be used for this model instance."""

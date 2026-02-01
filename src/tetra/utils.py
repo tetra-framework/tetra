@@ -44,6 +44,10 @@ logger = logging.getLogger(__name__)
 request_id: ContextVar[str | None] = ContextVar("request_id", default=None)
 
 
+def clear_request_id():
+    request_id.set(None)
+
+
 def camel_case_to_underscore(value: str):
     """
     Splits camelCase and PascalCase and converts to lower case with underscores.
