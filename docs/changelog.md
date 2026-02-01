@@ -12,19 +12,24 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.2] - 2026-01-31
+## [0.8.3] – unreleased
+### Added
+- **Component Addition via WebSocket**: Added `ComponentDispatcher.component_created` and client-side support for adding components dynamically via WebSockets.
+
+### Fixed
+- use actual user model for auto-subscribe channel name, instead of "user."
+- fix component key generation when `key` is not explicitly provided in template tag.
+- fix test compatibility with custom user models and playwright environments.
+- skip updates for focused fields to preserve user input during data updates
+
+## [0.8.2] - 2026-02-31
 ### Added
 - **Reactive Models**: Introduced `ReactiveModel` to enable automatic WebSocket updates when Django models are saved or deleted.
 - Add support for a request sender id to filter server-side change events.
-- **Component Addition via WebSocket**: Added `ComponentDispatcher.component_add` and client-side support for adding components dynamically via WebSockets.
 
 ### Fixed
 - Fixed signal connection reliability for `ReactiveModel` across various inheritance scenarios.
 - Ensured WebSocket scripts are only included when both reactive components/models are used and WebSocket support is detected.
-- skip updates for focused fields to preserve user input during data updates
-- use actual user model for auto-subscribe channel name, instead of "user."
-- fix component key generation when `key` is not explicitly provided in template tag.
-- fix test compatibility with custom user models and playwright environments.
 
 ## [0.8.1] - 2026-01-31
 ### Fixed
