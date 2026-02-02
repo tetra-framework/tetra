@@ -12,6 +12,24 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+
+## [0.8.6] – unrelased
+### Added
+- Introduce `group_registry` for group validation and improve subscription handling
+- Introduce online status tracking
+
+### Removed
+- Remove deprecated `@public.subscribe` decorator
+
+## [0.8.5] – 2026-02-01
+### Added
+- Improve subscription response handling
+- Raise ProtocolError for invalid Tetra protocol version
+
+### Changed
+- Rename `component.data_updated` to `component.data_changed`
+
 ## [0.8.4] – 2026-02-01
 ### Fixed
 - Fix error where another client could keep a stale component when two components are deleted locally.
