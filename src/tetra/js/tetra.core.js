@@ -196,7 +196,9 @@ const Tetra = {
     const { group, data, sender_id } = event;
     const components = this._get_components_by_subscribe_group(group);
     if (components.length === 0) {
-        const els = document.querySelectorAll(`[tetra-subscription*="${group}"]`);
+        // use [tetra-subscription] selector to find elements where the group is
+        // exactly matched.
+        const els = document.querySelectorAll(`[tetra-subscription="${group}"]`);
         els.forEach(el => {
             const component = Alpine.$data(el);
             if (component && !components.includes(component)) {
@@ -245,7 +247,7 @@ const Tetra = {
     if (target_group) {
       const components = this._get_components_by_subscribe_group(target_group);
       if (components.length === 0) {
-        const els = document.querySelectorAll(`[tetra-subscription*="${target_group}"]`);
+        const els = document.querySelectorAll(`[tetra-subscription="${target_group}"]`);
         els.forEach(el => {
           const component = Alpine.$data(el);
           if (component && component._removeComponent) {
@@ -272,7 +274,7 @@ const Tetra = {
     // components subscribed to the group and remove them.
     const components = this._get_components_by_subscribe_group(group);
     if (components.length === 0) {
-      const els = document.querySelectorAll(`[tetra-subscription*="${group}"]`);
+      const els = document.querySelectorAll(`[tetra-subscription="${group}"]`);
       els.forEach(el => {
         const component = Alpine.$data(el);
         if (component && component._removeComponent) {
@@ -529,22 +531,19 @@ const Tetra = {
         // Check for subscription changes after morphing
         if (window.__tetra_useWebsockets && this.$el.hasAttribute('tetra-reactive')) {
           const group = this.$el.getAttribute('tetra-subscription');
-          const currentTopics = group ? group.split(',').map(t => t.trim()) : [];
           const oldTopics = this.__subscribedGroups ? Array.from(this.__subscribedGroups) : [];
           
           // Unsubscribe from topics that are no longer present
           oldTopics.forEach(topic => {
-            if (!currentTopics.includes(topic)) {
+            if (topic !== group) {
               this._unsubscribe(topic);
             }
           });
           
-          // Subscribe to new topics
-          currentTopics.forEach(topic => {
-            if (!this.__subscribedGroups || !this.__subscribedGroups.has(topic)) {
-              this._subscribe(topic);
-            }
-          });
+          // Subscribe to new topic
+          if (group && (!this.__subscribedGroups || !this.__subscribedGroups.has(group))) {
+            this._subscribe(group);
+          }
         }
 
         this._handleAutofocus();
@@ -635,62 +634,56 @@ const Tetra = {
       },
 
       // Push notification methods
-      _subscribe(groupName) {
+      _subscribe(topic) {
         if (!this.__subscribedGroups) {
           this.__subscribedGroups = new Set();
         }
 
         const store = Alpine.store('tetra_subscriptions');
-        const topics = groupName.split(',').map(t => t.trim());
         
-        topics.forEach(topic => {
-          this.__subscribedGroups.add(topic);
-          
-          if (!store[topic]) {
-            store[topic] = [];
-          }
-          
-          if (!store[topic].includes(this.component_id)) {
-            const isFirst = store[topic].length === 0;
-            store[topic].push(this.component_id);
+        this.__subscribedGroups.add(topic);
+        
+        if (!store[topic]) {
+          store[topic] = [];
+        }
+        
+        if (!store[topic].includes(this.component_id)) {
+          const isFirst = store[topic].length === 0;
+          store[topic].push(this.component_id);
 
-            if (isFirst) {
-              Tetra.sendWebSocketMessage({
-                type: 'subscribe',
-                group: topic,
-                component_id: this.component_id,
-                component_class: this.componentName,
-              });
-            }
+          if (isFirst) {
+            Tetra.sendWebSocketMessage({
+              type: 'subscribe',
+              group: topic,
+              component_id: this.component_id,
+              component_class: this.componentName,
+            });
           }
-        });
+        }
       },
 
-      _unsubscribe(groupName) {
+      _unsubscribe(topic) {
         if (!this.__subscribedGroups) return;
 
         const store = Alpine.store('tetra_subscriptions');
-        const topics = groupName.split(',').map(t => t.trim());
 
-        topics.forEach(topic => {
-          this.__subscribedGroups.delete(topic);
-          
-          if (store[topic]) {
-            const index = store[topic].indexOf(this.component_id);
-            if (index > -1) {
-              store[topic].splice(index, 1);
-              const isLast = store[topic].length === 0;
-              if (isLast) {
-                delete store[topic];
-                Tetra.sendWebSocketMessage({
-                  type: 'unsubscribe',
-                  group: topic,
-                  component_id: this.component_id
-                });
-              }
+        this.__subscribedGroups.delete(topic);
+        
+        if (store[topic]) {
+          const index = store[topic].indexOf(this.component_id);
+          if (index > -1) {
+            store[topic].splice(index, 1);
+            const isLast = store[topic].length === 0;
+            if (isLast) {
+              delete store[topic];
+              Tetra.sendWebSocketMessage({
+                type: 'unsubscribe',
+                group: topic,
+                component_id: this.component_id
+              });
             }
           }
-        });
+        }
       },
 
       _notifyGroup(groupName, eventName, data) {
