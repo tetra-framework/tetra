@@ -276,7 +276,7 @@ const Tetra = {
     }));
   },
   handleComponentDataChanged(event) {
-    const { group, data, sender_id } = event;
+    const { group, data, sender_id, update } = event;
     const components = this._get_components_by_subscribe_group(group);
     if (components.length === 0) {
         // use [tetra-subscription] selector to find elements where the group is
@@ -303,7 +303,8 @@ const Tetra = {
       }
       if (data && Object.keys(data).length > 0) {
         component._updateData(data);
-      } else {
+      }
+      if (update || !data || Object.keys(data).length === 0) {
         component._refresh();
       }
     });

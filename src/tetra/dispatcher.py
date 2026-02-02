@@ -48,7 +48,10 @@ class ComponentDispatcher:
 
     @staticmethod
     async def data_changed(
-        group: str, data: dict | None = None, sender_id: str | None = None
+        group: str,
+        data: dict | None = None,
+        sender_id: str | None = None,
+        update: bool = False,
     ) -> None:
         """
         Sends data updates to public properties of all components that are subscribed to
@@ -64,6 +67,7 @@ class ComponentDispatcher:
                 IMPORTANT: All keys in this dict must match the components'
                 public_properties names.
            sender_id: Unique identifier of the request that triggered this update.
+           update: If True, the component will be refreshed after the data is updated.
         """
         channel_layer = get_channel_layer()
         await channel_layer.group_send(
@@ -73,6 +77,7 @@ class ComponentDispatcher:
                 "group": group,
                 "data": data or {},
                 "sender_id": sender_id,
+                "update": update,
             },
         )
 

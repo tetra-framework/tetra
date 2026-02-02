@@ -281,6 +281,7 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
                 "group": event["group"],
                 "data": event["data"],
                 "sender_id": event.get("sender_id"),
+                "update": event.get("update", False),
             },
         )
 
