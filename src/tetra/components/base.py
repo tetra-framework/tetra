@@ -930,17 +930,36 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     ]
     _excluded_load_props_from_saved_state: list[str] = []
     _loaded_children_state = None
-    _load_args: list[str] = []
+    _load_args: tuple = ()
     _load_kwargs: dict[str, Any] = {}
     _resumed_from_state_data: ComponentData
     # _temp_files is an internal dict to track which data attributes are files.
     _temp_files: dict[str, UploadedFile] = {}
     key = public(None)
 
-    def __init__(self, _request, key=None, *args, **kwargs) -> None:
-        self._load_args = []
+    def __init__(
+        self,
+        _request: TetraHttpRequest | HttpRequest,
+        _attrs: dict[str, Any] | None = None,
+        _context: dict[str, Any] | RequestContext | None = None,
+        _slots=None,
+        key: str | None = None,
+        *args,
+        **kwargs,
+    ) -> None:
+        self._load_args = ()
         self._load_kwargs = {}
-        super().__init__(_request, key=key, *args, **kwargs)
+        self._excluded_load_props_from_saved_state = []
+        self._temp_files = {}
+        super().__init__(
+            _request,
+            _attrs,
+            _context,
+            _slots,
+            key,
+            *args,
+            **kwargs,
+        )
         self.key = self.attrs.get("key")
         self.renderer = ComponentRenderer(self)
 
@@ -1279,12 +1298,12 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         state = self.__dict__.copy()
         if "renderer" in state:
             del state["renderer"]
-        for key in (
+        for prop_name in (
             self._excluded_props_from_saved_state
             + self._excluded_load_props_from_saved_state
         ):
-            if key in state:
-                del state[key]
+            if prop_name in state:
+                del state[prop_name]
         return state
 
     def _render_data(self) -> dict[str, Any]:
