@@ -108,6 +108,8 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
             await self._handle_subscribe(content)
         elif message_type == "unsubscribe":
             await self._handle_unsubscribe(content)
+        elif message_type == "ping":
+            await self.send_json({"protocol": "tetra-1.0", "type": "pong"})
         else:
             logger.warning(
                 f"Unknown message type received via websocket: {message_type}"

@@ -75,4 +75,8 @@ When a component subscription was redacted.
 ### `tetra:component-subscription-error`
 
 When a component subscription/unsubsription process did not succeed.
+
+### `tetra:websocket-disconnected`
+
+Triggered when the client's online status changes to `offline`. This happens either when a WebSocket connection is closed or when a ping request to the server times out. See [Offline Mode](online-status.md) for details.
  

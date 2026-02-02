@@ -98,10 +98,16 @@ You can make your Django **models** reactive by inheriting from `ReactiveModel`.
 
 See the [Reactive Models](reactive-models.md) section for more information.
 
+## Online/offline Status
+
+Tetra provides a built-in mechanism to track the online/offline status of the client, which is especially useful for reactive components.
+
+See the [Online Status](online-status.md) section for more information.
+
 ## Component Dispatcher
 
 Use `ComponentDispatcher` to push updates from anywhere in your Django application (e.g., in views, tasks, or signals).
-The dispatcher is called asynchronously, and needs to be wrapped in an async context manager if called from a sync function.
+The dispatcher is called asynchronously and needs to be wrapped in an async context manager if called from a sync function.
 
 ```python
 from tetra.dispatcher import ComponentDispatcher

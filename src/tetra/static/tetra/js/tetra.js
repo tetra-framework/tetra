@@ -16,6 +16,69 @@
       if (!Alpine.store("tetra_subscriptions")) {
         Alpine.store("tetra_subscriptions", {});
       }
+      this.initOnlineStatusStore();
+    },
+    initOnlineStatusStore() {
+      if (this.onlineStatusInitialized) return;
+      this.onlineStatusInitialized = true;
+      const defaultTimeout = window.__tetra_onlineTimeout || 1e4;
+      if (typeof Alpine !== "undefined") {
+        if (!Alpine.store("tetra_status")) {
+          Alpine.store("tetra_status", {
+            online: true,
+            lastActivity: Date.now(),
+            update() {
+              this.online = true;
+              this.lastActivity = Date.now();
+            }
+          });
+        }
+      }
+      if (this.offlineTimeout) {
+        clearTimeout(this.offlineTimeout);
+      }
+      this.offlineTimeout = setTimeout(() => this.checkOnlineStatus(), defaultTimeout);
+      document.addEventListener("tetra:websocket-connected", () => this.updateOnlineStatus());
+    },
+    updateOnlineStatus() {
+      if (typeof Alpine !== "undefined") {
+        const store = Alpine.store("tetra_status");
+        if (store) {
+          store.update();
+        }
+      }
+      if (this.offlineTimeout) {
+        clearTimeout(this.offlineTimeout);
+      }
+      const timeout = window.__tetra_onlineTimeout || 1e4;
+      this.offlineTimeout = setTimeout(() => this.checkOnlineStatus(), timeout);
+      if (this.pingTimeout) {
+        clearTimeout(this.pingTimeout);
+      }
+    },
+    checkOnlineStatus() {
+      if (this.pingTimeout) {
+        clearTimeout(this.pingTimeout);
+      }
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({
+          protocol: "tetra-1.0",
+          type: "ping"
+        }));
+        const timeout = window.__tetra_pingTimeout || 5e3;
+        this.pingTimeout = setTimeout(() => this.setOfflineStatus(), timeout);
+      } else {
+        this.setOfflineStatus();
+      }
+    },
+    setOfflineStatus() {
+      if (typeof Alpine !== "undefined") {
+        const store = Alpine.store("tetra_status");
+        if (store) {
+          store.online = false;
+          document.dispatchEvent(new CustomEvent("tetra:websocket-disconnected"));
+        }
+      }
     },
     handleInitialMessages(messages) {
       messages.forEach((message) => {
@@ -39,17 +102,27 @@
         this.ws = new WebSocket(ws_url);
         this.ws.onopen = () => {
           console.debug("Tetra WebSocket connected");
+          this.updateOnlineStatus();
+          document.dispatchEvent(new CustomEvent("tetra:websocket-connected"));
           this.pendingSubscriptions.forEach((data, componentId) => {
             this.ws.send(JSON.stringify(data));
           });
           this.pendingSubscriptions.clear();
         };
         this.ws.onmessage = (event) => {
+          this.updateOnlineStatus();
           const data = JSON.parse(event.data);
+          if (data.type === "pong") {
+            if (this.pingTimeout) {
+              clearTimeout(this.pingTimeout);
+            }
+            return;
+          }
           this.handleWebsocketMessage(data);
         };
         this.ws.onclose = () => {
           console.log("Tetra WebSocket disconnected");
+          this.setOfflineStatus();
           setTimeout(() => {
             this.ensureWebSocketConnection();
           }, 3e3);
@@ -913,6 +986,7 @@
         triggerEl,
         requestId
       });
+      this.updateOnlineStatus();
       const response = await fetch(methodEndpoint, fetchPayload);
       component.$dispatch("tetra:after-request", {
         component,
