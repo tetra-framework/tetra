@@ -1321,7 +1321,11 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     def _add_self_attrs_to_context(self, context) -> None:
         super()._add_self_attrs_to_context(context)
         if hasattr(self, "_loaded_children_state") and self._loaded_children_state:
-            children_state = {c["data"]["key"]: c for c in self._loaded_children_state}
+            children_state = {}
+            for c in self._loaded_children_state:
+                child_key = c.get("data", {}).get("key")
+                if child_key:
+                    children_state[child_key] = c
             context["_loaded_children_state"] = children_state
         else:
             context["_loaded_children_state"] = None
