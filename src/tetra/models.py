@@ -1,5 +1,6 @@
 import asyncio
 import re
+from typing import Any
 
 from django.db import models
 from django.db.models.signals import post_save, post_delete, class_prepared
@@ -142,7 +143,7 @@ class ReactiveModel(models.Model):
         """
         return f"{self._meta.app_label}.{self._meta.model_name}"
 
-    def get_tetra_update_data(self):
+    def get_tetra_update_data(self) -> dict[str, Any]:
         """Returns the data to be sent to components."""
         # By default, we only include fields specified in `Tetra.fields`.
         # This is for security reasons, to avoid sending sensitive data
@@ -151,11 +152,11 @@ class ReactiveModel(models.Model):
         # which triggers a refresh of public properties on the client.
 
         config = self.__tetra_config
-        data = {"id": self.pk}
         if not config:
-            return data
+            return {}
 
         fields = getattr(config, "fields", [])
+        data = {"id": self.pk}
 
         if fields == "__all__":
             # Send all model fields
@@ -169,7 +170,7 @@ class ReactiveModel(models.Model):
                     data[field_name] = getattr(self, field_name)
             return data
 
-        return data
+        return {}
 
 
 # this is necessary, as ReactiveModel is an AbstractModel where __init_subclass__()
