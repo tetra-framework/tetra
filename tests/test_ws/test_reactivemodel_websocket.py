@@ -11,6 +11,7 @@ import pytest
 from apps.main.models import WatchableModel
 from tetra.dispatcher import ComponentDispatcher
 from tetra.utils import request_id
+from tetra.registry import channels_group_registry
 
 
 @pytest.mark.django_db
@@ -20,6 +21,7 @@ async def test_reactivemodel_save_sends_websocket_update(tetra_ws_communicator):
     # Subscribe to the model's channel
     obj = WatchableModel.objects.create(name="Initial")
     group_name = f"main.watchablemodel.{obj.pk}"
+    channels_group_registry.register(group_name)
 
     await tetra_ws_communicator.send_json_to({"type": "subscribe", "group": group_name})
     subscription_response = await tetra_ws_communicator.receive_json_from()
@@ -47,6 +49,7 @@ async def test_reactivemodel_delete_sends_websocket_remove(tetra_ws_communicator
     # Create and subscribe to model
     obj = WatchableModel.objects.create(name="To Delete")
     group_name = f"main.watchablemodel.{obj.pk}"
+    channels_group_registry.register(group_name)
 
     await tetra_ws_communicator.send_json_to({"type": "subscribe", "group": group_name})
     subscription_response = await tetra_ws_communicator.receive_json_from()
@@ -71,6 +74,7 @@ async def test_reactivemodel_update_with_sender_id(tetra_ws_communicator):
     """Test that ReactiveModel updates include sender_id for deduplication."""
     obj = WatchableModel.objects.create(name="Test")
     group_name = f"main.watchablemodel.{obj.pk}"
+    channels_group_registry.register(group_name)
 
     await tetra_ws_communicator.send_json_to({"type": "subscribe", "group": group_name})
     await tetra_ws_communicator.receive_json_from()
@@ -99,6 +103,7 @@ async def test_reactivemodel_delete_with_sender_id(tetra_ws_communicator):
     """Test that ReactiveModel deletion includes sender_id for deduplication."""
     obj = WatchableModel.objects.create(name="Test Delete")
     group_name = f"main.watchablemodel.{obj.pk}"
+    channels_group_registry.register(group_name)
 
     await tetra_ws_communicator.send_json_to({"type": "subscribe", "group": group_name})
     await tetra_ws_communicator.receive_json_from()
@@ -127,6 +132,7 @@ async def test_multiple_models_same_channel(tetra_ws_communicator):
     """Test that multiple subscribers to same model channel all receive updates."""
     obj = WatchableModel.objects.create(name="Shared")
     group_name = f"main.watchablemodel.{obj.pk}"
+    channels_group_registry.register(group_name)
 
     # Subscribe to the model's channel
     await tetra_ws_communicator.send_json_to({"type": "subscribe", "group": group_name})
@@ -151,6 +157,7 @@ async def test_reactivemodel_filtered_fields(tetra_ws_communicator):
     # WatchableModel has Tetra.fields = "__all__"
     obj = WatchableModel.objects.create(name="Field Test")
     group_name = f"main.watchablemodel.{obj.pk}"
+    channels_group_registry.register(group_name)
 
     await tetra_ws_communicator.send_json_to({"type": "subscribe", "group": group_name})
     await tetra_ws_communicator.receive_json_from()
@@ -184,6 +191,7 @@ async def test_reactivemodel_no_duplicate_on_same_request(tetra_ws_communicator)
     """
     obj = WatchableModel.objects.create(name="Dedupe Test")
     group_name = f"main.watchablemodel.{obj.pk}"
+    channels_group_registry.register(group_name)
 
     await tetra_ws_communicator.send_json_to({"type": "subscribe", "group": group_name})
     await tetra_ws_communicator.receive_json_from()
@@ -225,6 +233,7 @@ async def test_component_remove_deduplication_scenario(tetra_ws_communicator):
     """
     obj = WatchableModel.objects.create(name="Remove Dedupe")
     group_name = f"main.watchablemodel.{obj.pk}"
+    channels_group_registry.register(group_name)
 
     await tetra_ws_communicator.send_json_to({"type": "subscribe", "group": group_name})
     await tetra_ws_communicator.receive_json_from()
@@ -257,6 +266,7 @@ async def test_reactivemodel_creation_sends_created_to_collection(
 ):
     """Test that creating a ReactiveModel sends component.created to collection channel."""
     collection_group = "main.watchablemodel"
+    channels_group_registry.register(collection_group)
 
     await tetra_ws_communicator.send_json_to(
         {"type": "subscribe", "group": collection_group}
@@ -281,6 +291,7 @@ async def test_reactivemodel_creation_sends_created_to_collection(
 async def test_reactivemodel_deletion_sends_remove_to_collection(tetra_ws_communicator):
     """Test that deleting a ReactiveModel sends component.removed to collection channel with target_group."""
     collection_group = "main.watchablemodel"
+    channels_group_registry.register(collection_group)
 
     await tetra_ws_communicator.send_json_to(
         {"type": "subscribe", "group": collection_group}

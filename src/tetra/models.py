@@ -1,11 +1,12 @@
 import asyncio
+import re
 
 from django.db import models
-from django.db.models.base import Model
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, post_delete, class_prepared
 from asgiref.sync import async_to_sync
 from .dispatcher import ComponentDispatcher
 from .utils import request_id
+from .registry import channels_group_registry
 
 
 class ReactiveModel(models.Model):
@@ -30,7 +31,7 @@ class ReactiveModel(models.Model):
 
     __tetra_config: type = None
 
-    def __init_subclass__(cls: type[Model], **kwargs):
+    def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         # Look for the Tetra inner class
         tetra_config = getattr(cls, "Tetra", None)
@@ -42,27 +43,6 @@ class ReactiveModel(models.Model):
                 fields = []
 
             cls.__tetra_config = DefaultTetra
-
-        cls._connect_tetra_signals()
-
-    @classmethod
-    def _connect_tetra_signals(cls):
-        # set a global flag to indicate that reactive components are in use
-        # this is necessary for the middleware to include the websocket scripts
-        from django.apps import apps
-        from .utils import check_websocket_support
-
-        if check_websocket_support():
-            apps.get_app_config("tetra").has_reactive_components = True
-
-        # Check if signals are already connected to avoid duplicates
-        # Using dispatch_uid is a good way to ensure unique connections.
-        uid_save = f"tetra_save_{cls.__module__}.{cls.__name__}"
-        uid_delete = f"tetra_delete_{cls.__module__}.{cls.__name__}"
-        post_save.connect(cls._handle_tetra_save, sender=cls, dispatch_uid=uid_save)
-        post_delete.connect(
-            cls._handle_tetra_delete, sender=cls, dispatch_uid=uid_delete
-        )
 
     def save(self, *args, **kwargs):
         """Override save to auto-increment model_version"""
@@ -190,3 +170,40 @@ class ReactiveModel(models.Model):
             return data
 
         return data
+
+
+# this is necessary, as ReactiveModel is an AbstractModel where __init_subclass__()
+# is notworking as expected (subclasses have no access to their ._meta at this point)
+def _reactivemodel_class_prepared(sender: type[ReactiveModel], **kwargs):
+    if issubclass(sender, ReactiveModel) and not sender._meta.abstract:
+        from django.apps import apps
+        from .utils import check_websocket_support
+
+        print(f"preparing {sender} for Tetra")
+        app_label = sender._meta.app_label
+        model_name = sender._meta.model_name
+        # Register collection group
+        channels_group_registry.register(f"{app_label}.{model_name}")
+        # Register instance group pattern
+        channels_group_registry.register(
+            re.compile(rf"^{app_label}\.{model_name}\..+$")
+        )
+
+        # set a global flag to indicate that reactive components are in use
+        # this is necessary for the middleware to include the websocket scripts
+        if check_websocket_support():
+            apps.get_app_config("tetra").has_reactive_components = True
+
+        # Check if signals are already connected to avoid duplicates
+        # Using dispatch_uid is a good way to ensure unique connections.
+        uid_save = f"tetra_save_{sender.__module__}.{sender.__name__}"
+        uid_delete = f"tetra_delete_{sender.__module__}.{sender.__name__}"
+        post_save.connect(
+            sender._handle_tetra_save, sender=sender, dispatch_uid=uid_save
+        )
+        post_delete.connect(
+            sender._handle_tetra_delete, sender=sender, dispatch_uid=uid_delete
+        )
+
+
+class_prepared.connect(_reactivemodel_class_prepared)

@@ -7,6 +7,7 @@ from tetra.consumers import TetraConsumer
 from tetra.dispatcher import ComponentDispatcher
 from tetra.utils import request_id
 from apps.main.models import WatchableModel
+from tetra.registry import channels_group_registry
 
 
 @pytest.mark.django_db
@@ -34,6 +35,7 @@ async def test_rapid_signals_dispatch():
         # Subscribe to all 10
         for pk in pks:
             group = f"main.watchablemodel.{pk}"
+            channels_group_registry.register(group)
             await communicator.send_json_to({"type": "subscribe", "group": group})
             await communicator.receive_json_from()
 

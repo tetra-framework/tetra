@@ -6,6 +6,7 @@ from django.contrib.sessions.backends.db import SessionStore
 from tetra.consumers import TetraConsumer
 from tetra.utils import request_id
 from apps.main.models import WatchableModel
+from tetra.registry import channels_group_registry
 
 
 @pytest.mark.django_db
@@ -39,6 +40,7 @@ async def test_rapid_deletions_sync():
         # Both clients subscribe to all 10 items
         for obj in objs:
             group = f"main.watchablemodel.{obj.pk}"
+            channels_group_registry.register(group)
             await communicator1.send_json_to({"type": "subscribe", "group": group})
             await communicator1.receive_json_from()
             await communicator2.send_json_to({"type": "subscribe", "group": group})

@@ -7,6 +7,7 @@ from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.contrib.sessions.backends.file import SessionStore
 
 from tetra.exceptions import ProtocolError
+from .registry import channels_group_registry
 
 logger = logging.getLogger(__name__)
 
@@ -53,18 +54,15 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
 
         await self.accept()
 
-        # Auto subscriptions: user, session, broadcast
+        # Auto subscriptions: users, auth.user.*, session.*, broadcast
 
         # subscribe client to user-specific group if authenticated
         self.user = self.scope.get("user", AnonymousUser())
         if self.user.is_authenticated:
-            await self.channel_layer.group_add(
-                f"{self.user_prefix}.{self.user.id}", self.channel_name
-            )
-            self.subscribed_groups.add(f"{self.user_prefix}.{self.user.id}")
-            logger.debug(
-                f"Subscribed '{self.channel_name}' to '{self.user_prefix}.{self.user.id}' group."
-            )
+            user_group = f"{self.user_prefix}.{self.user.id}"
+            await self.channel_layer.group_add(user_group, self.channel_name)
+            self.subscribed_groups.add(user_group)
+            logger.debug(f"Subscribed '{self.channel_name}' to '{user_group}' group.")
 
         # session keys theoretically could be None in an invalid session.
         if self.session.session_key:
@@ -82,6 +80,12 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         await self.channel_layer.group_add("broadcast", self.channel_name)
         self.subscribed_groups.add("broadcast")
         logger.debug(f"Subscribed '{self.channel_name}' to 'broadcast' group.")
+
+        # Connect to users group, if logged in
+        if self.user:
+            await self.channel_layer.group_add("users", self.channel_name)
+            self.subscribed_groups.add("users")
+            logger.debug(f"Subscribed '{self.channel_name}' to 'users' group.")
 
     async def disconnect(self, code) -> None:
         """Disconnects from all subscribed groups."""
@@ -138,31 +142,39 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
 
         # TODO: check if group name is valid, in a registry
 
+        # Block manual subscription to automated groups
+        if group_name in ["broadcast", "users"]:
+            logger.warning(
+                f"Manual subscription to automated group '{group_name}' blocked."
+            )
+            await self._send_unified_message(
+                "subscription.response",
+                {
+                    "group": group_name,
+                    "status": "error",
+                    "message": f"Manual subscription to '{group_name}' group is not allowed.",
+                },
+            )
+            return
+
+        is_user_group = False
         if group_name.startswith(f"{self.user_prefix}."):
             # The group name must be exactly {user_prefix}.{user_id}
             # to be considered a user-specific group.
             parts = group_name[len(self.user_prefix) + 1 :].split(".")
             if len(parts) == 1:
-                user_id = parts[0]
-                # TODO: admin group instead of is_superuser
-                if (
-                    self.user
-                    and str(self.user.id) != user_id
-                    and not self.user.is_superuser
-                ):
-                    logger.warning(
-                        f"Unauthorized access to group {group_name} by user "
-                        f"{self.user.id if self.user else None} blocked."
-                    )
-                    await self._send_unified_message(
-                        "subscription.response",
-                        {
-                            "group": group_name,
-                            "status": "error",
-                            "message": "Unauthorized",
-                        },
-                    )
-                    return
+                logger.warning(
+                    f"Manual subscription to private user group '{group_name}' blocked."
+                )
+                await self._send_unified_message(
+                    "subscription.response",
+                    {
+                        "group": group_name,
+                        "status": "error",
+                        "message": "Manual subscription to private user group is not allowed.",
+                    },
+                )
+                return
 
         if group_name.startswith("session."):
             # you cannot manually subscribe to a session group.
@@ -178,6 +190,20 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
                     "group": group_name,
                     "status": "error",
                     "message": "No manually joining of session groups allowed.",
+                },
+            )
+            return
+
+        if not channels_group_registry.is_allowed(group_name):
+            logger.warning(
+                f"Subscription to unregistered group '{group_name}' blocked."
+            )
+            await self._send_unified_message(
+                "subscription.response",
+                {
+                    "group": group_name,
+                    "status": "error",
+                    "message": "Subscription group is not registered",
                 },
             )
             return

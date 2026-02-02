@@ -5,6 +5,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.contrib.sessions.backends.db import SessionStore
 from tetra.consumers import TetraConsumer
 from tetra.dispatcher import ComponentDispatcher
+from tetra.registry import channels_group_registry
 
 
 @pytest.mark.django_db
@@ -22,6 +23,7 @@ async def test_group_removal_multiple_components():
 
     try:
         group = "shared-group"
+        channels_group_registry.register(group)
         # Subscribe multiple times (simulating multiple components in same group)
         # Note: server only cares about the group name, it doesn't know about individual components
         await communicator.send_json_to({"type": "subscribe", "group": group})

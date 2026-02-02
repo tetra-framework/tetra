@@ -3,6 +3,7 @@ from django.test import override_settings
 from django.contrib.auth import get_user_model
 from tetra.consumers import TetraConsumer
 from tetra.dispatcher import ComponentDispatcher
+from tetra.registry import channels_group_registry
 
 
 @pytest.mark.django_db
@@ -46,21 +47,29 @@ async def test_custom_user_manual_subscription_validation(tetra_ws_communicator)
     user = communicator.scope["user"]
     user_prefix = "another_app.customuser"
 
-    # Own group should be allowed (it's already auto-subscribed, but let's try manual)
+    # Own group should be BLOCKED (it's already auto-subscribed)
     own_group = f"{user_prefix}.{user.id}"
     await communicator.send_json_to({"type": "subscribe", "group": own_group})
     response = await communicator.receive_json_from()
-    assert response["payload"]["status"] in ["subscribed", "resubscribed"]
+    assert response["payload"]["status"] == "error"
+    assert (
+        response["payload"]["message"]
+        == "Manual subscription to private user group is not allowed."
+    )
 
-    # Other user's group should be blocked
+    # Other user's group should be BLOCKED
     other_group = f"{user_prefix}.999"
     await communicator.send_json_to({"type": "subscribe", "group": other_group})
     response = await communicator.receive_json_from()
     assert response["payload"]["status"] == "error"
-    assert response["payload"]["message"] == "Unauthorized"
+    assert (
+        response["payload"]["message"]
+        == "Manual subscription to private user group is not allowed."
+    )
 
     # Old hardcoded "user." prefix should be treated as a normal group now
     old_group = "user.1"
+    channels_group_registry.register(old_group)
     await communicator.send_json_to({"type": "subscribe", "group": old_group})
     response = await communicator.receive_json_from()
     assert response["payload"]["status"] == "subscribed"

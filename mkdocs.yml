@@ -54,6 +54,8 @@ nav:
     - if-else-filters.md
     - state-security.md
     - magic-static.md
+  - Websocket connections:
+    - group-registry.md
   - Additional topics:
     - settings.md
     - request.md
