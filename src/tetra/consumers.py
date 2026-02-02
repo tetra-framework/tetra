@@ -211,12 +211,20 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
             )
 
     async def subscription_response(self, event) -> None:
-        """Handle confirmation of subscription"""
-        # If it's already a protocol message, send as is
-        if event.get("protocol", "") == "tetra-1.0":
+        """Handle confirmation of subscription from channel layer"""
+        # The event should already be in tetra-1.0 protocol format
+        if event.get("protocol") == "tetra-1.0":
             await self.send_json(event)
         else:
-            raise ProtocolError("Invalid protocol version")
+            # Fallback: wrap in protocol format if needed for backwards compatibility
+            await self._send_unified_message(
+                "subscription.response",
+                {
+                    "group": event["group"],
+                    "status": event["status"],
+                    "message": event.get("message", ""),
+                },
+            )
 
     async def component_data_changed(self, event) -> None:
         """Handle component data update
