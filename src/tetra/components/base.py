@@ -938,6 +938,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     key = public(None)
 
     def __init__(self, _request, key=None, *args, **kwargs) -> None:
+        self._load_args = []
+        self._load_kwargs = {}
         super().__init__(_request, key=key, *args, **kwargs)
         self.key = self.attrs.get("key")
         self.renderer = ComponentRenderer(self)
@@ -1251,7 +1253,8 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             raise ComponentError(
                 f"Tetra Component {self.__class__.__name__} tried to self.set_load_args() with a none json serializable value."
             )
-        self._load_args = load_args
+        self._load_args = args
+        self._load_kwargs = kwargs
 
     def _data(self) -> dict[str, Any]:
         return {key: getattr(self, key) for key in self._public_properties}
