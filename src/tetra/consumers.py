@@ -139,22 +139,30 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
         # TODO: check if group name is valid, in a registry
 
         if group_name.startswith(f"{self.user_prefix}."):
-            user_id = group_name.split(".")[len(self.user_prefix.split("."))]
-            # TODO: admin group instead of is_superuser
-            if (
-                self.user
-                and str(self.user.id) != user_id
-                and not self.user.is_superuser
-            ):
-                logger.warning(
-                    f"Unauthorized access to group {group_name} by user "
-                    f"{user_id} blocked."
-                )
-                await self._send_unified_message(
-                    "subscription.response",
-                    {"group": group_name, "status": "error", "message": "Unauthorized"},
-                )
-                return
+            # The group name must be exactly {user_prefix}.{user_id}
+            # to be considered a user-specific group.
+            parts = group_name[len(self.user_prefix) + 1 :].split(".")
+            if len(parts) == 1:
+                user_id = parts[0]
+                # TODO: admin group instead of is_superuser
+                if (
+                    self.user
+                    and str(self.user.id) != user_id
+                    and not self.user.is_superuser
+                ):
+                    logger.warning(
+                        f"Unauthorized access to group {group_name} by user "
+                        f"{self.user.id if self.user else None} blocked."
+                    )
+                    await self._send_unified_message(
+                        "subscription.response",
+                        {
+                            "group": group_name,
+                            "status": "error",
+                            "message": "Unauthorized",
+                        },
+                    )
+                    return
 
         if group_name.startswith("session."):
             # you cannot manually subscribe to a session group.

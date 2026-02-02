@@ -326,6 +326,50 @@ async def test_handle_subscribe_old_user_prefix_fails(tetra_ws_communicator):
 
 @pytest.mark.django_db
 @pytest.mark.asyncio
+async def test_handle_subscribe_user_subgroup_allowed(tetra_ws_communicator):
+    """Test that a subgroup like auth.user.23.notifications is allowed."""
+    communicator = tetra_ws_communicator
+    from django.contrib.auth import get_user_model
+
+    user_model = get_user_model()
+    user_prefix = f"{user_model._meta.app_label}.{user_model._meta.model_name}"
+
+    group_name = f"{user_prefix}.{tetra_ws_communicator.scope['user'].id}.notifications"
+    await communicator.send_json_to({"type": "subscribe", "group": group_name})
+
+    response = await communicator.receive_json_from()
+    assert response["protocol"] == "tetra-1.0"
+    assert response["type"] == "subscription.response"
+    assert response["payload"]["group"] == group_name
+    assert response["payload"]["status"] == "subscribed"
+
+
+@pytest.mark.django_db
+@pytest.mark.asyncio
+async def test_handle_subscribe_user_subgroup_allowed_another_user(
+    tetra_ws_communicator,
+):
+    """Test that a subgroup of ANOTHER user is also allowed (as it's not the private group)."""
+    communicator = tetra_ws_communicator
+    from django.contrib.auth import get_user_model
+
+    user_model = get_user_model()
+    user_prefix = f"{user_model._meta.app_label}.{user_model._meta.model_name}"
+
+    # Use an ID that is NOT the current user's ID
+    other_user_id = tetra_ws_communicator.scope["user"].id + 1
+    group_name = f"{user_prefix}.{other_user_id}.notifications"
+    await communicator.send_json_to({"type": "subscribe", "group": group_name})
+
+    response = await communicator.receive_json_from()
+    assert response["protocol"] == "tetra-1.0"
+    assert response["type"] == "subscription.response"
+    assert response["payload"]["group"] == group_name
+    assert response["payload"]["status"] == "subscribed"
+
+
+@pytest.mark.django_db
+@pytest.mark.asyncio
 async def test_handle_subscribe_any_session_group(tetra_ws_communicator):
     communicator = tetra_ws_communicator
 
