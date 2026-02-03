@@ -37,7 +37,7 @@ Note that the *PK* of the model will always be included.
 The inner `Tetra` class configures the reactive behavior:
 
 *   **`fields`**: A list of field names to be sent to the client on updates. 
-    *   For security, it defaults to an empty list (only triggering a `_refresh()` on the client).
+    *   For security, it defaults to an empty list (only triggering a `_updateHtml()` on the client).
     *   Use `"__all__"` to send all model fields (use with caution!).
     *   The primary key (`id`) is always included.
 

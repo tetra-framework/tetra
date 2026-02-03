@@ -305,7 +305,7 @@ const Tetra = {
         component._updateData(data);
       }
       if (update || !data || Object.keys(data).length === 0) {
-        component._refresh();
+        component._updateHtml();
       }
     });
   },
@@ -390,11 +390,7 @@ const Tetra = {
       ) {
         return;
       }
-      if (typeof component._refresh === 'function') {
-        component._refresh();
-      } else {
-        component._updateHtml();
-      }
+      component._updateHtml();
     });
   },
   sendWebSocketMessage(message) {
@@ -585,7 +581,6 @@ const Tetra = {
           this.__destroyInner();
         }
       },
-      // Tetra built ins:
       _updateHtml(html) {
         this.__isUpdating = true;
         Alpine.morph(this.$root, html, {
