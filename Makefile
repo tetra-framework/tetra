@@ -6,7 +6,7 @@ setup:
 
 setup-dev:
 	pip install -U pip uv
-	uv sync --extra dev
+	uv sync
 	playwright install
 
 test:
@@ -19,11 +19,11 @@ check:
 	uvx ruff check
 
 doc:
-	uv sync --extra doc
+	uv sync --group docs
 	mkdocs build -d docs/build/doc/
 
 doc-dev:
-	uv sync --extra doc
+	uv sync --group docs
 	mkdocs serve -a localhost:8002
 
 build-js:

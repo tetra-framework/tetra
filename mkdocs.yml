@@ -65,7 +65,8 @@ nav:
     - files.md
     - helpers.md
   - Development:
-    - contribute.md
-    - testing.md
-    - protocol_specification.md
+    - development/contribute.md
+    - development/testing.md
+    - development/protocol_specification.md
+    - development/data-attributes.md
     - changelog.md
