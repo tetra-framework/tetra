@@ -11,6 +11,7 @@ from tetra.registry import channels_group_registry
 @pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_group_removal_multiple_components():
+    """Test that removing a group correctly notifies clients subscribed to that group."""
     # Setup client
     session = SessionStore()
     session.create()

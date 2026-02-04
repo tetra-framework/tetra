@@ -26,7 +26,7 @@ def test_import_tetra_without_channels():
 
 
 def test_reactivecomponent_not_in_tetra_star_exports():
-    """Testing star import with channels mocked as missing..."""
+    """Verify that ReactiveComponent is excluded from star exports when channels is missing."""
     with patch.dict(sys.modules, {"channels": None}):
         # We need to clear tetra from sys.modules to force re-import under mock
         if "tetra" in sys.modules:

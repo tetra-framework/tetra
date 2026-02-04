@@ -13,6 +13,7 @@ from tetra.registry import channels_group_registry
 @pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_rapid_signals_dispatch():
+    """Verify that multiple model signals are correctly dispatched as removal messages to the client."""
     # Setup client
     session = SessionStore()
     session.create()

@@ -40,6 +40,7 @@ def _get_request(path):
 
 
 def test_router_initial_render_home():
+    """Test that the router renders the Home component for the root path."""
     request = _get_request("/")
     router = ClassRouter(request)
     html = router.render()
@@ -48,6 +49,7 @@ def test_router_initial_render_home():
 
 
 def test_router_initial_render_about():
+    """Test that the router renders the About component for the /about/ path."""
     request = _get_request("/about/")
     router = ClassRouter(request)
     html = router.render()
@@ -56,6 +58,7 @@ def test_router_initial_render_about():
 
 
 def test_router_navigate():
+    """Test programmatic navigation between routes within the router."""
     request = _get_request("/")
     router = ClassRouter(request)
     router.navigate("/about/", push=False)
@@ -65,6 +68,7 @@ def test_router_navigate():
 
 
 def test_class_router_regex_match():
+    """Test that routes with regex parameters match correctly."""
     request = _get_request("/re/123/")
     router = ClassRouter(request)
     html = router.render()
@@ -73,6 +77,7 @@ def test_class_router_regex_match():
 
 
 def test_class_router_regex_match_str():
+    """Test regex route matching when the component is specified as a string path."""
     request = _get_request("/re-str/123/")
     router = ClassRouter(request)
     html = router.render()
@@ -81,6 +86,7 @@ def test_class_router_regex_match_str():
 
 
 def test_class_router_string_route():
+    """Test matching a simple string route to its registered component."""
     request = _get_request("/string-route/")
     router = ClassRouter(request)
     html = router.render()
@@ -89,6 +95,7 @@ def test_class_router_string_route():
 
 
 def test_router_no_match():
+    """Test that the router handles non-existent paths by not matching any component."""
     request = _get_request("/non-existent/")
     router = ClassRouter(request)
     html = router.render()
@@ -98,6 +105,7 @@ def test_router_no_match():
 
 
 def test_link_render():
+    """Test rendering the Link component and verify it generates the correct href and label."""
     from tetra import Library
     from tetra.router import Link
 

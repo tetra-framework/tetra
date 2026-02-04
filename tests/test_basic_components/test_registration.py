@@ -18,21 +18,20 @@ class Component2(BasicComponent):
 
 
 def test_register_component_manually(current_app):
-    """create a lib and register a component manually and make sure it exists in the library"""
+    """Verify that a component can be manually registered with a Library and retrieved."""
     lib1 = Library("lib1", current_app)
     lib1.register(Component1)
     assert lib1.components["component1"] is Component1
 
 
 def test_register_decorator(current_app):
-    """get a registered library with  a component registered there using the decorator
-    syntax and make sure it exists in the library"""
+    """Verify that a component is correctly registered with a Library using the @register decorator."""
     lib2 = Library("lib2", current_app)
     assert lib2.components["component2"] is Component2
 
 
 def test_template_name_attr():
-    """`template_name` should not be allowed as attribute"""
+    """Verify that using 'template_name' as a component attribute raises a NotImplementedError."""
     with pytest.raises(NotImplementedError):
 
         class SomeComponent(BasicComponent):

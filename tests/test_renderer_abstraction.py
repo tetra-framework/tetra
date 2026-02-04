@@ -10,6 +10,8 @@ class CustomRenderer(BaseRenderer):
 
 
 def test_custom_renderer(tetra_request):
+    """Test that a component can use a custom renderer subclass."""
+
     class MyComponent(BasicComponent):
         template = "<div>Original</div>"
 
@@ -22,14 +24,7 @@ def test_custom_renderer(tetra_request):
 
 
 def test_renderer_extension(tetra_request):
-    """
-    Tests the extension and behavior of component rendering with a custom renderer.
-
-    The function `test_renderer_extension` evaluates the functionality of a custom renderer
-    derived from `ComponentRenderer`. It ensures that the renderer properly wraps the output
-    HTML generated from the `MyComponent` implementation and validates specific render
-    properties and expected patterns in the output.
-    """
+    """Test extending ComponentRenderer to wrap component HTML with custom markup."""
     from tetra.components.base import ComponentRenderer
 
     class MyComponentRenderer(ComponentRenderer):

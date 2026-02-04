@@ -5,6 +5,7 @@ from tetra.exceptions import ComponentError
 
 
 def test_component_without_root_tag():
+    """Verify that a component template must contain at least one top-level tag."""
     with pytest.raises(ComponentError) as exc_info:
 
         class ComponentWithoutRootTag(BasicComponent):
@@ -20,6 +21,7 @@ def test_component_without_root_tag():
 
 
 def test_component_with_2_root_tags():
+    """Verify that a component template cannot contain more than one top-level tag (case with 2 tags)."""
     with pytest.raises(ComponentError) as exc_info:
 
         class ComponentWith2RootTags(BasicComponent):
@@ -36,6 +38,7 @@ def test_component_with_2_root_tags():
 
 
 def test_component_with_3_root_tags():
+    """Verify that a component template cannot contain more than one top-level tag (case with 3 tags)."""
     with pytest.raises(ComponentError) as exc_info:
 
         class ComponentWith3RootTags(BasicComponent):
@@ -53,6 +56,7 @@ def test_component_with_3_root_tags():
 
 
 def test_component_with_empty_template():
+    """Ensure that components with an empty template string raise a ComponentError."""
     with pytest.raises(ComponentError) as exc_info:
 
         class ComponentWithEmptyTemplate(BasicComponent):
@@ -64,6 +68,7 @@ def test_component_with_empty_template():
 
 
 def test_component_with_no_template():
+    """Ensure that components defined without any template raise a ComponentError."""
     with pytest.raises(ComponentError) as exc_info:
 
         class ComponentWithNoTemplate(BasicComponent):
@@ -75,7 +80,7 @@ def test_component_with_no_template():
 
 
 def test_component_with_template_syntax_error():
-
+    """Verify that Django template syntax errors within a component template are caught and reported."""
     with pytest.raises(ComponentError) as exc_info:
 
         class ComponentWithTemplateSyntaxError(BasicComponent):

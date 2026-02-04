@@ -32,6 +32,7 @@ class TypedComponent(Component):
 
 @pytest.mark.django_db
 def test_pydantic_validation_success():
+    """Verify that valid values for typed attributes do not raise a validation error."""
     request = get_request_with_session()
 
     comp = TypedComponent(request)
@@ -47,6 +48,7 @@ def test_pydantic_validation_success():
 
 @pytest.mark.django_db
 def test_pydantic_validation_none_not_allowed_on_strict_type():
+    """Ensure that None is not allowed for attributes hinted with a non-optional type."""
     request = get_request_with_session()
 
     comp = TypedComponent(request)
@@ -65,6 +67,7 @@ class OptionalComponent(Component):
 
 @pytest.mark.django_db
 def test_pydantic_validation_none_allowed_on_optional():
+    """Ensure that None is allowed for attributes explicitly hinted as Optional."""
     request = get_request_with_session()
 
     comp = OptionalComponent(request)

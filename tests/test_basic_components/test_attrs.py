@@ -3,7 +3,7 @@ from tetra.helpers import render_component_tag
 
 
 def test_attrs(tetra_request):
-    """Tests a simple component with / end"""
+    """Verify that extra attributes passed to a component are correctly rendered on the root element."""
     content = render_component_tag(tetra_request, "{% SimpleComponentWithAttrs / %}")
     soup = extract_component_tag(content)
     assert soup.text == "content"
@@ -11,7 +11,7 @@ def test_attrs(tetra_request):
 
 
 def test_attrs_merge(tetra_request):
-    """Tests a simple component with / end"""
+    """Verify that attributes passed via 'attrs:' are correctly merged with existing attributes on the component."""
     content = render_component_tag(
         tetra_request,
         "{% SimpleComponentWithAttrs attrs: class='class2' / %}",

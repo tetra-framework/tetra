@@ -36,6 +36,7 @@ def get_request_with_session():
 
 @pytest.mark.django_db
 def test_form_pydantic_validation():
+    """Verify that form fields allow None in the component state, regardless of their 'required' attribute."""
     request = get_request_with_session()
     comp = RequiredFormComponent(request)
 
@@ -75,6 +76,7 @@ class EnumChoiceFormComponent(FormComponent):
 
 @pytest.mark.django_db
 def test_form_enum_choice_pydantic_validation():
+    """Ensure that ChoiceFields using Enums are correctly validated and support coercion in the component state."""
     request = get_request_with_session()
     comp = EnumChoiceFormComponent(request)
 
@@ -112,6 +114,7 @@ class MockModel(models.Model):
 
 @pytest.mark.django_db
 def test_form_file_field_pydantic_validation():
+    """Verify that file fields (SimpleUploadedFile and FieldFile) are correctly handled during state encoding."""
     request = get_request_with_session()
     comp = FileFormComponent(request)
 

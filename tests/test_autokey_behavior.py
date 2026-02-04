@@ -3,6 +3,7 @@ from tetra.components.utils import get_next_autokey, _tetra_component_count
 
 
 def test_autokey_persistence():
+    """Verify that autokeys increment correctly within a single request context."""
     # Simulate first request
     if hasattr(_tetra_component_count, "count"):
         del _tetra_component_count.count

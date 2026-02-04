@@ -27,6 +27,7 @@ from django.contrib.auth.models import AnonymousUser
 
 @pytest.mark.django_db
 def test_reproduce_file_leak():
+    """Verify that a user cannot access another user's uploaded file by crafting a malicious state."""
     rf = RequestFactory()
     request = rf.get("/")
     request.user = AnonymousUser()
@@ -82,6 +83,7 @@ def test_reproduce_file_leak():
 
 @pytest.mark.django_db
 def test_legit_file_persistence():
+    """Ensure that legitimate file uploads persist correctly across component state reloads."""
     rf = RequestFactory()
     request = rf.get("/")
     request.user = AnonymousUser()

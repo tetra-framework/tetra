@@ -12,6 +12,7 @@ from tetra.registry import channels_group_registry
 @pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_rapid_deletions_sync():
+    """Test that rapid deletion of multiple models correctly notifies other subscribed clients."""
     # Setup two clients
     session1 = SessionStore()
     session1.create()
