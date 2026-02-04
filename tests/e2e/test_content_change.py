@@ -29,7 +29,7 @@ class ComponentWithButton(Component):
 
 @pytest.mark.playwright
 def test_component_click_content_change(component_locator):
-    """Tests component button click using playwright"""
+    """Verify that clicking a button triggers a server-side method and updates the component's text."""
     component = component_locator(ComponentWithButton)
 
     # # Check initial state
@@ -63,8 +63,7 @@ class ComponentWithMethodReturnValue(Component):
 
 @pytest.mark.playwright
 def test_basic_component_return_value_changes_content_dynamically(component_locator):
-    """Tests a component that dynamically returns a value to the Js frontend,
-    which updates the content dynamically with the return value"""
+    """Verify that a value returned from a server-side method can be used to update frontend state via Alpine.js."""
     component = component_locator(ComponentWithMethodReturnValue)
     button = component.locator("#clickme")
     assert button.text_content() == "Click me"

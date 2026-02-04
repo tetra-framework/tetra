@@ -25,6 +25,7 @@ def target_view(request):
 
 @pytest.mark.playwright
 def test_redirect(page: Page, component_locator, live_server):
+    """Verify that calling self.client._redirect() on the server triggers a client-side navigation."""
     # We can't easily add a new URL to live_server mid-test,
     # but we can redirect to a URL that we know exists or just
     # check if the browser tried to navigate there.

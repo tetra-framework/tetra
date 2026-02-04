@@ -1,8 +1,27 @@
+from tetra import Component, Library
 from sourcetypes import django_html
 
 from tetra import Library, BasicComponent
 from tetra.helpers import render_component_tag
-from utils import extract_component_tag
+from utils.base_utils import extract_component_tag
+
+lib = Library("lib", "main")
+
+
+@lib.register
+class PersonComponent(Component):
+    name: str = "John"
+    age: int = 23
+
+    template = """<div></div>"""
+
+
+def test_component_key_generation(tetra_request):
+    """Test that the component key is generated correctly."""
+
+    c = PersonComponent(tetra_request)
+    assert c.key.startswith("tk_")
+
 
 attrs = Library("attrs", "main")
 

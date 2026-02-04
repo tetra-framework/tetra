@@ -3,7 +3,7 @@ from types import MethodType
 import pytest
 
 from tetra import public, Library, Component
-from utils import extract_component_tag
+from utils.base_utils import extract_component_tag
 from apps.main.components.default import ComponentWithPublic
 from tetra.helpers import render_component_tag
 

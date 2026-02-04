@@ -8,7 +8,7 @@ from tetra.registry import channels_group_registry
 @pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_connect(tetra_ws_communicator):
-    """Test successful connection with session."""
+    """Verify that a client can successfully connect to the Tetra WebSocket endpoint."""
     # we don't have to do anything here, as the consumer connection is asserted
     # correctly within the fixture
     pass
@@ -17,7 +17,7 @@ async def test_connect(tetra_ws_communicator):
 @pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_consumer_connection_with_no_session():
-    """Test connection is closed if session is missing."""
+    """Verify that the WebSocket connection is rejected if no session is present in the scope."""
 
     # we can't use the tetra_ws_communicator fixture here, as it would return a
     # communicator (to the TetraConsumer) with a valid session scope
@@ -39,7 +39,7 @@ async def test_consumer_connection_with_no_session():
 @pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_auto_subscriptions(tetra_ws_communicator):
-    """Test that consumer auto-subscribes to session and broadcast groups."""
+    """Verify that the consumer automatically joins broadcast, user-specific, and session-specific groups."""
     communicator = tetra_ws_communicator
     session_key = communicator.scope["session"].session_key
 
@@ -136,6 +136,7 @@ async def test_auto_subscriptions(tetra_ws_communicator):
 @pytest.mark.django_db
 @pytest.mark.asyncio
 async def test_subscribe(tetra_ws_communicator):
+    """Verify that a client can successfully subscribe to an allowed channel group."""
     communicator = tetra_ws_communicator
     # Subscribe to a group
     group_name = "test-group"

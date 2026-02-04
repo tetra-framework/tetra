@@ -1,4 +1,4 @@
-from utils import extract_component_tag
+from utils.base_utils import extract_component_tag
 from tetra.helpers import render_component_tag
 
 

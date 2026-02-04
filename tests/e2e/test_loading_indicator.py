@@ -35,7 +35,7 @@ class ConcurrentLoadingIndicatorComponent(Component):
 
 @pytest.mark.playwright
 def test_loading_indicator(component_locator):
-
+    """Verify that the loading indicator is displayed while a server-side request is in progress."""
     component = component_locator(ConcurrentLoadingIndicatorComponent)
 
     spinner = component.locator("#spinner")
@@ -69,6 +69,7 @@ def test_loading_indicator(component_locator):
 
 @pytest.mark.playwright
 def test_concurrent_loading_indicators(page, component_locator):
+    """Verify that the loading indicator remains visible as long as at least one concurrent request is in flight."""
     component = component_locator(ConcurrentLoadingIndicatorComponent)
 
     spinner = component.locator("#spinner")
