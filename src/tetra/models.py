@@ -180,7 +180,6 @@ def _reactivemodel_class_prepared(sender: type[ReactiveModel], **kwargs):
         from django.apps import apps
         from .utils import check_websocket_support
 
-        print(f"preparing {sender} for Tetra")
         app_label = sender._meta.app_label
         model_name = sender._meta.model_name
         # Register collection group
