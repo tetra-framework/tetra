@@ -10,11 +10,17 @@ Once ready, install Tetra from PyPi - we recommend to use [uv](https://docs.astr
 
 ```
 $ uv pip install tetra
-# +reactive components?
-# uv pip install tetra channels daphne
 ```
 
-If you want to have reactive components as well, you have to install channels and an ASGI capable server like Daphne too. Have a look at [Reactive Components](reactive-components.md) how to get started with them.
+### For reactive components
+
+If you want to have reactive components as well, you need to install channels, channels-redis, and an ASGI capable server like Daphne:
+
+```bash
+$ uv add channels channels-redis daphne
+```
+
+You will also need a Redis server running. Install Redis using your system's package manager or [from redis.io](https://redis.io/download).
 
 !!! warning
     As Tetra is still being developed it has only been tested with Python 3.12-3.13, we intend to support all officially supported Python versions at the time of v1.0.0.
@@ -48,7 +54,55 @@ MIDDLEWARE = [
 ]
 ```
 
-If you are using ReactiveComponents, don't forget to set up channels. You can use [their documentation](https://channels.readthedocs.io/en/stable/installation.html) for that, or have a look at [Reactive Components](reactive-components.md).
+### Channels configuration for reactive components
+
+If you are planning to use reactive components, add the following to your `settings.py`:
+
+```python
+INSTALLED_APPS = [
+    "tetra",  # must be before daphne!
+    "daphne",  # must be before staticfiles!
+    # ... other apps
+    "channels",
+    # ... your apps
+]
+
+ASGI_APPLICATION = '<your_project>.asgi.application'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [env.str("REDIS_HOST", default=("127.0.0.1", 6379))],
+        },
+    },
+}
+```
+
+!!! note
+    The example above uses `env.str()` from [django-environ](https://django-environ.readthedocs.io/) to read the Redis host from environment variables. 
+    You can also hardcode it as `"hosts": [("127.0.0.1", 6379)]` or use your preferred configuration method.
+
+Configure your ASGI application in `asgi.py`:
+
+```python
+import os
+from django.core.asgi import get_asgi_application
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
+from tetra.routing import websocket_urlpatterns
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', '<your_project>.settings')
+
+application = ProtocolTypeRouter({
+    "http": get_asgi_application(),
+    "websocket": AuthMiddlewareStack(
+        URLRouter(websocket_urlpatterns)
+    ),
+})
+```
+
+For more details on reactive components, see [Reactive Components](reactive-components.md).
 
 Modify your `urls.py`:
 

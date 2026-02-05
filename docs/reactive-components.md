@@ -9,65 +9,10 @@ Reactive components can (as the name may suggest) *react* to events that are tri
 
 ## Setup
 
-To use reactive components, you need to add Django Channels and an ASGI capable server to your project and configure WebSocket routing.
-You can use e.g. [Daphne](https://github.com/django/daphne)) instead of the standard Django WSGI server:
+To use reactive components, you need to install and configure Django Channels, Redis, and an ASGI capable server. See the [Installation guide](install.md#for-reactive-components) for detailed setup instructions.
 
-```bash
-uv add channels daphne
-```
-
-Add to your Django settings:
-
-```python
-#settings.py
-INSTALLED_APPS = [
-    "tetra", # must be before daphne!
-    "daphne", # must be before staticfiles!
-    # ... other apps
-    "channels[types]", # with mypy support!
-    "your_app"
-]
-
-ASGI_APPLICATION = '<your_project>.asgi.application'
-
-...
-
-CHANNEL_LAYERS = {
-    "default": {
-        # you can use this in-memory layer for testing,
-        # but in production it won't work:
-        # "BACKEND": "channels.layers.InMemoryChannelLayer",
-        
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
-        },
-    },
-}
-```
-
-
-Configure your ASGI application:
-
-```python
-# asgi.py
-import os
-from django.core.asgi import get_asgi_application
-from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.auth import AuthMiddlewareStack
-from tetra.routing import websocket_urlpatterns
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', '<your_project>.settings')
-
-application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
-    "websocket": AuthMiddlewareStack(
-        URLRouter(websocket_urlpatterns)
-    ),
-})
-```
-
-If you don't add a `ProtocolTypeRouter` wrapper, your websockets won't work. However, Tetra automatically detects whether Django Channels is installed and properly configured in your project. When WebSocket support is not available, Tetra logs a warning to your configured logging mechanism and proceeds without websockets functionality.
+!!! note
+    Tetra automatically detects whether Django Channels is installed and properly configured in your project. When WebSocket support is not available, Tetra logs a warning to your configured logging mechanism and proceeds without websockets functionality.
 
 
 ## Creating reactive components
