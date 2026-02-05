@@ -143,10 +143,7 @@
     _get_components_by_subscribe_group(group) {
       const store = Alpine.store("tetra_subscriptions");
       const componentIds = store[group] || [];
-      const components = componentIds.map((id) => {
-        const c = this._get_component_by_id(id);
-        return c;
-      }).filter((c) => !!c && typeof c._removeComponent === "function");
+      const components = componentIds.map((id) => this._get_component_by_id(id)).filter((c) => !!c && typeof c._removeComponent === "function");
       return [...new Set(components)];
     },
     handleWebsocketMessage(data) {
