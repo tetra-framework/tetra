@@ -303,7 +303,9 @@ const Tetra = {
         component._updateData(data);
       }
       if (update || !data || Object.keys(data).length === 0) {
-        component._updateHtml();
+        component._updateHtml().catch(err => {
+          console.error('Error updating component HTML:', err);
+        });
       }
     });
   },
@@ -388,7 +390,9 @@ const Tetra = {
       ) {
         return;
       }
-      component._updateHtml();
+      component._updateHtml().catch(err => {
+        console.error('Error updating component HTML after creation:', err);
+      });
     });
   },
   sendWebSocketMessage(message) {
