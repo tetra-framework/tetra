@@ -33,6 +33,8 @@ class ReactiveModel(models.Model):
     __tetra_config: type = None
 
     def __init_subclass__(cls, **kwargs):
+        from .utils import check_websocket_support
+
         super().__init_subclass__(**kwargs)
         if not check_websocket_support():
             raise RuntimeError(
