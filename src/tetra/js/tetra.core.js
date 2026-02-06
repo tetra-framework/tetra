@@ -3,6 +3,13 @@ const Tetra = {
   ws: null,
   pendingSubscriptions: new Map(), // Store subscriptions until WS is ready
 
+  debug(...args) {
+    // Only output debug messages when DEBUG is enabled
+    if (window.__tetra_debug) {
+      console.debug(...args);
+    }
+  },
+
   init() {
     Alpine.magic('static', () => Tetra.$static);
     // Initialize WebSocket connection immediately, if in use
@@ -119,7 +126,7 @@ const Tetra = {
       this.ws = new WebSocket(ws_url);
 
       this.ws.onopen = () => {
-        console.debug('Tetra WebSocket connected');
+        Tetra.debug('Tetra WebSocket connected');
         this.updateOnlineStatus();
         document.dispatchEvent(new CustomEvent('tetra:websocket-connected'));
         // Process any pending subscriptions
@@ -221,7 +228,7 @@ const Tetra = {
   handleSubscriptionResponse(event){
     switch(event["status"]) {
       case "subscribed":
-        console.debug("Subscription to group", event["group"], "successful.")
+        Tetra.debug("Subscription to group", event["group"], "successful.")
         document.dispatchEvent(new CustomEvent(`tetra:component-subscribed`,  {
           detail: {
             component: this,
@@ -230,7 +237,7 @@ const Tetra = {
         }))
         break;
       case "unsubscribed":
-        console.debug("Subscription to group", event["group"], "redacted successfully.")
+        Tetra.debug("Subscription to group", event["group"], "redacted successfully.")
         document.dispatchEvent(new CustomEvent(`tetra:component-unsubscribed`,  {
           detail: {
             component: this,
@@ -239,7 +246,7 @@ const Tetra = {
         }))
         break;
       case "resubscribed":
-        console.debug("Re-subscription to group", event["group"], "successful.")
+        Tetra.debug("Re-subscription to group", event["group"], "successful.")
         document.dispatchEvent(new CustomEvent(`tetra:component-resubscribed`,  {
           detail: {
             component: this,
@@ -258,7 +265,7 @@ const Tetra = {
         }))
         break;
       default:
-        console.debug("Subscription response faulty:", event)
+        Tetra.debug("Subscription response faulty:", event)
     }
   },
   handleGroupNotify(event) {
@@ -652,7 +659,7 @@ const Tetra = {
 
         for (const key in data) {
           if (focusedModel === key) {
-            console.debug(`Skipping update for focused field: ${key}`);
+            Tetra.debug(`Skipping update for focused field: ${key}`);
             continue;
           }
           this[key] = data[key];
@@ -671,6 +678,7 @@ const Tetra = {
       _removeComponent() {
         this.$dispatch('tetra:component-before-remove', { component: this });
         this.$root.remove();
+        Tetra.debug(`Removed component with key ${this.key} and ID ${this.component_id}`);
       },
       _replaceComponent(html) {
         this.__isUpdating = true;
@@ -680,6 +688,7 @@ const Tetra = {
         this.__isUpdating = false;
         this.$dispatch('tetra:component-updated', { component: this });
         this._handleAutofocus();
+        Tetra.debug(`Replaced component with key ${this.key} and ID ${this.component_id}`);
       },
       _redirect(url) {
         document.location = url;
