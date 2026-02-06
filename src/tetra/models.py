@@ -34,6 +34,11 @@ class ReactiveModel(models.Model):
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
+        if not check_websocket_support():
+            raise RuntimeError(
+                f"{cls.__name__} is a reactive model, but WebSockets are not "
+                f"supported. "
+            )
         # Look for the Tetra inner class
         tetra_config = getattr(cls, "Tetra", None)
         if tetra_config:

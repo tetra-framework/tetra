@@ -27,6 +27,10 @@ class ReactiveComponent(Component):
 
         if check_websocket_support():
             apps.get_app_config("tetra").has_reactive_components = True
+        else:
+            raise RuntimeError(
+                f"{cls.__name__} is a reactive component, but WebSockets are not supported. "
+            )
 
     def get_extra_tags(self) -> dict[str, str | None]:
         extra_tags = super().get_extra_tags()
