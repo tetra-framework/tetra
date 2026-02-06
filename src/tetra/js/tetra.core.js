@@ -579,7 +579,11 @@ const Tetra = {
           this.__destroyInner();
         }
       },
-      _updateHtml(html) {
+      async _updateHtml(html) {
+        // If no HTML is provided, fetch it from the server
+        if (!html) {
+          html = await this._fetchHtml();
+        }
         this.__isUpdating = true;
         Alpine.morph(this.$root, html, {
           updating(el, toEl, childrenOnly, skip) {
@@ -708,6 +712,22 @@ const Tetra = {
             focus_el.focus();
           }
         });
+      },
+      async _fetchHtml() {
+        // Fetch fresh HTML from the server for this component by calling the special _refresh method
+        // The _refresh endpoint is always included in __serverMethods by the server
+        const refreshMethod = this.__serverMethods?.find(m => m.name === '_refresh');
+        if (!refreshMethod) {
+          throw new Error('_refresh method endpoint not found in component server methods');
+        }
+
+        const refreshUrl = refreshMethod.endpoint[0];
+
+        // Use the standard callServerMethod for consistent behavior
+        const result = await Tetra.callServerMethod(this, '_refresh', refreshUrl, []);
+
+        // The result from _refresh contains the html in the response
+        return result?.html || result;
       },
 
       // Push notification methods

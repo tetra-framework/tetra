@@ -1210,6 +1210,12 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             method_data["endpoint"] = (cls._component_url(method["name"]),)
             component_server_methods.append(method_data)
 
+        # Always add _refresh as an internal method for reactive components
+        # This ensures the URL is always available without hardcoding
+        component_server_methods.append(
+            {"name": "_refresh", "endpoint": (cls._component_url("_refresh"),)}
+        )
+
         if not component_var:
             component_var = cls.extract_script() if cls.has_script() else "{}"
         return render_to_string(

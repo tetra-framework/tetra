@@ -30,7 +30,10 @@ def _component_method(
     except KeyError:
         return HttpResponseNotFound()
 
-    if method_name not in (m["name"] for m in Component._public_methods):
+    # Allow special internal "_refresh" method for reactive component updates
+    is_refresh = method_name == "_refresh"
+
+    if not is_refresh and method_name not in (m["name"] for m in Component._public_methods):
         logger.warning(
             f"Tetra method was requested, but not found: {component_name}.{method_name}()"
         )
@@ -88,6 +91,25 @@ def _component_method(
     request.tetra_components_used.add(Component)
 
     component = Component.from_state(component_state, request)
+
+    # Handle special _refresh method by just rendering the component
+    if is_refresh:
+        from django.http import JsonResponse
+        html = component.render()
+        response_data = {
+            "protocol": "tetra-1.0",
+            "success": True,
+            "payload": {
+                "html": html
+            },
+            "metadata": {
+                "js": [],
+                "styles": [],
+                "messages": [],
+                "callbacks": []
+            }
+        }
+        return JsonResponse(response_data)
 
     logger.debug(
         f"Calling component method {component.__class__.__name__}.{method_name}()"

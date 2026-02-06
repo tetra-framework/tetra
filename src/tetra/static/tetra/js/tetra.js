@@ -249,7 +249,9 @@
           component._updateData(data);
         }
         if (update || !data || Object.keys(data).length === 0) {
-          component._refresh();
+          component._updateHtml().catch((err) => {
+            console.error("Error updating component HTML:", err);
+          });
         }
       });
     },
@@ -312,11 +314,9 @@
         if (sender_id && component.__activeRequests && component.__activeRequests.has(sender_id)) {
           return;
         }
-        if (typeof component._refresh === "function") {
-          component._refresh();
-        } else {
-          component._updateHtml();
-        }
+        component._updateHtml().catch((err) => {
+          console.error("Error updating component HTML after creation:", err);
+        });
       });
     },
     sendWebSocketMessage(message) {
@@ -471,8 +471,10 @@
             this.__destroyInner();
           }
         },
-        // Tetra built ins:
-        _updateHtml(html) {
+        async _updateHtml(html) {
+          if (!html) {
+            html = await this._fetchHtml();
+          }
           this.__isUpdating = true;
           Alpine.morph(this.$root, html, {
             updating(el, toEl, childrenOnly, skip) {
@@ -587,6 +589,16 @@
               focus_el.focus();
             }
           });
+        },
+        async _fetchHtml() {
+          var _a;
+          const refreshMethod = (_a = this.__serverMethods) == null ? void 0 : _a.find((m) => m.name === "_refresh");
+          if (!refreshMethod) {
+            throw new Error("_refresh method endpoint not found in component server methods");
+          }
+          const refreshUrl = refreshMethod.endpoint[0];
+          const result = await Tetra.callServerMethod(this, "_refresh", refreshUrl, []);
+          return (result == null ? void 0 : result.html) || result;
         },
         // Push notification methods
         _subscribe(topic) {
