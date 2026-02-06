@@ -33,7 +33,9 @@ def _component_method(
     # Allow special internal "_refresh" method for reactive component updates
     is_refresh = method_name == "_refresh"
 
-    if not is_refresh and method_name not in (m["name"] for m in Component._public_methods):
+    if not is_refresh and method_name not in (
+        m["name"] for m in Component._public_methods
+    ):
         logger.warning(
             f"Tetra method was requested, but not found: {component_name}.{method_name}()"
         )
@@ -95,19 +97,13 @@ def _component_method(
     # Handle special _refresh method by just rendering the component
     if is_refresh:
         from django.http import JsonResponse
+
         html = component.render()
         response_data = {
             "protocol": "tetra-1.0",
             "success": True,
-            "payload": {
-                "html": html
-            },
-            "metadata": {
-                "js": [],
-                "styles": [],
-                "messages": [],
-                "callbacks": []
-            }
+            "payload": {"html": html},
+            "metadata": {"js": [], "styles": [], "messages": [], "callbacks": []},
         }
         return JsonResponse(response_data)
 
