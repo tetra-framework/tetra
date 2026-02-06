@@ -60,30 +60,27 @@ class ReactiveModel(models.Model):
         This is called both on `create` and `update`.
         """
         instance_channel = instance.get_tetra_instance_channel()
-        collection_channel = instance.get_tetra_collection_channel()
+        collection_channel = sender.get_tetra_collection_channel()
         data = instance.get_tetra_update_data()
         # Always include model_version for deduplication
         data["model_version"] = instance.model_version
         sender_id = request_id.get()
         try:
             loop = asyncio.get_running_loop()
+            if loop.is_running():
+                if created:
+                    loop.create_task(
+                        ComponentDispatcher.component_created(
+                            collection_channel, data=data, sender_id=sender_id
+                        )
+                    )
+                else:
+                    loop.create_task(
+                        ComponentDispatcher.data_changed(
+                            instance_channel, data, sender_id=sender_id
+                        )
+                    )
         except RuntimeError:
-            loop = None
-
-        if loop and loop.is_running():
-            if created:
-                loop.create_task(
-                    ComponentDispatcher.component_created(
-                        collection_channel, data=data, sender_id=sender_id
-                    )
-                )
-            else:
-                loop.create_task(
-                    ComponentDispatcher.data_changed(
-                        instance_channel, data, sender_id=sender_id
-                    )
-                )
-        else:
 
             if created:
                 async_to_sync(ComponentDispatcher.component_created)(
@@ -102,24 +99,22 @@ class ReactiveModel(models.Model):
         channel = instance.get_tetra_instance_channel()
         collection_channel = instance.get_tetra_collection_channel()
         sender_id = request_id.get()
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
 
         # Send data to the collection channel and the instance channel
-        if loop and loop.is_running():
-            loop.create_task(
-                ComponentDispatcher.component_removed(
-                    channel, component_id=None, sender_id=sender_id
+        try:
+            loop = asyncio.get_running_loop()
+            if loop.is_running():
+                loop.create_task(
+                    ComponentDispatcher.component_removed(
+                        channel, component_id=None, sender_id=sender_id
+                    )
                 )
-            )
-            loop.create_task(
-                ComponentDispatcher.component_removed(
-                    collection_channel, target_group=channel, sender_id=sender_id
+                loop.create_task(
+                    ComponentDispatcher.component_removed(
+                        collection_channel, target_group=channel, sender_id=sender_id
+                    )
                 )
-            )
-        else:
+        except RuntimeError:
             async_to_sync(ComponentDispatcher.component_removed)(
                 channel, component_id=None, sender_id=sender_id
             )
@@ -135,13 +130,14 @@ class ReactiveModel(models.Model):
         """
         return f"{self._meta.app_label}.{self._meta.model_name}.{self.pk}"
 
-    def get_tetra_collection_channel(self) -> str:
+    @classmethod
+    def get_tetra_collection_channel(cls) -> str:
         """Returns the channel name for the collection of this model type.
 
         Returns:
             as default "{app_label}.{model_name}"
         """
-        return f"{self._meta.app_label}.{self._meta.model_name}"
+        return f"{cls._meta.app_label}.{cls._meta.model_name}"
 
     def get_tetra_update_data(self) -> dict[str, Any]:
         """Returns the data to be sent to components."""
@@ -183,7 +179,7 @@ def _reactivemodel_class_prepared(sender: type[ReactiveModel], **kwargs):
         app_label = sender._meta.app_label
         model_name = sender._meta.model_name
         # Register collection group
-        channels_group_registry.register(f"{app_label}.{model_name}")
+        channels_group_registry.register(sender.get_tetra_collection_channel())
         # Register instance group pattern
         channels_group_registry.register(
             re.compile(rf"^{app_label}\.{model_name}\..+$")
