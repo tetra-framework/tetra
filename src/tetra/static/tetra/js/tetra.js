@@ -466,8 +466,19 @@
           this.$el.addEventListener("tetra:component-updated", reapplyLoadingState);
         },
         destroy() {
+          var _a;
           this.$dispatch("tetra:child-component-destroy", { component: this });
-          if (!this.__isUpdating && this.__subscribedGroups) {
+          let isParentUpdating = false;
+          let current = this.$el.parentElement;
+          while (current) {
+            const parentComponent = (_a = current._x_dataStack) == null ? void 0 : _a[0];
+            if (parentComponent && parentComponent.__isUpdating) {
+              isParentUpdating = true;
+              break;
+            }
+            current = current.parentElement;
+          }
+          if (!this.__isUpdating && !isParentUpdating && this.__subscribedGroups) {
             [...this.__subscribedGroups].forEach((group) => {
               this._unsubscribe(group);
             });
@@ -503,18 +514,6 @@
             lookahead: true
           });
           this.__isUpdating = false;
-          if (window.__tetra_useWebsockets && this.$el.hasAttribute("tetra-reactive")) {
-            const group = this.$el.getAttribute("tetra-subscription");
-            const oldTopics = this.__subscribedGroups ? Array.from(this.__subscribedGroups) : [];
-            oldTopics.forEach((topic) => {
-              if (topic !== group) {
-                this._unsubscribe(topic);
-              }
-            });
-            if (group && (!this.__subscribedGroups || !this.__subscribedGroups.has(group))) {
-              this._subscribe(group);
-            }
-          }
           this._handleAutofocus();
           this.$dispatch("tetra:component-updated", { component: this });
         },

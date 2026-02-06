@@ -435,7 +435,6 @@ const Tetra = {
           Tetra.ensureWebSocketConnection();
 
           // Handle dynamic subscriptions from template
-
           const group = this.$el.getAttribute('tetra-subscription');
           if (group) {
             this._subscribe(group);
@@ -579,8 +578,23 @@ const Tetra = {
       destroy() {
         this.$dispatch('tetra:child-component-destroy', {component:  this});
 
-        // Unsubscribe from all group when component is destroyed
-        if (!this.__isUpdating && this.__subscribedGroups) {
+        // Check if this component or any parent is currently updating
+        // to prevent unsubscription during morphing (could be a race condition!)
+        let isParentUpdating = false;
+        let current = this.$el.parentElement;
+        while (current) {
+          const parentComponent = current._x_dataStack?.[0];
+          if (parentComponent && parentComponent.__isUpdating) {
+            isParentUpdating = true;
+            break;
+          }
+          current = current.parentElement;
+        }
+
+        // Unsubscribe from all groups when component is destroyed
+        // but NOT if this component or a parent is being morphed/updated
+        // because it most probably is a replacement!
+        if (!this.__isUpdating && !isParentUpdating && this.__subscribedGroups) {
           [...this.__subscribedGroups].forEach(group => {
             this._unsubscribe(group);
           });
@@ -619,24 +633,6 @@ const Tetra = {
           lookahead: true
         });
         this.__isUpdating = false;
-
-        // Check for subscription changes after morphing
-        if (window.__tetra_useWebsockets && this.$el.hasAttribute('tetra-reactive')) {
-          const group = this.$el.getAttribute('tetra-subscription');
-          const oldTopics = this.__subscribedGroups ? Array.from(this.__subscribedGroups) : [];
-          
-          // Unsubscribe from topics that are no longer present
-          oldTopics.forEach(topic => {
-            if (topic !== group) {
-              this._unsubscribe(topic);
-            }
-          });
-          
-          // Subscribe to new topic
-          if (group && (!this.__subscribedGroups || !this.__subscribedGroups.has(group))) {
-            this._subscribe(group);
-          }
-        }
 
         this._handleAutofocus();
         this.$dispatch('tetra:component-updated', { component: this });
