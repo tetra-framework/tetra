@@ -609,30 +609,41 @@ const Tetra = {
         if (!html) {
           html = await this._fetchHtml();
         }
+
+        // Validate HTML before morphing
+        if (!html) return;
+
         this.__isUpdating = true;
-        Alpine.morph(this.$root, html, {
-          updating(el, toEl, childrenOnly, skip) {
-            if (toEl.hasAttribute && toEl.hasAttribute('x-data-maintain') && el.hasAttribute && el.hasAttribute('x-data')) {
-              toEl.setAttribute('x-data', el.getAttribute('x-data'));
-              toEl.removeAttribute('x-data-maintain');
-            } else if (toEl.hasAttribute && toEl.hasAttribute('x-data-update') && el.hasAttribute && el.hasAttribute('x-data')) {
-              let data = Tetra.jsonDecode(toEl.getAttribute('x-data-update'));
-              let old_data = Tetra.jsonDecode(toEl.getAttribute('x-data-update-old'));
-              let comp = window.Alpine.$data(el);
-              for (const key in data) {
-                if (old_data.hasOwnProperty(key) && (old_data[key] !== comp[key])) {
-                  // If the data that was submitted to the server has since changed we don't overwrite it
-                  continue
+        try {
+          Alpine.morph(this.$root, html, {
+            updating(el, toEl, childrenOnly, skip) {
+              if (toEl.hasAttribute && toEl.hasAttribute('x-data-maintain') && el.hasAttribute && el.hasAttribute('x-data')) {
+                toEl.setAttribute('x-data', el.getAttribute('x-data'));
+                toEl.removeAttribute('x-data-maintain');
+              } else if (toEl.hasAttribute && toEl.hasAttribute('x-data-update') && el.hasAttribute && el.hasAttribute('x-data')) {
+                let data = Tetra.jsonDecode(toEl.getAttribute('x-data-update'));
+                let old_data = Tetra.jsonDecode(toEl.getAttribute('x-data-update-old'));
+                let comp = window.Alpine.$data(el);
+                for (const key in data) {
+                  if (old_data.hasOwnProperty(key) && (old_data[key] !== comp[key])) {
+                    // If the data that was submitted to the server has since changed we don't overwrite it
+                    continue
+                  }
+                  comp[key] = data[key];
                 }
-                comp[key] = data[key];
+                toEl.setAttribute('x-data', el.getAttribute('x-data'));
+                toEl.removeAttribute('x-data-update');
               }
-              toEl.setAttribute('x-data', el.getAttribute('x-data'));
-              toEl.removeAttribute('x-data-update');
-            }
-          },
-          lookahead: true
-        });
-        this.__isUpdating = false;
+            },
+            lookahead: true
+          });
+        } catch (error) {
+          console.error('Error during Alpine.morph:', error);
+          console.error('HTML that caused the error:', html);
+          // Don't throw - just log and continue
+        } finally {
+          this.__isUpdating = false;
+        }
 
         this._handleAutofocus();
         this.$dispatch('tetra:component-updated', { component: this });
@@ -770,23 +781,47 @@ const Tetra = {
 
       _unsubscribe(topic) {
         if (!this.__subscribedGroups) return;
-
+        console.trace(`Unsubscribing from ${topic} from ${this.component_id}`);
         const store = Alpine.store('tetra_subscriptions');
 
         this.__subscribedGroups.delete(topic);
-        
+
         if (store[topic]) {
           const index = store[topic].indexOf(this.component_id);
           if (index > -1) {
             store[topic].splice(index, 1);
             const isLast = store[topic].length === 0;
-            if (isLast) {
+
+            // Check if ANY parent component is currently morphing
+            // If so, don't actually unsubscribe from the WebSocket - the component
+            // is likely being recreated during the morph
+            let isParentMorphing = false;
+            if (this.$el) {
+              let current = this.$el.parentElement;
+              while (current) {
+                const parentComponent = current._x_dataStack?.[0];
+                if (parentComponent && parentComponent.__isUpdating) {
+                  isParentMorphing = true;
+                  break;
+                }
+                current = current.parentElement;
+              }
+            }
+
+            if (isLast && !isParentMorphing) {
               delete store[topic];
               Tetra.sendWebSocketMessage({
                 type: 'unsubscribe',
                 group: topic,
                 component_id: this.component_id
               });
+            } else if (isLast && isParentMorphing) {
+              // Don't delete from store or send unsubscribe - component is being recreated
+              if (window.__tetra_debug) {
+                Tetra.debug(`Skipping unsubscribe from ${topic} - parent is morphing, component likely being recreated`);
+              }
+            } else if (window.__tetra_debug) {
+              Tetra.debug(`Component ${this.component_id} unsubscribed from ${topic}, but ${store[topic].length} components still subscribed`);
             }
           }
         }
