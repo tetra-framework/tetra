@@ -145,6 +145,7 @@ def pytest_configure(config):
         STATIC_ROOT=BASE_DIR / "staticfiles",
         MEDIA_ROOT=BASE_DIR / "media",
         DEBUG=True,
+        ASGI_APPLICATION="tests.asgi.application",
         CHANNEL_LAYERS={
             "default": {
                 "BACKEND": "channels.layers.InMemoryChannelLayer",
