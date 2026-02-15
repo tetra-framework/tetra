@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import re
 from typing import Any
 
@@ -8,6 +9,8 @@ from asgiref.sync import async_to_sync
 from .dispatcher import ComponentDispatcher
 from .utils import request_id
 from .registry import channels_group_registry
+
+logger = logging.getLogger(__name__)
 
 
 class ReactiveModel(models.Model):
@@ -82,9 +85,17 @@ class ReactiveModel(models.Model):
                         )
                     )
                 else:
+                    # On update: notify both instance channel AND collection channel
+                    # Instance channel: updates the specific component instance
                     loop.create_task(
                         ComponentDispatcher.data_changed(
                             instance_channel, data, sender_id=sender_id
+                        )
+                    )
+                    # Collection channel: notifies list components to refresh
+                    loop.create_task(
+                        ComponentDispatcher.data_changed(
+                            collection_channel, data, sender_id=sender_id, update=True
                         )
                     )
         except RuntimeError:
@@ -94,8 +105,14 @@ class ReactiveModel(models.Model):
                     collection_channel, data=data, sender_id=sender_id
                 )
             else:
+                # On update: notify both instance channel AND collection channel
+                # Instance channel: updates the specific component instance
                 async_to_sync(ComponentDispatcher.data_changed)(
                     instance_channel, data, sender_id=sender_id
+                )
+                # Collection channel: notifies list components to refresh
+                async_to_sync(ComponentDispatcher.data_changed)(
+                    collection_channel, data, sender_id=sender_id, update=True
                 )
 
     @classmethod
@@ -185,17 +202,30 @@ def _reactivemodel_class_prepared(sender: type[ReactiveModel], **kwargs):
 
         app_label = sender._meta.app_label
         model_name = sender._meta.model_name
+
         # Register collection group
-        channels_group_registry.register(sender.get_tetra_collection_channel())
+        collection_channel = sender.get_tetra_collection_channel()
+        channels_group_registry.register(collection_channel)
+        logger.debug(
+            f"Registered collection group '{collection_channel}' for {sender.__name__}"
+        )
+
         # Register instance group pattern
-        channels_group_registry.register(
-            re.compile(rf"^{app_label}\.{model_name}\..+$")
+        instance_pattern = re.compile(rf"^{app_label}\.{model_name}\..+$")
+        channels_group_registry.register(instance_pattern)
+        logger.debug(
+            f"Registered instance pattern '{instance_pattern.pattern}' for {sender.__name__}"
         )
 
         # set a global flag to indicate that reactive components are in use
         # this is necessary for the middleware to include the websocket scripts
         if check_websocket_support():
             apps.get_app_config("tetra").has_reactive_components = True
+        else:
+            raise RuntimeError(
+                f"{sender.__name__} is a ReactiveModel, but WebSockets are not supported. "
+                "Make sure you have installed the required packages (channels, channels_redis, daphne)."
+            )
 
         # Check if signals are already connected to avoid duplicates
         # Using dispatch_uid is a good way to ensure unique connections.
