@@ -639,7 +639,6 @@
         _unsubscribe(topic) {
           var _a;
           if (!this.__subscribedGroups) return;
-          console.trace(`Unsubscribing from ${topic} from ${this.component_id}`);
           const store = Alpine.store("tetra_subscriptions");
           this.__subscribedGroups.delete(topic);
           if (store[topic]) {
@@ -888,6 +887,23 @@
       return null;
     },
     async handleServerMethodResponse(response, component) {
+      if (response.status === 410) {
+        const responseText = await response.text();
+        const respData = Tetra.jsonDecode(responseText);
+        if (respData.error && respData.error.code === "StaleComponentState") {
+          console.warn(`Component has stale state: ${respData.error.message}`);
+          if (component && component._removeComponent) {
+            component._removeComponent();
+          }
+          document.dispatchEvent(new CustomEvent("tetra:component-stale", {
+            detail: {
+              component,
+              error: respData.error
+            }
+          }));
+          return null;
+        }
+      }
       if (response.status === 200) {
         const cd = response.headers.get("Content-Disposition");
         if (cd == null ? void 0 : cd.startsWith("attachment")) {

@@ -18,6 +18,11 @@ title: Changelog
 ### Added
 - Introduce `group_registry` for group validation and improve subscription handling
 - Introduce online status tracking
+- **Stale Component State Handling**: Components now gracefully handle cases where database objects they reference 
+  have been deleted by another client. Instead of crashing with a 500 error, the server returns a 410 Gone response
+  with a `StaleComponentState` error code, allowing the client to handle the situation appropriately 
+  (e.g., by removing the component).
+  
 
 ### Changed
 - Pickling/Unpickling now checks variables against a "safe list" of types.

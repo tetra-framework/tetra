@@ -17,7 +17,7 @@ from functools import wraps
 from threading import local
 
 from django import forms
-from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.core.files import File
 from django.core.files.uploadedfile import UploadedFile
 from django.db.models.fields.files import FieldFile
@@ -54,7 +54,7 @@ from django.contrib.messages import get_messages
 from datetime import date, datetime, time
 from decimal import Decimal
 from enum import Enum
-from ..exceptions import ComponentError
+from ..exceptions import ComponentError, StaleComponentStateError
 from ..middleware import TetraHttpRequest
 from ..utils import (
     camel_case_to_underscore,
@@ -1098,7 +1098,25 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         else:
             component.renderer = BaseRenderer(component)
 
-        component._recall_load()
+        # Try to reload the component state. If the component's load() method
+        # fails because database objects no longer exist, raise a StaleComponentStateError
+        try:
+            component._recall_load()
+        except (ObjectDoesNotExist, AttributeError) as e:
+            # Check if this is truly a stale state error (e.g., accessing attribute on None)
+            # or a legitimate programming error in the load() method
+            error_msg = str(e)
+            if (
+                "DoesNotExist" in e.__class__.__name__
+                or "has no attribute" in error_msg
+                or "NoneType" in error_msg
+            ):
+                raise StaleComponentStateError(
+                    f"Component '{cls.__name__}' state is stale: {error_msg}. "
+                    f"The data it references may have been deleted or modified by another client."
+                ) from e
+            # Re-raise if it's not a stale state issue
+            raise
 
         # get data from client and populate component attributes with it
         for key, state_value in component_state["data"].items():

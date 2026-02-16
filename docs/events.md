@@ -43,6 +43,25 @@ The same goes for data updates: the event is fired after a data update without H
 
 Right before a component is removed using `self.client._removeComponent()` this event is triggered.
 
+### `tetra:component-stale`
+
+This event is fired when a component's state becomes stale, typically because database objects it references have been deleted by another client. When this happens, the component is automatically removed from the DOM after this event fires.
+
+This event allows you to perform custom cleanup or notify users before the component is removed.
+
+#### Details
+* `component`: the component instance with stale state
+* `error`: an object containing `code: "StaleComponentState"` and a user-friendly `message`
+
+**Example:**
+```html
+<div @tetra:component-stale="alert('A component was removed because its data no longer exists')">
+  <!-- Your component -->
+</div>
+```
+
+**Note:** This is a global event dispatched on `document`, so use `.document` modifier to listen for it from any component.
+
 ### `tetra:new-message`
 
 After a request returns a response, Tetra fires this event if there are new messages from the Django messaging system. You can react to these messages, e.g. display them in a component.

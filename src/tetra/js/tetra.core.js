@@ -781,7 +781,6 @@ const Tetra = {
 
       _unsubscribe(topic) {
         if (!this.__subscribedGroups) return;
-        console.trace(`Unsubscribing from ${topic} from ${this.component_id}`);
         const store = Alpine.store('tetra_subscriptions');
 
         this.__subscribedGroups.delete(topic);
@@ -1071,6 +1070,29 @@ const Tetra = {
   },
 
   async handleServerMethodResponse(response, component) {
+    // Handle 410 Gone - component state is stale (data was deleted)
+    if (response.status === 410) {
+      const responseText = await response.text();
+      const respData = Tetra.jsonDecode(responseText);
+
+      if (respData.error && respData.error.code === 'StaleComponentState') {
+        console.warn(`Component has stale state: ${respData.error.message}`);
+        // Gracefully remove the component from the DOM
+        if (component && component._removeComponent) {
+          component._removeComponent();
+        }
+        // Emit event for custom handling if needed
+        document.dispatchEvent(new CustomEvent('tetra:component-stale', {
+          detail: {
+            component: component,
+            error: respData.error
+          }
+        }));
+        return null;
+      }
+      // If not a stale state error, fall through to generic error handling
+    }
+
     if (response.status === 200) {
       const cd = response.headers.get('Content-Disposition')
       if (cd?.startsWith("attachment")) {

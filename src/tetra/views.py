@@ -1,11 +1,12 @@
 import json
 import logging
 
-from django.http import HttpResponseNotFound, HttpResponseBadRequest, HttpResponse
+from django.http import HttpResponseNotFound, HttpResponseBadRequest, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
 from . import Library
 from .utils import from_json, NamedTemporaryFileUploadHandler, request_id
+from .exceptions import StaleComponentStateError
 
 
 logger = logging.getLogger(__name__)
@@ -92,12 +93,31 @@ def _component_method(
         request.tetra_components_used = set()
     request.tetra_components_used.add(Component)
 
-    component = Component.from_state(component_state, request)
+    try:
+        component = Component.from_state(component_state, request)
+    except StaleComponentStateError as e:
+        # Component state references data that no longer exists
+        logger.warning(
+            f"Stale component state detected for {component_name}: {e}"
+        )
+        return JsonResponse(
+            {
+                "protocol": "tetra-1.0",
+                "type": "call.response",
+                "success": False,
+                "error": {
+                    "code": "StaleComponentState",
+                    "message": (
+                        "This component's data is no longer valid. "
+                        "It may have been deleted or modified by another user."
+                    ),
+                },
+            },
+            status=410,  # 410 Gone - resource no longer available
+        )
 
     # Handle special _refresh method by just rendering the component
     if is_refresh:
-        from django.http import JsonResponse
-
         html = component.render()
         response_data = {
             "protocol": "tetra-1.0",
