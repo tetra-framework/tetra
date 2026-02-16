@@ -346,6 +346,7 @@ class StateUnpickler(pickle.Unpickler):
             "NotImplementedType",
             "slice",
             "object",
+            "iter",
         },
     }
 
@@ -357,6 +358,7 @@ class StateUnpickler(pickle.Unpickler):
         "pathlib": {"PurePath", "PosixPath", "WindowsPath"},
         "uuid": {"UUID"},
         "django.utils.safestring": {"SafeString", "SafeData", "SafeText"},
+        "itertools": {"islice", "chain", "cycle", "repeat", "count"},
     }
 
     def find_class(self, module: str, name: str) -> type:
