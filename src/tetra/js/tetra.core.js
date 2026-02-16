@@ -34,7 +34,6 @@ const Tetra = {
     if (this.onlineStatusInitialized) return;
     this.onlineStatusInitialized = true;
 
-    const defaultTimeout = window.__tetra_onlineTimeout || 10000;
     if (typeof Alpine !== 'undefined') {
       if (!Alpine.store('tetra_status')) {
         Alpine.store('tetra_status', {
@@ -48,6 +47,7 @@ const Tetra = {
       }
     }
 
+    const defaultTimeout = window.__tetra_onlineTimeout || 10000;
     if (this.offlineTimeout) {
       clearTimeout(this.offlineTimeout);
     }
@@ -94,7 +94,7 @@ const Tetra = {
   setOfflineStatus() {
     if (typeof Alpine !== 'undefined') {
         const store = Alpine.store('tetra_status');
-        if (store) {
+        if (store && store.online !== false) {
           store.online = false;
           document.dispatchEvent(new CustomEvent('tetra:websocket-disconnected'));
         }
