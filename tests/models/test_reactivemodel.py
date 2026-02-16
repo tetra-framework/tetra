@@ -28,9 +28,11 @@ def test_reactive_model_mixin_save():
         obj.name = "Updated"
         obj.save()
 
-        # Check if data_changed was called once for the instance
-        assert mock_data_changed.call_count == 1
-        assert mock_data_changed.call_args[0][0] == f"main.watchablemodel.{obj.pk}"
+        # Check if data_changed was called twice (once for instance, once for collection)
+        assert mock_data_changed.call_count == 2
+        calls = [c.args[0] for c in mock_data_changed.call_args_list]
+        assert f"main.watchablemodel.{obj.pk}" in calls
+        assert "main.watchablemodel" in calls
 
 
 def test_metaclass_conflict():
@@ -144,9 +146,10 @@ def test_reactive_model_mixin_custom_channel():
             CustomDecoratedModel, obj, created=False
         )
 
-        assert mock_data_changed.call_count == 1
-        group = mock_data_changed.call_args[0][0]
-        assert group == "custom_channel"
+        assert mock_data_changed.call_count == 2
+        calls = [c.args[0] for c in mock_data_changed.call_args_list]
+        assert "custom_channel" in calls
+        assert "main.customdecoratedmodel" in calls
 
 
 @pytest.mark.django_db

@@ -74,9 +74,7 @@ def test_component_with_no_template():
         class ComponentWithNoTemplate(BasicComponent):
             pass
 
-    assert (
-        "'test_templates.ComponentWithNoTemplate' is not a valid component."
-    ) in str(exc_info.value)
+    assert "ComponentWithNoTemplate' is not a valid component." in str(exc_info.value)
 
 
 def test_component_with_template_syntax_error():

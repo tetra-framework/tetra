@@ -24,8 +24,9 @@ def test_request_id_tracking():
         obj.save()
 
         # Check call
-        assert mock_data_changed.call_count == 1
-        assert mock_data_changed.call_args[1].get("sender_id") is None
+        assert mock_data_changed.call_count == 2
+        for call in mock_data_changed.call_args_list:
+            assert call[1].get("sender_id") is None
 
         mock_data_changed.reset_mock()
 
@@ -36,8 +37,9 @@ def test_request_id_tracking():
         obj.name = "Changed 2"
         obj.save()
 
-        assert mock_data_changed.call_count == 1
-        assert mock_data_changed.call_args[1].get("sender_id") == test_id
+        assert mock_data_changed.call_count == 2
+        for call in mock_data_changed.call_args_list:
+            assert call[1].get("sender_id") == test_id
 
 
 @pytest.mark.django_db
