@@ -80,8 +80,22 @@ logger = logging.getLogger(__name__)
 
 # Types that should be preserved as-is during serialization
 SERIALIZABLE_TYPES = (
-    str, int, float, bool, list, dict, tuple, set, type(None),
-    date, datetime, time, Decimal, Enum, File, models.Model
+    str,
+    int,
+    float,
+    bool,
+    list,
+    dict,
+    tuple,
+    set,
+    type(None),
+    date,
+    datetime,
+    time,
+    Decimal,
+    Enum,
+    File,
+    models.Model,
 )
 
 
@@ -1194,7 +1208,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     @classmethod
     def _component_url(cls) -> str:
         """Returns the single Tetra call endpoint URL"""
-        return reverse("tetra:component_call")
+        return reverse("tetra:component-call")
 
     @classmethod
     def has_script(cls) -> bool:
@@ -1262,9 +1276,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
         # Always add _refresh as an internal method for reactive components
         # This ensures the endpoint is always available without hardcoding
-        component_server_methods.append(
-            {"name": "_refresh", "endpoint": endpoint_url}
-        )
+        component_server_methods.append({"name": "_refresh", "endpoint": endpoint_url})
 
         if not component_var:
             component_var = cls.extract_script() if cls.has_script() else "{}"

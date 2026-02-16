@@ -7,6 +7,6 @@ urlpatterns = [
     path(
         "call/",
         views.component_method,
-        name="component_call",
+        name="component-call",
     ),
 ]

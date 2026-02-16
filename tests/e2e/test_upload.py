@@ -69,7 +69,9 @@ def test_upload_file_with_submit(page: Page, component_locator):
     component.locator("#id_file").wait_for(state="visible")
     component.locator("#id_file").set_input_files(file_path)
 
-    with page.expect_response(lambda response: "/tetra/call/" in response.url):
+    with page.expect_response(
+        lambda response: reverse("tetra:component-call") in response.url
+    ):
         component.locator("#submit-button").click()
     expect(component.locator("#result")).to_have_text("Uploaded successfully")
 
@@ -116,7 +118,9 @@ def test_upload_file_with_other_component_method(page: Page, component_locator):
 
     # Now we click on any action button that triggers a component method. Even here
     # the file must be uploaded.
-    with page.expect_response(lambda response: "/tetra/call/" in response.url):
+    with page.expect_response(
+        lambda response: reverse("tetra:component-call") in response.url
+    ):
         component.locator("#action-button").click()
     expect(component.locator("#result")).to_have_text("Uploaded successfully")
 

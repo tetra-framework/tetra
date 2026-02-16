@@ -1,7 +1,12 @@
 import json
 import logging
 
-from django.http import HttpResponseNotFound, HttpResponseBadRequest, HttpResponse, JsonResponse
+from django.http import (
+    HttpResponseNotFound,
+    HttpResponseBadRequest,
+    HttpResponse,
+    JsonResponse,
+)
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
 from . import Library
@@ -28,10 +33,10 @@ def _component_method(request) -> HttpResponse:
     # Extract component and method info from the JSON payload
     try:
         # check if request includes multipart/form-data files
-        if request.content_type == "multipart/form-data":
+        if request.content_type.startswith("multipart/form-data"):
             payload = from_json(request.POST["tetra_payload"])
-        # if the request is application-data/json, we need to decode it ourselves
-        elif request.content_type == "application/json" and request.body:
+        # if the request is application/json, we need to decode it ourselves
+        elif request.content_type.startswith("application/json") and request.body:
             payload = from_json(request.body.decode())
         else:
             logger.error("Unsupported content type: %s", request.content_type)
@@ -90,7 +95,7 @@ def _component_method(request) -> HttpResponse:
         "args": inner_payload.get("args"),
     }
     # Add files to the component state
-    if request.content_type == "multipart/form-data":
+    if request.content_type.startswith("multipart/form-data"):
         for key in request.FILES:
             component_state["data"][key] = request.FILES[key]
 
@@ -109,9 +114,7 @@ def _component_method(request) -> HttpResponse:
         component = Component.from_state(component_state, request)
     except StaleComponentStateError as e:
         # Component state references data that no longer exists
-        logger.warning(
-            f"Stale component state detected for {component_name}: {e}"
-        )
+        logger.warning(f"Stale component state detected for {component_name}: {e}")
         return JsonResponse(
             {
                 "protocol": "tetra-1.0",
