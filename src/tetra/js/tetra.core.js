@@ -1154,17 +1154,54 @@ const Tetra = {
         }
 
         if (callbacks) {
+          // Whitelist of allowed callback methods to prevent arbitrary code execution
+          const ALLOWED_CALLBACKS = new Set([
+            '_redirect', '_updateHtml', '_updateData', '_dispatch',
+            '_pushUrl', '_updateSearchParam', '_replaceComponent',
+            '_removeComponent', '_setValueByName'
+          ]);
+
           callbacks.forEach((item) => {
+            // Validate callback structure
+            if (!item.callback || !Array.isArray(item.callback) || item.callback.length === 0) {
+              console.error('Invalid callback structure: missing or invalid callback array');
+              return;
+            }
+
+            const methodName = item.callback[0];
+
+            // Security check: only allow whitelisted top-level methods
+            if (!ALLOWED_CALLBACKS.has(methodName)) {
+              console.error(`Blocked disallowed callback method: ${methodName}`);
+              return;
+            }
+
+            // Security check: prevent prototype chain traversal
+            if (item.callback.some(name =>
+              name === '__proto__' || name === 'constructor' || name === 'prototype'
+            )) {
+              console.error('Blocked callback with dangerous property access');
+              return;
+            }
+
             // iterate down path to callback
             let obj = component;
-            item.callback.forEach((name, i) => {
-              if (i === item.callback.length-1) {
-                obj[name](...item.args);
-              } else {
-                obj = obj[name];
-              }
-            })
-          })
+            try {
+              item.callback.forEach((name, i) => {
+                if (i === item.callback.length-1) {
+                  if (typeof obj[name] === 'function') {
+                    obj[name](...item.args);
+                  } else {
+                    console.error(`Callback target is not a function: ${name}`);
+                  }
+                } else {
+                  obj = obj[name];
+                }
+              });
+            } catch (e) {
+              console.error('Error executing callback:', e);
+            }
+          });
         }
         return result;
       } else {

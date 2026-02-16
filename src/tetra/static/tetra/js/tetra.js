@@ -26,7 +26,6 @@
     initOnlineStatusStore() {
       if (this.onlineStatusInitialized) return;
       this.onlineStatusInitialized = true;
-      const defaultTimeout = window.__tetra_onlineTimeout || 1e4;
       if (typeof Alpine !== "undefined") {
         if (!Alpine.store("tetra_status")) {
           Alpine.store("tetra_status", {
@@ -39,6 +38,7 @@
           });
         }
       }
+      const defaultTimeout = window.__tetra_onlineTimeout || 1e4;
       if (this.offlineTimeout) {
         clearTimeout(this.offlineTimeout);
       }
@@ -79,7 +79,7 @@
     setOfflineStatus() {
       if (typeof Alpine !== "undefined") {
         const store = Alpine.store("tetra_status");
-        if (store) {
+        if (store && store.online !== false) {
           store.online = false;
           document.dispatchEvent(new CustomEvent("tetra:websocket-disconnected"));
         }
@@ -491,29 +491,36 @@
           if (!html) {
             html = await this._fetchHtml();
           }
+          if (!html) return;
           this.__isUpdating = true;
-          Alpine.morph(this.$root, html, {
-            updating(el, toEl, childrenOnly, skip) {
-              if (toEl.hasAttribute && toEl.hasAttribute("x-data-maintain") && el.hasAttribute && el.hasAttribute("x-data")) {
-                toEl.setAttribute("x-data", el.getAttribute("x-data"));
-                toEl.removeAttribute("x-data-maintain");
-              } else if (toEl.hasAttribute && toEl.hasAttribute("x-data-update") && el.hasAttribute && el.hasAttribute("x-data")) {
-                let data = Tetra.jsonDecode(toEl.getAttribute("x-data-update"));
-                let old_data = Tetra.jsonDecode(toEl.getAttribute("x-data-update-old"));
-                let comp = window.Alpine.$data(el);
-                for (const key in data) {
-                  if (old_data.hasOwnProperty(key) && old_data[key] !== comp[key]) {
-                    continue;
+          try {
+            Alpine.morph(this.$root, html, {
+              updating(el, toEl, childrenOnly, skip) {
+                if (toEl.hasAttribute && toEl.hasAttribute("x-data-maintain") && el.hasAttribute && el.hasAttribute("x-data")) {
+                  toEl.setAttribute("x-data", el.getAttribute("x-data"));
+                  toEl.removeAttribute("x-data-maintain");
+                } else if (toEl.hasAttribute && toEl.hasAttribute("x-data-update") && el.hasAttribute && el.hasAttribute("x-data")) {
+                  let data = Tetra.jsonDecode(toEl.getAttribute("x-data-update"));
+                  let old_data = Tetra.jsonDecode(toEl.getAttribute("x-data-update-old"));
+                  let comp = window.Alpine.$data(el);
+                  for (const key in data) {
+                    if (old_data.hasOwnProperty(key) && old_data[key] !== comp[key]) {
+                      continue;
+                    }
+                    comp[key] = data[key];
                   }
-                  comp[key] = data[key];
+                  toEl.setAttribute("x-data", el.getAttribute("x-data"));
+                  toEl.removeAttribute("x-data-update");
                 }
-                toEl.setAttribute("x-data", el.getAttribute("x-data"));
-                toEl.removeAttribute("x-data-update");
-              }
-            },
-            lookahead: true
-          });
-          this.__isUpdating = false;
+              },
+              lookahead: true
+            });
+          } catch (error) {
+            console.error("Error during Alpine.morph:", error);
+            console.error("HTML that caused the error:", html);
+          } finally {
+            this.__isUpdating = false;
+          }
           this._handleAutofocus();
           this.$dispatch("tetra:component-updated", { component: this });
         },
@@ -630,7 +637,9 @@
           }
         },
         _unsubscribe(topic) {
+          var _a;
           if (!this.__subscribedGroups) return;
+          console.trace(`Unsubscribing from ${topic} from ${this.component_id}`);
           const store = Alpine.store("tetra_subscriptions");
           this.__subscribedGroups.delete(topic);
           if (store[topic]) {
@@ -638,13 +647,31 @@
             if (index > -1) {
               store[topic].splice(index, 1);
               const isLast = store[topic].length === 0;
-              if (isLast) {
+              let isParentMorphing = false;
+              if (this.$el) {
+                let current = this.$el.parentElement;
+                while (current) {
+                  const parentComponent = (_a = current._x_dataStack) == null ? void 0 : _a[0];
+                  if (parentComponent && parentComponent.__isUpdating) {
+                    isParentMorphing = true;
+                    break;
+                  }
+                  current = current.parentElement;
+                }
+              }
+              if (isLast && !isParentMorphing) {
                 delete store[topic];
                 Tetra.sendWebSocketMessage({
                   type: "unsubscribe",
                   group: topic,
                   component_id: this.component_id
                 });
+              } else if (isLast && isParentMorphing) {
+                if (window.__tetra_debug) {
+                  Tetra.debug(`Skipping unsubscribe from ${topic} - parent is morphing, component likely being recreated`);
+                }
+              } else if (window.__tetra_debug) {
+                Tetra.debug(`Component ${this.component_id} unsubscribed from ${topic}, but ${store[topic].length} components still subscribed`);
               }
             }
           }
@@ -932,15 +959,49 @@
             component._updateHtml(html);
           }
           if (callbacks) {
+            const ALLOWED_CALLBACKS = /* @__PURE__ */ new Set([
+              "_redirect",
+              "_updateHtml",
+              "_updateData",
+              "_dispatch",
+              "_pushUrl",
+              "_updateSearchParam",
+              "_replaceComponent",
+              "_removeComponent",
+              "_setValueByName"
+            ]);
             callbacks.forEach((item) => {
+              if (!item.callback || !Array.isArray(item.callback) || item.callback.length === 0) {
+                console.error("Invalid callback structure: missing or invalid callback array");
+                return;
+              }
+              const methodName = item.callback[0];
+              if (!ALLOWED_CALLBACKS.has(methodName)) {
+                console.error(`Blocked disallowed callback method: ${methodName}`);
+                return;
+              }
+              if (item.callback.some(
+                (name) => name === "__proto__" || name === "constructor" || name === "prototype"
+              )) {
+                console.error("Blocked callback with dangerous property access");
+                return;
+              }
               let obj = component;
-              item.callback.forEach((name, i) => {
-                if (i === item.callback.length - 1) {
-                  obj[name](...item.args);
-                } else {
-                  obj = obj[name];
-                }
-              });
+              try {
+                item.callback.forEach((name, i) => {
+                  if (i === item.callback.length - 1) {
+                    if (typeof obj[name] === "function") {
+                      obj[name](...item.args);
+                    } else {
+                      console.error(`Callback target is not a function: ${name}`);
+                    }
+                  } else {
+                    obj = obj[name];
+                  }
+                });
+              } catch (e) {
+                console.error("Error executing callback:", e);
+              }
             });
           }
           return result;
