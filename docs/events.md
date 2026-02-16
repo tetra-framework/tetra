@@ -95,7 +95,90 @@ When a component subscription was redacted.
 
 When a component subscription/unsubsription process did not succeed.
 
+### `tetra:websocket-connected`
+
+Triggered when the WebSocket connection is successfully established or re-established. This indicates that reactive features are now available.
+
 ### `tetra:websocket-disconnected`
 
-Triggered when the client's online status changes to `offline`. This happens either when a WebSocket connection is closed or when a ping request to the server times out. See [Offline Mode](online-status.md) for details.
- 
+Triggered when the client's online status changes to `offline`. This happens either when a WebSocket connection is closed or when a ping request to the server times out. See [Online/Offline Status](online-status.md) for details.
+
+## Offline Queue Events
+
+These events are dispatched during offline queue operations. See [Offline Queue](offline-queue.md) for detailed documentation.
+
+### `tetra:call-queued`
+
+Fired when a component method call is queued because the connection is offline.
+
+#### Details
+* `component`: The component instance
+* `methodName`: Name of the queued method
+* `queueLength`: Current number of items in the queue
+
+### `tetra:queue-processing-start`
+
+Fired when the offline queue begins processing after the connection is restored. This is a global event dispatched on `document`.
+
+#### Details
+* `queueLength`: Number of calls being processed
+
+### `tetra:queue-processing-complete`
+
+Fired when the offline queue finishes processing. This is a global event dispatched on `document`.
+
+#### Details
+* `processedCount`: Number of calls processed in this batch
+* `remainingCount`: Number of calls still queued (failed with 500+ errors)
+
+### `tetra:call-reconciled`
+
+Fired when a queued call is successfully reconciled with the server after being offline.
+
+#### Details
+* `component`: The component instance
+* `methodName`: Name of the reconciled method
+* `result`: Result returned from the server
+
+### `tetra:call-rolled-back`
+
+Fired when a queued call is rolled back due to authentication/authorization errors (401/403).
+
+#### Details
+* `component`: The component instance
+* `methodName`: Name of the rolled back method
+* `status`: HTTP status code (401 or 403)
+* `reason`: Reason for rollback (e.g., 'auth_error')
+
+### `tetra:call-conflict`
+
+Fired when a queued call results in a 409 Conflict response, indicating stale component state. The component will be automatically refreshed from the server.
+
+#### Details
+* `component`: The component instance
+* `methodName`: Name of the conflicted method
+
+### `tetra:call-failed`
+
+Fired when a queued call fails permanently (4xx errors other than 401/403/409).
+
+#### Details
+* `component`: The component instance
+* `methodName`: Name of the failed method
+* `status`: HTTP status code
+
+### `tetra:state-rolled-back`
+
+Fired after component state is restored to a previous snapshot due to an error during queue processing.
+
+#### Details
+* `component`: The component instance
+
+### `tetra:call-replayed-without-component`
+
+Fired when a queued call is successfully replayed using snapshot state without finding the component in the DOM. This is a global event dispatched on `document`.
+
+#### Details
+* `componentId`: The component ID that was not found
+* `methodName`: Name of the replayed method
+* `response`: Server response data

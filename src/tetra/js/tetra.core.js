@@ -2,6 +2,8 @@
 const Tetra = {
   ws: null,
   pendingSubscriptions: new Map(), // Store subscriptions until WS is ready
+  offlineCallQueue: [], // Queue for method calls made while offline
+  queueRetryTimer: null, // Timer for periodic queue retry attempts
 
   debug(...args) {
     // Only output debug messages when DEBUG is enabled
@@ -29,6 +31,9 @@ const Tetra = {
 
     // Initialize online status store
     this.initOnlineStatusStore();
+
+    // Listen for browser online/offline events
+    this.initBrowserOnlineDetection();
   },
   initOnlineStatusStore() {
     if (this.onlineStatusInitialized) return;
@@ -100,6 +105,40 @@ const Tetra = {
         }
       }
   },
+
+  initBrowserOnlineDetection() {
+    // Listen for browser's online/offline events
+    // These fire when DevTools switches offline mode or actual network changes
+    if (this.browserOnlineDetectionInitialized) return;
+    this.browserOnlineDetectionInitialized = true;
+
+    window.addEventListener('online', () => {
+      Tetra.debug('Browser detected network online');
+      this.updateOnlineStatus();
+
+      // Try to reconnect WebSocket if it's not connected
+      if (window.__tetra_useWebsockets) {
+        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+          this.ensureWebSocketConnection();
+        }
+      }
+
+      // Process offline queue when we come back online
+      if (this.offlineCallQueue.length > 0) {
+        Tetra.debug(`Browser online event: processing ${this.offlineCallQueue.length} queued calls`);
+        // Small delay to ensure connection is stable
+        setTimeout(() => {
+          this.processOfflineCallQueue();
+        }, 500);
+      }
+    });
+
+    window.addEventListener('offline', () => {
+      Tetra.debug('Browser detected network offline');
+      this.setOfflineStatus();
+    });
+  },
+
   handleInitialMessages(messages) {
     // We need to wait for Alpine components to be ready before dispatching events to them.
     // However, since we use 'defer' for tetra.js and Alpine, they should be ready around the same time.
@@ -140,6 +179,8 @@ const Tetra = {
           this.ws.send(JSON.stringify(data));
         });
         this.pendingSubscriptions.clear();
+        // Process offline call queue
+        this.processOfflineCallQueue();
       };
 
       this.ws.onmessage = (event) => {
@@ -404,6 +445,467 @@ const Tetra = {
       });
     });
   },
+
+  scheduleQueueRetry() {
+    // Schedule a retry attempt for queued calls after a short delay
+    if (this.queueRetryTimer) {
+      clearTimeout(this.queueRetryTimer);
+    }
+
+    // Only schedule if there are items in the queue
+    if (this.offlineCallQueue.length > 0) {
+      this.queueRetryTimer = setTimeout(() => {
+        this.processOfflineCallQueue();
+      }, 2000); // Retry after 2 seconds
+    }
+  },
+
+  async processOfflineCallQueue() {
+    if (this.offlineCallQueue.length === 0) return;
+
+    const queueLength = this.offlineCallQueue.length;
+    Tetra.debug(`Processing ${queueLength} queued calls from offline mode`);
+
+    // Notify that queue processing has started
+    document.dispatchEvent(new CustomEvent('tetra:queue-processing-start', {
+      detail: { queueLength }
+    }));
+
+    // Process calls in order - copy queue and clear original
+    const queue = [...this.offlineCallQueue];
+    this.offlineCallQueue = [];
+
+    // Process each queued call sequentially
+    for (const queuedCall of queue) {
+      try {
+        const { component, methodName, args, componentMetadata, preCallSnapshot, optimisticUpdate } = queuedCall;
+
+        // Look up component for event dispatching (may have moved or been destroyed)
+        // First try to find by component_id
+        let componentEl = document.querySelector(`[tetra-component-id="${component.component_id}"]`);
+        let componentInstance = componentEl ? Alpine.$data(componentEl) : null;
+
+        // If found but key doesn't match, try to find by key instead
+        // This handles cases where component_id was reused for a different component
+        if (componentInstance && component.key && componentInstance.key !== component.key) {
+          Tetra.debug(`Component ID ${component.component_id} found but key mismatch, searching by key: ${component.key}`);
+
+          // Search all components with any ID to find matching key
+          const allComponents = document.querySelectorAll('[tetra-component-id]');
+          let foundByKey = false;
+          for (const el of allComponents) {
+            const comp = Alpine.$data(el);
+            if (comp && comp.key === component.key) {
+              componentEl = el;
+              componentInstance = comp;
+              foundByKey = true;
+              Tetra.debug(`Found component by key ${component.key} with ID ${comp.component_id}`);
+              break;
+            }
+          }
+
+          if (!foundByKey) {
+            componentEl = null;
+            componentInstance = null;
+          }
+        }
+
+        // Validate that we have the correct component by checking the key
+        // Component IDs can be reused in lists, so we must verify the key matches
+        const isCorrectComponent = componentInstance &&
+          (component.key === undefined || component.key === null || componentInstance.key === component.key);
+
+        if (!componentInstance || !isCorrectComponent) {
+          if (componentInstance && !isCorrectComponent) {
+            Tetra.debug(`Component ${component.component_id} found but key mismatch (queued: ${component.key}, found: ${componentInstance.key}), attempting replay with snapshot state: ${methodName}`);
+          } else {
+            Tetra.debug(`Component ${component.component_id} not found, attempting replay with snapshot state: ${methodName}`);
+          }
+
+          // Try to replay using snapshot state without a component instance
+          const success = await this.replayCallWithoutComponent(queuedCall);
+          if (success) {
+            Tetra.debug(`Successfully replayed ${methodName} without component instance`);
+          } else {
+            Tetra.debug(`Failed to replay ${methodName} - skipping`);
+          }
+          continue;
+        }
+
+        Tetra.debug(`Replaying queued call: ${methodName} (component_id: ${component.component_id}, key: ${component.key})`);
+
+        const requestId = Math.random().toString(36).substring(2, 15);
+        const triggerEl = componentInstance.$el;
+
+        // Get current state for the call
+        let component_state = Tetra.getStateWithChildren(componentInstance);
+        component_state.args = args || [];
+
+        // Get the unified endpoint
+        if (!componentInstance.__serverMethods || componentInstance.__serverMethods.length === 0) {
+          console.error('No server methods available for queued call');
+          continue;
+        }
+        const endpoint = componentInstance.__serverMethods[0].endpoint;
+
+        const metadata = componentMetadata || componentInstance.__componentMetadata;
+        const requestEnvelope = {
+          protocol: "tetra-1.0",
+          id: requestId,
+          type: "call",
+          payload: {
+            component_id: componentInstance.$el.getAttribute('tetra-component-id'),
+            method: methodName,
+            args: component_state.args,
+            state: component_state.data,
+            encrypted_state: component_state.encrypted,
+            children_state: component_state.children,
+            app_name: metadata.app_name,
+            library_name: metadata.library_name,
+            component_name: metadata.component_name,
+          }
+        };
+
+        // Prepare fetch payload
+        let fetchPayload = {
+          method: 'POST',
+          headers: {
+            'T-Request': "true",
+            'T-Current-URL': document.location.href,
+            'X-CSRFToken': window.__tetra_csrfToken,
+            'Content-Type': 'application/json'
+          },
+          mode: 'same-origin',
+          body: Tetra.jsonEncode(requestEnvelope)
+        };
+
+        // Dispatch before-request event
+        componentInstance.$dispatch('tetra:before-request', {
+          component: componentInstance,
+          triggerEl: triggerEl,
+          requestId: requestId
+        });
+
+        try {
+          const response = await fetch(endpoint, fetchPayload);
+
+          // Dispatch after-request event
+          componentInstance.$dispatch('tetra:after-request', {
+            component: componentInstance,
+            triggerEl: triggerEl,
+            requestId: requestId
+          });
+
+          // Handle different HTTP status codes with appropriate reconciliation strategies
+          if (response.status === 401 || response.status === 403) {
+            // Auth error - rollback optimistic changes
+            console.error(`Auth error (${response.status}) replaying queued call to ${methodName}, rolling back`);
+            this.rollbackOptimisticUpdate(componentInstance, preCallSnapshot);
+
+            componentInstance.$dispatch('tetra:call-rolled-back', {
+              component: componentInstance,
+              methodName: methodName,
+              status: response.status,
+              reason: 'auth_error'
+            });
+            continue; // Skip this call, don't retry
+          }
+
+          if (response.status === 409) {
+            // Conflict - refresh component from server
+            console.warn(`Conflict (409) replaying queued call to ${methodName}, refreshing component`);
+            await componentInstance._updateHtml().catch(err => {
+              console.error('Error refreshing component after conflict:', err);
+            });
+
+            componentInstance.$dispatch('tetra:call-conflict', {
+              component: componentInstance,
+              methodName: methodName
+            });
+            continue; // Call succeeded but state was stale, component refreshed
+          }
+
+          if (response.status >= 500) {
+            // Server error - rollback and re-queue for retry
+            console.warn(`Server error (${response.status}) replaying queued call to ${methodName}, will retry`);
+            this.rollbackOptimisticUpdate(componentInstance, preCallSnapshot);
+
+            // Re-queue at the end for retry
+            this.offlineCallQueue.push(queuedCall);
+            continue; // Continue processing other calls
+          }
+
+          if (!response.ok) {
+            // Other 4xx errors - rollback and log
+            console.error(`HTTP error ${response.status} replaying queued call to ${methodName}`);
+            this.rollbackOptimisticUpdate(componentInstance, preCallSnapshot);
+
+            componentInstance.$dispatch('tetra:call-failed', {
+              component: componentInstance,
+              methodName: methodName,
+              status: response.status
+            });
+            continue;
+          }
+
+          // Success (200) - parse response and apply updates
+          const result = await this.handleServerMethodResponse(response, componentInstance);
+
+          Tetra.debug(`Queued call ${methodName} completed successfully`);
+
+          componentInstance.$dispatch('tetra:call-reconciled', {
+            component: componentInstance,
+            methodName: methodName,
+            result: result
+          });
+
+        } catch (error) {
+          // Network error - rollback and re-queue at front
+          const isNetworkError = error instanceof TypeError &&
+            (error.message.includes('fetch') || error.message.includes('NetworkError'));
+
+          if (isNetworkError) {
+            console.warn('Network error during queue replay, rolling back and re-queuing:', error);
+            this.rollbackOptimisticUpdate(componentInstance, preCallSnapshot);
+
+            componentInstance.$dispatch('tetra:after-request', {
+              component: componentInstance,
+              triggerEl: triggerEl,
+              requestId: requestId
+            });
+
+            this.offlineCallQueue.unshift(queuedCall); // Put back at front
+            this.setOfflineStatus();
+            break; // Stop processing queue
+          }
+
+          // For other errors, log and continue
+          console.error('Error replaying queued call:', error);
+          componentInstance.$dispatch('tetra:after-request', {
+            component: componentInstance,
+            triggerEl: triggerEl,
+            requestId: requestId
+          });
+        }
+      } catch (error) {
+        console.error('Error processing queued call:', error);
+        // Continue with next call
+      }
+    }
+
+    // Schedule retry if there are still items in queue (server errors or network issues)
+    if (this.offlineCallQueue.length > 0) {
+      this.scheduleQueueRetry();
+    }
+
+    // Notify that queue processing has completed
+    document.dispatchEvent(new CustomEvent('tetra:queue-processing-complete', {
+      detail: {
+        processedCount: queueLength,
+        remainingCount: this.offlineCallQueue.length
+      }
+    }));
+  },
+
+  async replayCallWithoutComponent(queuedCall) {
+    // Replay a queued call when the component instance is not available in DOM
+    // This uses the snapshot state to reconstruct the request
+    const { component, methodName, args, componentMetadata, preCallSnapshot } = queuedCall;
+
+    if (!preCallSnapshot || !preCallSnapshot.data.__state) {
+      console.warn(`Cannot replay ${methodName} - no snapshot state available`);
+      return false;
+    }
+
+    const requestId = Math.random().toString(36).substring(2, 15);
+    const metadata = componentMetadata;
+
+    // Reconstruct the request envelope from snapshot
+    const requestEnvelope = {
+      protocol: "tetra-1.0",
+      id: requestId,
+      type: "call",
+      payload: {
+        component_id: component.component_id,
+        method: methodName,
+        args: args || [],
+        state: preCallSnapshot.data,
+        encrypted_state: preCallSnapshot.data.__state,
+        children_state: [],
+        app_name: metadata.app_name,
+        library_name: metadata.library_name,
+        component_name: metadata.component_name,
+      }
+    };
+
+    // Get endpoint from metadata or use default unified endpoint
+    const endpoint = '/tetra/call/';
+
+    const fetchPayload = {
+      method: 'POST',
+      headers: {
+        'T-Request': "true",
+        'T-Current-URL': document.location.href,
+        'X-CSRFToken': window.__tetra_csrfToken,
+        'Content-Type': 'application/json'
+      },
+      mode: 'same-origin',
+      body: Tetra.jsonEncode(requestEnvelope)
+    };
+
+    try {
+      const response = await fetch(endpoint, fetchPayload);
+
+      // Handle different status codes
+      if (response.status === 401 || response.status === 403) {
+        console.error(`Auth error (${response.status}) replaying ${methodName} without component - skipping`);
+        return false;
+      }
+
+      if (response.status === 409) {
+        console.warn(`Conflict (409) replaying ${methodName} without component - state was stale`);
+        return true; // Consider it handled
+      }
+
+      if (response.status >= 500) {
+        console.warn(`Server error (${response.status}) replaying ${methodName} without component - will retry`);
+        // Re-queue for retry
+        this.offlineCallQueue.push(queuedCall);
+        return false;
+      }
+
+      if (!response.ok) {
+        console.error(`HTTP error ${response.status} replaying ${methodName} without component`);
+        return false;
+      }
+
+      // Success - parse response
+      const respData = await response.json();
+
+      // Handle messages globally
+      if (respData.metadata?.messages) {
+        respData.metadata.messages.forEach((message) => {
+          document.dispatchEvent(new CustomEvent('tetra:new-message', { detail: message }));
+        });
+      }
+
+      // Dispatch global event for successful replay without component
+      document.dispatchEvent(new CustomEvent('tetra:call-replayed-without-component', {
+        detail: {
+          componentId: component.component_id,
+          methodName: methodName,
+          response: respData
+        }
+      }));
+
+      return true;
+    } catch (error) {
+      const isNetworkError = error instanceof TypeError &&
+        (error.message.includes('fetch') || error.message.includes('NetworkError'));
+
+      if (isNetworkError) {
+        console.warn('Network error during replay without component, re-queuing:', error);
+        this.offlineCallQueue.unshift(queuedCall);
+        this.setOfflineStatus();
+        return false;
+      }
+
+      console.error('Error replaying call without component:', error);
+      return false;
+    }
+  },
+
+  rollbackOptimisticUpdate(component, preCallSnapshot) {
+    if (!preCallSnapshot) return;
+
+    // Restore public state from snapshot
+    for (const key in preCallSnapshot.data) {
+      if (component.hasOwnProperty(key)) {
+        component[key] = preCallSnapshot.data[key];
+      }
+    }
+
+    // Restore HTML if available
+    if (preCallSnapshot.html && component.$el) {
+      try {
+        Alpine.morph(component.$root, preCallSnapshot.html, {
+          lookahead: true
+        });
+        Tetra.debug('Rolled back component HTML to pre-call state');
+      } catch (error) {
+        console.error('Error during rollback morph:', error);
+      }
+    }
+
+    component.$dispatch('tetra:state-rolled-back', { component: component });
+  },
+
+  captureComponentSnapshot(component) {
+    // Capture current component state for potential rollback
+    const snapshot = {
+      data: {},
+      html: component.$el ? component.$el.outerHTML : null,
+      timestamp: Date.now()
+    };
+
+    // Copy all public properties
+    for (const key in component) {
+      if (!key.startsWith('_') && !key.startsWith('$') && !key.startsWith('__') &&
+          typeof component[key] !== 'function') {
+        // Deep clone the value to prevent reference issues
+        try {
+          snapshot.data[key] = JSON.parse(JSON.stringify(component[key]));
+        } catch (e) {
+          // If value can't be serialized, store reference (best effort)
+          snapshot.data[key] = component[key];
+        }
+      }
+    }
+
+    // Capture encrypted state (needed for server-side validation)
+    if (component.__state) {
+      snapshot.data.__state = component.__state;
+    }
+
+    // Capture component metadata (needed for endpoint routing)
+    if (component.component_id) {
+      snapshot.component_id = component.component_id;
+    }
+    if (component.key) {
+      snapshot.key = component.key;
+    }
+
+    Tetra.debug(`Captured snapshot for component ${component.component_id} (key: ${component.key})`);
+    return snapshot;
+  },
+
+  queueOfflineCall(component, methodName, args, componentMetadata, preCallSnapshot, optimisticUpdate) {
+    Tetra.debug(`Queuing call to ${methodName} - connection offline`);
+
+    // Queue the call with all necessary context for replay
+    this.offlineCallQueue.push({
+      component: {
+        component_id: component.component_id,
+        key: component.key
+      },
+      methodName,
+      args,
+      componentMetadata,
+      preCallSnapshot, // Snapshot for rollback
+      optimisticUpdate, // Info about what was optimistically changed
+      queuedAt: Date.now()
+    });
+
+    // Dispatch event to notify that call was queued
+    component.$dispatch('tetra:call-queued', {
+      component: component,
+      methodName: methodName,
+      queueLength: this.offlineCallQueue.length
+    });
+
+    Tetra.debug(`Call queued: ${methodName}, component id: ${component.component_id} (queue length: ${this.offlineCallQueue.length})`);
+  },
+
   sendWebSocketMessage(message) {
     if (!this.ws) {
       console.log("WebSocket is not connected. Cannot send message.");
@@ -1241,8 +1743,13 @@ const Tetra = {
 
   async callServerMethod(component, methodName, args, componentMetadata) {
     const requestId = Math.random().toString(36).substring(2, 15);
-    let component_state = Tetra.getStateWithChildren(component);
-    component_state.args = args || [];
+    const triggerEl = component.$event ? component.$event.target : component.$el;
+
+    // Debug: Log which component is being called
+    Tetra.debug(`callServerMethod: ${methodName} on component ${component.component_id} (key: ${component.key})`);
+
+    // Capture component snapshot BEFORE making any changes (for rollback)
+    const preCallSnapshot = this.captureComponentSnapshot(component);
 
     // Get the unified endpoint URL from the first server method
     // Note: _refresh is always added to server methods, so this should never be empty
@@ -1255,6 +1762,24 @@ const Tetra = {
     // Use passed componentMetadata or fall back to component property
     const metadata = componentMetadata || component.__componentMetadata;
     if (!metadata) debugger
+
+    // Check if we're offline
+    // 1. Browser offline mode (DevTools or actual network)
+    // 2. WebSocket disconnected (for reactive components)
+    const isBrowserOffline = !navigator.onLine;
+    const isReactive = window.__tetra_useWebsockets && component.$el?.hasAttribute('tetra-reactive');
+    const isWebSocketOffline = isReactive && (!this.ws || this.ws.readyState !== WebSocket.OPEN);
+
+    // If offline, queue immediately with snapshot
+    if (isBrowserOffline || isWebSocketOffline) {
+      this.queueOfflineCall(component, methodName, args, metadata, preCallSnapshot, null);
+      return null;
+    }
+
+    // Prepare request
+    let component_state = Tetra.getStateWithChildren(component);
+    component_state.args = args || [];
+
     const requestEnvelope = {
       protocol: "tetra-1.0",
       id: requestId,
@@ -1306,30 +1831,63 @@ const Tetra = {
       fetchPayload.body = Tetra.jsonEncode(requestEnvelope)
       fetchPayload.headers['Content-Type'] = 'application/json'
     }
-    const triggerEl = component.$event ? component.$event.target : component.$el;
+
     component.$dispatch('tetra:before-request', {
       component: component,
       triggerEl: triggerEl,
       requestId: requestId
     });
     this.updateOnlineStatus();
-    const response = await fetch(endpoint, fetchPayload);
-    component.$dispatch('tetra:after-request', {
-      component: component,
-      triggerEl: triggerEl,
-      requestId: requestId
-    })
-    const result = await this.handleServerMethodResponse(response, component);
 
-    // If the request was successful, we might have already updated the data via
-    // the HTTP response. We keep the requestId in __activeRequests until now
-    // to ensure handleComponentUpdateData can filter it out if it arrives
-    // around the same time.
-    // However, the 'tetra:after-request' event already removed it from
-    // __activeRequests in the default Alpine mixin (if not overridden).
-    // Actually, looking at the code, tetra:after-request IS what removes it.
+    // Try to make the request, queue if network error occurs
+    try {
+      const response = await fetch(endpoint, fetchPayload);
+      component.$dispatch('tetra:after-request', {
+        component: component,
+        triggerEl: triggerEl,
+        requestId: requestId
+      })
+      const result = await this.handleServerMethodResponse(response, component);
 
-    return result;
+      // If there are queued calls and this request succeeded, schedule queue retry
+      if (this.offlineCallQueue.length > 0) {
+        this.scheduleQueueRetry();
+      }
+
+      return result;
+    } catch (error) {
+      // Check if it's a network error (connection refused, DNS failure, etc.)
+      const isNetworkError = error instanceof TypeError ||
+                            error.message.toLowerCase().includes('network') ||
+                            error.message.toLowerCase().includes('fetch');
+
+      if (isNetworkError) {
+        console.warn(`Network error calling ${methodName}, queueing for retry:`, error.message);
+
+        // Dispatch after-request to clear current loading state
+        component.$dispatch('tetra:after-request', {
+          component: component,
+          triggerEl: triggerEl,
+          requestId: requestId
+        });
+
+        // Queue the call for retry when connection is restored
+        this.queueOfflineCall(component, methodName, args, metadata, preCallSnapshot, null);
+
+        // Set offline status
+        this.setOfflineStatus();
+
+        return null;
+      }
+
+      // For other errors (like server errors), dispatch after-request and re-throw
+      component.$dispatch('tetra:after-request', {
+        component: component,
+        triggerEl: triggerEl,
+        requestId: requestId
+      });
+      throw error;
+    }
   },
 
   jsonReplacer(key, value) {
