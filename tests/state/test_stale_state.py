@@ -94,16 +94,22 @@ def test_stale_state_view_returns_410():
     component_state = {
         "protocol": "tetra-1.0",
         "id": "test-request-id",
+        "type": "call",
         "payload": {
             "encrypted_state": encoded_state,
             "state": {"key": "test-key"},
             "children_state": [],
             "args": [],
+            "method": "update_item",
+            # Add component location metadata
+            "app_name": "main",
+            "library_name": "stale_test",
+            "component_name": "item_component",
         },
     }
 
     post_request = factory.post(
-        "/tetra/main/stale_test/item_component/update_item",
+        "/tetra/call/",
         json.dumps(component_state),
         content_type="application/json",
     )
@@ -112,9 +118,7 @@ def test_stale_state_view_returns_410():
     post_request.csrf_processing_done = True
 
     # Call the view
-    response = _component_method(
-        post_request, "main", "stale_test", "item_component", "update_item"
-    )
+    response = _component_method(post_request)
 
     # Should return 410 Gone
     assert response.status_code == 410

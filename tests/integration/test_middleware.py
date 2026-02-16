@@ -317,7 +317,7 @@ def test_unified_protocol_full_flow(rf):
 
     # Setup request
     request = rf.post(
-        "/tetra/main/test_lib/FlowComponent/update_title",
+        "/tetra/call/",
         data={},
         content_type="application/json",
     )
@@ -330,7 +330,7 @@ def test_unified_protocol_full_flow(rf):
     lib = Library("test_lib", app="main")
     lib.register(FlowComponent)
 
-    # Prepare unified protocol request
+    # Prepare unified protocol request with component location metadata
     encrypted_state = encode_component(FlowComponent(request))
     request_envelope = {
         "protocol": "tetra-1.0",
@@ -343,6 +343,10 @@ def test_unified_protocol_full_flow(rf):
             "state": {"title": "initial"},
             "encrypted_state": encrypted_state,
             "children_state": [],
+            # Add component location metadata
+            "app_name": "main",
+            "library_name": "test_lib",
+            "component_name": "flow_component",
         },
     }
     request._body = json.dumps(request_envelope).encode("utf-8")
@@ -352,24 +356,24 @@ def test_unified_protocol_full_flow(rf):
     # Add a message
     add_message(request, constants.SUCCESS, "Success message")
 
-    # Mock the Library registry
+    # Mock the Library registry and library URLs
     with patch.object(Library, "registry", {"main": {"test_lib": lib}}):
-        response = component_method(
-            request, "main", "test_lib", "flow_component", "update_title"
-        )
+        with patch.object(Library, "styles_url", new_callable=lambda: "/static/main/tetra/test_lib/main_test_lib.css"):
+            with patch.object(Library, "js_url", new_callable=lambda: "/static/main/tetra/test_lib/main_test_lib.js"):
+                response = component_method(request)
 
-        # Check response from view
-        assert response.status_code == 200
-        resp_data = json.loads(response.content)
-        assert resp_data["protocol"] == "tetra-1.0"
-        assert resp_data["type"] == "call.response"
-        assert resp_data["metadata"]["messages"][0]["message"] == "Success message"
+                # Check response from view
+                assert response.status_code == 200
+                resp_data = json.loads(response.content)
+                assert resp_data["protocol"] == "tetra-1.0"
+                assert resp_data["type"] == "call.response"
+                assert resp_data["metadata"]["messages"][0]["message"] == "Success message"
 
-        # Check response through middleware
-        middleware = TetraMiddleware(lambda r: response)
-        final_response = middleware(request)
-        assert "T-Messages" not in final_response.headers
-        assert final_response == response
+                # Check response through middleware
+                middleware = TetraMiddleware(lambda r: response)
+                final_response = middleware(request)
+                assert "T-Messages" not in final_response.headers
+                assert final_response == response
 
 
 @pytest.mark.django_db
@@ -411,7 +415,7 @@ def test_unified_protocol_error_handling(rf):
 
     # Setup request
     request = rf.post(
-        "/tetra/main/test_lib/ErrorComponent/raise_error",
+        "/tetra/call/",
         data={},
         content_type="application/json",
     )
@@ -424,7 +428,7 @@ def test_unified_protocol_error_handling(rf):
     lib = Library("test_lib", app="main")
     lib.register(ErrorComponent)
 
-    # Prepare unified protocol request
+    # Prepare unified protocol request with component location metadata
     encrypted_state = encode_component(ErrorComponent(request))
     request_envelope = {
         "protocol": "tetra-1.0",
@@ -437,6 +441,10 @@ def test_unified_protocol_error_handling(rf):
             "state": {},
             "encrypted_state": encrypted_state,
             "children_state": [],
+            # Add component location metadata
+            "app_name": "main",
+            "library_name": "test_lib",
+            "component_name": "error_component",
         },
     }
     request._body = json.dumps(request_envelope).encode("utf-8")
@@ -445,9 +453,7 @@ def test_unified_protocol_error_handling(rf):
 
     # Mock the Library registry
     with patch.object(Library, "registry", {"main": {"test_lib": lib}}):
-        response = component_method(
-            request, "main", "test_lib", "error_component", "raise_error"
-        )
+        response = component_method(request)
 
         # Check response from view
         assert response.status_code == 500

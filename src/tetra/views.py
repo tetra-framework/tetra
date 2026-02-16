@@ -21,11 +21,51 @@ def component_method(request, *args, **kwargs):
 
 
 @csrf_protect
-def _component_method(
-    request, app_name, library_name, component_name, method_name
-) -> HttpResponse:
+def _component_method(request) -> HttpResponse:
     if not request.method == "POST":
         return HttpResponseBadRequest()
+
+    # Extract component and method info from the JSON payload
+    try:
+        # check if request includes multipart/form-data files
+        if request.content_type == "multipart/form-data":
+            payload = from_json(request.POST["tetra_payload"])
+        # if the request is application-data/json, we need to decode it ourselves
+        elif request.content_type == "application/json" and request.body:
+            payload = from_json(request.body.decode())
+        else:
+            logger.error("Unsupported content type: %s", request.content_type)
+            return HttpResponseBadRequest()
+
+        # Extract request ID and store it in context variable
+        if isinstance(payload, dict) and payload.get("id"):
+            request_id.set(payload["id"])
+
+        # Validate protocol and extract payload
+        if not (
+            isinstance(payload, dict)
+            and payload.get("protocol") == "tetra-1.0"
+            and "payload" in payload
+        ):
+            logger.error("Invalid or missing Tetra protocol in payload")
+            return HttpResponseBadRequest()
+
+        inner_payload = payload["payload"]
+
+        # Extract component location from payload
+        app_name = inner_payload.get("app_name")
+        library_name = inner_payload.get("library_name")
+        component_name = inner_payload.get("component_name")
+        method_name = inner_payload.get("method")
+
+        if not all([app_name, library_name, component_name, method_name]):
+            logger.error("Missing component or method information in payload")
+            return HttpResponseBadRequest()
+
+    except (json.decoder.JSONDecodeError, KeyError) as e:
+        logger.error(e)
+        return HttpResponseBadRequest()
+
     try:
         Component = Library.registry[app_name][library_name].components[component_name]
     except KeyError:
@@ -42,45 +82,17 @@ def _component_method(
         )
         return HttpResponseNotFound()
 
-    try:
-        # check if request includes multipart/form-data files
-        if request.content_type == "multipart/form-data":
-            payload = from_json(request.POST["tetra_payload"])
-        # if the request is application-data/json, we need to decode it ourselves
-        elif request.content_type == "application/json" and request.body:
-            payload = from_json(request.body.decode())
-        else:
-            logger.error("Unsupported content type: %s", request.content_type)
-            return HttpResponseBadRequest()
-
-        # Extract request ID and store it in context variable
-        if isinstance(payload, dict) and payload.get("id"):
-            request_id.set(payload["id"])
-
-        # Extract component state from unified protocol payload
-        if (
-            isinstance(payload, dict)
-            and payload.get("protocol") == "tetra-1.0"
-            and "payload" in payload
-        ):
-            inner_payload = payload["payload"]
-            component_state = {
-                "encrypted": inner_payload.get("encrypted_state"),
-                "data": inner_payload.get("state"),
-                "children": inner_payload.get("children_state"),
-                "args": inner_payload.get("args"),
-            }
-            # Add files to the component state
-            if request.content_type == "multipart/form-data":
-                for key in request.FILES:
-                    component_state["data"][key] = request.FILES[key]
-        else:
-            logger.error("Invalid or missing Tetra protocol in payload")
-            return HttpResponseBadRequest()
-
-    except (json.decoder.JSONDecodeError, KeyError) as e:
-        logger.error(e)
-        return HttpResponseBadRequest()
+    # Extract component state from payload (already parsed above)
+    component_state = {
+        "encrypted": inner_payload.get("encrypted_state"),
+        "data": inner_payload.get("state"),
+        "children": inner_payload.get("children_state"),
+        "args": inner_payload.get("args"),
+    }
+    # Add files to the component state
+    if request.content_type == "multipart/form-data":
+        for key in request.FILES:
+            component_state["data"][key] = request.FILES[key]
 
     if not (
         isinstance(component_state, dict)

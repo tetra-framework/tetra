@@ -172,8 +172,10 @@ def test_person_component_call_submit_triggers_form_valid(
         component.locator("#id_email").fill("john@example.net")
         component.locator("#id_dob").fill("2000-01-02")
 
-        with page.expect_response(lambda response: "submit" in response.url):
-            component.locator("#submit-button").click()
+        component.locator("#submit-button").click()
+
+        # Wait for network to be idle after the click
+        page.wait_for_load_state("networkidle")
 
         mock_form_valid.assert_called_once()
 
@@ -189,14 +191,20 @@ def test_person_component_call_submit_triggers_form_invalid(
     with patch.object(PersonComponent, "form_invalid") as mock_form_invalid:
         component = component_locator(PersonComponent)
         component.locator("#id_name").fill("John Doe")
-        with page.expect_response(lambda response: "submit" in response.url):
-            component.locator("#submit-button").click()
+        component.locator("#submit-button").click()
+
+        # Wait for network to be idle after the click
+        page.wait_for_load_state("networkidle")
+
         mock_form_invalid.assert_called_once()
 
     with patch.object(PersonComponent, "form_invalid") as mock_form_invalid:
         component = component_locator(PersonComponent)
         component.locator("#id_age").fill("23")
         component.locator("#id_name").clear()
-        with page.expect_response(lambda response: "submit" in response.url):
-            component.locator("#submit-button").click()
+        component.locator("#submit-button").click()
+
+        # Wait for network to be idle after the click
+        page.wait_for_load_state("networkidle")
+
         mock_form_invalid.assert_called_once()

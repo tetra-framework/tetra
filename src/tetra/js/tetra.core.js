@@ -125,6 +125,12 @@ const Tetra = {
       const ws_url = `${ws_scheme}://${window.location.host}/ws/tetra/`;
       this.ws = new WebSocket(ws_url);
 
+      // Suppress connection error messages in console by handling errors silently
+      this.ws.onerror = () => {
+        // Silently handle WebSocket errors to prevent console spam
+        // The onclose handler will manage reconnection logic
+      };
+
       this.ws.onopen = () => {
         Tetra.debug('Tetra WebSocket connected');
         this.updateOnlineStatus();
@@ -157,10 +163,6 @@ const Tetra = {
         setTimeout(() => {
           this.ensureWebSocketConnection();
         }, 3000);
-      };
-
-      this.ws.onerror = (error) => {
-        console.error('Tetra WebSocket error:', error);
       };
     }
     return this.ws;
@@ -735,16 +737,15 @@ const Tetra = {
       },
       async _fetchHtml() {
         // Fetch fresh HTML from the server for this component by calling the special _refresh method
-        // The _refresh endpoint is always included in __serverMethods by the server
+        // The _refresh method uses the unified endpoint like all other methods
         const refreshMethod = this.__serverMethods?.find(m => m.name === '_refresh');
         if (!refreshMethod) {
-          throw new Error('_refresh method endpoint not found in component server methods');
+          throw new Error('_refresh method not found in component server methods');
         }
 
-        const refreshUrl = refreshMethod.endpoint[0];
-
         // Use the standard callServerMethod for consistent behavior
-        const result = await Tetra.callServerMethod(this, '_refresh', refreshUrl, []);
+        // Pass the componentMetadata from this component instance
+        const result = await Tetra.callServerMethod(this, '_refresh', [], this.__componentMetadata);
 
         // The result from _refresh contains the html in the response
         return result?.html || result;
@@ -964,12 +965,12 @@ const Tetra = {
     }
   },
 
-  makeServerMethods(serverMethods) {
+  makeServerMethods(serverMethods, componentMetadata) {
     const methods = {};
     serverMethods.forEach((serverMethod) => {
       var func = async function(...args) {
         // TODO: ensure only one concurrent?
-        return await Tetra.callServerMethod(this, serverMethod.name, serverMethod.endpoint, args)
+        return await Tetra.callServerMethod(this, serverMethod.name, args, componentMetadata)
       }
       if (serverMethod.debounce) {
         func = Tetra.debounce(func, serverMethod.debounce, serverMethod.debounce_immediate)
@@ -984,7 +985,7 @@ const Tetra = {
     return methods
   },
 
-  makeAlpineComponent(componentName, script, serverMethods, serverProperties) {
+  makeAlpineComponent(componentName, script, serverMethods, serverProperties, componentMetadata) {
     Alpine.data(
         componentName,
         (initialDataJson) => {
@@ -996,10 +997,11 @@ const Tetra = {
             __destroyInner: destroy,
             __serverMethods: serverMethods,
             __serverProperties: serverProperties,
+            __componentMetadata: componentMetadata,
             __serverStores: initialData?.__serverStores,
             ...(initialData || {}),
             ...script_rest,
-            ...Tetra.makeServerMethods(serverMethods),
+            ...Tetra.makeServerMethods(serverMethods, componentMetadata),
             ...Tetra.alpineComponentMixins(),
           }
           return data
@@ -1237,11 +1239,19 @@ const Tetra = {
     }
   },
 
-  async callServerMethod(component, methodName, methodEndpoint, args) {
+  async callServerMethod(component, methodName, args, componentMetadata) {
     const requestId = Math.random().toString(36).substring(2, 15);
     let component_state = Tetra.getStateWithChildren(component);
     component_state.args = args || [];
 
+    // Get the unified endpoint URL from the first server method
+    const endpoint = component.__serverMethods && component.__serverMethods.length > 0
+      ? component.__serverMethods[0].endpoint
+      : '/tetra/call/';
+
+    // Use passed componentMetadata or fall back to component property
+    const metadata = componentMetadata || component.__componentMetadata;
+    if (!metadata) debugger
     const requestEnvelope = {
       protocol: "tetra-1.0",
       id: requestId,
@@ -1252,7 +1262,11 @@ const Tetra = {
         args: component_state.args,
         state: component_state.data,
         encrypted_state: component_state.encrypted,
-        children_state: component_state.children
+        children_state: component_state.children,
+        // Add component location metadata for the unified endpoint
+        app_name: metadata.app_name,
+        library_name: metadata.library_name,
+        component_name: metadata.component_name,
       }
     };
 
@@ -1296,7 +1310,7 @@ const Tetra = {
       requestId: requestId
     });
     this.updateOnlineStatus();
-    const response = await fetch(methodEndpoint, fetchPayload);
+    const response = await fetch(endpoint, fetchPayload);
     component.$dispatch('tetra:after-request', {
       component: component,
       triggerEl: triggerEl,

@@ -59,11 +59,15 @@ def test_request_id_extraction_in_view():
             "state": {},
             "encrypted_state": None,
             "children_state": {},
+            # Add component location metadata
+            "app_name": "main",
+            "library_name": "main",
+            "component_name": "MyComponent",
         },
     }
 
     request = factory.post(
-        "/tetra/call/main/main/MyComponent/some_method",
+        "/tetra/call/",
         data=json.dumps(payload),
         content_type="application/json",
     )
@@ -86,7 +90,7 @@ def test_request_id_extraction_in_view():
 
         from tetra.views import _component_method
 
-        _component_method(request, "main", "main", "MyComponent", "some_method")
+        _component_method(request)
 
         # Check if request_id was set
         assert request_id.get() == test_id

@@ -2,6 +2,7 @@
   let __script = {{ component_script|safe }}
   let __serverMethods = {{ component_server_methods|safe }}
   let __serverProperties = {{ component_server_properties|safe }}
+  let __componentMetadata = {{ component_metadata|safe }}
   let __componentName = '{{ component_name|safe }}'
   window.document.addEventListener('alpine:init', () => {
     Tetra.makeAlpineComponent(
@@ -9,6 +10,7 @@
       __script,
       __serverMethods,
       __serverProperties,
+      __componentMetadata,
     )
   })
 })();

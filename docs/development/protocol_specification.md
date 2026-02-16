@@ -14,7 +14,7 @@ Current Status: **Phase 1 (HTTP) and Phase 2 (WebSockets) Implemented.**
 ### 1.1 HTTP (Method Calls)
 - **Method:** `POST`
 - **Content-Type:** `application/json` or `multipart/form-data` (for file uploads)
-- **Endpoint:** Component-specific URL
+- **Endpoint:** `/__tetra__/call/`
 - **Headers:**
     - `T-Request: true`: Identifies the request as a Tetra protocol request.
     - `X-CSRFToken`: Standard Django CSRF protection.

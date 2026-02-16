@@ -105,6 +105,8 @@
         const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
         const ws_url = `${ws_scheme}://${window.location.host}/ws/tetra/`;
         this.ws = new WebSocket(ws_url);
+        this.ws.onerror = () => {
+        };
         this.ws.onopen = () => {
           Tetra.debug("Tetra WebSocket connected");
           this.updateOnlineStatus();
@@ -131,9 +133,6 @@
           setTimeout(() => {
             this.ensureWebSocketConnection();
           }, 3e3);
-        };
-        this.ws.onerror = (error) => {
-          console.error("Tetra WebSocket error:", error);
         };
       }
       return this.ws;
@@ -607,10 +606,9 @@
           var _a;
           const refreshMethod = (_a = this.__serverMethods) == null ? void 0 : _a.find((m) => m.name === "_refresh");
           if (!refreshMethod) {
-            throw new Error("_refresh method endpoint not found in component server methods");
+            throw new Error("_refresh method not found in component server methods");
           }
-          const refreshUrl = refreshMethod.endpoint[0];
-          const result = await Tetra.callServerMethod(this, "_refresh", refreshUrl, []);
+          const result = await Tetra.callServerMethod(this, "_refresh", [], this.__componentMetadata);
           return (result == null ? void 0 : result.html) || result;
         },
         // Push notification methods
@@ -791,11 +789,11 @@
         }
       };
     },
-    makeServerMethods(serverMethods) {
+    makeServerMethods(serverMethods, componentMetadata) {
       const methods = {};
       serverMethods.forEach((serverMethod) => {
         var func = async function(...args) {
-          return await Tetra.callServerMethod(this, serverMethod.name, serverMethod.endpoint, args);
+          return await Tetra.callServerMethod(this, serverMethod.name, args, componentMetadata);
         };
         if (serverMethod.debounce) {
           func = Tetra.debounce(func, serverMethod.debounce, serverMethod.debounce_immediate);
@@ -809,7 +807,7 @@
       });
       return methods;
     },
-    makeAlpineComponent(componentName, script, serverMethods, serverProperties) {
+    makeAlpineComponent(componentName, script, serverMethods, serverProperties, componentMetadata) {
       Alpine.data(
         componentName,
         (initialDataJson) => {
@@ -821,10 +819,11 @@
             __destroyInner: destroy,
             __serverMethods: serverMethods,
             __serverProperties: serverProperties,
+            __componentMetadata: componentMetadata,
             __serverStores: initialData == null ? void 0 : initialData.__serverStores,
             ...initialData || {},
             ...script_rest,
-            ...Tetra.makeServerMethods(serverMethods),
+            ...Tetra.makeServerMethods(serverMethods, componentMetadata),
             ...Tetra.alpineComponentMixins()
           };
           return data;
@@ -1031,10 +1030,13 @@
         throw new Error(`Server responded with an error ${response.status} (${response.statusText})`);
       }
     },
-    async callServerMethod(component, methodName, methodEndpoint, args) {
+    async callServerMethod(component, methodName, args, componentMetadata) {
       const requestId = Math.random().toString(36).substring(2, 15);
       let component_state = Tetra.getStateWithChildren(component);
       component_state.args = args || [];
+      const endpoint = component.__serverMethods && component.__serverMethods.length > 0 ? component.__serverMethods[0].endpoint : "/tetra/call/";
+      const metadata = componentMetadata || component.__componentMetadata;
+      if (!metadata) debugger;
       const requestEnvelope = {
         protocol: "tetra-1.0",
         id: requestId,
@@ -1045,7 +1047,11 @@
           args: component_state.args,
           state: component_state.data,
           encrypted_state: component_state.encrypted,
-          children_state: component_state.children
+          children_state: component_state.children,
+          // Add component location metadata for the unified endpoint
+          app_name: metadata.app_name,
+          library_name: metadata.library_name,
+          component_name: metadata.component_name
         }
       };
       let fetchPayload = {
@@ -1080,7 +1086,7 @@
         requestId
       });
       this.updateOnlineStatus();
-      const response = await fetch(methodEndpoint, fetchPayload);
+      const response = await fetch(endpoint, fetchPayload);
       component.$dispatch("tetra:after-request", {
         component,
         triggerEl,

@@ -28,6 +28,7 @@ def extract_component_tag(html: str | bytes) -> Tag:
 
 
 def call_component_method(
+    app_name,
     library_name,
     component_name,
     method,
@@ -35,18 +36,30 @@ def call_component_method(
     **kwargs,
 ):
     factory = RequestFactory(content_type="application/json")
-    component_state = {
-        "csrfmiddlewaretoken": "fake-token",
-        "args": [],
-        "encrypted": "",  # FIXME: test does not work with invalid encrypted state
-        "data": {"data": ""},
+    # Create unified protocol request envelope
+    request_envelope = {
+        "protocol": "tetra-1.0",
+        "id": "test-req-id",
+        "type": "call",
+        "payload": {
+            "component_id": "test-comp-id",
+            "method": method,
+            "args": [],
+            "state": {"data": ""},
+            "encrypted_state": "",  # FIXME: test does not work with invalid encrypted state
+            "children_state": [],
+            # Add component location metadata
+            "app_name": app_name,
+            "library_name": library_name,
+            "component_name": component_name,
+        },
     }
     req = factory.post(
-        "/", json.dumps(component_state), content_type="application/json"
+        "/tetra/call/", json.dumps(request_envelope), content_type="application/json"
     )
 
     req.session = SessionStore()
     req.session.create()
     req.user = AnonymousUser()
     req.csrf_processing_done = True
-    return _component_method(req, library_name, component_name, method)
+    return _component_method(req)

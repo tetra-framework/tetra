@@ -5,8 +5,8 @@ app_name = "tetra"
 
 urlpatterns = [
     path(
-        "<str:app_name>/<str:library_name>/<str:component_name>/<str:method_name>",
+        "call/",
         views.component_method,
-        name="public_component_method",
+        name="component_call",
     ),
 ]

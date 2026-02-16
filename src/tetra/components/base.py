@@ -1192,11 +1192,9 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         return component
 
     @classmethod
-    def _component_url(cls, method_name) -> str:
-        return reverse(
-            "tetra:public_component_method",
-            args=[cls._library.app.label, cls._library.name, cls._name, method_name],
-        )
+    def _component_url(cls) -> str:
+        """Returns the single Tetra call endpoint URL"""
+        return reverse("tetra:component_call")
 
     @classmethod
     def has_script(cls) -> bool:
@@ -1254,19 +1252,30 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         the component's state.
         """
         component_server_methods = []
+        # Get the single endpoint URL for all component calls
+        endpoint_url = cls._component_url()
+
         for method in cls._public_methods:
             method_data = copy(method)
-            method_data["endpoint"] = (cls._component_url(method["name"]),)
+            method_data["endpoint"] = endpoint_url
             component_server_methods.append(method_data)
 
         # Always add _refresh as an internal method for reactive components
-        # This ensures the URL is always available without hardcoding
+        # This ensures the endpoint is always available without hardcoding
         component_server_methods.append(
-            {"name": "_refresh", "endpoint": (cls._component_url("_refresh"),)}
+            {"name": "_refresh", "endpoint": endpoint_url}
         )
 
         if not component_var:
             component_var = cls.extract_script() if cls.has_script() else "{}"
+
+        # Component location metadata for the unified endpoint
+        component_metadata = {
+            "app_name": cls._library.app.label,
+            "library_name": cls._library.name,
+            "component_name": cls._name,
+        }
+
         return render_to_string(
             "script.js",
             {
@@ -1274,6 +1283,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
                 "component_script": component_var,
                 "component_server_methods": to_json(component_server_methods),
                 "component_server_properties": to_json(cls._public_properties),
+                "component_metadata": to_json(component_metadata),
             },
         )
 

@@ -18,12 +18,14 @@ title: Changelog
 ### Added
 - Introduce `group_registry` for group validation and improve subscription handling
 - Introduce online status tracking
-- **Stale Component State Handling**: Components now gracefully handle cases where database objects they reference 
+- **Stale Component State Handling**: Components now gracefully handle cases where database objects they reference
   have been deleted by another client. Instead of crashing with a 500 error, the server returns a 410 Gone response
-  with a `StaleComponentState` error code, allowing the client to handle the situation appropriately 
+  with a `StaleComponentState` error code, allowing the client to handle the situation appropriately
   (e.g., by removing the component).
 
 ### Changed
+- **JSON-based Calling Endpoint**: Component method calls now use a unified JSON-based HTTP endpoint at `/__tetra__/call/` 
+  instead of the previous component-specific URLs, providing a more consistent API structure.
 - Pickling/Unpickling now checks variables against a "safe list" of types.
 - rename Alpine store `tetra_status` to `tetraStatus`
 
