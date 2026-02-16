@@ -24,6 +24,9 @@ class MyComponent(Component):
     a_value:bool = True
 ```
 
+!!! note
+    Component attributes must be of types from the [safe types list](state-security.md#safe-types) or have a custom pickler registered. This security measure prevents arbitrary code execution. If you use an unsupported type, you'll receive a `StateException` during unpickling.
+
 As components are standard Python classes you can construct them with any number of methods. These are by default private, and only available on the server and to your template.
 
 ``` python

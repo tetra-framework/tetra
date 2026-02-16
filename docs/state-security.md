@@ -12,6 +12,47 @@ By using Pickle for the serialisation of the server state we are able to support
 
 It is essential that the Django `SECRET_KEY` is kept secure. It should never be checked into source controls, and ideally be stored securely by a secrets management system.
 
+## Security Safeguards
+
+To protect against potential security vulnerabilities, Tetra implements strict type checking during the unpickling process. Only types from a predefined "safe list" are allowed to be unpickled. This prevents arbitrary code execution even if an attacker manages to forge an encrypted state token.
+
+### Safe Types
+
+The following types are allowed by default:
+
+**Built-in types:**
+- Basic types: `str`, `int`, `float`, `bool`, `bytes`, `bytearray`, `complex`, `range`, `type`, `NoneType`
+- Collections: `list`, `dict`, `set`, `frozenset`, `tuple`
+- Utilities: `slice`, `object`, `Ellipsis`, `NotImplementedType`
+
+**Standard library types:**
+- `datetime`: `datetime`, `date`, `time`, `timedelta`, `timezone`
+- `decimal`: `Decimal`
+- `collections`: `OrderedDict`, `defaultdict`, `Counter`, `deque`
+- `pathlib`: `PurePath`, `PosixPath`, `WindowsPath`
+- `uuid`: `UUID`
+
+**Django types:**
+- `django.utils.safestring`: `SafeString`, `SafeData`, `SafeText`
+- Django models (automatically detected)
+- Django forms
+- Django QuerySets (handled via custom picklers)
+
+**Tetra types:**
+- All Tetra component classes
+- Custom types registered via the `@register_pickler` decorator
+
+### Custom Type Serialization
+
+If you need to serialize a type that is not in the safe list, you must register a custom pickler for it. See the implementation of `PickleModel`, `PickleQuerySet`, or `PickleFieldFile` in `src/tetra/state.py` for examples.
+
+!!! warning
+    If you attempt to use a variable type that is not in the safe list and doesn't have a custom pickler, you will receive a `StateException` during unpickling with a message like: `"Unpickling blocked: 'module.ClassName' is not in the allowed list."`
+
+    This is a security feature, not a bug. To resolve this, either:
+    1. Use a type that is already in the safe list
+    2. Register a custom pickler for your type using `@register_pickler`
+
 As this encrypted server state was generated after the component had been passed its arguments, and after any view based authentication, it holds onto that authentication when resumed later. It is, in effect, an authentication token allowing the user to continue from that state at a later point in time. It is also possible to do further authentication within the `load()` method, or any other public method.
 
 ## State optimizations

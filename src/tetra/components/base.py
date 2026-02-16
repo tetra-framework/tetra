@@ -47,8 +47,13 @@ from django.utils.functional import SimpleLazyObject
 from django.http import JsonResponse, HttpRequest, FileResponse, HttpResponse
 from django.urls import reverse
 from django.template.loaders.filesystem import Loader as FileSystemLoader
-
+from django.db import models
+from django.core.files.base import File
 from django.contrib.messages import get_messages
+
+from datetime import date, datetime, time
+from decimal import Decimal
+from enum import Enum
 from ..exceptions import ComponentError
 from ..middleware import TetraHttpRequest
 from ..utils import (
@@ -72,6 +77,12 @@ from .utils import get_next_autokey, reset_autokey_count
 thread_local = local()
 
 logger = logging.getLogger(__name__)
+
+# Types that should be preserved as-is during serialization
+SERIALIZABLE_TYPES = (
+    str, int, float, bool, list, dict, tuple, set, type(None),
+    date, datetime, time, Decimal, Enum, File, models.Model
+)
 
 
 def make_template(cls) -> Template:
@@ -873,13 +884,33 @@ class ComponentMetaClass(type):
                             hint = base.__annotations__[prop]
                             break
 
-                # Wrap the hint in Optional for UploadedFile
-                if hint is not Any and hint is not NoneType:
+                # Normalize the hint
+                if hint is not Any:
                     try:
-                        if hint is UploadedFile or (
-                            isinstance(hint, type) and issubclass(hint, UploadedFile)
+                        inner_hint = hint
+                        if get_origin(hint) is Union:
+                            args = get_args(hint)
+                            if NoneType in args:
+                                inner_hint = next(
+                                    (a for a in args if a is not NoneType), Any
+                                )
+
+                        if inner_hint is NoneType:
+                            # If it's just NoneType, it means we don't know the type,
+                            # so treat as Any.
+                            hint = Any
+                        elif isinstance(inner_hint, type) and issubclass(
+                            inner_hint, UploadedFile
                         ):
-                            hint = Optional[hint]
+                            # In ModelForm, FileFields might contain FieldFile (e.g. from instance)
+                            # which are not UploadedFile. So we allow Any here if it's not a new upload.
+                            hint = Any
+                        elif inner_hint is Any or (
+                            isinstance(inner_hint, type)
+                            and inner_hint.__module__ != "builtins"
+                            and not issubclass(inner_hint, (Enum, models.Model))
+                        ):
+                            hint = Any
                     except TypeError:
                         pass
 
@@ -1282,7 +1313,19 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         self._load_kwargs = kwargs
 
     def _data(self) -> dict[str, Any]:
-        return {key: getattr(self, key) for key in self._public_properties}
+        """
+        Returns a dictionary of public properties suitable for state validation.
+        Converts non-serializable objects (like PhoneNumber) to their string representation
+        for proper serialization and validation.
+        """
+        data = {}
+        for key in self._public_properties:
+            value = getattr(self, key)
+            # Convert non-serializable types to strings
+            if value is not None and not isinstance(value, SERIALIZABLE_TYPES):
+                value = str(value)
+            data[key] = value
+        return data
 
     def get_extra_tags(self) -> dict[str, str | None]:
         extra_tags = super().get_extra_tags()
@@ -1511,15 +1554,11 @@ def get_python_type_from_form_field(field, initial) -> type:
     # Fallback: try to infer from initial value
     if initial is not None:
         initial = field.to_python(initial)
-        return type(initial)
-    else:
-        # Infer type from field class
-        initial = field.to_python(initial or "")
-        if initial is not None:
-            if isinstance(initial, Enum):
-                return type(initial)
-            return type(initial)
-        return NoneType
+        python_type = type(initial)
+        if python_type.__module__ == "builtins":
+            return python_type
+        return Any
+    return Any
 
 
 class FormComponentMetaClass(ComponentMetaClass):

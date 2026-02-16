@@ -19,6 +19,9 @@ title: Changelog
 - Introduce `group_registry` for group validation and improve subscription handling
 - Introduce online status tracking
 
+### Changed
+- Pickling/Unpickling now checks variables against a "safe list" of types.
+
 ### Removed
 - Remove deprecated `@public.subscribe` decorator
 
