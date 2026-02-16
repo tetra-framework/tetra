@@ -27,8 +27,8 @@
       if (this.onlineStatusInitialized) return;
       this.onlineStatusInitialized = true;
       if (typeof Alpine !== "undefined") {
-        if (!Alpine.store("tetra_status")) {
-          Alpine.store("tetra_status", {
+        if (!Alpine.store("tetraStatus")) {
+          Alpine.store("tetraStatus", {
             online: true,
             lastActivity: Date.now(),
             update() {
@@ -47,7 +47,7 @@
     },
     updateOnlineStatus() {
       if (typeof Alpine !== "undefined") {
-        const store = Alpine.store("tetra_status");
+        const store = Alpine.store("tetraStatus");
         if (store) {
           store.update();
         }
@@ -78,7 +78,7 @@
     },
     setOfflineStatus() {
       if (typeof Alpine !== "undefined") {
-        const store = Alpine.store("tetra_status");
+        const store = Alpine.store("tetraStatus");
         if (store && store.online !== false) {
           store.online = false;
           document.dispatchEvent(new CustomEvent("tetra:websocket-disconnected"));

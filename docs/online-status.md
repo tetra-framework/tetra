@@ -5,14 +5,14 @@ title: Offline Mode
 
 Tetra includes a built-in system to track the "online" status of the client. This is particularly useful for reactive components that rely on a stable WebSocket connection.
 
-## The `tetra_status` Store
+## The `tetraStatus` Store
 
-Tetra automatically initializes an Alpine.js global store named `tetra_status` (unless it's already defined). You can use this store in your templates to react to connection changes.
+Tetra automatically initializes an Alpine.js global store named `tetraStatus` (unless it's already defined). You can use this store in your templates to react to connection changes.
 
 ### Properties
 
-*   `$store.tetra_status.online`: A boolean indicating if the client is currently considered "online".
-*   `$store.tetra_status.lastActivity`: A timestamp (in milliseconds) of the last successful communication with the server (WebSocket message received or HTTP request completed).
+*   `$store.tetraStatus.online`: A boolean indicating if the client is currently considered "online".
+*   `$store.tetraStatus.lastActivity`: A timestamp (in milliseconds) of the last successful communication with the server (WebSocket message received or HTTP request completed).
 
 ### Example Usage
 
@@ -21,7 +21,7 @@ You can use Alpine's `x-show` or `:class` to display connection status to your u
 ```html
 <!-- Display a badge when offline -->
 <div 
-    x-show="!$store.tetra_status.online" 
+    x-show="!$store.tetraStatus.online" 
     class="alert alert-warning" 
     x-cloak
 >
@@ -29,8 +29,8 @@ You can use Alpine's `x-show` or `:class` to display connection status to your u
 </div>
 
 <!-- Change status indicator color -->
-<div :class="$store.tetra_status.online ? 'text-success' : 'text-danger'">
-    ● <span x-text="$store.tetra_status.online ? 'Connected' : 'Disconnected'"></span>
+<div :class="$store.tetraStatus.online ? 'text-success' : 'text-danger'">
+    ● <span x-text="$store.tetraStatus.online ? 'Connected' : 'Disconnected'"></span>
 </div>
 ```
 

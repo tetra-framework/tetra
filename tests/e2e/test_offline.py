@@ -10,7 +10,7 @@ class OfflineTestComponent(Component):
     # language=html
     template = """
     <div id="status-component" tetra-reactive tetra-subscription="broadcast">
-        <div id="online-status" x-text="$store.tetra_status.online ? 'online' : 'offline'"></div>
+        <div id="online-status" x-text="$store.tetraStatus.online ? 'online' : 'offline'"></div>
         <div id="disconnected-event">no event</div>
         <script>
             document.addEventListener('tetra:websocket-disconnected', () => {
@@ -40,8 +40,8 @@ def test_offline_event_dispatched(page: Page, component_locator):
     # Force online status if WebSocket is not available
     page.evaluate(
         """
-        if (Alpine.store('tetra_status').online !== true) {
-            Alpine.store('tetra_status').online = true;
+        if (Alpine.store('tetraStatus').online !== true) {
+            Alpine.store('tetraStatus').online = true;
             if (Tetra.offlineTimeout) {
                 clearTimeout(Tetra.offlineTimeout);
             }
