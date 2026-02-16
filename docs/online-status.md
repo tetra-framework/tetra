@@ -21,7 +21,7 @@ You can use Alpine's `x-show` or `:class` to display connection status to your u
 ```html
 <!-- Display a badge when offline -->
 <div 
-    x-show="!$store.tetraStatus.online" 
+    x-show="!$store.tetraStatus?.online" 
     class="alert alert-warning" 
     x-cloak
 >
@@ -29,10 +29,12 @@ You can use Alpine's `x-show` or `:class` to display connection status to your u
 </div>
 
 <!-- Change status indicator color -->
-<div :class="$store.tetraStatus.online ? 'text-success' : 'text-danger'">
-    ● <span x-text="$store.tetraStatus.online ? 'Connected' : 'Disconnected'"></span>
+<div :class="$store.tetraStatus?.online ? 'text-success' : 'text-danger'">
+    ● <span x-text="$store.tetraStatus?.online ? 'Connected' : 'Disconnected'"></span>
 </div>
 ```
+Make sure you only use Alpine store variables within a `Component` and not elsewhere at the page, as it needs to have 
+the Alpine store initialized and accessible.
 
 ## How it Works
 
