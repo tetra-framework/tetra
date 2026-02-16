@@ -1245,9 +1245,12 @@ const Tetra = {
     component_state.args = args || [];
 
     // Get the unified endpoint URL from the first server method
-    const endpoint = component.__serverMethods && component.__serverMethods.length > 0
-      ? component.__serverMethods[0].endpoint
-      : '/tetra/call/';
+    // Note: _refresh is always added to server methods, so this should never be empty
+    if (!component.__serverMethods || component.__serverMethods.length === 0) {
+      console.error('No server methods available. Component may not be properly initialized.');
+      return Promise.reject(new Error('No server methods available'));
+    }
+    const endpoint = component.__serverMethods[0].endpoint;
 
     // Use passed componentMetadata or fall back to component property
     const metadata = componentMetadata || component.__componentMetadata;

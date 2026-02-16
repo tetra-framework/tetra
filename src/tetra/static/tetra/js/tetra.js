@@ -1034,7 +1034,11 @@
       const requestId = Math.random().toString(36).substring(2, 15);
       let component_state = Tetra.getStateWithChildren(component);
       component_state.args = args || [];
-      const endpoint = component.__serverMethods && component.__serverMethods.length > 0 ? component.__serverMethods[0].endpoint : "/tetra/call/";
+      if (!component.__serverMethods || component.__serverMethods.length === 0) {
+        console.error("No server methods available. Component may not be properly initialized.");
+        return Promise.reject(new Error("No server methods available"));
+      }
+      const endpoint = component.__serverMethods[0].endpoint;
       const metadata = componentMetadata || component.__componentMetadata;
       if (!metadata) debugger;
       const requestEnvelope = {
