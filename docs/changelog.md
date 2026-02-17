@@ -19,7 +19,7 @@ title: Changelog
 - Introduce `group_registry` for group validation and improve subscription handling
 - Introduce online status tracking
 - **Offline Queue System**: Automatic queueing and replay of component method calls when network is unavailable.
-- **Stale Component State Handling**: Components now gracefully handle cases where database objects they reference
+- **Stale Component State Handling**: Components now gracefully handle cases where database objects their reference
   have been deleted/changed by another client.
 
 ### Changed
