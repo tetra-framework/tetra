@@ -65,9 +65,10 @@ class ReactiveModel(models.Model):
     @classmethod
     def _handle_tetra_save(cls, sender, instance, created, **kwargs):
         """
-        Handle save event for Tetra model instances, updating the instance and collection channels.
+        Handle save event for Tetra model instances.
 
-        This is called both on `create` and `update`.
+        On create: notifies collection channel with component_created.
+        On update: notifies only instance channel with data_changed.
         """
         instance_channel = instance.get_tetra_instance_channel()
         collection_channel = sender.get_tetra_collection_channel()
@@ -85,17 +86,10 @@ class ReactiveModel(models.Model):
                         )
                     )
                 else:
-                    # On update: notify both instance channel AND collection channel
-                    # Instance channel: updates the specific component instance
+                    # On update: notify only instance channel
                     loop.create_task(
                         ComponentDispatcher.data_changed(
                             instance_channel, data, sender_id=sender_id
-                        )
-                    )
-                    # Collection channel: notifies list components to refresh
-                    loop.create_task(
-                        ComponentDispatcher.data_changed(
-                            collection_channel, data, sender_id=sender_id, update=True
                         )
                     )
         except RuntimeError:
@@ -105,14 +99,9 @@ class ReactiveModel(models.Model):
                     collection_channel, data=data, sender_id=sender_id
                 )
             else:
-                # On update: notify both instance channel AND collection channel
-                # Instance channel: updates the specific component instance
+                # On update: notify only instance channel
                 async_to_sync(ComponentDispatcher.data_changed)(
                     instance_channel, data, sender_id=sender_id
-                )
-                # Collection channel: notifies list components to refresh
-                async_to_sync(ComponentDispatcher.data_changed)(
-                    collection_channel, data, sender_id=sender_id, update=True
                 )
 
     @classmethod
