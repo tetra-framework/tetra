@@ -71,7 +71,18 @@ def render_styles(request):
 def render_scripts(request, csrf_token, messages=None):
     """Render Tetra JavaScript with WebSocket support detection"""
     websockets_supported = check_websocket_support()
-    has_reactive_components = apps.get_app_config("tetra").has_reactive_components
+
+    # Check if any of the actually used components are ReactiveComponents
+    try:
+        from tetra.components.reactive import ReactiveComponent
+        has_reactive_components = any(
+            issubclass(component, ReactiveComponent)
+            for component in request.tetra_components_used
+        )
+    except ImportError:
+        # ReactiveComponent not available (channels not installed)
+        has_reactive_components = False
+
     libs = list(set(component._library for component in request.tetra_components_used))
     if has_reactive_components:
         if not websockets_supported:
@@ -91,8 +102,7 @@ def render_scripts(request, csrf_token, messages=None):
             "messages": (
                 json.dumps(messages, cls=TetraJSONEncoder) if messages else None
             ),
-            # even if we support it - there are no reactive components in use,
-            # so disable support: it only generates overhead.
+            # Only enable websockets if reactive components are actually used on this page
             "use_websockets": has_reactive_components and websockets_supported,
         },
     )

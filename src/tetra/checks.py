@@ -3,18 +3,49 @@ from django.core.checks import Error, Warning, register, Tags
 from django.conf import settings
 
 
+def _has_reactive_components_defined():
+    """Check if any ReactiveComponent or ReactiveModel classes are defined in the project."""
+    try:
+        from tetra.components.reactive import ReactiveComponent
+        from tetra import Library
+
+        # Check all registered components
+        for app_name, libraries in Library.registry.items():
+            for lib_name, library in libraries.items():
+                if library and library.components:
+                    for component_cls in library.components.values():
+                        if issubclass(component_cls, ReactiveComponent):
+                            return True
+    except ImportError:
+        pass
+
+    try:
+        from tetra.models import ReactiveModel
+        from django.apps import apps
+
+        # Check all models
+        for model in apps.get_models():
+            if issubclass(model, ReactiveModel):
+                return True
+    except ImportError:
+        pass
+
+    return False
+
+
 @register(Tags.compatibility)
 def check_websocket_support(app_configs, **kwargs):
     """
     Check if WebSocket support is properly configured for Tetra reactive components.
 
     The checks are only executed if there is demand for websockets - if any app
-    declares a ReactiveComponent.
+    declares a ReactiveComponent or ReactiveModel.
     """
     errors = []
 
-    # Only check if reactive components are being used
-    if not apps.get_app_config("tetra").has_reactive_components:
+    # Check if reactive components or models are defined in the project
+    has_reactive_components = _has_reactive_components_defined()
+    if not has_reactive_components:
         return errors
 
     # Check if Channels is installed

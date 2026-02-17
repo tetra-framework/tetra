@@ -22,12 +22,11 @@ class ReactiveComponent(Component):
         """Initialize the reactive component."""
         super().__init_subclass__(**kwargs)
 
-        # set a global flag to indicate that reactive components are in use
+        # Check websocket support but don't set the global flag here
+        # The flag will be set when the component is actually rendered
         from ..utils import check_websocket_support
 
-        if check_websocket_support():
-            apps.get_app_config("tetra").has_reactive_components = True
-        else:
+        if not check_websocket_support():
             raise RuntimeError(
                 f"{cls.__name__} is a reactive component, but WebSockets are not supported. "
             )

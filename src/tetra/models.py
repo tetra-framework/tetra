@@ -217,11 +217,9 @@ def _reactivemodel_class_prepared(sender: type[ReactiveModel], **kwargs):
             f"Registered instance pattern '{instance_pattern.pattern}' for {sender.__name__}"
         )
 
-        # set a global flag to indicate that reactive components are in use
-        # this is necessary for the middleware to include the websocket scripts
-        if check_websocket_support():
-            apps.get_app_config("tetra").has_reactive_components = True
-        else:
+        # Check websocket support but don't set the global flag here
+        # The flag will be set when components using reactive models are actually rendered
+        if not check_websocket_support():
             raise RuntimeError(
                 f"{sender.__name__} is a ReactiveModel, but WebSockets are not supported. "
                 "Make sure you have installed the required packages (channels, channels_redis, daphne)."

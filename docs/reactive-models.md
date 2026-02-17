@@ -2,6 +2,9 @@
 
 Reactive models in Tetra provide a seamless way to synchronize your database changes with the client-side UI in real-time. By inheriting from `ReactiveModel`, your models automatically notify subscribed components whenever an instance is saved, created, or deleted.
 
+!!! info "WebSocket connections are established on-demand"
+    WebSocket connections are only established when a page **actually renders** a `ReactiveComponent`. If you have reactive models defined in your codebase but no reactive components are used on a particular page, no WebSocket connection will be initiated.
+
 ## Overview
 
 When a `ReactiveModel` is updated on the server:

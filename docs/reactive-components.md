@@ -14,6 +14,9 @@ To use reactive components, you need to install and configure Django Channels, R
 !!! note
     Tetra automatically detects whether Django Channels is installed and properly configured in your project. When WebSocket support is not available, Tetra logs a warning to your configured logging mechanism and proceeds without websockets functionality.
 
+!!! info "WebSocket connections are established on-demand"
+    WebSocket connections are only established when a page **actually renders** a `ReactiveComponent`. If you have reactive components defined in your codebase but don't use them on a particular page, no WebSocket connection will be initiated. This minimizes overhead on pages that don't require real-time updates.
+
 
 ## Creating reactive components
 To make a **component** reactive, inherit from `ReactiveComponent` instead of `Component`:
@@ -181,6 +184,7 @@ You can additionally use your own structure for group channels but try to be con
 
 ## Performance tips
 
+- **On-demand WebSockets**: WebSocket connections are only established when pages render `ReactiveComponent` instances. No reactive components on the page = no WebSocket overhead.
 - **Limit subscriptions**: Only subscribe to channels you actually need
 - **Use specific channels**: Avoid creating and sending to broad channels that generate too many events
 - **Clean up**: Unsubscribe when components are destroyed
