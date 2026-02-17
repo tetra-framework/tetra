@@ -14,7 +14,7 @@ title: Changelog
 
 
 
-## [0.8.6] – unrelased
+## [0.9.0] – 2026-02-17
 ### Added
 - Introduce `group_registry` for group validation and improve subscription handling
 - Introduce online status tracking
@@ -23,7 +23,7 @@ title: Changelog
   have been deleted/changed by another client.
 
 ### Changed
-- **JSON-based Calling Endpoint**: Component method calls now use a unified JSON-based HTTP endpoint at `/__tetra__/call/` 
+- **JSON-based internal Calling Endpoint**: Component method calls now use a unified JSON-based HTTP endpoint at `/__tetra__/call/` 
   instead of the previous component-specific URLs, providing a more consistent API structure.
 - Pickling/Unpickling now checks variables against a "safe list" of types.
 - rename Alpine store `tetra_status` to `tetraStatus`
