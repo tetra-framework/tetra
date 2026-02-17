@@ -12,9 +12,10 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.1] – unreleased
+## [0.9.1] – 2026-02-17
 ### Fixed
-- WebSocket connections are now only established when a page actually renders a ReactiveComponent, not just when such classes exist in the codebase. 
+- WebSocket connections are now only established when a page actually renders a ReactiveComponent, not just when such classes exist in the codebase.
+- When ReactiveModels change, they now only update the *instance* channel, not the * collection* channel.
 
 ## [0.9.0] – 2026-02-17
 ### Added
