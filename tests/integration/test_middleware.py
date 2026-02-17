@@ -176,8 +176,18 @@ def test_middleware_full_path_with_tetra_components(request_factory):
         content_type="text/html",
     )
 
+    # Create a simple test component class
+    class TestComponent(Component):
+        template = "<div></div>"
+
+    # Create a mock library for the component
+    mock_library = Mock()
+    mock_library.app_name = "test_app"
+    mock_library.name = "test_lib"
+    TestComponent._library = mock_library
+
     # Simulate that Tetra components were used
-    request.tetra_components_used = {Mock()}
+    request.tetra_components_used = {TestComponent}
     request.tetra_scripts_placeholder_string = b"<!-- tetra scripts placeholder123 -->"
     request.tetra_scripts_placeholder_include_alpine = False
     request.tetra_styles_placeholder_string = b"<!-- tetra styles placeholder456 -->"
