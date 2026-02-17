@@ -143,7 +143,8 @@ def _component_method(request) -> HttpResponse:
         return JsonResponse(response_data)
 
     logger.debug(
-        f"Calling component method {component.__class__.__name__}.{method_name}()"
+        f"Calling component method {component.__class__.__name__}.{method_name}() "
+        f"on component ID{component.component_id}"
     )
     return component._call_public_method(
         request, method_name, component_state["children"], *component_state["args"]
