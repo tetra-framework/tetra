@@ -1410,7 +1410,6 @@
       }
       const endpoint = component.__serverMethods[0].endpoint;
       const metadata = componentMetadata || component.__componentMetadata;
-      if (!metadata) debugger;
       const isBrowserOffline = !navigator.onLine;
       const isReactive = window.__tetra_useWebsockets && ((_a = component.$el) == null ? void 0 : _a.hasAttribute("tetra-reactive"));
       const isWebSocketOffline = isReactive && (!this.ws || this.ws.readyState !== WebSocket.OPEN);

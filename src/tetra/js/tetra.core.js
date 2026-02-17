@@ -1761,7 +1761,6 @@ const Tetra = {
 
     // Use passed componentMetadata or fall back to component property
     const metadata = componentMetadata || component.__componentMetadata;
-    if (!metadata) debugger
 
     // Check if we're offline
     // 1. Browser offline mode (DevTools or actual network)
