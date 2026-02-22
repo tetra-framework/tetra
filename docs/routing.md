@@ -156,6 +156,29 @@ This pattern provides better encapsulation - the parent doesn't need to know abo
 - `current_path`: (Public) The current URL path being handled by the router
 - `url_params`: (Public) Dict of URL parameters extracted from the current path
 
+### `Router` Class Methods
+
+#### `get_routes()`
+
+Class method that returns the list of `Route` objects defined for the router. As default, returns the Router class' `.routes` attribute.
+
+**Usage:**
+
+```python
+class AppRouter(Router):
+    routes = [
+        route("", Home, name="home"),
+        route("about/", About, name="about"),
+    ]
+
+# Get all routes programmatically
+for route_obj in AppRouter.get_routes():
+    print(route_obj.name, route_obj.pattern)
+```
+
+This method is useful when you need to introspect or programmatically access a router's configured routes, such as for debugging, documentation generation, or dynamic route manipulation.
+You can override the `get_routes()` method to return a special list of routes, e.g. from plugins. 
+
 ### Reversing Routes
 
 Tetra provides global `reverse()` and `reverse_lazy()` functions to generate URL paths from named routes, similar to Django's `reverse()` function. These work with Tetra's component routes and support namespaces.
