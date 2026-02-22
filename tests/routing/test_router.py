@@ -1,7 +1,7 @@
 import pytest
 from django.test import RequestFactory
 from tetra import Library
-from tetra.router import Component, Router, route, path, re_path, include
+from tetra.router import Component, Router, route, path, re_path, include, reverse, reverse_lazy, _route_registry
 from tetra.middleware import TetraDetails
 from tetra.tests.fixtures import add_session_to_request
 
@@ -58,12 +58,6 @@ class Sugar(Component):
             self.patient_id = int(patient_id)
 
 
-@library.register
-class ClassRouter(Router):
-    routes = {
-        "/": Home,
-        "/about/": About,
-    }
 
 
 @library.register
@@ -303,13 +297,6 @@ def test_nested_route_navigation():
     assert router.url_params["patient_id"] == "100"
 
 
-def test_legacy_dict_router_params():
-    """Test that legacy dict-based router can extract regex parameters."""
-    request = _get_request("/re/999/")
-    router = RouteBasedRouter(request)
-    html = router.render()
-    assert "About" in html
-    assert router.url_params == {"id": "999"}
 
 
 # ===== Delegated routing tests =====
@@ -335,3 +322,147 @@ def test_delegated_router_child_bp():
     assert router.current_component == "test_router.PatientRouter"
     # URL params from prefix matching are strings
     assert router.url_params == {"patient_id": "600"}
+
+
+# ===== Router.reverse() tests =====
+
+
+@library.register
+class NamedRoutesRouter(Router):
+    """Router with named routes for testing reverse()."""
+
+    routes = [
+        route("", Home, name="home"),
+        route("about/", About, name="about"),
+        route("patient/<int:patient_id>/", PatientView, name="patient-detail"),
+        route(
+            "patient/<int:patient_id>/",
+            PatientView,
+            name="patient-root",
+            children=[
+                route("bp/", BloodPressure, name="patient-bp"),
+                route("sugar/", Sugar, name="patient-sugar"),
+            ],
+        ),
+    ]
+
+
+def test_reverse_simple_route():
+    """Test reversing a simple named route without parameters."""
+    url = NamedRoutesRouter.reverse("home")
+    assert url == ""
+
+
+def test_reverse_simple_route_with_path():
+    """Test reversing a simple named route with a path."""
+    url = NamedRoutesRouter.reverse("about")
+    assert url == "about/"
+
+
+def test_reverse_route_with_params():
+    """Test reversing a route with URL parameters."""
+    url = NamedRoutesRouter.reverse("patient-detail", patient_id=123)
+    assert url == "patient/123/"
+
+
+def test_reverse_nonexistent_route():
+    """Test that reversing a nonexistent route raises ValueError."""
+    with pytest.raises(ValueError, match="Route 'nonexistent' not found"):
+        NamedRoutesRouter.reverse("nonexistent")
+
+
+def test_reverse_nested_child_route():
+    """Test reversing a nested child route."""
+    url = NamedRoutesRouter.reverse("patient-bp", patient_id=456)
+    # Should combine parent and child paths
+    assert "patient" in url and "bp" in url
+
+
+def test_reverse_lazy():
+    """Test that reverse_lazy returns a lazy object that evaluates correctly."""
+    lazy_url = NamedRoutesRouter.reverse_lazy("about")
+    # Lazy object should convert to string when needed
+    assert str(lazy_url) == "about/"
+
+
+def test_reverse_lazy_with_params():
+    """Test reverse_lazy with URL parameters."""
+    lazy_url = NamedRoutesRouter.reverse_lazy("patient-detail", patient_id=789)
+    assert str(lazy_url) == "patient/789/"
+
+
+# ===== Global route reversal tests =====
+
+
+@library.register
+class UserRouter(Router):
+    """Router with namespace for testing global reversal."""
+    namespace = "user"
+
+    routes = [
+        route("", Home, name="home"),
+        route("profile/<int:user_id>/", PatientView, name="profile"),
+    ]
+
+
+@library.register
+class AdminRouter(Router):
+    """Another router with namespace for testing global reversal."""
+    namespace = "admin"
+
+    routes = [
+        route("", Home, name="dashboard"),
+        route("users/", About, name="users"),
+    ]
+
+
+@library.register
+class NoNamespaceRouter(Router):
+    """Router without namespace for testing global reversal."""
+
+    routes = [
+        route("", Home, name="global-home"),
+        route("contact/", About, name="contact"),
+    ]
+
+
+def test_global_reverse_with_namespace():
+    """Test global reverse() with namespaced routes."""
+    url = reverse("user:profile", user_id=123)
+    assert url == "profile/123/"
+
+
+def test_global_reverse_without_namespace():
+    """Test global reverse() without namespace."""
+    url = reverse("global-home")
+    assert url == ""
+
+
+def test_global_reverse_contact():
+    """Test global reverse() for contact route."""
+    url = reverse("contact")
+    assert url == "contact/"
+
+
+def test_global_reverse_admin_namespace():
+    """Test global reverse() with admin namespace."""
+    url = reverse("admin:users")
+    assert url == "users/"
+
+
+def test_global_reverse_nonexistent():
+    """Test that global reverse() raises ValueError for nonexistent route."""
+    with pytest.raises(ValueError, match="Route 'nonexistent:route' not found"):
+        reverse("nonexistent:route")
+
+
+def test_global_reverse_lazy_with_namespace():
+    """Test global reverse_lazy() with namespace."""
+    lazy_url = reverse_lazy("user:home")
+    assert str(lazy_url) == ""
+
+
+def test_global_reverse_lazy_with_params():
+    """Test global reverse_lazy() with parameters."""
+    lazy_url = reverse_lazy("user:profile", user_id=456)
+    assert str(lazy_url) == "profile/456/"

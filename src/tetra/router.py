@@ -5,8 +5,131 @@ from dataclasses import dataclass, field
 from django.conf import settings
 from django.urls import path as django_path, re_path as django_re_path
 from django.urls.resolvers import RoutePattern, RegexPattern, URLPattern, URLResolver
+from django.utils.functional import lazy
 from sourcetypes import django_html
 from tetra import Component, public, BasicComponent
+
+
+# Global route registry
+class RouteRegistry:
+    """
+    Global registry for all Tetra routes across all Router components.
+
+    Allows route lookup by name with optional namespace, similar to Django's URL resolver.
+    """
+
+    def __init__(self):
+        self._routes: Dict[str, tuple[type["Router"], "Route"]] = {}
+
+    def register(
+        self,
+        router_class: type["Router"],
+        route_obj: "Route",
+        namespace: Optional[str] = None,
+    ):
+        """
+        Register a route with optional namespace.
+
+        Args:
+            router_class: The Router class that owns this route
+            route_obj: The Route object to register
+            namespace: Optional namespace (e.g., 'user', 'admin')
+        """
+        if not route_obj.name:
+            return  # Skip unnamed routes
+
+        # Build full name with namespace if provided
+        if namespace:
+            full_name = f"{namespace}:{route_obj.name}"
+        else:
+            full_name = route_obj.name
+
+        if full_name in self._routes:
+            existing_router, _ = self._routes[full_name]
+            # Only warn if it's a different router (allow re-registration from same router)
+            if existing_router != router_class:
+                import warnings
+
+                warnings.warn(
+                    f"Route name '{full_name}' is already registered by {existing_router.__name__}. "
+                    f"It will be overwritten by {router_class.__name__}.",
+                    stacklevel=2,
+                )
+
+        self._routes[full_name] = (router_class, route_obj)
+
+    def get(self, name: str) -> Optional[tuple[type["Router"], "Route"]]:
+        """Get a route by name (with optional namespace)."""
+        return self._routes.get(name)
+
+    def reverse(self, name: str, **kwargs) -> str:
+        """
+        Reverse a named route to a URL path.
+
+        Args:
+            name: Route name, optionally with namespace (e.g., 'user:profile')
+            **kwargs: URL parameters for the route
+
+        Returns:
+            The URL path for the named route
+
+        Raises:
+            ValueError: If the route name is not found
+        """
+        result = self.get(name)
+        if not result:
+            raise ValueError(f"Route '{name}' not found in global registry")
+
+        router_class, route_obj = result
+        # Use the router's reverse logic
+        return router_class._reverse_route(route_obj, **kwargs)
+
+    def reverse_lazy(self, name: str, **kwargs):
+        """Lazy version of reverse()."""
+        return lazy(self.reverse, str)(name, **kwargs)
+
+    def clear(self):
+        """Clear all registered routes (useful for testing)."""
+        self._routes.clear()
+
+
+# Global instance
+_route_registry = RouteRegistry()
+
+
+def reverse(name: str, **kwargs) -> str:
+    """
+    Global function to reverse a named Tetra route to a URL path.
+
+    Works like Django's reverse() but for Tetra component routes.
+    Supports namespaced routes (e.g., 'user:profile').
+
+    Args:
+        name: Route name, optionally with namespace (e.g., 'user:profile')
+        **kwargs: URL parameters for the route
+
+    Returns:
+        The URL path for the named route
+
+    Raises:
+        ValueError: If the route name is not found
+
+    Example:
+        url = reverse('user:profile', user_id=123)
+    """
+    return _route_registry.reverse(name, **kwargs)
+
+
+def reverse_lazy(name: str, **kwargs):
+    """
+    Lazy version of reverse() for Tetra routes.
+
+    Useful when you need to define URLs at import time.
+
+    Example:
+        SUCCESS_URL = reverse_lazy('home')
+    """
+    return _route_registry.reverse_lazy(name, **kwargs)
 
 
 def ensure_trailing_slash(path):
@@ -43,11 +166,13 @@ class Route:
             pattern = self.pattern.lstrip("/")
 
             # Detect if this is a regex pattern (contains regex special chars)
-            is_regex = bool(re.search(r'[\\()[\]{}?+*|^$.]', pattern))
+            is_regex = bool(re.search(r"[\\()[\]{}?+*|^$.]", pattern))
 
             if is_regex:
                 # Use regex pattern
-                self._url_pattern = django_re_path(pattern, lambda: None, name=self.name)
+                self._url_pattern = django_re_path(
+                    pattern, lambda: None, name=self.name
+                )
             else:
                 # Use RoutePattern (path-style) by default
                 self._url_pattern = django_path(pattern, lambda: None, name=self.name)
@@ -283,10 +408,137 @@ class Router(Component):
     """
 
     routes: List[Route] = []
+    namespace: Optional[str] = None  # Optional namespace for route registration
 
     current_component: str = public("")
     current_path: str = public("")
     url_params: dict[str, Any] = public({})
+
+    def __init_subclass__(cls, **kwargs):
+        """Auto-register routes when Router subclass is defined."""
+        super().__init_subclass__(**kwargs)
+        # Register all named routes in the global registry
+        cls._register_routes()
+
+    @classmethod
+    def get_routes(cls) -> List[Route]:
+        return cls.routes
+
+    @classmethod
+    def _register_routes(cls):
+        """Register all routes from this Router in the global registry."""
+        for route_obj in cls.get_routes():
+            _route_registry.register(cls, route_obj, namespace=cls.namespace)
+            # Also register nested children
+            if isinstance(route_obj, NestedRoute) and route_obj.children:
+                for child_route in route_obj.children:
+                    _route_registry.register(cls, child_route, namespace=cls.namespace)
+
+    @classmethod
+    def reverse(cls, name: str, **kwargs) -> str:
+        """
+        Reverse a named route to a URL path.
+
+        Args:
+            name: The name of the route to reverse
+            **kwargs: URL parameters for the route (e.g., patient_id=123)
+
+        Returns:
+            The URL path for the named route
+
+        Raises:
+            ValueError: If the route name is not found
+
+        Example:
+            class MyRouter(Router):
+                routes = [
+                    route('', Home, name='home'),
+                    route('patient/<int:id>/', PatientView, name='patient-detail'),
+                ]
+
+            # Reverse by name
+            url = MyRouter.reverse('patient-detail', id=123)
+            # Returns: 'patient/123/'
+        """
+        for route_obj in cls.routes:
+            if route_obj.name == name:
+                # Use Django's reverse logic on the pattern
+                if route_obj._url_pattern:
+                    try:
+                        # Django's URLPattern.reverse() or pattern.reverse()
+                        if hasattr(route_obj._url_pattern.pattern, "reverse"):
+                            path = route_obj._url_pattern.pattern.reverse(**kwargs)
+                        else:
+                            # Fallback: manually construct path for simple patterns
+                            path = str(route_obj._url_pattern.pattern)
+                            for key, value in kwargs.items():
+                                path = path.replace(f"<int:{key}>", str(value))
+                                path = path.replace(f"<str:{key}>", str(value))
+                                path = path.replace(f"<slug:{key}>", str(value))
+                                path = path.replace(f"<uuid:{key}>", str(value))
+                                path = path.replace(f"<path:{key}>", str(value))
+                        return path
+                    except Exception as e:
+                        raise ValueError(
+                            f"Could not reverse route '{name}' with kwargs {kwargs}: {e}"
+                        )
+            # Check nested routes recursively
+            if isinstance(route_obj, NestedRoute) and route_obj.children:
+                for child_route in route_obj.children:
+                    if child_route.name == name:
+                        # For nested routes, combine parent and child patterns
+                        parent_path = cls._reverse_route(route_obj, **kwargs)
+                        child_path = cls._reverse_route(child_route, **kwargs)
+                        return parent_path.rstrip("/") + "/" + child_path.lstrip("/")
+
+        raise ValueError(f"Route '{name}' not found in {cls.__name__}")
+
+    @classmethod
+    def _reverse_route(cls, route_obj: Route, **kwargs) -> str:
+        """Helper to reverse a single route object."""
+        if not route_obj._url_pattern:
+            return ""
+        try:
+            if hasattr(route_obj._url_pattern.pattern, "reverse"):
+                return route_obj._url_pattern.pattern.reverse(**kwargs)
+            else:
+                # Fallback: manually construct path
+                path = str(route_obj._url_pattern.pattern)
+                for key, value in kwargs.items():
+                    path = path.replace(f"<int:{key}>", str(value))
+                    path = path.replace(f"<str:{key}>", str(value))
+                    path = path.replace(f"<slug:{key}>", str(value))
+                    path = path.replace(f"<uuid:{key}>", str(value))
+                    path = path.replace(f"<path:{key}>", str(value))
+                return path
+        except Exception:
+            return ""
+
+    @classmethod
+    def reverse_lazy(cls, name: str, **kwargs):
+        """
+        Lazy version of reverse() that defers evaluation until the value is accessed.
+
+        This is useful when you need to provide a URL at import time, but the
+        route definitions may not be fully loaded yet.
+
+        Args:
+            name: The name of the route to reverse
+            **kwargs: URL parameters for the route (e.g., patient_id=123)
+
+        Returns:
+            A lazy object that evaluates to the URL path when accessed
+
+        Example:
+            class MyRouter(Router):
+                routes = [
+                    route('', Home, name='home'),
+                ]
+
+            # At import time
+            SUCCESS_URL = MyRouter.reverse_lazy('home')
+        """
+        return lazy(cls.reverse, str)(name, **kwargs)
 
     # Pass url_params to child components via context
     _extra_context = ["url_params"]

@@ -150,10 +150,122 @@ This pattern provides better encapsulation - the parent doesn't need to know abo
 
 ### `Router` Attributes
 
-- `routes`: List of Route objects or dict (legacy) mapping paths to components
+- `routes`: List of Route objects defining the URL patterns and components
+- `namespace`: Optional namespace for route registration (e.g., `"user"`, `"admin"`)
 - `current_component`: (Public) The name of the currently active component
 - `current_path`: (Public) The current URL path being handled by the router
 - `url_params`: (Public) Dict of URL parameters extracted from the current path
+
+### Reversing Routes
+
+Tetra provides global `reverse()` and `reverse_lazy()` functions to generate URL paths from named routes, similar to Django's `reverse()` function. These work with Tetra's component routes and support namespaces.
+
+#### Basic Usage
+
+```python
+from tetra.router import Router, route, reverse, reverse_lazy
+
+@library.register
+class AppRouter(Router):
+    routes = [
+        route("", Home, name="home"),
+        route("about/", About, name="about"),
+        route("patient/<int:patient_id>/", PatientView, name="patient-detail"),
+    ]
+
+# Global reverse by name
+home_url = reverse("home")  # Returns: ""
+about_url = reverse("about")  # Returns: "about/"
+patient_url = reverse("patient-detail", patient_id=123)  # Returns: "patient/123/"
+```
+
+#### Using Namespaces
+
+Routers can define a namespace to organize routes, similar to Django's URL namespaces:
+
+```python
+from tetra.router import Router, route, reverse
+
+@library.register
+class UserRouter(Router):
+    namespace = "user"  # Define namespace
+
+    routes = [
+        route("", UserHome, name="home"),
+        route("profile/<int:user_id>/", UserProfile, name="profile"),
+    ]
+
+@library.register
+class AdminRouter(Router):
+    namespace = "admin"
+
+    routes = [
+        route("", AdminDashboard, name="dashboard"),
+        route("users/", UserList, name="users"),
+    ]
+
+# Reverse with namespace
+user_profile = reverse("user:profile", user_id=123)  # Returns: "profile/123/"
+admin_dash = reverse("admin:dashboard")  # Returns: ""
+```
+
+#### Using in Components
+
+```python
+from tetra.router import reverse
+
+@library.register
+class MyComponent(Component):
+    @public
+    def redirect_to_patient(self, patient_id):
+        # Generate URL and navigate
+        url = reverse("user:profile", user_id=patient_id)
+        self.client._dispatch("tetra:navigate", {"path": f"/{url}"})
+```
+
+#### Lazy Evaluation
+
+Use `reverse_lazy()` when you need to define URLs at import time:
+
+```python
+from tetra.router import reverse_lazy
+
+# At import time - defers evaluation until accessed
+SUCCESS_URL = reverse_lazy("user:home")
+PROFILE_URL = reverse_lazy("user:profile", user_id=123)
+```
+
+#### Named Routes in Nested Routing
+
+Child routes in explicit nested routing can also be named and reversed:
+
+```python
+@library.register
+class AppRouter(Router):
+    namespace = "app"
+
+    routes = [
+        route("patient/<int:patient_id>/", PatientView, name="patient", children=[
+            route("bp/", BloodPressureView, name="patient-bp"),
+        ]),
+    ]
+
+# Reverse child route - combines parent and child patterns
+bp_url = reverse("app:patient-bp", patient_id=456)
+# Returns: "patient/456/bp/"
+```
+
+#### Router-Scoped Reverse (Alternative)
+
+Routers also provide class methods for reversing routes within that specific router:
+
+```python
+# Class method on specific router
+url = AppRouter.reverse("patient-detail", patient_id=123)
+lazy_url = AppRouter.reverse_lazy("home")
+```
+
+**Note:** Tetra routes are separate from Django's `urlpatterns`. Django's `reverse()` function cannot resolve Tetra routes. Use `tetra.router.reverse()` instead for component routing.
 
 ## `Link` Component
 
@@ -310,27 +422,6 @@ Tetra uses Django's URL pattern syntax for route-based routing:
 | `<uuid:id>` | `/item/550e8400-e29b-41d4-a716-446655440000/` | Matches UUIDs |
 | `<path:path>` | `/files/docs/readme.txt` | Matches paths (including slashes) |
 
-### Migration from Dict-based to Route-based
-
-**Before (dict-based):**
-```python
-routes = {
-    "/": Home,
-    "/about/": About,
-    "/user/(?P<id>\\d+)/": UserProfile,
-}
-```
-
-**After (route-based):**
-```python
-from tetra.router import route
-
-routes = [
-    route("", Home),
-    route("about/", About),
-    route("user/<int:id>/", UserProfile),
-]
-```
 
 ### Accessing Route Parameters
 
