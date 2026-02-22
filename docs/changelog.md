@@ -12,6 +12,11 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] – unreleased
+### Added
+- Implement nested routes with components
+
+
 ## [0.9.1] – 2026-02-17
 ### Fixed
 - WebSocket connections are now only established when a page actually renders a ReactiveComponent, not just when such classes exist in the codebase.

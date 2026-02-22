@@ -46,11 +46,13 @@ def inline_styles_tag(source) -> str:
 class TetraDetails:
     _url: str = ""
     _websockets_available: bool = False
+    _route_params: dict = {}
 
     # Based on HtmxDetails from htmx-django by adamchainz
     def __init__(self, request: HttpRequest) -> None:
         self.request = request
         self._url = self._get_header_value("T-Current-URL")
+        self._route_params = {}
 
     def _get_header_value(self, name: str) -> str | None:
         value = self.request.headers.get(name) or None
@@ -144,6 +146,46 @@ class TetraDetails:
             and split.netloc == self.request.get_host()
         ):
             self._url = str(urlunsplit(split._replace(path=path)))
+            # Invalidate cached properties that depend on URL
+            if hasattr(self, 'current_url_path'):
+                delattr(self, 'current_url_path')
+            if hasattr(self, 'current_url_full_path'):
+                delattr(self, 'current_url_full_path')
+            if hasattr(self, 'current_url'):
+                delattr(self, 'current_url')
+
+    @property
+    def route_params(self) -> dict:
+        """Returns URL path parameters extracted from the current route.
+
+        Similar to Vue Router's $route.params.
+        These are NOT query parameters (use url_query_params for that).
+
+        Route parameters are extracted from URL patterns like "/patient/<int:id>/".
+        They are set by Router components when navigating.
+
+        Example:
+            Route pattern: "patient/<int:patient_id>/bp/"
+            Browser URL: "/patient/123/bp/"
+            route_params returns: {"patient_id": "123"}
+
+        Usage in components:
+            patient_id = self.request.tetra.route_params.get('patient_id')
+
+        Returns:
+            Dict of route parameters (read-only copy)
+        """
+        return self._route_params.copy()
+
+    def set_route_params(self, params: dict) -> None:
+        """Store route parameters extracted by Router component.
+
+        Called by Router.navigate() after matching a route.
+
+        Args:
+            params: Dict of URL path parameters extracted from route matching
+        """
+        self._route_params = params.copy() if params else {}
 
     def set_url(self, url: str) -> None:
         """Set new internal URL.
