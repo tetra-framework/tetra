@@ -111,7 +111,7 @@ These are made available as `attrs` in the component's template, the [attribute 
 
 ## Passing Context
 
-By default, outer template context is not passed down to the component's template when rendering; this is to optimise the size of the saved component state. You can explicitly pass context to a component with the `context:` label, followed by a space-separated list of either variable names or `key=value` pairs, where the "key" will be the new name for a context var, and the value either a variable name or a literal.
+By default, outer template context is not passed down to the component's template when rendering. You can explicitly pass context to a component with the `context:` label, followed by a space-separated list of either variable names or `key=value` pairs, where the "key" will be the new name for a context var, and the value either a variable name or a literal.
 
 ``` django
 {% MyComponent context: a_context_var something=old_name another="a string" / %}
@@ -123,12 +123,12 @@ It is also possible to explicitly pass all template context to a component with 
 {% MyComponent context: __all__ / %}
 ```
 
-!!! warning
-    This should be used sparingly as the whole template context will be saved with the component's saved (encrypted) state, and sent to the client, see [state security](state-security.md).
+!!! note
+    Context is **never saved with the state**, and is only available during rendering on the server. This is to optimise the size of the saved component state, and to prevent sensitive data from being sent to the client.
 
 In general, if the value is something that is needed for the component to function (and be available to methods or be "public") it should be generally passed as an *argument* [(see above)](#passing-arguments). Passing context is ideal for composing your components with inner content passed down from an outer template (see [passing slots](slots.md)).
 
-When context is passed using the `_extra_context` class attribute, you can always override these variables in the component tag:
+When context is passed using the [_extra_context](components.md#extra-context) class attribute, you can always override these variables in the component tag:
 
 ``` django
 {{ var }} {# this is "5" #}

@@ -353,6 +353,8 @@ class StateUnpickler(pickle.Unpickler):
     }
 
     # Whitelist of safe module.class combinations
+    # - If a module maps to a set of class names, only those classes are allowed
+    # - If a module maps to an empty set, ALL classes from that module (and submodules) are allowed
     SAFE_MODULES = {
         "datetime": {"datetime", "date", "time", "timedelta", "timezone"},
         "decimal": {"Decimal"},
@@ -360,6 +362,8 @@ class StateUnpickler(pickle.Unpickler):
         "pathlib": {"PurePath", "PosixPath", "WindowsPath"},
         "uuid": {"UUID"},
         "django.utils.safestring": {"SafeString", "SafeData", "SafeText"},
+        "django.template": (),
+        "tetra.templates": (),
         "itertools": {"islice", "chain", "cycle", "repeat", "count"},
     }
 
@@ -380,13 +384,30 @@ class StateUnpickler(pickle.Unpickler):
             raise StateException(f"Unpickling blocked: unsafe builtin '{name}'")
 
         # Check module whitelist
+        # First check for exact module match
         if module in self.SAFE_MODULES:
-            if name in self.SAFE_MODULES[module]:
-                mod = __import__(module, fromlist=[name])
-                return getattr(mod, name)
-            raise StateException(
-                f"Unpickling blocked: '{module}.{name}' not in safe list"
-            )
+            allowed_classes = self.SAFE_MODULES[module]
+            # Empty set means all classes from this module are allowed
+            if not allowed_classes or name in allowed_classes:
+                try:
+                    mod = __import__(module, fromlist=[name])
+                    return getattr(mod, name)
+                except (ImportError, AttributeError):
+                    pass
+            if allowed_classes:  # Only raise if it's a specific whitelist
+                raise StateException(
+                    f"Unpickling blocked: '{module}.{name}' not in safe list"
+                )
+
+        # Check for module prefix matches (e.g., "django.template" matches "django.template.loader_tags")
+        for safe_module, allowed_classes in self.SAFE_MODULES.items():
+            if not allowed_classes and module.startswith(safe_module + "."):
+                # Empty set means all classes from this module tree are allowed
+                try:
+                    mod = __import__(module, fromlist=[name])
+                    return getattr(mod, name)
+                except (ImportError, AttributeError):
+                    pass
 
         # Allow types module for basic types
         if module == "types":

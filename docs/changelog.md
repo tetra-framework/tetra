@@ -17,6 +17,9 @@ title: Changelog
 - Implement nested routes with components
 - Allow BasicComponents to include simple JavaScript (without Alpine/state access)
 
+### Changed
+- **Breaking change**: Exclude context from saved component state per default
+
 ## [0.9.1] – 2026-02-17
 ### Fixed
 - WebSocket connections are now only established when a page actually renders a ReactiveComponent, not just when such classes exist in the codebase.

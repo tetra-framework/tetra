@@ -1008,6 +1008,7 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         "__abstract__",
         "_temp_files",
         "_is_directory_component",
+        "_context",
     ]
     _excluded_load_props_from_saved_state: list[str] = []
     _loaded_children_state = None
@@ -1423,12 +1424,30 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         state = self.__dict__.copy()
         if "renderer" in state:
             del state["renderer"]
-        for prop_name in (
-            self._excluded_props_from_saved_state
-            + self._excluded_load_props_from_saved_state
-        ):
-            if prop_name in state:
-                del state[prop_name]
+
+        # Access class attribute directly to avoid instance attribute shadowing
+        # Collect exclusions from the entire class hierarchy
+        excluded_props = []
+        for cls in self.__class__.__mro__:
+            if hasattr(cls, '_excluded_props_from_saved_state'):
+                # Get the class attribute, not instance attribute
+                excluded_props.extend(
+                    getattr(cls, '_excluded_props_from_saved_state', [])
+                )
+
+        # Also include instance-specific exclusions
+        excluded_props.extend(
+            getattr(self, '_excluded_load_props_from_saved_state', [])
+        )
+
+        # Remove duplicates while preserving order
+        seen = set()
+        for prop_name in excluded_props:
+            if prop_name not in seen:
+                seen.add(prop_name)
+                if prop_name in state:
+                    del state[prop_name]
+
         return state
 
     def _render_data(self) -> dict[str, Any]:

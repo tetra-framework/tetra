@@ -2,8 +2,8 @@ from utils.base_utils import extract_component_tag
 from tetra.helpers import render_component_tag
 
 
-def test_use_extra_context_not_scoped(tetra_request):
-    """Component may not display outer context vars, if not explicitly included."""
+def test_use_extra_context_not_scoped_must_be_ignored(tetra_request):
+    """Outer context vars are not available by default in slots for rendering"""
     content = render_component_tag(
         tetra_request,
         component_string="{% SimpleComponentWithDefaultBlock %}"
@@ -11,6 +11,7 @@ def test_use_extra_context_not_scoped(tetra_request):
         "{% /SimpleComponentWithDefaultBlock %}",
         context={"foo": "bar"},  # global, outer context
     )
+    # Context is not available in slots by default
     assert extract_component_tag(content).text == ""
 
 
@@ -34,8 +35,7 @@ def test_use_extra_context_empty(tetra_request):
         tetra_request,
         component_string="{% SimpleComponentWithFooContext %}"
         "{{foo}}"
-        "{% /SimpleComponentWithFooContext %}",  # FIXME:KeyError(key)
-        # context={"foo": "bar"},  # global, outer context
+        "{% /SimpleComponentWithFooContext %}",
     )
     assert extract_component_tag(content).text == ""
 
