@@ -644,7 +644,7 @@ class Link(Component):
     template: django_html = """
     <a {% ... attrs %}
        href="{{ to }}"
-       @click.prevent="click()"
+       @click.prevent="follow()"
        :class="{ '{{ active_class }}': window.location.pathname === '{{ to }}' }"
     >
         {% slot default %}{% endslot %}
@@ -656,7 +656,7 @@ class Link(Component):
         self.active_class = active_class
 
     @public(update=False)
-    def click(self):
+    def follow(self):
         self.client._dispatch("tetra:navigate", {"path": self.to})
 
 
