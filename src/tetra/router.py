@@ -367,7 +367,7 @@ def re_path(
         **kwargs: Additional keyword arguments passed to the component
 
     Examples:
-        re_path(r'^patient/(?P<id>\d+)/$', PatientView)
+        re_path(r'^patient/(?P<id>\\d+)/$', PatientView)
     """
     django_pattern = django_re_path(pattern, lambda: None, name=name)
     if routes:
