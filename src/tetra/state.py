@@ -203,6 +203,7 @@ class PickleNamedTemporaryUploadedFile(Pickler):
 
 @register_pickler(BlockNode, b"BlockNode")
 class PickleBlockNode(Pickler):
+    @staticmethod
     def pickle(obj: Origin) -> bytes | None:
         origin = getattr(obj, "origin", None)
         if isinstance(origin, InlineOrigin) and hasattr(obj, "_path_key"):
@@ -223,6 +224,7 @@ class PickleBlockNode(Pickler):
             )
         return None
 
+    @staticmethod
     def unpickle(bs: bytes) -> Origin:
         data = pickle.loads(bs)
         if "loader_name" in data:
