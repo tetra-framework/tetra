@@ -15,7 +15,7 @@ title: Changelog
 ## [0.9.2] – unreleased
 ### Added
 - Implement nested routes with components
-
+- Allow BasicComponents to include simple JavaScript (without Alpine/state access)
 
 ## [0.9.1] – 2026-02-17
 ### Fixed

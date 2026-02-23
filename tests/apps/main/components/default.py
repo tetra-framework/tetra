@@ -11,6 +11,11 @@ class SimpleBasicComponentWithCSS(BasicComponent):
     style: css = ".text-red { color: red; }"
 
 
+class SimpleBasicComponentWithJS(BasicComponent):
+    template: django_html = "<div id='component'><button onclick='testFunction()'>Click</button></div>"
+    script = "function testFunction() { console.log('BasicComponent JS works!'); }"
+
+
 class SimpleComponentWithDefaultBlock(BasicComponent):
     template: django_html = "<div id='component'>{% slot default %}{% endslot %}</div>"
 

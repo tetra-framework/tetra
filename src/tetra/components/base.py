@@ -344,6 +344,7 @@ class ComponentRenderer(BaseRenderer):
 class BasicComponent:
     __abstract__ = True
     style: str = ""
+    script: Optional[str] = None
     component_id: Optional[str] = None
     _is_resumed_from_state = False
     _is_directory_component: bool = False
@@ -500,12 +501,47 @@ class BasicComponent:
 
     @classmethod
     def has_script(cls) -> bool:
-        return False
+        """Returns True if the component has a javascript script defined in the class or a file
+        in the component directory."""
+        if cls.script:
+            return True
+        else:
+            return os.path.exists(cls._get_component_file_path_with_extension("js"))
+
+    @classmethod
+    def _is_script_inline(cls) -> bool:
+        """Returns True if the component has a JavaScript script declared inline."""
+        return bool(cls.script)
+
+    @classmethod
+    def extract_script(cls) -> str:
+        """Returns the JavaScript code from the component's inline script or external .js file."""
+        if cls._is_script_inline():
+            source_filename, comp_start_line, source_len = cls.get_source_location()
+            with open(source_filename, "r") as f:
+                py_source = f.read()
+            comp_start_offset = len("\n".join(py_source.split("\n")[:comp_start_line]))
+            start = py_source.index(cls.script, comp_start_offset)
+            before = py_source[:start]
+            before = re.sub(r"\S", " ", before)
+            return f"{before}{cls.script}"
+        else:
+            return cls._read_component_file_with_extension("js")
 
     @classmethod
     def render_script(cls, component_var=None) -> str:
-        """In BasicComponent, always returns an empty string."""
-        return ""
+        """Returns the raw JavaScript code for BasicComponent.
+
+        Unlike Component, BasicComponent returns raw JS without Alpine.js component registration.
+        This allows BasicComponents to include utility scripts in the bundle without the overhead
+        of full component state management.
+        """
+        if component_var:
+            return component_var
+        elif cls.has_script():
+            return cls.extract_script()
+        else:
+            return ""
 
     @classmethod
     def has_styles(cls) -> bool:
