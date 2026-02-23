@@ -112,6 +112,7 @@ def _component_method(request) -> HttpResponse:
     request.tetra_components_used.add(Component)
 
     try:
+        logger.debug(f"Decoding component state for '{Component.__name__}'")
         component = Component.from_state(component_state, request)
     except StateException as e:
         # Re-raise with component name for better debugging
