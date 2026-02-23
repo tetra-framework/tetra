@@ -20,6 +20,9 @@ title: Changelog
 ### Changed
 - **Breaking change**: Exclude context from saved component state per default
 
+### Fixed
+- Fix order of finding html templates, css, js files of components when base classes are involved
+
 ## [0.9.1] – 2026-02-17
 ### Fixed
 - WebSocket connections are now only established when a page actually renders a ReactiveComponent, not just when such classes exist in the codebase.

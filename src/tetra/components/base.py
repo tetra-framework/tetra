@@ -100,6 +100,43 @@ SERIALIZABLE_TYPES = (
 )
 
 
+def _has_own_attribute(cls, attr_name: str) -> bool:
+    """Check if a class has its own attribute (not inherited from base classes).
+
+    Args:
+        cls: The class to check
+        attr_name: The attribute name to look for
+
+    Returns:
+        True if the class defines the attribute itself with a non-empty value,
+        False if inherited, not present, or empty
+    """
+    # First check if it's directly in the class's __dict__
+    if attr_name in cls.__dict__:
+        attr_value = cls.__dict__[attr_name]
+        # Only return True if the value is non-empty (not None, not empty string)
+        if attr_value:
+            return True
+        # If empty, continue to check parents
+        return False
+
+    # If not in __dict__, check if it exists and differs from all parents
+    if hasattr(cls, attr_name):
+        attr_value = getattr(cls, attr_name, None)
+        if attr_value:  # Only check if not empty/None
+            # Check if this is the same as any parent's attribute (inherited)
+            for parent in cls.__mro__[1:]:
+                if (
+                    hasattr(parent, attr_name)
+                    and getattr(parent, attr_name, None) == attr_value
+                ):
+                    # Found in parent with same value, so it's inherited
+                    return False
+            # Not found in parents with same value, so it's defined in this class
+            return True
+    return False
+
+
 def make_template(cls) -> Template:
     """Create a template from a component class.
 
@@ -120,8 +157,19 @@ def make_template(cls) -> Template:
             )
         return "{% load tetra %}" + source
 
-    # if only "template" is defined, use it as inline template string.
-    if hasattr(cls, "template"):
+    # Check if template is defined in this class (not inherited)
+    has_own_template = _has_own_attribute(cls, "template")
+
+    # For templates, we also need to check if there's an inherited template from parent
+    has_inherited_template = False
+    if not has_own_template and hasattr(cls, "template") and cls.template:
+        # Check if any parent has a template
+        for parent in cls.__mro__[1:]:
+            if _has_own_attribute(parent, "template"):
+                has_inherited_template = True
+                break
+
+    if has_own_template or has_inherited_template:
         if not cls.template:
             raise ComponentError(f"Component '{cls.__name__}' has an empty template.")
         making_lazy_after_exception = False
@@ -503,21 +551,59 @@ class BasicComponent:
     @classmethod
     def has_script(cls) -> bool:
         """Returns True if the component has a javascript script defined in the class or a file
-        in the component directory."""
-        if cls.script:
+        in the component directory.
+
+        Follows discovery rules:
+        1. Check current class for inline script (takes precedence)
+        2. Check current class for external JS file
+        3. Check base classes for inline script
+        4. Check base classes for external JS file
+        """
+        # Check current class first (inline takes precedence)
+        if _has_own_attribute(cls, "script"):
             return True
-        else:
-            return os.path.exists(cls._get_component_file_path_with_extension("js"))
+        # Check current class for external file
+        if os.path.exists(cls._get_component_file_path_with_extension("js")):
+            return True
+        # Check base classes
+        for base in cls.__mro__[1:]:
+            if hasattr(base, "has_script") and base is not BasicComponent:
+                if base.has_script():
+                    return True
+        return False
 
     @classmethod
     def _is_script_inline(cls) -> bool:
-        """Returns True if the component has a JavaScript script declared inline."""
-        return bool(cls.script)
+        """Returns True if the component has inline JavaScript script.
+
+        Follows discovery rules:
+        1. Check current class for inline script (takes precedence)
+        2. Check base classes for inline script
+        """
+        # Check current class first
+        if _has_own_attribute(cls, "script"):
+            return True
+        # Check base classes
+        for base in cls.__mro__[1:]:
+            if hasattr(base, "_is_script_inline") and base is not BasicComponent:
+                if base._is_script_inline():
+                    return True
+        return False
 
     @classmethod
     def extract_script(cls) -> str:
-        """Returns the JavaScript code from the component's inline script or external .js file."""
-        if cls._is_script_inline():
+        """Returns the JavaScript code extracted from either inline or external sources.
+
+        Follows discovery rules:
+        1. If current class has inline script, use it
+        2. If current class has external JS file, use it
+        3. Check base classes with same rules
+
+        Returns:
+            The JavaScript code as a string
+        """
+        # Check current class for inline script (takes precedence)
+        if _has_own_attribute(cls, "script"):
             source_filename, comp_start_line, source_len = cls.get_source_location()
             with open(source_filename, "r") as f:
                 py_source = f.read()
@@ -526,8 +612,17 @@ class BasicComponent:
             before = py_source[:start]
             before = re.sub(r"\S", " ", before)
             return f"{before}{cls.script}"
-        else:
+        # Check current class for external file
+        js_file = cls._get_component_file_path_with_extension("js")
+        if os.path.exists(js_file):
             return cls._read_component_file_with_extension("js")
+        # Check base classes
+        for base in cls.__mro__[1:]:
+            if hasattr(base, "extract_script") and base is not BasicComponent:
+                script = base.extract_script()
+                if script:
+                    return script
+        return ""
 
     @classmethod
     def render_script(cls, component_var=None) -> str:
@@ -547,27 +642,59 @@ class BasicComponent:
     @classmethod
     def has_styles(cls) -> bool:
         """Returns True if the component has a css style defined in the class or a file
-        in the component directory."""
-        if cls.style:
+        in the component directory.
+
+        Follows discovery rules:
+        1. Check current class for inline style (takes precedence)
+        2. Check current class for external CSS file
+        3. Check base classes for inline style
+        4. Check base classes for external CSS file
+        """
+        # Check current class first (inline takes precedence)
+        if _has_own_attribute(cls, "style"):
             return True
-        else:
-            return os.path.exists(cls._get_component_file_path_with_extension("css"))
+        # Check current class for external file
+        if os.path.exists(cls._get_component_file_path_with_extension("css")):
+            return True
+        # Check base classes
+        for base in cls.__mro__[1:]:
+            if hasattr(base, "has_styles") and base is not BasicComponent:
+                if base.has_styles():
+                    return True
+        return False
 
     @classmethod
     def _is_styles_inline(cls) -> bool:
-        return bool(cls.style)
+        """Returns True if the component has inline CSS style.
+
+        Follows discovery rules:
+        1. Check current class for inline style (takes precedence)
+        2. Check base classes for inline style
+        """
+        # Check current class first
+        if _has_own_attribute(cls, "style"):
+            return True
+        # Check base classes
+        for base in cls.__mro__[1:]:
+            if hasattr(base, "_is_styles_inline") and base is not BasicComponent:
+                if base._is_styles_inline():
+                    return True
+        return False
 
     @classmethod
     def extract_styles(cls) -> str:
-        """Returns the filename and whether the style was found in the component's source code.
+        """Returns the CSS styles extracted from either inline or external sources.
+
+        Follows discovery rules:
+        1. If current class has inline style, use it
+        2. If current class has external CSS file, use it
+        3. Check base classes with same rules
 
         Returns:
-            filename: str
-            found: bool
+            The CSS code as a string
         """
-        # check if we have a style defined in the class, otherwise check if there is
-        # a file in the component directory
-        if cls._is_styles_inline():
+        # Check current class for inline style (takes precedence)
+        if _has_own_attribute(cls, "style"):
             source_filename, comp_start_line, source_len = cls.get_source_location()
             with open(source_filename, "r") as f:
                 py_source = f.read()
@@ -576,8 +703,17 @@ class BasicComponent:
             before = py_source[:start]
             before = re.sub(r"\S", " ", before)
             return f"{before}{cls.style}"
-        else:
+        # Check current class for external file
+        css_file = cls._get_component_file_path_with_extension("css")
+        if os.path.exists(css_file):
             return cls._read_component_file_with_extension("css")
+        # Check base classes
+        for base in cls.__mro__[1:]:
+            if hasattr(base, "extract_styles") and base is not BasicComponent:
+                styles = base.extract_styles()
+                if styles:
+                    return styles
+        return ""
 
     @classmethod
     def render_styles(cls) -> str:
@@ -1250,48 +1386,80 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
 
     @classmethod
     def has_script(cls) -> bool:
-        """Returns True if the component has a javascript script part, else False."""
+        """Returns True if the component has a javascript script part, else False.
 
-        # First check if the script is defined in the class, otherwise check if there
-        # is a file in the component directory
-        if cls.script:
+        Follows discovery rules:
+        1. Check current class for inline script (takes precedence)
+        2. Check current class for external JS file
+        3. Check base classes for inline script
+        4. Check base classes for external JS file
+        """
+        # Check current class first (inline takes precedence)
+        if _has_own_attribute(cls, "script"):
             return True
-        else:
-            return os.path.exists(cls._get_component_file_path_with_extension("js"))
+        # Check current class for external file
+        if os.path.exists(cls._get_component_file_path_with_extension("js")):
+            return True
+        # Check base classes
+        for base in cls.__mro__[1:]:
+            if hasattr(base, "has_script") and base not in (Component, BasicComponent):
+                if base.has_script():
+                    return True
+        return False
 
     @classmethod
     def _is_script_inline(cls) -> bool:
-        """Returns True if the component has a JavaScript script,
-        and this script is declared inline.
+        """Returns True if the component has inline JavaScript script.
 
-        If the component has a script file AND an inline script, the inline script
-        takes precedence, and True is returned."""
-        return bool(cls.script)
+        Follows discovery rules:
+        1. Check current class for inline script (takes precedence)
+        2. Check base classes for inline script
+        """
+        # Check current class first
+        if _has_own_attribute(cls, "script"):
+            return True
+        # Check base classes
+        for base in cls.__mro__[1:]:
+            if hasattr(base, "_is_script_inline") and base not in (Component, BasicComponent):
+                if base._is_script_inline():
+                    return True
+        return False
 
     @classmethod
     def extract_script(cls) -> str:
         """This method extracts the component's JavaScript, from wherever it finds
         it, and returns it.
 
+        Follows discovery rules:
+        1. If current class has inline script, use it
+        2. If current class has external JS file, use it
+        3. Check base classes with same rules
+
         Returns:
             The JavaScript code as a string, extracted from either the inline
                 script property or an external .js file.
         """
-        if cls._is_script_inline():
+        # Check current class for inline script (takes precedence)
+        if _has_own_attribute(cls, "script"):
             source_filename, comp_start_line, source_len = cls.get_source_location()
             with open(source_filename, "r") as f:
                 py_source = f.read()
             comp_start_offset = len("\n".join(py_source.split("\n")[:comp_start_line]))
-            try:
-                start = py_source.index(cls.script, comp_start_offset)
-                before = py_source[:start]
-                before = re.sub(r"\S", " ", before)
-                return f"{before}{cls.script}"
-            except ValueError:
-                return ""
-        else:
-            # Find script in the component's directory
+            start = py_source.index(cls.script, comp_start_offset)
+            before = py_source[:start]
+            before = re.sub(r"\S", " ", before)
+            return f"{before}{cls.script}"
+        # Check current class for external file
+        js_file = cls._get_component_file_path_with_extension("js")
+        if os.path.exists(js_file):
             return cls._read_component_file_with_extension("js")
+        # Check base classes
+        for base in cls.__mro__[1:]:
+            if hasattr(base, "extract_script") and base not in (Component, BasicComponent):
+                script = base.extract_script()
+                if script:
+                    return script
+        return ""
 
     @classmethod
     def render_script(cls, component_var=None) -> str:
