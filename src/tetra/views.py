@@ -12,6 +12,7 @@ from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from . import Library
 from .utils import from_json, NamedTemporaryFileUploadHandler, request_id
 from .exceptions import StaleComponentStateError
+from .state import StateException
 
 
 logger = logging.getLogger(__name__)
@@ -112,6 +113,11 @@ def _component_method(request) -> HttpResponse:
 
     try:
         component = Component.from_state(component_state, request)
+    except StateException as e:
+        # Re-raise with component name for better debugging
+        raise StateException(
+            f"Failed to decode state for component '{Component.__name__}': {e}"
+        )
     except StaleComponentStateError as e:
         # Component state references data that no longer exists
         logger.warning(f"Stale component state detected for {component_name}: {e}")

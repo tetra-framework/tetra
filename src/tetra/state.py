@@ -647,10 +647,8 @@ def decode_component(state_token: str, request: HttpRequest) -> "Component":
         )
 
     # Decompress and unpickle
-    try:
-        pickled_state = gzip.decompress(compressed_state)
-        component: Component = unpickle_state(pickled_state)
-    except Exception as e:
-        raise StateException(f"Failed to decode state: {e}")
+    pickled_state = gzip.decompress(compressed_state)
+    # raises StateException if unpickling did not work:
+    component: Component = unpickle_state(pickled_state)
 
     return component
