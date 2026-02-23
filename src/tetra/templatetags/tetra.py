@@ -321,7 +321,7 @@ class ComponentNode(template.Node):
                 if k in context:
                     ctx[k] = context[k]
                 else:
-                    # this variable is nnot in context!
+                    # this variable is not in context!
                     logger.warning(
                         f"Component {self} uses '{k}' in _extra_context, "
                         f"but it is not available in current context."

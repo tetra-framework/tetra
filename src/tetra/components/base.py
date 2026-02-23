@@ -1432,15 +1432,15 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         # Collect exclusions from the entire class hierarchy
         excluded_props = []
         for cls in self.__class__.__mro__:
-            if hasattr(cls, '_excluded_props_from_saved_state'):
+            if hasattr(cls, "_excluded_props_from_saved_state"):
                 # Get the class attribute, not instance attribute
                 excluded_props.extend(
-                    getattr(cls, '_excluded_props_from_saved_state', [])
+                    getattr(cls, "_excluded_props_from_saved_state", [])
                 )
 
         # Also include instance-specific exclusions
         excluded_props.extend(
-            getattr(self, '_excluded_load_props_from_saved_state', [])
+            getattr(self, "_excluded_load_props_from_saved_state", [])
         )
 
         # Remove duplicates while preserving order
