@@ -16,6 +16,7 @@ from weakref import WeakKeyDictionary
 from functools import wraps
 from threading import local
 
+from autobahn.wamp import component
 from django import forms
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.core.files import File
@@ -485,7 +486,7 @@ class BasicComponent:
         return os.path.join(module_path, file_name)
 
     @classmethod
-    def _read_component_file_with_extension(cls, extension):
+    def _read_component_file_with_extension(cls, extension) -> str:
         file_path = cls._get_component_file_path_with_extension(extension)
         if not os.path.exists(file_path):
             return ""
@@ -1273,19 +1274,21 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         it, and returns it.
 
         Returns:
-            A tuple with the filename of the javascript script and a boolean value
-                which is True if the JavaScript was found inline in the component code,
-                False if there was an external .js file.
+            The JavaScript code as a string, extracted from either the inline
+                script property or an external .js file.
         """
         if cls._is_script_inline():
             source_filename, comp_start_line, source_len = cls.get_source_location()
             with open(source_filename, "r") as f:
                 py_source = f.read()
             comp_start_offset = len("\n".join(py_source.split("\n")[:comp_start_line]))
-            start = py_source.index(cls.script, comp_start_offset)
-            before = py_source[:start]
-            before = re.sub(r"\S", " ", before)
-            return f"{before}{cls.script}"
+            try:
+                start = py_source.index(cls.script, comp_start_offset)
+                before = py_source[:start]
+                before = re.sub(r"\S", " ", before)
+                return f"{before}{cls.script}"
+            except ValueError:
+                return ""
         else:
             # Find script in the component's directory
             return cls._read_component_file_with_extension("js")
