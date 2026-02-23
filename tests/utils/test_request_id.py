@@ -74,6 +74,7 @@ def test_request_id_extraction_in_view():
     # We need to mock the Library and Component to let the view proceed
     with patch("tetra.views.Library") as mock_library:
         mock_component = MagicMock()
+        mock_component.__name__ = "MockComponent"
         mock_component._public_methods = [{"name": "some_method"}]
         mock_library.registry = {
             "main": {"main": MagicMock(components={"MyComponent": mock_component})}
