@@ -1,7 +1,17 @@
 import pytest
 from django.test import RequestFactory
 from tetra import Library
-from tetra.router import Component, Router, route, path, re_path, include, reverse, reverse_lazy, _route_registry
+from tetra.router import (
+    Component,
+    Router,
+    route,
+    path,
+    re_path,
+    include,
+    reverse,
+    reverse_lazy,
+    _route_registry,
+)
 from tetra.middleware import TetraDetails
 from tetra.tests.fixtures import add_session_to_request
 
@@ -56,8 +66,6 @@ class Sugar(Component):
         patient_id = self.request.tetra.route_params.get("patient_id")
         if patient_id:
             self.patient_id = int(patient_id)
-
-
 
 
 @library.register
@@ -214,7 +222,7 @@ def test_router_no_match():
 
 
 def test_link_render():
-    """Test rendering the Link component and verify it generates the correct href and label."""
+    """Test rendering the Link component and verify it generates the correct href."""
     from tetra import Library
     from tetra.router import Link
 
@@ -224,10 +232,126 @@ def test_link_render():
         default_lib.register(Link)
 
     request = _get_request("/")
-    link = Link(request, to="/about/", label="Go to About")
+    link = Link(request, to="/about/")
     html = link.render()
     assert 'href="/about/"' in html
+    assert "<a" in html
+
+
+def test_link_default_to_param():
+    """Test that Link defaults to='#' if not provided."""
+    from tetra import Library
+    from tetra.router import Link
+
+    if not getattr(Link, "_library", None):
+        default_lib = Library("default", "tetra")
+        default_lib.register(Link)
+
+    request = _get_request("/")
+    link = Link(request)
+    html = link.render()
+    assert 'href="#"' in html
+
+
+def test_link_custom_active_class():
+    """Test Link with custom active_class parameter."""
+    from tetra import Library
+    from tetra.router import Link
+
+    if not getattr(Link, "_library", None):
+        default_lib = Library("default", "tetra")
+        default_lib.register(Link)
+
+    request = _get_request("/")
+    link = Link(request, to="/about/", active_class="current")
+    html = link.render()
+    assert "'current'" in html  # active_class should be in Alpine.js binding
+
+
+def test_link_active_class_binding():
+    """Test that Link includes Alpine.js active class binding."""
+    from tetra import Library
+    from tetra.router import Link
+
+    if not getattr(Link, "_library", None):
+        default_lib = Library("default", "tetra")
+        default_lib.register(Link)
+
+    request = _get_request("/test/")
+    link = Link(request, to="/test/")
+    html = link.render()
+    # Should have Alpine.js binding for active class
+    assert ":class=" in html
+    assert "'active'" in html
+    assert "window.location.pathname" in html
+
+
+def test_link_click_prevention():
+    """Test that Link includes @click.prevent directive."""
+    from tetra import Library
+    from tetra.router import Link
+
+    if not getattr(Link, "_library", None):
+        default_lib = Library("default", "tetra")
+        default_lib.register(Link)
+
+    request = _get_request("/")
+    link = Link(request, to="/about/")
+    html = link.render()
+    assert "@click.prevent=" in html or '@click.prevent="click()"' in html
+
+
+def test_link_with_slot_content():
+    """Test that Link accepts slot content syntax between {% Link %}...{% /Link %} tags."""
+    from tetra.helpers import render_component_tag
+    from bs4 import BeautifulSoup
+
+    request = _get_request("/")
+
+    # Render Link with content in default slot using template tag syntax
+    # Link is registered in the tetra.default library
+    html = render_component_tag(
+        request,
+        '{% Link to="/about/" %}Go to About{% /Link %}',
+    )
+
+    # Parse HTML and verify Link component renders correctly
+    soup = BeautifulSoup(html, "html.parser")
+    link_tag = soup.find("a")
+
+    assert link_tag is not None, "Link <a> tag not found"
+    assert (
+        link_tag.get("href") == "/about/"
+    ), f"Expected href='/about/', got {link_tag.get('href')}"
+
+    # Verify the Link has the necessary attributes for Tetra components
+    assert link_tag.get("tetra-component") == "tetra__default__link"
+    assert link_tag.get("@click.prevent") is not None or "@click.prevent" in str(
+        link_tag
+    )
     assert "Go to About" in html
+
+
+def test_link_with_kwargs():
+    """Test Link with various URL paths including parameters."""
+    from tetra import Library
+    from tetra.router import Link
+
+    if not getattr(Link, "_library", None):
+        default_lib = Library("default", "tetra")
+        default_lib.register(Link)
+
+    request = _get_request("/")
+
+    # Test with parameterized URL
+    link = Link(request, to="/patient/123/")
+    html = link.render()
+    assert 'href="/patient/123/"' in html
+
+    # Test with query string
+    link = Link(request, to="/search/?q=test")
+    html = link.render()
+    assert 'href="/search/?q=test"' in html
 
 
 def test_route_with_params():
@@ -295,8 +419,6 @@ def test_nested_route_navigation():
     router.navigate("/patient/100/sugar/", push=False)
     assert router.current_component == "test_router.Sugar"
     assert router.url_params["patient_id"] == "100"
-
-
 
 
 # ===== Delegated routing tests =====
@@ -397,6 +519,7 @@ def test_reverse_lazy_with_params():
 @library.register
 class UserRouter(Router):
     """Router with namespace for testing global reversal."""
+
     namespace = "user"
 
     routes = [
@@ -408,6 +531,7 @@ class UserRouter(Router):
 @library.register
 class AdminRouter(Router):
     """Another router with namespace for testing global reversal."""
+
     namespace = "admin"
 
     routes = [

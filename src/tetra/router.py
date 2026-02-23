@@ -568,7 +568,7 @@ class Router(Component):
             self.navigate(path, push=False)
 
     @public
-    def navigate(self, path, push=True):
+    def navigate(self, path: str, push=True):
         if push:
             self.client._pushUrl(path)
 
@@ -638,24 +638,21 @@ class Link(Component):
     """
 
     to: str = ""
-    label: str = ""
     active_class: str = "active"
 
     # language=html
     template: django_html = """
-    <a
-        {% ... attrs %}
-        href="{{ to }}"
-        @click.prevent="click()"
-        :class="{ '{{ active_class }}': window.location.pathname === '{{ to }}' }"
+    <a {% ... attrs %}
+       href="{{ to }}"
+       @click.prevent="click()"
+       :class="{ '{{ active_class }}': window.location.pathname === '{{ to }}' }"
     >
-        {% if label %}{{ label }}{% else %}{% slot "default" %}{% endslot %}{% endif %}
+        {% slot default %}{% endslot %}
     </a>
     """
 
-    def load(self, to="#", label="", active_class="active", *args, **kwargs):
+    def load(self, to="#", active_class="active", *args, **kwargs):
         self.to = to
-        self.label = label
         self.active_class = active_class
 
     @public(update=False)
