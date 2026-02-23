@@ -586,3 +586,58 @@ def else_filter(value, else_value):
         return value
     else:
         return else_value
+
+
+@register.tag(name="router_view")
+def do_router_view(parser, token):
+    """
+    Parse {% router_view %} tag for rendering matched route components.
+
+    This tag is used within Router component templates to mark where the
+    matched child component should be rendered.
+    """
+    return RouterViewNode()
+
+
+class RouterViewNode(template.Node):
+    def __repr__(self):
+        return "<RouterViewNode>"
+
+    def render(self, context: RequestContext) -> SafeString:
+        """
+        Render the matched component from router context.
+
+        Looks for '_router_matched_component' in context, which should be
+        set by the Router component during routing.
+        """
+        matched_component = context.get('_router_matched_component', '')
+
+        if not matched_component:
+            return mark_safe('')
+
+        try:
+            from ..component_register import resolve_component
+            component_class = resolve_component(context, matched_component)
+            request: HttpRequest = context.request
+
+            # Create a new context based on the current context
+            # This ensures library registration and other context is preserved
+            from django.template import Context
+            if isinstance(context, RequestContext):
+                resolved_context = RequestContext(request, dict(context.flatten()))
+            else:
+                resolved_context = Context(dict(context.flatten()))
+
+            # Update with routing-related context (ensure they're in the new context)
+            for key in ['url_params', '_remaining_path', '_consumed_path']:
+                if key in context:
+                    resolved_context[key] = context[key]
+
+            # Render the matched component
+            return component_class.as_tag(
+                request,
+                _context=resolved_context,
+            )
+        except Exception as e:
+            logger.error(f"Error rendering router_view for component '{matched_component}': {e}")
+            return mark_safe('')

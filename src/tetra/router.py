@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 
 from django.conf import settings
 from django.urls import path as django_path, re_path as django_re_path
-from django.urls.resolvers import RoutePattern, RegexPattern, URLPattern, URLResolver
+from django.urls.resolvers import RoutePattern, RegexPattern, URLPattern
 from django.utils.functional import lazy
 from sourcetypes import django_html
 from tetra import Component, public, BasicComponent
@@ -405,14 +405,36 @@ class Router(Component):
 
     Routing format:
     routes = [route('/', Home), route('about/', About)]
+
+    Router subclasses should define their own template and use {% router_view %}
+    to mark where the matched child component should be rendered.
     """
 
     routes: List[Route] = []
     namespace: Optional[str] = None  # Optional namespace for route registration
 
-    current_component: str = public("")
+    # Internal routing state (not exposed to frontend)
+    _matched_component: str = ""
+    _consumed_path: str = ""
+    _remaining_path: str = ""
+
+    # Public state for templates
     current_path: str = public("")
     url_params: dict[str, Any] = public({})
+
+    @property
+    def current_component(self) -> str:
+        """
+        Backward compatibility property for accessing matched component.
+
+        Returns the fully qualified name of the currently matched component.
+        """
+        return self._matched_component
+
+    @current_component.setter
+    def current_component(self, value: str):
+        """Allow setting current_component for backward compatibility."""
+        self._matched_component = value
 
     def __init_subclass__(cls, **kwargs):
         """Auto-register routes when Router subclass is defined."""
@@ -540,21 +562,30 @@ class Router(Component):
         """
         return lazy(cls.reverse, str)(name, **kwargs)
 
-    # Pass url_params to child components via context
-    _extra_context = ["url_params"]
+    # Pass routing context to child components
+    _extra_context = [
+        "url_params",
+        "_router_matched_component",
+        "_remaining_path",
+        "_consumed_path",
+    ]
 
     # language=html
     template: django_html = """
-    <div
-        @popstate.window="navigate(window.location.pathname, false)"
-        @tetra:navigate.window="navigate($event.detail.path)"
-    >
-        {% if current_component %}
-            {% component =current_component / %}
-        {% else %}
-            {% slot "default" %}{% endslot %}
-        {% endif %}
+    <div>
+        {% router_view %}
     </div>
+    """
+
+    # Alpine.js event handlers for navigation (added dynamically to root element)
+    # language=javascript
+    script = """
+    return {
+        __rootBind: {
+            '@popstate.window': 'navigate(window.location.pathname, false)',
+            '@tetra:navigate.window': 'navigate($event.detail.path)',
+        }
+    }
     """
 
     def load(self, *args, **kwargs):
@@ -562,10 +593,48 @@ class Router(Component):
         if "url_params" not in kwargs and not hasattr(self, "url_params"):
             self.url_params = {}
 
-        if not self.current_component:
+        # Merge parent url_params if passed via context
+        if hasattr(self, "_context") and self._context:
+            parent_params = self._context.get("url_params", {})
+            if parent_params and isinstance(parent_params, dict):
+                # Merge parent params with current params (current takes precedence)
+                self.url_params = {**parent_params, **self.url_params}
+
+        # Initialize routing state
+        if not self._matched_component:
             # Use browser URL from request.tetra as source of truth, not request.path
             path = self.request.tetra.current_url_path or self.request.path
-            self.navigate(path, push=False)
+
+            # If this is a nested router, use the remaining path from parent
+            if (
+                hasattr(self, "_context")
+                and self._context
+                and "_remaining_path" in self._context
+            ):
+                path_to_match = self._context["_remaining_path"]
+                self.navigate(path_to_match, push=False)
+            else:
+                self.navigate(path, push=False)
+
+    def get_context_data(self, **kwargs):
+        """
+        Override to add routing context to template.
+
+        This exposes routing state to the template so {% router_view %} can access it.
+        """
+        context = super().get_context_data(**kwargs)
+
+        # Add routing context
+        context.update(
+            {
+                "_router_matched_component": self._matched_component,
+                "_remaining_path": self._remaining_path,
+                "_consumed_path": self._consumed_path,
+                "url_params": self.url_params,
+            }
+        )
+
+        return context
 
     @public
     def navigate(self, path: str, push=True):
@@ -580,25 +649,62 @@ class Router(Component):
 
         # Use browser URL as source of truth for routing
         path_to_match = self.request.tetra.current_url_path or path
+
+        # If this is a nested router, only match against remaining path
+        if (
+            hasattr(self, "_context")
+            and self._context
+            and "_remaining_path" in self._context
+        ):
+            path_to_match = self._context["_remaining_path"]
+
         result = self._match_route(path_to_match)
 
         if result:
-            self.current_component = result[0]
-            self.url_params = result[1]
+            component_name, url_params = result
+            self._matched_component = component_name
+
+            # Merge with parent url_params if this is a nested router
+            if hasattr(self, "_context") and self._context:
+                parent_params = self._context.get("url_params", {})
+                if parent_params and isinstance(parent_params, dict):
+                    # Merge parent params with current params (current takes precedence)
+                    self.url_params = {**parent_params, **url_params}
+                else:
+                    self.url_params = url_params
+            else:
+                self.url_params = url_params
 
             # Store in request.tetra for all components to access
-            self.request.tetra.set_route_params(self.url_params)
+            # Also merge with existing params to preserve parent router params
+            existing_params = (
+                self.request.tetra.route_params
+                if hasattr(self.request.tetra, "route_params")
+                else {}
+            )
+            merged_params = {**existing_params, **self.url_params}
+            self.request.tetra.set_route_params(merged_params)
         else:
-            self.current_component = ""
+            self._matched_component = ""
             self.url_params = {}
-            self.request.tetra.set_route_params({})
+            # Don't clear request.tetra params - child routers might need parent params
+            # self.request.tetra.set_route_params({})
 
     def _match_route(self, path: str) -> Optional[tuple[str, Dict[str, Any]]]:
-        """Match path against list of Route objects."""
+        """
+        Match path against list of Route objects.
+
+        For nested routing, stores consumed and remaining path portions
+        that can be passed to child Router components.
+        """
         for route_obj in self.routes:
             # First try exact match
             result = route_obj.match(path)
             if result:
+                component_name, url_params = result
+                # Exact match - this router consumes entire path
+                self._consumed_path = path
+                self._remaining_path = ""
                 return result
 
             # If this is a NestedRoute, try prefix matching
@@ -607,6 +713,15 @@ class Router(Component):
 
                 if prefix_result:
                     component_name, remaining_path, url_params = prefix_result
+
+                    # Calculate consumed path
+                    if remaining_path:
+                        consumed_length = len(path) - len(remaining_path)
+                        self._consumed_path = path[:consumed_length]
+                        self._remaining_path = remaining_path
+                    else:
+                        self._consumed_path = path
+                        self._remaining_path = ""
 
                     # If there's no remaining path, this route is the match
                     if not remaining_path or remaining_path == "/":
@@ -619,6 +734,9 @@ class Router(Component):
                             if child_result:
                                 # Merge parent and child URL parameters
                                 merged_params = {**url_params, **child_result[1]}
+                                # Update consumed/remaining for explicit child match
+                                self._consumed_path = path
+                                self._remaining_path = ""
                                 return child_result[0], merged_params
 
                     # If no children matched but there's remaining path,
@@ -626,9 +744,12 @@ class Router(Component):
                     # In this case, still return the parent component and let it
                     # route internally
                     if remaining_path and remaining_path != "/":
-                        # Component will receive the full path and can route internally
+                        # Component will receive remaining path and route internally
                         return component_name, url_params
 
+        # No match found
+        self._consumed_path = ""
+        self._remaining_path = ""
         return None
 
 

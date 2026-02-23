@@ -14,7 +14,7 @@ The `Router` component is responsible for matching the current URL path to a spe
 
 ### Basic Usage
 
-Tetra supports routing by using `Router` subclasses that define one or more `tetra.router.route` enries in a `routes` property.
+Tetra supports routing by using `Router` subclasses that define one or more `tetra.router.route` entries in a `routes` property.
 It uses Django's URL pattern syntax and supports nested routing:
 
 ```python
@@ -41,12 +41,46 @@ Then, include your router in a Django template:
 {% MyRouter / %}
 ```
 
-You can also define a default content rendered when no route matches:
-```html
-{% MyRouter %}
-  <p>We did not find anything there!</p>
-{% /MyRouter %}
+### Custom Router Templates
+
+By default, the `Router` renders matched components in a simple `<div>` wrapper. You can customize the router's layout by defining a custom `template` that includes the `{% router_view %}` tag to mark where the matched component should render:
+
+```python
+@library.register
+class MyRouter(Router):
+    routes = [
+        route("", Home),
+        route("about/", About),
+        route("user/<int:id>/", UserProfile),
+    ]
+
+    template = """
+    <div class="app-layout">
+        <header>
+            <h1>My App</h1>
+            <nav>
+                {% Link to="/" %}Home{% /Link %}
+                {% Link to="/about/" %}About{% /Link %}
+            </nav>
+        </header>
+        <main>
+            {% router_view %}  <!-- Matched component renders here -->
+        </main>
+        <footer>
+            <p>&copy; 2026 My App</p>
+        </footer>
+    </div>
+    """
 ```
+
+The `{% router_view %}` template tag is where the matched route component will be rendered. This allows you to:
+
+- Define consistent layouts around your routed content
+- Add navigation, headers, or footers at the router level
+- Create nested layouts with multiple router levels
+- Control exactly where child components appear in the page structure
+
+**Note:** The router automatically handles navigation events (`@popstate.window` and `@tetra:navigate.window`) - you don't need to add these in your custom template.
 
 ### URL Parameters
 
@@ -80,9 +114,9 @@ The `<int:id>` pattern captures the ID from URLs like `/user/123/` and makes it 
 
 ### Nested Routing
 
-Tetra supports two patterns for nested routing: **explicit** and **delegated**.
+Tetra supports two patterns for nested routing: **explicit** and **delegated**. Both patterns work seamlessly with custom router templates and the `{% router_view %}` tag.
 
-#### Explicit Nested Routing
+#### Explicit Nested Routing (Recommended for Simple Apps)
 
 The parent router defines all child and grandchild routes:
 
@@ -91,10 +125,11 @@ The parent router defines all child and grandchild routes:
 class MyRouter(Router):
     routes = [
         route("", Home),
-        route("patient/<int:patient_id>/", PatientView, children=[
-            route("bp/", BloodPressureView),
-            route("lab/", LabResultsView),
-        ]),
+        route("patient/<int:patient_id>/", PatientView,
+              children=[
+                  route("bp/", BloodPressureView),
+                  route("lab/", LabResultsView),
+              ]),
     ]
 ```
 
@@ -117,19 +152,35 @@ class BloodPressureView(Component):
             self.patient_id = int(patient_id)
 ```
 
-#### Delegated Nested Routing (Clean Encapsulation)
+#### Delegated Nested Routing (Recommended for Complex Apps)
 
-The parent router delegates to a child `Router` component:
+The parent router delegates to a child `Router` component using the `delegate=True` parameter. This provides clean encapsulation where each router manages its own sub-routes:
 
 ```python
 @library.register
 class PatientRouter(Router):
-    """Handles patient sub-routes."""
+    """Handles patient sub-routes with custom layout."""
     routes = [
         route("", PatientView),
         route("bp/", BloodPressureView),
         route("lab/", LabResultsView),
     ]
+
+    template = """
+    <div class="patient-section">
+        <aside>
+            <h2>Patient {{ url_params.patient_id }}</h2>
+            <nav>
+                {% Link to="/patient/{{ url_params.patient_id }}/" %}Overview{% /Link %}
+                {% Link to="/patient/{{ url_params.patient_id }}/bp/" %}Blood Pressure{% /Link %}
+                {% Link to="/patient/{{ url_params.patient_id }}/lab/" %}Lab Results{% /Link %}
+            </nav>
+        </aside>
+        <section>
+            {% router_view %}  <!-- Child route renders here -->
+        </section>
+    </div>
+    """
 
 @library.register
 class AppRouter(Router):
@@ -139,11 +190,103 @@ class AppRouter(Router):
     ]
 ```
 
-This pattern provides better encapsulation - the parent doesn't need to know about grandchildren routes.
+In this example:
+
+1. URL `/patient/123/bp/` is requested
+2. `AppRouter` matches `patient/<int:patient_id>/` with `patient_id=123`
+3. `PatientRouter` receives the remaining path `bp/` and `url_params={patient_id: 123}`
+4. `PatientRouter` matches `bp/` and renders `BloodPressureView` within its custom layout
+5. Final HTML: `AppRouter` layout → `PatientRouter` layout → `BloodPressureView` content
+
+**Benefits of Delegated Routing:**
+
+- **Encapsulation**: Parent router doesn't need to know about grandchild routes
+- **Reusability**: Child routers can be used in different parent routers
+- **Custom Layouts**: Each router level can define its own layout with `{% router_view %}`
+- **Maintainability**: Each feature area has its own router and template
+- **URL Parameter Inheritance**: Child routers automatically receive parent URL parameters via `url_params`
+
+**Accessing URL Parameters in Nested Routers:**
+
+In custom router templates, URL parameters are available via the `url_params` context variable:
+
+```django
+<!-- In PatientRouter template -->
+<h2>Patient {{ url_params.patient_id }}</h2>
+<nav>
+    {% Link to="/patient/{{ url_params.patient_id }}/bp/" %}Blood Pressure{% /Link %}
+</nav>
+```
+
+Components rendered by the router access parameters via `request.tetra.route_params` as usual:
+
+```python
+class BloodPressureView(Component):
+    def load(self, *args, **kwargs):
+        patient_id = self.request.tetra.route_params.get('patient_id')
+        # URL parameters are inherited from parent routers
+```
+
+### The `{% router_view %}` Template Tag
+
+The `{% router_view %}` template tag is used within custom router templates to mark where the matched route component should be rendered. It's similar to Vue.js's `<router-view>` component or React Router's `<Outlet>`.
+
+**Usage in Router Templates:**
+
+```python
+@library.register
+class AppRouter(Router):
+    routes = [...]
+
+    template = """
+    <div class="app">
+        <nav><!-- navigation --></nav>
+        {% router_view %}  <!-- Matched component renders here -->
+        <footer><!-- footer --></footer>
+    </div>
+    """
+```
+
+**How it Works:**
+
+- The `Router` component matches the current URL against its routes
+- When a match is found, it stores the matched component name in the template context
+- The `{% router_view %}` tag renders that matched component
+- URL parameters and routing context are automatically passed to the child component
+
+**Nested Routing:**
+
+When routers are nested (router within router), each `{% router_view %}` renders the next level:
+
+```python
+# Top-level router
+class AppRouter(Router):
+    template = """
+    <div class="app">
+        {% router_view %}  <!-- Renders UserRouter -->
+    </div>
+    """
+
+# Nested router
+class UserRouter(Router):
+    template = """
+    <div class="user-section">
+        <nav><!-- user navigation --></nav>
+        {% router_view %}  <!-- Renders UserProfile or UserPosts -->
+    </div>
+    """
+```
+
+URL `/users/johnny/posts/` would render:
+```
+AppRouter layout
+  └─ UserRouter layout
+      └─ UserPosts component
+```
 
 ### Route Helper Functions
 
-- `route(pattern, component, children=None)` - Create a route with Django's path syntax
+- `route(pattern, component, children=None, delegate=False)` - Create a route with Django's path syntax
 - `path(pattern, component, routes=None)` - Alias for `route()`
 - `re_path(pattern, component, routes=None)` - Create a route with regex pattern
 - `include(routes)` - Include a list of routes (for readability)
@@ -152,9 +295,10 @@ This pattern provides better encapsulation - the parent doesn't need to know abo
 
 - `routes`: List of Route objects defining the URL patterns and components
 - `namespace`: Optional namespace for route registration (e.g., `"user"`, `"admin"`)
-- `current_component`: (Public) The name of the currently active component
+- `template`: Custom template string for the router layout (must include `{% router_view %}` to render matched components)
+- `current_component`: (Read-only property) The fully qualified name of the currently matched component
 - `current_path`: (Public) The current URL path being handled by the router
-- `url_params`: (Public) Dict of URL parameters extracted from the current path
+- `url_params`: (Public) Dict of URL parameters extracted from the current path (available in templates and passed to child routers)
 
 ### `Router` Class Methods
 
@@ -177,7 +321,7 @@ for route_obj in AppRouter.get_routes():
 ```
 
 This method is useful when you need to introspect or programmatically access a router's configured routes, such as for debugging, documentation generation, or dynamic route manipulation.
-You can override the `get_routes()` method to return a special list of routes, e.g. from plugins. 
+You can override the `get_routes()` method to return a special list of routes, e.g. from plugins.
 
 ### Reversing Routes
 
@@ -304,7 +448,7 @@ Or using slots for the label:
 
 ```html
 {% Link to="/" %}
-    <img src="logo.png" alt="Home">
+<img src="logo.png" alt="Home">
 {% endLink %}
 ```
 
@@ -408,19 +552,19 @@ class AppRouter(Router):
 <!DOCTYPE html>
 <html>
 <head>
-    {% tetra_styles %}
+  {% tetra_styles %}
 </head>
 <body>
-    <nav>
-        {% Link to="/" label="Home" / %}
-        {% Link to="/about" label="About" / %}
-    </nav>
+<nav>
+  {% Link to="/" label="Home" / %}
+  {% Link to="/about" label="About" / %}
+</nav>
 
-    <main>
-        {% AppRouter / %}
-    </main>
+<main>
+  {% AppRouter / %}
+</main>
 
-    {% tetra_scripts %}
+{% tetra_scripts %}
 </body>
 </html>
 ```
@@ -474,9 +618,24 @@ class PatientView(Component):
 
 ### Best Practices
 
-1. **Use route-based routing** for new projects (better nested routing support)
-2. **Keep routes organized** by defining them in separate `routes.py` files
-3. **Use explicit nested routing** when parent needs to know all routes (simpler)
-4. **Use delegated routing** when you want clean encapsulation (each router manages its own sub-routes)
+1. **Use custom router templates with `{% router_view %}`** for layouts that wrap routed content (headers, navigation, footers)
+2. **Keep routes organized** by defining them in separate `routes.py` files for large applications
+3. **Use delegated routing** for complex apps where each section has its own router and layout
+4. **Use explicit nested routing** when the parent needs to know all routes (simpler for small apps)
 5. **Always explicitly access route parameters** via `request.tetra.route_params` for security
 6. **Use browser URL as source of truth** - Tetra uses `request.tetra.current_url_path`, not `request.path`
+7. **Leverage `url_params` in router templates** to create dynamic navigation links that reflect current route parameters
+8. **Test nested routing carefully** - ensure URL parameters flow correctly through router hierarchies
+
+**When to Use Custom Router Templates:**
+
+- ✅ You need consistent navigation, headers, or footers around routed content
+- ✅ Different sections of your app have different layouts (admin vs. user areas)
+- ✅ You want to create master-detail layouts with sidebars
+- ✅ You need nested routing with multiple layout levels
+
+**When to Use Default Router Template:**
+
+- ✅ Simple apps where routes just swap between full-page components
+- ✅ The router is just coordinating components without providing layout
+- ✅ Layout is handled by parent Django templates, not the router
