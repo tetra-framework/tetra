@@ -314,6 +314,8 @@ class ComponentNode(template.Node):
             resolved_context = context
         else:
             resolved_context = template.Context()
+
+            # Handle _extra_context - add only explicitly requested context vars
             ctx = {}
             for k in extra_context:
                 if k in context:
