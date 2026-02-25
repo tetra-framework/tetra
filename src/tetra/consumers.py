@@ -268,7 +268,7 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
 
         # Log navigation for debugging
         logger.debug(
-            f"Client-side navigation to '{path}' "
+            f"Client-side navigation (ws) to '{path}' "
             f"(session: {self.session.session_key if self.session else 'none'})"
         )
 
