@@ -39,8 +39,6 @@ def find_component_libraries():
             for a in apps.get_app_configs()
             if a.module.__name__ not in unsupported_modules
         ]:
-            # from django.utils.module_loading import *
-
             module_name = f"{app_config.name}.{components_module_name}"
             try:
                 components_module = importlib.import_module(module_name)
@@ -50,6 +48,10 @@ def find_component_libraries():
                 for module_finder, library_name, ispkg in pkgutil.iter_modules(
                     components_module.__path__
                 ):
+                    # from Tetra, only use the "default" library, others are internal code
+                    if app_config.name == "tetra" and library_name != "default":
+                        continue
+
                     # if library name is already registered, get the instance, else register it.
                     library = Library(name=library_name, app=app_config)
 

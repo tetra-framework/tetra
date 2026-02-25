@@ -34,7 +34,7 @@ from tetra.types import ComponentData
 # "components" directory.
 # FIXME: This is badly designed, and should be replaced with a non-hardcoded approach
 #  someday[tm]
-unsupported_modules = ["tetra", "wagtail.documents", "wagtail.images"]
+unsupported_modules = ["wagtail.documents", "wagtail.images"]
 
 logger = logging.getLogger(__name__)
 
