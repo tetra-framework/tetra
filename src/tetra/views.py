@@ -192,7 +192,6 @@ def navigate(request) -> HttpResponse:
             logger.warning("Navigation event received without path")
             return HttpResponseBadRequest()
 
-        # Log navigation for debugging
         logger.debug(
             f"Client-side navigation to '{path}' "
             f"(session: {request.session.session_key if hasattr(request, 'session') else 'none'})"

@@ -287,7 +287,7 @@ class Router(Component):
         For nested routing, stores consumed and remaining path portions
         that can be passed to child Router components.
         """
-        for i, route_obj in enumerate(self.routes):
+        for route_obj in self.routes:
             # First try exact match
             result = route_obj.match(path)
             if result:

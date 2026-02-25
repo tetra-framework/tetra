@@ -932,7 +932,7 @@ const Tetra = {
       snapshot.key = component.key;
     }
 
-    Tetra.debug(`Captured snapshot for component ${component.component_id} (key: ${component.key})`);
+    Tetra.debug(`Captured snapshot for component '${component.componentName}' (id: ${component.component_id}, key: ${component.key})`);
     return snapshot;
   },
 

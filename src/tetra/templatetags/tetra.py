@@ -631,9 +631,9 @@ class RouterViewNode(template.Node):
             for key in ["url_params", "_remaining_path", "_consumed_path"]:
                 if key in context:
                     resolved_context[key] = context[key]
-            logger.debug(
-                f"Rendering router_view for component '{matched_component}' with context: {resolved_context}"
-            )
+
+            logger.debug(f"Rendering router_view for component '{matched_component}'")
+
             # Render the matched component
             return component_class.as_tag(
                 request,

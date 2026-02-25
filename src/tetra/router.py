@@ -457,7 +457,6 @@ def router_view(router_class: type["Router"], template_name: str = None):
 
         # Render the router component with the current path
         router_html = router_class.as_tag(request)
-        print("SSR:", router_class.__name__)
 
         if template_name:
             # Render within a Django template
@@ -493,7 +492,7 @@ def router_urls(
     Args:
         base_path: The base URL path where the router is mounted (e.g., '', 'app/', 'users/')
         router_class: The Router component class that handles routing
-        template_name: Optional Django template that wraps the router component
+        template_name: Optional Django base template that wraps the router component
         name: Optional URL pattern name
 
     Returns:
