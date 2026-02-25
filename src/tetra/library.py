@@ -9,7 +9,6 @@ from typing import Self
 
 from django.apps import AppConfig, apps
 from django.templatetags.static import static
-from django.utils.functional import cached_property
 
 from .conf import get_setting, get_esbuild_path
 from .components.base import ComponentMetaClass, BasicComponent, Component
@@ -95,14 +94,14 @@ class Library:
             self.styles_filename,
         )
 
-    @cached_property
+    @property
     def js_url(self):
         """Returns the static URL of the library's compiled JavaScript file."""
         with open(f"{self.js_path}.filename") as f:
             js_filename = f.read()
         return static(os.path.join(self.app.label, "tetra", self.name, js_filename))
 
-    @cached_property
+    @property
     def styles_url(self):
         """Returns the static URL of the library's compiled CSS file."""
         with open(f"{self.styles_path}.filename") as f:
