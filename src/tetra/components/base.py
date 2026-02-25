@@ -312,7 +312,7 @@ def make_template(cls) -> Template:
                 raise ComponentError(
                     f"'{cls.__module__}.{cls.__name__}' is not a valid component. "
                     f"You either have to put it into a correct library directory with a "
-                    f"template HTML alongside, or add a 'template'/'template_name' "
+                    f"template HTML alongside, or add a (not empty) 'template' "
                     f"attribute to the component."
                 )
     if not re.match(r"^\s*{%\s*extends", template.source) and not has_single_root(
