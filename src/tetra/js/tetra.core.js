@@ -327,15 +327,15 @@ const Tetra = {
     const { group, data, sender_id, update } = event;
     const components = this._get_components_by_subscribe_group(group);
     if (components.length === 0) {
-        // use [tetra-subscription] selector to find elements where the group is
-        // exactly matched.
-        const els = document.querySelectorAll(`[tetra-subscription="${group}"]`);
-        els.forEach(el => {
-            const component = Alpine.$data(el);
-            if (component && !components.includes(component)) {
-                components.push(component);
-            }
-        });
+      // use [tetra-subscription] selector to find elements where the group is
+      // exactly matched.
+      const els = document.querySelectorAll(`[tetra-subscription="${group}"]`);
+      els.forEach(el => {
+        const component = Alpine.$data(el);
+        if (component && !components.includes(component)) {
+          components.push(component);
+        }
+      });
     }
 
     // iter through components and update their data fields
@@ -343,9 +343,9 @@ const Tetra = {
       // Skip update if this component is currently waiting for a response
       // from the request that triggered this server-side change.
       if (
-        sender_id &&
-        component.__activeRequests &&
-        component.__activeRequests.has(sender_id)
+          sender_id &&
+          component.__activeRequests &&
+          component.__activeRequests.has(sender_id)
       ) {
         return;
       }
@@ -367,9 +367,9 @@ const Tetra = {
 
       if (component && component._removeComponent) {
         if (
-          sender_id &&
-          component.__activeRequests &&
-          component.__activeRequests.has(sender_id)
+            sender_id &&
+            component.__activeRequests &&
+            component.__activeRequests.has(sender_id)
         ) {
           return;
         }
@@ -392,9 +392,9 @@ const Tetra = {
       components.forEach(component => {
         if (component && component._removeComponent) {
           if (
-            sender_id &&
-            component.__activeRequests &&
-            component.__activeRequests.has(sender_id)
+              sender_id &&
+              component.__activeRequests &&
+              component.__activeRequests.has(sender_id)
           ) {
             return;
           }
@@ -419,9 +419,9 @@ const Tetra = {
     components.forEach(component => {
       if (component && component._removeComponent) {
         if (
-          sender_id &&
-          component.__activeRequests &&
-          component.__activeRequests.has(sender_id)
+            sender_id &&
+            component.__activeRequests &&
+            component.__activeRequests.has(sender_id)
         ) {
           return;
         }
@@ -434,9 +434,9 @@ const Tetra = {
     const components = this._get_components_by_subscribe_group(group);
     components.forEach((component) => {
       if (
-        sender_id &&
-        component.__activeRequests &&
-        component.__activeRequests.has(sender_id)
+          sender_id &&
+          component.__activeRequests &&
+          component.__activeRequests.has(sender_id)
       ) {
         return;
       }
@@ -513,7 +513,7 @@ const Tetra = {
         // Validate that we have the correct component by checking the key
         // Component IDs can be reused in lists, so we must verify the key matches
         const isCorrectComponent = componentInstance &&
-          (component.key === undefined || component.key === null || componentInstance.key === component.key);
+            (component.key === undefined || component.key === null || componentInstance.key === component.key);
 
         if (!componentInstance || !isCorrectComponent) {
           if (componentInstance && !isCorrectComponent) {
@@ -662,7 +662,7 @@ const Tetra = {
         } catch (error) {
           // Network error - rollback and re-queue at front
           const isNetworkError = error instanceof TypeError &&
-            (error.message.includes('fetch') || error.message.includes('NetworkError'));
+              (error.message.includes('fetch') || error.message.includes('NetworkError'));
 
           if (isNetworkError) {
             console.warn('Network error during queue replay, rolling back and re-queuing:', error);
