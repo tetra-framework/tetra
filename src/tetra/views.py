@@ -8,6 +8,7 @@ from django.http import (
     JsonResponse,
 )
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.views.decorators.http import require_POST
 
 from . import Library
 from .utils import from_json, NamedTemporaryFileUploadHandler, request_id
@@ -156,3 +157,53 @@ def _component_method(request) -> HttpResponse:
     return component._call_public_method(
         request, method_name, component_state["children"], *component_state["args"]
     )
+
+
+@require_POST
+@csrf_protect
+def navigate(request) -> HttpResponse:
+    """
+    HTTP fallback endpoint for client-side navigation notifications.
+
+    This is called when WebSockets are unavailable or disabled. It's a fire-and-forget
+    endpoint that receives navigation events from the client but doesn't need to respond
+    with any data.
+
+    The client uses fetch() to send navigation events. CSRF protection is required to
+    prevent malicious sites from sending fake navigation events.
+    """
+    try:
+        # Parse the navigation payload
+        payload = from_json(request.body.decode())
+
+        # Validate protocol
+        if not (
+            isinstance(payload, dict)
+            and payload.get("protocol") == "tetra-1.0"
+            and payload.get("type") == "navigation"
+        ):
+            logger.warning("Invalid navigation payload received")
+            return HttpResponseBadRequest()
+
+        inner_payload = payload.get("payload", {})
+        path = inner_payload.get("path")
+
+        if not path:
+            logger.warning("Navigation event received without path")
+            return HttpResponseBadRequest()
+
+        # Log navigation for debugging
+        logger.debug(
+            f"Client-side navigation to '{path}' "
+            f"(session: {request.session.session_key if hasattr(request, 'session') else 'none'})"
+        )
+
+        # Future: Could trigger server-side route handlers or analytics here
+        # For now, just acknowledge receipt
+
+        # Return minimal success response (204 No Content is appropriate for fire-and-forget)
+        return HttpResponse(status=204)
+
+    except (json.JSONDecodeError, ValueError) as e:
+        logger.error(f"Error parsing navigation payload: {e}")
+        return HttpResponseBadRequest()

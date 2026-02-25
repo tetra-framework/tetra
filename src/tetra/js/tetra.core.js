@@ -34,6 +34,63 @@ const Tetra = {
 
     // Listen for browser online/offline events
     this.initBrowserOnlineDetection();
+
+    // listen for URL changes
+    this.initRouteStore()
+  },
+  initRouteStore() {
+    Alpine.store('route', {
+      path: window.location.pathname,
+      go(path) {
+        history.pushState({}, '', path)
+        this.path = path
+      }
+    })
+    window.addEventListener('popstate', () => {
+      Alpine.store('route').path = window.location.pathname
+    })
+  },
+  navigate(path) {
+    // Shortcut for client side navigation
+    Alpine.store('route').go(path)
+
+    // Notify server about the navigation
+    this.notifyNavigation(path)
+  },
+  notifyNavigation(path) {
+    // Notify the Django server about client-side navigation
+    // This keeps request.tetra.current_url_path in sync with browser URL
+
+    const payload = {
+      protocol: 'tetra-1.0',
+      type: 'navigation',
+      payload: {
+        path: path
+      }
+    }
+    if (window.__tetra_useWebsockets && this.ws && this.ws.readyState === WebSocket.OPEN) {
+      // Use WebSocket if available (fast, real-time)
+      this.sendWebSocketMessage(payload)
+    } else {
+      // Fallback to HTTP POST (fire-and-forget with CSRF protection)
+      const navigateUrl = window.__tetra_navigateUrl
+      if (!navigateUrl){
+        console.error('Tetra navigate url is missing')
+        return
+      }
+
+      fetch(navigateUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': window.__tetra_csrfToken,
+        },
+        body: JSON.stringify(payload),
+        keepalive: true, // Request continues even if page unloads
+      }).catch(() => {
+        // Silently fail - this is just a notification
+      })
+    }
   },
   initOnlineStatusStore() {
     if (this.onlineStatusInitialized) return;
@@ -68,15 +125,15 @@ const Tetra = {
         store.update();
       }
     }
-    
+
     if (this.offlineTimeout) {
       clearTimeout(this.offlineTimeout);
     }
     const timeout = window.__tetra_onlineTimeout || 10000;
     this.offlineTimeout = setTimeout(() => this.checkOnlineStatus(), timeout);
-    
+
     if (this.pingTimeout) {
-        clearTimeout(this.pingTimeout);
+      clearTimeout(this.pingTimeout);
     }
   },
   checkOnlineStatus() {
@@ -98,12 +155,12 @@ const Tetra = {
   },
   setOfflineStatus() {
     if (typeof Alpine !== 'undefined') {
-        const store = Alpine.store('tetraStatus');
-        if (store && store.online !== false) {
-          store.online = false;
-          document.dispatchEvent(new CustomEvent('tetra:websocket-disconnected'));
-        }
+      const store = Alpine.store('tetraStatus');
+      if (store && store.online !== false) {
+        store.online = false;
+        document.dispatchEvent(new CustomEvent('tetra:websocket-disconnected'));
       }
+    }
   },
 
   initBrowserOnlineDetection() {
@@ -801,7 +858,7 @@ const Tetra = {
       return true;
     } catch (error) {
       const isNetworkError = error instanceof TypeError &&
-        (error.message.includes('fetch') || error.message.includes('NetworkError'));
+          (error.message.includes('fetch') || error.message.includes('NetworkError'));
 
       if (isNetworkError) {
         console.warn('Network error during replay without component, re-queuing:', error);
@@ -1064,7 +1121,7 @@ const Tetra = {
                   allIndicators.add(el)
                 }
               })
-              
+
               allIndicators.forEach(el => {
                 if (!el.__activeRequests) el.__activeRequests = new Set();
                 el.__activeRequests.add(reqId);
@@ -1260,13 +1317,13 @@ const Tetra = {
         }
 
         const store = Alpine.store('tetra_subscriptions');
-        
+
         this.__subscribedGroups.add(topic);
-        
+
         if (!store[topic]) {
           store[topic] = [];
         }
-        
+
         if (!store[topic].includes(this.component_id)) {
           const isFirst = store[topic].length === 0;
           store[topic].push(this.component_id);
@@ -1704,7 +1761,7 @@ const Tetra = {
 
             // Security check: prevent prototype chain traversal
             if (item.callback.some(name =>
-              name === '__proto__' || name === 'constructor' || name === 'prototype'
+                name === '__proto__' || name === 'constructor' || name === 'prototype'
             )) {
               console.error('Blocked callback with dangerous property access');
               return;
@@ -1857,8 +1914,8 @@ const Tetra = {
     } catch (error) {
       // Check if it's a network error (connection refused, DNS failure, etc.)
       const isNetworkError = error instanceof TypeError ||
-                            error.message.toLowerCase().includes('network') ||
-                            error.message.toLowerCase().includes('fetch');
+          error.message.toLowerCase().includes('network') ||
+          error.message.toLowerCase().includes('fetch');
 
       if (isNetworkError) {
         console.warn(`Network error calling ${methodName}, queueing for retry:`, error.message);

@@ -70,6 +70,8 @@ def render_styles(request):
 
 def render_scripts(request, csrf_token, messages=None):
     """Render Tetra JavaScript with WebSocket support detection"""
+    from django.urls import reverse
+
     websockets_supported = check_websocket_support()
 
     # Check if any of the actually used components are ReactiveComponents
@@ -104,6 +106,8 @@ def render_scripts(request, csrf_token, messages=None):
             ),
             # Only enable websockets if reactive components are actually used on this page
             "use_websockets": has_reactive_components and websockets_supported,
+            # Dynamic endpoint for navigation notifications
+            "navigate_url": reverse("tetra:navigate"),
         },
     )
 

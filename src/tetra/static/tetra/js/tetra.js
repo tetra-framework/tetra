@@ -27,6 +27,52 @@
       }
       this.initOnlineStatusStore();
       this.initBrowserOnlineDetection();
+      this.initRouteStore();
+    },
+    initRouteStore() {
+      Alpine.store("route", {
+        path: window.location.pathname,
+        go(path) {
+          history.pushState({}, "", path);
+          this.path = path;
+        }
+      });
+      window.addEventListener("popstate", () => {
+        Alpine.store("route").path = window.location.pathname;
+      });
+    },
+    navigate(path) {
+      Alpine.store("route").go(path);
+      this.notifyNavigation(path);
+    },
+    notifyNavigation(path) {
+      const payload = {
+        protocol: "tetra-1.0",
+        type: "navigation",
+        payload: {
+          path
+        }
+      };
+      if (window.__tetra_useWebsockets && this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.sendWebSocketMessage(payload);
+      } else {
+        const navigateUrl = window.__tetra_navigateUrl;
+        if (!navigateUrl) {
+          console.error("Tetra navigate url is missing");
+          return;
+        }
+        fetch(navigateUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": window.__tetra_csrfToken
+          },
+          body: JSON.stringify(payload),
+          keepalive: true
+          // Request continues even if page unloads
+        }).catch(() => {
+        });
+      }
     },
     initOnlineStatusStore() {
       if (this.onlineStatusInitialized) return;

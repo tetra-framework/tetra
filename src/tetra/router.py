@@ -753,7 +753,7 @@ class Router(Component):
         return None
 
 
-class Link(Component):
+class Link(BasicComponent):
     """
     A component for navigating between routes.
     """
@@ -761,11 +761,12 @@ class Link(Component):
     to: str = ""
     active_class: str = "active"
 
+    # FIXME: the active class path detection is wrong.
     # language=html
     template: django_html = """
     <a {% ... attrs %}
        href="{{ to }}"
-       @click.prevent="follow()"
+       @click.prevent="Tetra.navigate('{{ to }}')"
        :class="{ '{{ active_class }}': window.location.pathname === '{{ to }}' }"
     >
         {% slot default %}{% endslot %}
@@ -776,9 +777,9 @@ class Link(Component):
         self.to = to
         self.active_class = active_class
 
-    @public(update=False)
-    def follow(self):
-        self.client._dispatch("tetra:navigate", {"path": self.to})
+    # @public(update=False)
+    # def follow(self):
+    #     self.client._dispatch("tetra:navigate", {"path": self.to})
 
 
 class Redirect(Component):
