@@ -298,7 +298,13 @@ class Library:
                     script = component_cls.extract_script()
                     py_filename, _, _ = component_cls.get_source_location()
                     py_dir = os.path.dirname(py_filename)
-                    if component_cls._is_script_inline():
+
+                    # Check if this component has its own external JS file
+                    own_js_file = component_cls._get_component_file_path_with_extension("js")
+                    has_own_external_js = own_js_file and os.path.exists(own_js_file)
+
+                    if component_cls._is_script_inline() or not has_own_external_js:
+                        # Inline script or inherited script - write to cache
                         filename = os.path.join(
                             library_cache_path,
                             f"{os.path.basename(py_filename)}__{component_name}.tmp.js",
@@ -307,7 +313,8 @@ class Library:
                             f.write(script)
                         # files_to_remove.append(filename)
                     else:
-                        filename = os.path.join(py_dir, f"{component_name}.js")
+                        # Own external JS file exists
+                        filename = own_js_file
                     rel_path = os.path.relpath(filename, library_cache_path)
                     if os.name == "nt":
                         rel_path = rel_path.replace(os.sep, "/")

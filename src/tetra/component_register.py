@@ -5,9 +5,7 @@ import pkgutil
 from django.apps import apps
 from django.conf import settings
 import importlib
-from django.template import Template
 import inspect
-from collections import defaultdict
 
 from .components.base import InlineTemplate, Component, BasicComponent
 from .exceptions import ComponentError, ComponentNotFound

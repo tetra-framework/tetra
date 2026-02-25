@@ -7,7 +7,7 @@ from uuid import uuid4
 from threading import local
 from django import template
 from django.http import HttpRequest
-from django.template import RequestContext, TemplateSyntaxError
+from django.template import RequestContext, TemplateSyntaxError, Context
 from django.template.loader_tags import BlockNode, BLOCK_CONTEXT_KEY
 from django.utils.safestring import mark_safe, SafeString
 
@@ -610,34 +610,37 @@ class RouterViewNode(template.Node):
         Looks for '_router_matched_component' in context, which should be
         set by the Router component during routing.
         """
-        matched_component = context.get('_router_matched_component', '')
+        matched_component = context.get("_router_matched_component", "")
 
         if not matched_component:
-            return mark_safe('')
+            return mark_safe("")
 
         try:
-            from ..component_register import resolve_component
             component_class = resolve_component(context, matched_component)
             request: HttpRequest = context.request
 
             # Create a new context based on the current context
             # This ensures library registration and other context is preserved
-            from django.template import Context
+
             if isinstance(context, RequestContext):
                 resolved_context = RequestContext(request, dict(context.flatten()))
             else:
                 resolved_context = Context(dict(context.flatten()))
 
             # Update with routing-related context (ensure they're in the new context)
-            for key in ['url_params', '_remaining_path', '_consumed_path']:
+            for key in ["url_params", "_remaining_path", "_consumed_path"]:
                 if key in context:
                     resolved_context[key] = context[key]
-
+            logger.debug(
+                f"Rendering router_view for component '{matched_component}' with context: {resolved_context}"
+            )
             # Render the matched component
             return component_class.as_tag(
                 request,
                 _context=resolved_context,
             )
         except Exception as e:
-            logger.error(f"Error rendering router_view for component '{matched_component}': {e}")
-            return mark_safe('')
+            logger.error(
+                f"Error rendering router_view for component '{matched_component}': {e}"
+            )
+            return mark_safe("")

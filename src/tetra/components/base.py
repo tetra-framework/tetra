@@ -16,7 +16,6 @@ from weakref import WeakKeyDictionary
 from functools import wraps
 from threading import local
 
-from autobahn.wamp import component
 from django import forms
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.core.files import File
@@ -160,8 +159,7 @@ def make_template(cls) -> Template:
     # Template resolution order:
     # 1. Inline template of THIS class
     # 2. External template file of THIS class
-    # 3. Inline template of parent class
-    # 4. External template file of parent class (handled by inheritance)
+    # 3. Inherited template from parent class (either inline or external)
 
     # Check if template is defined inline in THIS class (not inherited)
     has_own_inline_template = _has_own_attribute(cls, "template")
@@ -260,9 +258,29 @@ def make_template(cls) -> Template:
             except (TemplateDoesNotExist, Exception) as e:
                 pass  # External template not found, try inherited template
 
-        # 3. Fall back to inherited inline template from parent class
+        # 3. Fall back to inherited template from parent class
         if not external_template_found:
-            has_inherited_template = hasattr(cls, "template") and cls.template
+            # First check if parent has a compiled template
+            parent_with_template = None
+            for base in cls.__mro__[1:]:
+                if hasattr(base, "_template"):
+                    if base._template is not None:
+                        # Use parent's compiled template
+                        return base._template
+                    else:
+                        # Parent exists but template not compiled yet
+                        # Remember this parent for later
+                        parent_with_template = base
+
+            # If parent has template but not compiled yet, return None
+            # This will cause the calling code to defer compilation
+            if parent_with_template is not None:
+                return None
+
+            # Otherwise check for inherited inline template
+            has_inherited_template = (
+                hasattr(cls, "template") and cls.template is not None
+            )
             if has_inherited_template:
                 # Use inherited template
                 if not cls.template:
@@ -445,6 +463,10 @@ class BasicComponent:
                 cls._to_compile.append(cls)
             else:
                 cls._template = make_template(cls)
+                # If template is None, it means parent template isn't ready yet
+                # Add to compile list to compile later
+                if cls._template is None:
+                    cls._to_compile.append(cls)
 
     def __init__(
         self,
@@ -568,7 +590,12 @@ class BasicComponent:
         if cls._is_directory_component is not True:
             # assume this is an inline component, no css/js files available
             return ""
+        # Check if THIS class's module is actually a package (has __path__)
+        # Don't rely on inherited _is_directory_component value
         module = importlib.import_module(cls.__module__)
+        if not hasattr(module, "__path__"):
+            # Not a directory component
+            return ""
         component_name = module.__name__.split(".")[-1]
         module_path = module.__path__[0]
         file_name = f"{component_name}.{extension}"
@@ -604,7 +631,8 @@ class BasicComponent:
         if _has_own_attribute(cls, "script"):
             return True
         # Check current class for external file
-        if os.path.exists(cls._get_component_file_path_with_extension("js")):
+        js_file = cls._get_component_file_path_with_extension("js")
+        if os.path.exists(js_file):
             return True
         # Check base classes
         for base in cls.__mro__[1:]:
@@ -656,13 +684,20 @@ class BasicComponent:
         # Check current class for external file
         js_file = cls._get_component_file_path_with_extension("js")
         if os.path.exists(js_file):
+            logger.debug(
+                f"Found JavaScript file '{js_file}' for component '{cls.__name__}'"
+            )
             return cls._read_component_file_with_extension("js")
         # Check base classes
         for base in cls.__mro__[1:]:
             if hasattr(base, "extract_script") and base is not BasicComponent:
                 script = base.extract_script()
                 if script:
+                    logger.debug(
+                        f"Found script from base class '{base.__name__}' for component '{cls.__name__}'"
+                    )
                     return script
+        logger.debug(f"No JavaScript file for component '{cls.__name__}'")
         return ""
 
     @classmethod

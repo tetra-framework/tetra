@@ -77,6 +77,7 @@ def render_scripts(request, csrf_token, messages=None):
     # Check if any of the actually used components are ReactiveComponents
     try:
         from tetra.components.reactive import ReactiveComponent
+
         has_reactive_components = any(
             issubclass(component, ReactiveComponent)
             for component in request.tetra_components_used

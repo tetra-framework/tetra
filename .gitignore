@@ -291,3 +291,4 @@ dist
 __tetracache__/
 /src/tetra/bin/esbuild-*
 **/static/*/tetra/**
+/src/tetra/static/tetra/js/tetra.*

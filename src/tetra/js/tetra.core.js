@@ -858,7 +858,7 @@ const Tetra = {
       return true;
     } catch (error) {
       const isNetworkError = error instanceof TypeError &&
-          (error.message.includes('fetch') || error.message.includes('NetworkError'));
+        (error.message.includes('fetch') || error.message.includes('NetworkError'));
 
       if (isNetworkError) {
         console.warn('Network error during replay without component, re-queuing:', error);
@@ -1121,7 +1121,7 @@ const Tetra = {
                   allIndicators.add(el)
                 }
               })
-
+              
               allIndicators.forEach(el => {
                 if (!el.__activeRequests) el.__activeRequests = new Set();
                 el.__activeRequests.add(reqId);
@@ -1317,13 +1317,13 @@ const Tetra = {
         }
 
         const store = Alpine.store('tetra_subscriptions');
-
+        
         this.__subscribedGroups.add(topic);
-
+        
         if (!store[topic]) {
           store[topic] = [];
         }
-
+        
         if (!store[topic].includes(this.component_id)) {
           const isFirst = store[topic].length === 0;
           store[topic].push(this.component_id);
@@ -1761,7 +1761,7 @@ const Tetra = {
 
             // Security check: prevent prototype chain traversal
             if (item.callback.some(name =>
-                name === '__proto__' || name === 'constructor' || name === 'prototype'
+              name === '__proto__' || name === 'constructor' || name === 'prototype'
             )) {
               console.error('Blocked callback with dangerous property access');
               return;
@@ -1914,8 +1914,8 @@ const Tetra = {
     } catch (error) {
       // Check if it's a network error (connection refused, DNS failure, etc.)
       const isNetworkError = error instanceof TypeError ||
-          error.message.toLowerCase().includes('network') ||
-          error.message.toLowerCase().includes('fetch');
+                            error.message.toLowerCase().includes('network') ||
+                            error.message.toLowerCase().includes('fetch');
 
       if (isNetworkError) {
         console.warn(`Network error calling ${methodName}, queueing for retry:`, error.message);

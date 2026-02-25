@@ -1,0 +1,8 @@
+{#   FIXME: the active class path detection is wrong.#}
+<a {% ... attrs %}
+   href="{{ to }}"
+   @click.prevent="Tetra.navigate('{{ to }}')"
+   :class="{ '{{ active_class }}': window.location.pathname === '{{ to }}' }"
+>
+    {% slot default %}{% endslot %}
+</a>
