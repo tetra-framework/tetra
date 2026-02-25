@@ -1,4 +1,5 @@
 import re
+import logging
 from typing import Optional, Union, List, Dict, Any, TYPE_CHECKING
 from dataclasses import dataclass, field
 
@@ -7,6 +8,8 @@ from django.urls import path as django_path, re_path as django_re_path
 from django.urls.resolvers import RoutePattern, RegexPattern, URLPattern
 from django.utils.functional import lazy
 from tetra import BasicComponent
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from tetra.components.default.router import Router
@@ -166,6 +169,8 @@ class Route:
             # Convert string patterns to Django patterns
             # Strip leading slash - Django patterns don't use them
             pattern = self.pattern.lstrip("/")
+            if settings.APPEND_SLASH and not pattern.endswith("/"):
+                pattern = f"{pattern}/"
 
             # Detect if this is a regex pattern (contains regex special chars)
             is_regex = bool(re.search(r"[\\()[\]{}?+*|^$.]", pattern))
@@ -192,6 +197,7 @@ class Route:
             Tuple of (component_name, url_params) if matched, None otherwise.
         """
         if not self._url_pattern:
+            logger.debug(f"      Route.match: No _url_pattern set")
             return None
 
         # Normalize path for matching
@@ -204,7 +210,8 @@ class Route:
                 # Get component name
                 component_name = self._get_component_name()
                 return component_name, match.kwargs
-        except Exception:
+        except Exception as e:
+            logger.debug(f"      Route.match: resolve() raised exception: {e}")
             pass
 
         return None

@@ -1,9 +1,12 @@
 from typing import Optional, Any
+import logging
 
 from django.utils.functional import lazy
 
 from tetra import Component, public
 from tetra.router import Route, _route_registry, NestedRoute
+
+logger = logging.getLogger(__name__)
 
 
 class Router(Component):
@@ -170,13 +173,10 @@ class Router(Component):
         """
         return lazy(cls.reverse, str)(name, **kwargs)
 
-    # Pass routing context to child components
-    _extra_context = [
-        "url_params",
-        "_router_matched_component",
-        "_remaining_path",
-        "_consumed_path",
-    ]
+    # Don't use _extra_context - these values are created by the Router itself
+    # in get_context_data() and passed to child components via context.
+    # Child Router components will receive these through _context parameter.
+    _extra_context = []
 
     def load(self, *args, **kwargs):
         # Ensure url_params is initialized even if passed from parent context
@@ -287,7 +287,7 @@ class Router(Component):
         For nested routing, stores consumed and remaining path portions
         that can be passed to child Router components.
         """
-        for route_obj in self.routes:
+        for i, route_obj in enumerate(self.routes):
             # First try exact match
             result = route_obj.match(path)
             if result:
@@ -338,6 +338,7 @@ class Router(Component):
                         return component_name, url_params
 
         # No match found
+        logger.debug(f"Router._match_route: No route matched for path '{path}'")
         self._consumed_path = ""
         self._remaining_path = ""
         return None

@@ -1,11 +1,10 @@
 export default {
     init() {
-        console.log('Router Initialized')
         // Watch global route store for path changes
         // This makes Router components reactive to Tetra.navigate() calls
         this.$watch('$store.route.path', (newPath) => {
             // Only update if the path actually changed
-        console.log('Router path changed:', newPath)
+        Tetra.debug('Router path changed:', newPath)
             if (this.current_path !== newPath) {
                 this.handleRouteChange(newPath)
             }
