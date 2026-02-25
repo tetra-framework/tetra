@@ -73,13 +73,13 @@ const Tetra = {
       this.sendWebSocketMessage(payload)
     } else {
       // Fallback to HTTP POST (fire-and-forget with CSRF protection)
-      const navigateUrl = window.__tetra_navigateUrl
-      if (!navigateUrl){
-        console.error('Tetra navigate url is missing')
+      const endpoint = window.__tetra_endpoint
+      if (!endpoint){
+        console.error('Tetra endpoint is missing')
         return
       }
 
-      fetch(navigateUrl, {
+      fetch(endpoint + 'navigate/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -795,8 +795,8 @@ const Tetra = {
       }
     };
 
-    // Get endpoint from metadata or use default unified endpoint
-    const endpoint = '/tetra/call/';
+    // Get endpoint from metadata or construct from base tetra endpoint
+    const endpoint = window.__tetra_endpoint + 'call/';
 
     const fetchPayload = {
       method: 'POST',

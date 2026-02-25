@@ -94,6 +94,10 @@ def render_scripts(request, csrf_token, messages=None):
                 "packages (channels, channels_redis, daphne)."
             )
 
+    # Get the base Tetra endpoint URL (e.g., "__tetra__/" or "" depending on URL configuration)
+    # We use the component-call URL and strip the "call/" suffix to get the base
+    tetra_endpoint = reverse("tetra:component-call").rsplit("call/", 1)[0]
+
     return render_to_string(
         "lib_scripts.html",
         {
@@ -106,8 +110,8 @@ def render_scripts(request, csrf_token, messages=None):
             ),
             # Only enable websockets if reactive components are actually used on this page
             "use_websockets": has_reactive_components and websockets_supported,
-            # Dynamic endpoint for navigation notifications
-            "navigate_url": reverse("tetra:navigate"),
+            # Base Tetra endpoint path (e.g., "__tetra__/")
+            "tetra_endpoint": tetra_endpoint,
         },
     )
 
