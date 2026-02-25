@@ -142,7 +142,7 @@ def make_template(cls) -> Template:
 
     Uses either the `cls.template` attribute as inline template string,
     or the html template file source in the component's directory. If both are defined,
-    'template' overrides 'template_name'.
+    'template' overrides the file template.
     """
     from ..templatetags.tetra import get_nodes_by_type_deep
 
@@ -157,19 +157,17 @@ def make_template(cls) -> Template:
             )
         return "{% load tetra %}" + source
 
-    # Check if template is defined in this class (not inherited)
-    has_own_template = _has_own_attribute(cls, "template")
+    # Template resolution order:
+    # 1. Inline template of THIS class
+    # 2. External template file of THIS class
+    # 3. Inline template of parent class
+    # 4. External template file of parent class (handled by inheritance)
 
-    # For templates, we also need to check if there's an inherited template from parent
-    has_inherited_template = False
-    if not has_own_template and hasattr(cls, "template") and cls.template:
-        # Check if any parent has a template
-        for parent in cls.__mro__[1:]:
-            if _has_own_attribute(parent, "template"):
-                has_inherited_template = True
-                break
+    # Check if template is defined inline in THIS class (not inherited)
+    has_own_inline_template = _has_own_attribute(cls, "template")
 
-    if has_own_template or has_inherited_template:
+    # 1. Use inline template if defined in THIS class
+    if has_own_inline_template:
         if not cls.template:
             raise ComponentError(f"Component '{cls.__name__}' has an empty template.")
         making_lazy_after_exception = False
@@ -220,71 +218,103 @@ def make_template(cls) -> Template:
         raise NotImplementedError(
             f"'template_name' is not implemented for Tetra components ({cls})"
         )
-        # template_file_name = cls.template_name
-        # template_dir = os.path.dirname(template_file_name)
 
+    # 2. Try to find external template file of THIS class
     else:
-
-        # try to find <component_name>.html within component's directory
         module = importlib.import_module(cls.__module__)
+        external_template_found = False
 
-        # No template, no template_name attrs found
-        # Here we definitely must have a dir-style component
-        if not hasattr(module, "__path__"):
-            raise ComponentError(
-                f"'{cls.__module__}.{cls.__name__}' is not a valid component. "
-                f"You either have to put it into a correct library directory with a "
-                f"template HTML alongside, or add a 'template'/'template_name' "
-                f"attribute to the component."
-            )
-        module_path = module.__path__[0]
-        component_name = module.__name__.split(".")[-1]
-        # if path is a file, get the containing directory
-        # template_dir = os.path.dirname(module_path)
+        # Check if this is a directory-style component with external template
+        if hasattr(module, "__path__"):
+            module_path = module.__path__[0]
+            component_name = module.__name__.split(".")[-1]
+            template_file_name = f"{component_name}.html"
 
-        # FIXME: better use cls.get_template_source_location() for this!
-        # template_source = cls._read_component_file_with_extension("html")
+            # Try to load the external template
+            try:
+                engine = Engine(dirs=[module_path], app_dirs=False)
+                loader = FileSystemLoader(engine)
+                for template_path in loader.get_template_sources(template_file_name):
+                    try:
+                        # Open and read the template source
+                        with open(template_path.name, "r", encoding="utf-8") as f:
+                            template_source = f.read()
 
-        template_file_name = f"{component_name}.html"
+                        origin = InlineOrigin(  # TODO: isn't that a normal Origin?
+                            name=os.path.join(module_path, template_file_name),
+                            template_name=template_file_name,
+                            start_line=0,
+                            component=cls,
+                        )
+                        # Compile the template
+                        template = Template(
+                            prepare_template_source(template_source),
+                            origin,
+                            template_file_name,
+                        )
+                        external_template_found = True
+                        break
+                    except FileNotFoundError:
+                        # If the file is not found, continue with the next source
+                        continue
+            except (TemplateDoesNotExist, Exception) as e:
+                pass  # External template not found, try inherited template
 
-        # Load the template using a custom loader
-        try:
-            engine = Engine(dirs=[module_path], app_dirs=False)
-            loader = FileSystemLoader(engine)
-            for template_path in loader.get_template_sources(template_file_name):
-                try:
-                    # Open and read the template source
-                    with open(template_path.name, "r", encoding="utf-8") as f:
-                        template_source = f.read()
-
-                    origin = InlineOrigin(
-                        name=os.path.join(module_path, template_file_name),
-                        template_name=template_file_name,
-                        start_line=0,
-                        component=cls,
+        # 3. Fall back to inherited inline template from parent class
+        if not external_template_found:
+            has_inherited_template = hasattr(cls, "template") and cls.template
+            if has_inherited_template:
+                # Use inherited template
+                if not cls.template:
+                    raise ComponentError(
+                        f"Component '{cls.__name__}' has an empty template."
                     )
-                    # Compile the template
-                    template = Template(
-                        prepare_template_source(template_source),
-                        origin,
-                        template_file_name,
-                    )
-                    break
-                except FileNotFoundError:
-                    # If the file is not found, continue with the next source
-                    continue
-            else:
-                # If no template is found, raise an error
-                raise ComponentError(
-                    f"Template file '{template_file_name}' not found for component"
-                    f" '{cls.__name__}'."
+                making_lazy_after_exception = False
+                filename, line = cls.get_template_source_location()
+                origin = InlineOrigin(
+                    name=f"{filename}:{cls.__name__}.template",
+                    template_name=filename,
+                    start_line=line,
+                    component=cls,
                 )
-            # template = get_template(template_file_name).template
-        except TemplateDoesNotExist:
-            raise ComponentError(
-                f"Template file '{template_file_name}' not found for component"
-                f" '{cls.__name__}'."
-            )
+                try:
+                    template = InlineTemplate(
+                        prepare_template_source(cls.template),
+                        origin=origin,
+                    )
+                except TemplateSyntaxError as e:
+                    from django.conf import settings
+
+                    logger.error(
+                        f"Failed to compile inherited template for component '{cls.__name__}': {e}"
+                    )
+                    if settings.DEBUG:
+                        making_lazy_after_exception = True
+                        template = SimpleLazyObject(
+                            lambda: InlineTemplate(
+                                prepare_template_source(cls.template),
+                                origin=origin,
+                            )
+                        )
+                    else:
+                        raise ComponentError(
+                            f"Template compilation failed for component '{cls.__name__}': {e}"
+                        )
+
+                if not making_lazy_after_exception and template is not None:
+                    for i, block_node in enumerate(
+                        get_nodes_by_type_deep(template.nodelist, BlockNode)
+                    ):
+                        if not getattr(block_node, "origin", None):
+                            block_node.origin = origin
+            else:
+                # No template found anywhere
+                raise ComponentError(
+                    f"'{cls.__module__}.{cls.__name__}' is not a valid component. "
+                    f"You either have to put it into a correct library directory with a "
+                    f"template HTML alongside, or add a 'template'/'template_name' "
+                    f"attribute to the component."
+                )
     if not re.match(r"^\s*{%\s*extends", template.source) and not has_single_root(
         template.source
     ):
@@ -451,7 +481,18 @@ class BasicComponent:
     def _compile_all_templates(mcls):
         while mcls._to_compile:
             cls = mcls._to_compile.pop(0)
-            if not hasattr(cls, "_template"):
+            # Check if class has its own external template file before inheriting
+            # This allows subclasses to override inherited templates with external files
+            module = importlib.import_module(cls.__module__)
+            has_external_template = False
+            if hasattr(module, "__path__"):
+                module_path = module.__path__[0]
+                component_name = module.__name__.split(".")[-1]
+                template_file_path = os.path.join(module_path, f"{component_name}.html")
+                has_external_template = os.path.exists(template_file_path)
+
+            # Compile if: no _template yet, OR has external template (to override inherited)
+            if "_template" not in cls.__dict__ or has_external_template:
                 cls._template = make_template(cls)
 
     def get_component_id(self) -> str:
@@ -1420,7 +1461,10 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             return True
         # Check base classes
         for base in cls.__mro__[1:]:
-            if hasattr(base, "_is_script_inline") and base not in (Component, BasicComponent):
+            if hasattr(base, "_is_script_inline") and base not in (
+                Component,
+                BasicComponent,
+            ):
                 if base._is_script_inline():
                     return True
         return False
@@ -1455,7 +1499,10 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
             return cls._read_component_file_with_extension("js")
         # Check base classes
         for base in cls.__mro__[1:]:
-            if hasattr(base, "extract_script") and base not in (Component, BasicComponent):
+            if hasattr(base, "extract_script") and base not in (
+                Component,
+                BasicComponent,
+            ):
                 script = base.extract_script()
                 if script:
                     return script
