@@ -7,6 +7,9 @@ from django.conf import settings
 from django.urls import path as django_path, re_path as django_re_path
 from django.urls.resolvers import RoutePattern, RegexPattern, URLPattern
 from django.utils.functional import lazy
+from django.shortcuts import render
+from django.http import HttpRequest
+
 from tetra import BasicComponent
 
 logger = logging.getLogger(__name__)
@@ -445,8 +448,6 @@ def router_view(router_class: type["Router"], template_name: str = None):
             *router_urls('', AppRouter, 'base.html'),
         ]
     """
-    from django.shortcuts import render
-    from django.http import HttpRequest
 
     def view(request: HttpRequest, path: str = ""):
         # Normalize path to include leading slash
