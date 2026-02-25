@@ -439,10 +439,10 @@ def router_view(router_class: type["Router"], template_name: str = None):
         ]
 
         # Or use the helper function:
-        from tetra.router import router_url
+        from tetra.router import router_urls
 
         urlpatterns = [
-            router_url('', AppRouter, 'base.html'),
+            *router_urls('', AppRouter, 'base.html'),
         ]
     """
     from django.shortcuts import render
@@ -478,12 +478,12 @@ def router_view(router_class: type["Router"], template_name: str = None):
     return view
 
 
-def router_url(
+def router_urls(
     base_path: str,
     router_class: type["Router"],
     template_name: str = None,
     name: str = None,
-):
+) -> list[URLPattern]:
     """
     Create Django URL patterns for a Router component with catch-all routing.
 
@@ -502,12 +502,12 @@ def router_url(
     Example:
         # In urls.py:
         from django.urls import path, include
-        from tetra.router import router_url
+        from tetra.router import router_urls
         from myapp.components import AppRouter
 
         urlpatterns = [
             # Other URL patterns...
-            *router_url('', AppRouter, 'base.html', name='app'),
+            *router_urls('', AppRouter, 'base.html', name='app'),
         ]
 
         # This creates two patterns:
