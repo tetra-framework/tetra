@@ -136,7 +136,7 @@ def _has_own_attribute(cls, attr_name: str) -> bool:
     return False
 
 
-def make_template(cls) -> Template:
+def make_template(cls) -> Template | None:
     """Create a template from a component class.
 
     Uses either the `cls.template` attribute as inline template string,
