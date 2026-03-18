@@ -12,16 +12,29 @@ title: Changelog
     implementing some additional functionality.
     After v1.0 we will move to using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.2] – unreleased
+## [0.9.2] – 2026-03-18
 ### Added
-- Implement nested routes with components
-- Allow BasicComponents to include simple JavaScript (without Alpine/state access)
+- **Client-side Routing**: Implement full client-side routing that informs the server of new routes.
+- **Nested Routes**: Improved `Router` to be nestable and delegate routes to sub-routers.
+- **Router Registry**: Introduced a global router registry with `reverse` and `reverse_lazy` support for components.
+- Allow `BasicComponent` to include simple JavaScript (without Alpine/state access).
+- Pass Tetra endpoint from server config to client instead of using hardcoded URLs.
+- Add "ws" hint when debugging navigation in the browser console.
 
 ### Changed
-- **Breaking change**: Exclude context from saved component state per default
+- **Breaking change**: Exclude context from saved component state per default to reduce state size and improve security.
+- Rename `router_url` to `router_urls` for consistency.
+- Remove compiled JavaScript assets from VCS to reduce repository noise.
+- Improve error messages when template HTML files are missing or when `StateException` is raised.
 
 ### Fixed
-- Fix order of finding html templates, css, js files of components when base classes are involved
+- Fix order of finding HTML templates, CSS, and JS files for components when base classes are involved.
+- Handle Django empty patterns returning `/` by converting to an empty string in the router.
+- Fix `ReactiveComponent` auto-generated `key` support.
+- Fix template resolution and JS discovery for directory-based components.
+- Fix return annotations and various typos/whitespace issues.
+- Ensure only the "default" library in Tetra is discovered to avoid conflicts.
+- Refactored tests and improved error handling in templates.
 
 ## [0.9.1] – 2026-02-17
 ### Fixed
