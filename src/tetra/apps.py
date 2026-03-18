@@ -29,15 +29,24 @@ class TetraConfig(AppConfig):
         from .component_register import find_component_libraries
         from tetra import checks  # noqa
         from .library import Library
-        from tetra.router import Redirect
-        from tetra.router import Link
-        from tetra.router import Router
+        from .components.default.redirect import Redirect
+        from .components.default.link import Link
+        from .components.default.router import Router
 
         # Register router components in the default library
-        default_lib = Library("default", "tetra")
-        default_lib.register(Router)
-        default_lib.register(Link)
-        default_lib.register(Redirect)
+        # default_lib = Library("default", "tetra")
+        #
+        # # Set the library path so component resources can be discovered
+        # default_lib.path = os.path.join(
+        #     os.path.dirname(__file__), "components", "default"
+        # )
+        #
+        # # Set _is_directory_component for Router so its JS file can be discovered
+        # Router._is_directory_component = True
+        # default_lib.register(Router)
+        #
+        # default_lib.register(Link)
+        # default_lib.register(Redirect)
 
         find_component_libraries()
         autoreload_started.connect(watch_extra_files)

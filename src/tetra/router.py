@@ -1,13 +1,21 @@
 import re
-from typing import Optional, Union, List, Dict, Any
+import logging
+from typing import Optional, Union, List, Dict, Any, TYPE_CHECKING
 from dataclasses import dataclass, field
 
 from django.conf import settings
 from django.urls import path as django_path, re_path as django_re_path
 from django.urls.resolvers import RoutePattern, RegexPattern, URLPattern
 from django.utils.functional import lazy
-from sourcetypes import django_html
-from tetra import Component, public, BasicComponent
+from django.shortcuts import render
+from django.http import HttpRequest
+
+from tetra import BasicComponent
+
+logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from tetra.components.default.router import Router
 
 
 # Global route registry
@@ -164,6 +172,9 @@ class Route:
             # Convert string patterns to Django patterns
             # Strip leading slash - Django patterns don't use them
             pattern = self.pattern.lstrip("/")
+            # Only add trailing slash if pattern is non-empty
+            if settings.APPEND_SLASH and pattern and not pattern.endswith("/"):
+                pattern = f"{pattern}/"
 
             # Detect if this is a regex pattern (contains regex special chars)
             is_regex = bool(re.search(r"[\\()[\]{}?+*|^$.]", pattern))
@@ -190,6 +201,7 @@ class Route:
             Tuple of (component_name, url_params) if matched, None otherwise.
         """
         if not self._url_pattern:
+            logger.debug(f"      Route.match: No _url_pattern set")
             return None
 
         # Normalize path for matching
@@ -202,7 +214,8 @@ class Route:
                 # Get component name
                 component_name = self._get_component_name()
                 return component_name, match.kwargs
-        except Exception:
+        except Exception as e:
+            logger.debug(f"      Route.match: resolve() raised exception: {e}")
             pass
 
         return None
@@ -399,400 +412,125 @@ def include(routes: List[Route]) -> List[Route]:
     return routes
 
 
-class Router(Component):
+def router_view(router_class: type["Router"], template_name: str = None):
     """
-    A component that manages navigation and dynamic component switching.
+    Create a Django view that renders a "root" Router component for any path.
 
-    Routing format:
-    routes = [route('/', Home), route('about/', About)]
+    It is the entry point for server-side rendering (SSR) of client-side routing - when
+    users navigate directly to a deep URL (e.g., via bookmark or F5 refresh),
+    the server can render the appropriate component based on the Router's route
+    configuration.
 
-    Router subclasses should define their own template and use {% router_view %}
-    to mark where the matched child component should be rendered.
-    """
+    Args:
+        router_class: The "root" Router component class that handles routing
+        template_name: Optional Django template that wraps the router component.
+                      If not provided, it renders only the router component.
 
-    routes: List[Route] = []
-    namespace: Optional[str] = None  # Optional namespace for route registration
+    Returns:
+        A Django view function that can be used in urls.py
 
-    # Internal routing state (not exposed to frontend)
-    _matched_component: str = ""
-    _consumed_path: str = ""
-    _remaining_path: str = ""
+    Example:
+        # In your Django app's views.py:
+        from django.urls import path
+        from tetra.router import router_view
+        from .components import AppRouter
 
-    # Public state for templates
-    current_path: str = public("")
-    url_params: dict[str, Any] = public({})
+        app_router_view = router_view(AppRouter, 'base.html')
+        urlpatterns = [
+            path(...),  # your other paths: API, etc.
+            path('', app_router_view),            # Root path
+            path('<path:path>', app_router_view), # Catch-all for any subpath
+        ]
 
-    @property
-    def current_component(self) -> str:
-        """
-        Backward compatibility property for accessing matched component.
+        # Or use the helper function:
+        from tetra.router import router_urls
 
-        Returns the fully qualified name of the currently matched component.
-        """
-        return self._matched_component
-
-    @current_component.setter
-    def current_component(self, value: str):
-        """Allow setting current_component for backward compatibility."""
-        self._matched_component = value
-
-    def __init_subclass__(cls, **kwargs):
-        """Auto-register routes when Router subclass is defined."""
-        super().__init_subclass__(**kwargs)
-        # Register all named routes in the global registry
-        cls._register_routes()
-
-    @classmethod
-    def get_routes(cls) -> List[Route]:
-        return cls.routes
-
-    @classmethod
-    def _register_routes(cls):
-        """Register all routes from this Router in the global registry."""
-        for route_obj in cls.get_routes():
-            _route_registry.register(cls, route_obj, namespace=cls.namespace)
-            # Also register nested children
-            if isinstance(route_obj, NestedRoute) and route_obj.children:
-                for child_route in route_obj.children:
-                    _route_registry.register(cls, child_route, namespace=cls.namespace)
-
-    @classmethod
-    def reverse(cls, name: str, **kwargs) -> str:
-        """
-        Reverse a named route to a URL path.
-
-        Args:
-            name: The name of the route to reverse
-            **kwargs: URL parameters for the route (e.g., patient_id=123)
-
-        Returns:
-            The URL path for the named route
-
-        Raises:
-            ValueError: If the route name is not found
-
-        Example:
-            class MyRouter(Router):
-                routes = [
-                    route('', Home, name='home'),
-                    route('patient/<int:id>/', PatientView, name='patient-detail'),
-                ]
-
-            # Reverse by name
-            url = MyRouter.reverse('patient-detail', id=123)
-            # Returns: 'patient/123/'
-        """
-        for route_obj in cls.routes:
-            if route_obj.name == name:
-                # Use Django's reverse logic on the pattern
-                if route_obj._url_pattern:
-                    try:
-                        # Django's URLPattern.reverse() or pattern.reverse()
-                        if hasattr(route_obj._url_pattern.pattern, "reverse"):
-                            path = route_obj._url_pattern.pattern.reverse(**kwargs)
-                        else:
-                            # Fallback: manually construct path for simple patterns
-                            path = str(route_obj._url_pattern.pattern)
-                            for key, value in kwargs.items():
-                                path = path.replace(f"<int:{key}>", str(value))
-                                path = path.replace(f"<str:{key}>", str(value))
-                                path = path.replace(f"<slug:{key}>", str(value))
-                                path = path.replace(f"<uuid:{key}>", str(value))
-                                path = path.replace(f"<path:{key}>", str(value))
-                        return path
-                    except Exception as e:
-                        raise ValueError(
-                            f"Could not reverse route '{name}' with kwargs {kwargs}: {e}"
-                        )
-            # Check nested routes recursively
-            if isinstance(route_obj, NestedRoute) and route_obj.children:
-                for child_route in route_obj.children:
-                    if child_route.name == name:
-                        # For nested routes, combine parent and child patterns
-                        parent_path = cls._reverse_route(route_obj, **kwargs)
-                        child_path = cls._reverse_route(child_route, **kwargs)
-                        return parent_path.rstrip("/") + "/" + child_path.lstrip("/")
-
-        raise ValueError(f"Route '{name}' not found in {cls.__name__}")
-
-    @classmethod
-    def _reverse_route(cls, route_obj: Route, **kwargs) -> str:
-        """Helper to reverse a single route object."""
-        if not route_obj._url_pattern:
-            return ""
-        try:
-            if hasattr(route_obj._url_pattern.pattern, "reverse"):
-                return route_obj._url_pattern.pattern.reverse(**kwargs)
-            else:
-                # Fallback: manually construct path
-                path = str(route_obj._url_pattern.pattern)
-                for key, value in kwargs.items():
-                    path = path.replace(f"<int:{key}>", str(value))
-                    path = path.replace(f"<str:{key}>", str(value))
-                    path = path.replace(f"<slug:{key}>", str(value))
-                    path = path.replace(f"<uuid:{key}>", str(value))
-                    path = path.replace(f"<path:{key}>", str(value))
-                return path
-        except Exception:
-            return ""
-
-    @classmethod
-    def reverse_lazy(cls, name: str, **kwargs):
-        """
-        Lazy version of reverse() that defers evaluation until the value is accessed.
-
-        This is useful when you need to provide a URL at import time, but the
-        route definitions may not be fully loaded yet.
-
-        Args:
-            name: The name of the route to reverse
-            **kwargs: URL parameters for the route (e.g., patient_id=123)
-
-        Returns:
-            A lazy object that evaluates to the URL path when accessed
-
-        Example:
-            class MyRouter(Router):
-                routes = [
-                    route('', Home, name='home'),
-                ]
-
-            # At import time
-            SUCCESS_URL = MyRouter.reverse_lazy('home')
-        """
-        return lazy(cls.reverse, str)(name, **kwargs)
-
-    # Pass routing context to child components
-    _extra_context = [
-        "url_params",
-        "_router_matched_component",
-        "_remaining_path",
-        "_consumed_path",
-    ]
-
-    # language=html
-    template: django_html = """
-    <div>
-        {% router_view %}
-    </div>
+        urlpatterns = [
+            *router_urls('', AppRouter, 'base.html'),
+        ]
     """
 
-    # Alpine.js event handlers for navigation (added dynamically to root element)
-    # language=javascript
-    script = """
-    return {
-        __rootBind: {
-            '@popstate.window': 'navigate(window.location.pathname, false)',
-            '@tetra:navigate.window': 'navigate($event.detail.path)',
-        }
-    }
-    """
+    def view(request: HttpRequest, path: str = ""):
+        # Normalize path to include leading slash
+        if not path.startswith("/"):
+            path = "/" + path
+        if not path.endswith("/") and settings.APPEND_SLASH:
+            path = path + "/"
 
-    def load(self, *args, **kwargs):
-        # Ensure url_params is initialized even if passed from parent context
-        if "url_params" not in kwargs and not hasattr(self, "url_params"):
-            self.url_params = {}
+        # Render the router component with the current path
+        router_html = router_class.as_tag(request)
 
-        # Merge parent url_params if passed via context
-        if hasattr(self, "_context") and self._context:
-            parent_params = self._context.get("url_params", {})
-            if parent_params and isinstance(parent_params, dict):
-                # Merge parent params with current params (current takes precedence)
-                self.url_params = {**parent_params, **self.url_params}
-
-        # Initialize routing state
-        if not self._matched_component:
-            # Use browser URL from request.tetra as source of truth, not request.path
-            path = self.request.tetra.current_url_path or self.request.path
-
-            # If this is a nested router, use the remaining path from parent
-            if (
-                hasattr(self, "_context")
-                and self._context
-                and "_remaining_path" in self._context
-            ):
-                path_to_match = self._context["_remaining_path"]
-                self.navigate(path_to_match, push=False)
-            else:
-                self.navigate(path, push=False)
-
-    def get_context_data(self, **kwargs):
-        """
-        Override to add routing context to template.
-
-        This exposes routing state to the template so {% router_view %} can access it.
-        """
-        context = super().get_context_data(**kwargs)
-
-        # Add routing context
-        context.update(
-            {
-                "_router_matched_component": self._matched_component,
-                "_remaining_path": self._remaining_path,
-                "_consumed_path": self._consumed_path,
-                "url_params": self.url_params,
-            }
-        )
-
-        return context
-
-    @public
-    def navigate(self, path: str, push=True):
-        if push:
-            self.client._pushUrl(path)
-
-        self.current_path = path
-
-        # Update request.tetra URL so current_url_path reflects the navigation
-        # This ensures route matching uses the correct path
-        self.request.tetra.set_url_path(path)
-
-        # Use browser URL as source of truth for routing
-        path_to_match = self.request.tetra.current_url_path or path
-
-        # If this is a nested router, only match against remaining path
-        if (
-            hasattr(self, "_context")
-            and self._context
-            and "_remaining_path" in self._context
-        ):
-            path_to_match = self._context["_remaining_path"]
-
-        result = self._match_route(path_to_match)
-
-        if result:
-            component_name, url_params = result
-            self._matched_component = component_name
-
-            # Merge with parent url_params if this is a nested router
-            if hasattr(self, "_context") and self._context:
-                parent_params = self._context.get("url_params", {})
-                if parent_params and isinstance(parent_params, dict):
-                    # Merge parent params with current params (current takes precedence)
-                    self.url_params = {**parent_params, **url_params}
-                else:
-                    self.url_params = url_params
-            else:
-                self.url_params = url_params
-
-            # Store in request.tetra for all components to access
-            # Also merge with existing params to preserve parent router params
-            existing_params = (
-                self.request.tetra.route_params
-                if hasattr(self.request.tetra, "route_params")
-                else {}
+        if template_name:
+            # Render within a Django template
+            return render(
+                request,
+                template_name,
+                {
+                    "router": router_html,
+                    "router_component": router_class,
+                },
             )
-            merged_params = {**existing_params, **self.url_params}
-            self.request.tetra.set_route_params(merged_params)
         else:
-            self._matched_component = ""
-            self.url_params = {}
-            # Don't clear request.tetra params - child routers might need parent params
-            # self.request.tetra.set_route_params({})
+            # Render just the router component
+            from django.http import HttpResponse
 
-    def _match_route(self, path: str) -> Optional[tuple[str, Dict[str, Any]]]:
-        """
-        Match path against list of Route objects.
+            return HttpResponse(router_html)
 
-        For nested routing, stores consumed and remaining path portions
-        that can be passed to child Router components.
-        """
-        for route_obj in self.routes:
-            # First try exact match
-            result = route_obj.match(path)
-            if result:
-                component_name, url_params = result
-                # Exact match - this router consumes entire path
-                self._consumed_path = path
-                self._remaining_path = ""
-                return result
-
-            # If this is a NestedRoute, try prefix matching
-            if isinstance(route_obj, NestedRoute):
-                prefix_result = route_obj.match_prefix(path)
-
-                if prefix_result:
-                    component_name, remaining_path, url_params = prefix_result
-
-                    # Calculate consumed path
-                    if remaining_path:
-                        consumed_length = len(path) - len(remaining_path)
-                        self._consumed_path = path[:consumed_length]
-                        self._remaining_path = remaining_path
-                    else:
-                        self._consumed_path = path
-                        self._remaining_path = ""
-
-                    # If there's no remaining path, this route is the match
-                    if not remaining_path or remaining_path == "/":
-                        return component_name, url_params
-
-                    # If this route has explicit children, try to match them
-                    if route_obj.children:
-                        for child_route in route_obj.children:
-                            child_result = child_route.match(remaining_path)
-                            if child_result:
-                                # Merge parent and child URL parameters
-                                merged_params = {**url_params, **child_result[1]}
-                                # Update consumed/remaining for explicit child match
-                                self._consumed_path = path
-                                self._remaining_path = ""
-                                return child_result[0], merged_params
-
-                    # If no children matched but there's remaining path,
-                    # the component itself should handle it (delegation pattern)
-                    # In this case, still return the parent component and let it
-                    # route internally
-                    if remaining_path and remaining_path != "/":
-                        # Component will receive remaining path and route internally
-                        return component_name, url_params
-
-        # No match found
-        self._consumed_path = ""
-        self._remaining_path = ""
-        return None
+    return view
 
 
-class Link(Component):
+def router_urls(
+    base_path: str,
+    router_class: type["Router"],
+    template_name: str = None,
+    name: str = None,
+) -> list[URLPattern]:
     """
-    A component for navigating between routes.
+    Create Django URL patterns for a Router component with catch-all routing.
+
+    This is a convenience function that creates the necessary URL patterns to
+    handle both the base path and all subpaths for client-side routing with SSR.
+
+    Args:
+        base_path: The base URL path where the router is mounted (e.g., '', 'app/', 'users/')
+        router_class: The Router component class that handles routing
+        template_name: Optional Django base template that wraps the router component
+        name: Optional URL pattern name
+
+    Returns:
+        A list of Django URLPattern objects to include in urlpatterns
+
+    Example:
+        # In urls.py:
+        from django.urls import path, include
+        from tetra.router import router_urls
+        from myapp.components import AppRouter
+
+        urlpatterns = [
+            # Other URL patterns...
+            *router_urls('', AppRouter, 'base.html', name='app'),
+        ]
+
+        # This creates two patterns:
+        # 1. path('', router_view) - handles the base path
+        # 2. path('<path:path>', router_view) - catches all subpaths
     """
+    view = router_view(router_class, template_name)
 
-    to: str = ""
-    active_class: str = "active"
+    # Normalize base_path
+    if base_path and not base_path.endswith("/"):
+        base_path = base_path + "/"
 
-    # language=html
-    template: django_html = """
-    <a {% ... attrs %}
-       href="{{ to }}"
-       @click.prevent="follow()"
-       :class="{ '{{ active_class }}': window.location.pathname === '{{ to }}' }"
-    >
-        {% slot default %}{% endslot %}
-    </a>
-    """
+    patterns = []
 
-    def load(self, to="#", active_class="active", *args, **kwargs):
-        self.to = to
-        self.active_class = active_class
+    # Pattern for base path
+    if base_path == "" or base_path == "/":
+        # Root router
+        patterns.append(django_path("", view, name=name))
+        patterns.append(django_path("<path:path>", view))
+    else:
+        # Nested base path
+        patterns.append(django_path(base_path, view, name=name))
+        patterns.append(django_path(f"{base_path}<path:path>", view))
 
-    @public(update=False)
-    def follow(self):
-        self.client._dispatch("tetra:navigate", {"path": self.to})
-
-
-class Redirect(Component):
-    """
-    A component that redirects to another path when rendered.
-    """
-
-    to: str = ""
-
-    template: django_html = "<div></div>"
-
-    def load(self, to: str, *args, **kwargs):
-        self.to = to
-
-    def render(self, *args, **kwargs):
-        self.client._dispatch("tetra:navigate", {"path": self.to})
-        return super().render(*args, **kwargs)
+    return patterns

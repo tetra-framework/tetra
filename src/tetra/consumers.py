@@ -100,8 +100,8 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
 
         This method processes different types of messages based on the 'type' field
         in the received JSON content and routes them to appropriate handler methods.
-        Supported message types include 'subscribe', 'unsubscribe', 'notify', and
-        'data_request'. Unknown message types are logged as warnings.
+        Supported message types include 'subscribe', 'unsubscribe', 'notify',
+        'navigation', and 'data_request'. Unknown message types are logged as warnings.
         """
         message_type = content.get("type")
         if message_type == "subscribe":
@@ -110,6 +110,8 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
             await self._handle_unsubscribe(content)
         elif message_type == "ping":
             await self.send_json({"protocol": "tetra-1.0", "type": "pong"})
+        elif message_type == "navigation":
+            await self._handle_navigation(content)
         else:
             logger.warning(
                 f"Unknown message type received via websocket: {message_type}"
@@ -245,6 +247,35 @@ class TetraConsumer(AsyncJsonWebsocketConsumer):
                     "status": "unsubscribed",
                 },
             )
+
+    async def _handle_navigation(self, data: dict) -> None:
+        """Handle client-side navigation notification.
+
+        This notifies the server that the browser URL has changed via client-side
+        routing. The server can react to this if needed (e.g., updating session state,
+        logging navigation events, etc.).
+
+        Currently this is mainly informational - the T-Current-URL header sent with
+        each component method call already keeps the server in sync. However, this
+        allows the server to be aware of navigation events in real-time.
+        """
+        payload = data.get("payload", {})
+        path = payload.get("path")
+
+        if not path:
+            logger.warning("Navigation event received without path")
+            return
+
+        # Log navigation for debugging
+        logger.debug(
+            f"Client-side navigation (ws) to '{path}' "
+            f"(session: {self.session.session_key if self.session else 'none'})"
+        )
+
+        # Future: Could trigger server-side route handlers here
+        # For now, just acknowledge receipt (optional - fire-and-forget is fine)
+
+        # No response needed - this is a notification, not a request
 
     async def subscription_response(self, event) -> None:
         """Handle confirmation of subscription from channel layer"""

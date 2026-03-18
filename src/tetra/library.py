@@ -9,7 +9,6 @@ from typing import Self
 
 from django.apps import AppConfig, apps
 from django.templatetags.static import static
-from django.utils.functional import cached_property
 
 from .conf import get_setting, get_esbuild_path
 from .components.base import ComponentMetaClass, BasicComponent, Component
@@ -95,14 +94,14 @@ class Library:
             self.styles_filename,
         )
 
-    @cached_property
+    @property
     def js_url(self):
         """Returns the static URL of the library's compiled JavaScript file."""
         with open(f"{self.js_path}.filename") as f:
             js_filename = f.read()
         return static(os.path.join(self.app.label, "tetra", self.name, js_filename))
 
-    @cached_property
+    @property
     def styles_url(self):
         """Returns the static URL of the library's compiled CSS file."""
         with open(f"{self.styles_path}.filename") as f:
@@ -298,7 +297,13 @@ class Library:
                     script = component_cls.extract_script()
                     py_filename, _, _ = component_cls.get_source_location()
                     py_dir = os.path.dirname(py_filename)
-                    if component_cls._is_script_inline():
+
+                    # Check if this component has its own external JS file
+                    own_js_file = component_cls._get_component_file_path_with_extension("js")
+                    has_own_external_js = own_js_file and os.path.exists(own_js_file)
+
+                    if component_cls._is_script_inline() or not has_own_external_js:
+                        # Inline script or inherited script - write to cache
                         filename = os.path.join(
                             library_cache_path,
                             f"{os.path.basename(py_filename)}__{component_name}.tmp.js",
@@ -307,7 +312,8 @@ class Library:
                             f.write(script)
                         # files_to_remove.append(filename)
                     else:
-                        filename = os.path.join(py_dir, f"{component_name}.js")
+                        # Own external JS file exists
+                        filename = own_js_file
                     rel_path = os.path.relpath(filename, library_cache_path)
                     if os.name == "nt":
                         rel_path = rel_path.replace(os.sep, "/")

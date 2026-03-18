@@ -19,10 +19,12 @@ It uses Django's URL pattern syntax and supports nested routing:
 
 ```python
 from tetra import Library
-from tetra.router import route, Router
+from tetra.router import route
+from tetra.components.default.router import Router
 from my_app.components import Home, About, UserProfile
 
 library = Library("library", "my_app")
+
 
 @library.register
 class MyRouter(Router):
@@ -330,7 +332,9 @@ Tetra provides global `reverse()` and `reverse_lazy()` functions to generate URL
 #### Basic Usage
 
 ```python
-from tetra.router import Router, route, reverse, reverse_lazy
+from tetra.router import route, reverse, reverse_lazy
+from tetra.components.default.router import Router
+
 
 @library.register
 class AppRouter(Router):
@@ -339,6 +343,7 @@ class AppRouter(Router):
         route("about/", About, name="about"),
         route("patient/<int:patient_id>/", PatientView, name="patient-detail"),
     ]
+
 
 # Global reverse by name
 home_url = reverse("home")  # Returns: ""
@@ -351,7 +356,9 @@ patient_url = reverse("patient-detail", patient_id=123)  # Returns: "patient/123
 Routers can define a namespace to organize routes, similar to Django's URL namespaces:
 
 ```python
-from tetra.router import Router, route, reverse
+from tetra.router import route, reverse
+from tetra.components.default.router import Router
+
 
 @library.register
 class UserRouter(Router):
@@ -362,6 +369,7 @@ class UserRouter(Router):
         route("profile/<int:user_id>/", UserProfile, name="profile"),
     ]
 
+
 @library.register
 class AdminRouter(Router):
     namespace = "admin"
@@ -370,6 +378,7 @@ class AdminRouter(Router):
         route("", AdminDashboard, name="dashboard"),
         route("users/", UserList, name="users"),
     ]
+
 
 # Reverse with namespace
 user_profile = reverse("user:profile", user_id=123)  # Returns: "profile/123/"
@@ -496,7 +505,9 @@ class About(Component):
 
 ```python
 # my_app/components.py
-from tetra.router import Router, route
+from tetra.router import route
+from tetra.components.default.router import Router
+
 
 @lib.register
 class AppRouter(Router):
@@ -510,9 +521,11 @@ You can also collect routes from different apps using `include()`:
 
 ```python
 # my_app/components.py
-from tetra.router import Router, route, include
+from tetra.router import route, include
+from tetra.components.default.router import Router
 from other_app.routes import routes as other_app_routes
 from third_app.routes import routes as third_app_routes
+
 
 @library.register
 class AppRouter(Router):
@@ -537,8 +550,9 @@ routes = [
 ]
 
 # my_app/components.py
-from tetra.router import Router
+from tetra.components.default.router import Router
 from .routes import routes
+
 
 @library.register
 class AppRouter(Router):

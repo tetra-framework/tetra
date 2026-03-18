@@ -1,17 +1,8 @@
 import pytest
 from django.test import RequestFactory
-from tetra import Library
-from tetra.router import (
-    Component,
-    Router,
-    route,
-    path,
-    re_path,
-    include,
-    reverse,
-    reverse_lazy,
-    _route_registry,
-)
+from tetra import Library, Component
+from tetra.components.default.router import Router
+from tetra.router import route, reverse, reverse_lazy
 from tetra.middleware import TetraDetails
 from tetra.tests.fixtures import add_session_to_request
 
@@ -224,7 +215,7 @@ def test_router_no_match():
 def test_link_render():
     """Test rendering the Link component and verify it generates the correct href."""
     from tetra import Library
-    from tetra.router import Link
+    from tetra.components.default.link import Link
 
     # Ensure Link is registered (it might have been lost due to module reloads)
     if not getattr(Link, "_library", None):
@@ -241,7 +232,7 @@ def test_link_render():
 def test_link_default_to_param():
     """Test that Link defaults to='#' if not provided."""
     from tetra import Library
-    from tetra.router import Link
+    from tetra.components.default.link import Link
 
     if not getattr(Link, "_library", None):
         default_lib = Library("default", "tetra")
@@ -256,7 +247,7 @@ def test_link_default_to_param():
 def test_link_custom_active_class():
     """Test Link with custom active_class parameter."""
     from tetra import Library
-    from tetra.router import Link
+    from tetra.components.default.link import Link
 
     if not getattr(Link, "_library", None):
         default_lib = Library("default", "tetra")
@@ -271,7 +262,7 @@ def test_link_custom_active_class():
 def test_link_active_class_binding():
     """Test that Link includes Alpine.js active class binding."""
     from tetra import Library
-    from tetra.router import Link
+    from tetra.components.default.link import Link
 
     if not getattr(Link, "_library", None):
         default_lib = Library("default", "tetra")
@@ -289,7 +280,7 @@ def test_link_active_class_binding():
 def test_link_click_prevention():
     """Test that Link includes @click.prevent directive."""
     from tetra import Library
-    from tetra.router import Link
+    from tetra.components.default.link import Link
 
     if not getattr(Link, "_library", None):
         default_lib = Library("default", "tetra")
@@ -324,8 +315,8 @@ def test_link_with_slot_content():
         link_tag.get("href") == "/about/"
     ), f"Expected href='/about/', got {link_tag.get('href')}"
 
-    # Verify the Link has the necessary attributes for Tetra components
-    assert link_tag.get("tetra-component") == "tetra__default__link"
+    # Verify the Link has the necessary attributes
+    # Note: Link is a BasicComponent, so it doesn't have tetra-component attribute
     assert link_tag.get("@click.prevent") is not None or "@click.prevent" in str(
         link_tag
     )
@@ -335,7 +326,7 @@ def test_link_with_slot_content():
 def test_link_with_kwargs():
     """Test Link with various URL paths including parameters."""
     from tetra import Library
-    from tetra.router import Link
+    from tetra.components.default.link import Link
 
     if not getattr(Link, "_library", None):
         default_lib = Library("default", "tetra")

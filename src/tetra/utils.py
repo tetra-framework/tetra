@@ -34,7 +34,7 @@ from tetra.types import ComponentData
 # "components" directory.
 # FIXME: This is badly designed, and should be replaced with a non-hardcoded approach
 #  someday[tm]
-unsupported_modules = ["tetra", "wagtail.documents", "wagtail.images"]
+unsupported_modules = ["wagtail.documents", "wagtail.images"]
 
 logger = logging.getLogger(__name__)
 
@@ -70,11 +70,14 @@ def render_styles(request):
 
 def render_scripts(request, csrf_token, messages=None):
     """Render Tetra JavaScript with WebSocket support detection"""
+    from django.urls import reverse
+
     websockets_supported = check_websocket_support()
 
     # Check if any of the actually used components are ReactiveComponents
     try:
         from tetra.components.reactive import ReactiveComponent
+
         has_reactive_components = any(
             issubclass(component, ReactiveComponent)
             for component in request.tetra_components_used
@@ -92,6 +95,10 @@ def render_scripts(request, csrf_token, messages=None):
                 "packages (channels, channels_redis, daphne)."
             )
 
+    # Get the base Tetra endpoint URL (e.g., "__tetra__/" or "" depending on URL configuration)
+    # We use the component-call URL and strip the "call/" suffix to get the base
+    tetra_endpoint = reverse("tetra:component-call").rsplit("call/", 1)[0]
+
     return render_to_string(
         "lib_scripts.html",
         {
@@ -104,6 +111,8 @@ def render_scripts(request, csrf_token, messages=None):
             ),
             # Only enable websockets if reactive components are actually used on this page
             "use_websockets": has_reactive_components and websockets_supported,
+            # Base Tetra endpoint path (e.g., "__tetra__/")
+            "tetra_endpoint": tetra_endpoint,
         },
     )
 

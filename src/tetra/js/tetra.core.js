@@ -34,6 +34,63 @@ const Tetra = {
 
     // Listen for browser online/offline events
     this.initBrowserOnlineDetection();
+
+    // listen for URL changes
+    this.initRouteStore()
+  },
+  initRouteStore() {
+    Alpine.store('route', {
+      path: window.location.pathname,
+      go(path) {
+        history.pushState({}, '', path)
+        this.path = path
+      }
+    })
+    window.addEventListener('popstate', () => {
+      Alpine.store('route').path = window.location.pathname
+    })
+  },
+  navigate(path) {
+    // Shortcut for client side navigation
+    Alpine.store('route').go(path)
+
+    // Notify server about the navigation
+    this.notifyNavigation(path)
+  },
+  notifyNavigation(path) {
+    // Notify the Django server about client-side navigation
+    // This keeps request.tetra.current_url_path in sync with browser URL
+
+    const payload = {
+      protocol: 'tetra-1.0',
+      type: 'navigation',
+      payload: {
+        path: path
+      }
+    }
+    if (window.__tetra_useWebsockets && this.ws && this.ws.readyState === WebSocket.OPEN) {
+      // Use WebSocket if available (fast, real-time)
+      this.sendWebSocketMessage(payload)
+    } else {
+      // Fallback to HTTP POST (fire-and-forget with CSRF protection)
+      const endpoint = window.__tetra_endpoint
+      if (!endpoint){
+        console.error('Tetra endpoint is missing')
+        return
+      }
+
+      fetch(endpoint + 'navigate/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': window.__tetra_csrfToken,
+        },
+        body: JSON.stringify(payload),
+        keepalive: true, // Request continues even if page unloads
+      }).catch(() => {
+        // Silently fail - this is just a notification
+      })
+    }
   },
   initOnlineStatusStore() {
     if (this.onlineStatusInitialized) return;
@@ -68,15 +125,15 @@ const Tetra = {
         store.update();
       }
     }
-    
+
     if (this.offlineTimeout) {
       clearTimeout(this.offlineTimeout);
     }
     const timeout = window.__tetra_onlineTimeout || 10000;
     this.offlineTimeout = setTimeout(() => this.checkOnlineStatus(), timeout);
-    
+
     if (this.pingTimeout) {
-        clearTimeout(this.pingTimeout);
+      clearTimeout(this.pingTimeout);
     }
   },
   checkOnlineStatus() {
@@ -98,12 +155,12 @@ const Tetra = {
   },
   setOfflineStatus() {
     if (typeof Alpine !== 'undefined') {
-        const store = Alpine.store('tetraStatus');
-        if (store && store.online !== false) {
-          store.online = false;
-          document.dispatchEvent(new CustomEvent('tetra:websocket-disconnected'));
-        }
+      const store = Alpine.store('tetraStatus');
+      if (store && store.online !== false) {
+        store.online = false;
+        document.dispatchEvent(new CustomEvent('tetra:websocket-disconnected'));
       }
+    }
   },
 
   initBrowserOnlineDetection() {
@@ -738,8 +795,8 @@ const Tetra = {
       }
     };
 
-    // Get endpoint from metadata or use default unified endpoint
-    const endpoint = '/tetra/call/';
+    // Get endpoint from metadata or construct from base tetra endpoint
+    const endpoint = window.__tetra_endpoint + 'call/';
 
     const fetchPayload = {
       method: 'POST',
@@ -875,7 +932,7 @@ const Tetra = {
       snapshot.key = component.key;
     }
 
-    Tetra.debug(`Captured snapshot for component ${component.component_id} (key: ${component.key})`);
+    Tetra.debug(`Captured snapshot for component '${component.componentName}' (id: ${component.component_id}, key: ${component.key})`);
     return snapshot;
   },
 
