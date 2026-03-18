@@ -172,7 +172,8 @@ class Route:
             # Convert string patterns to Django patterns
             # Strip leading slash - Django patterns don't use them
             pattern = self.pattern.lstrip("/")
-            if settings.APPEND_SLASH and not pattern.endswith("/"):
+            # Only add trailing slash if pattern is non-empty
+            if settings.APPEND_SLASH and pattern and not pattern.endswith("/"):
                 pattern = f"{pattern}/"
 
             # Detect if this is a regex pattern (contains regex special chars)

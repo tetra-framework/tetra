@@ -110,6 +110,9 @@ class Router(Component):
                                 path = path.replace(f"<slug:{key}>", str(value))
                                 path = path.replace(f"<uuid:{key}>", str(value))
                                 path = path.replace(f"<path:{key}>", str(value))
+                        # For empty patterns, Django may return "/" but we want ""
+                        if path == "/":
+                            path = ""
                         return path
                     except Exception as e:
                         raise ValueError(
@@ -133,7 +136,7 @@ class Router(Component):
             return ""
         try:
             if hasattr(route_obj._url_pattern.pattern, "reverse"):
-                return route_obj._url_pattern.pattern.reverse(**kwargs)
+                path = route_obj._url_pattern.pattern.reverse(**kwargs)
             else:
                 # Fallback: manually construct path
                 path = str(route_obj._url_pattern.pattern)
@@ -143,7 +146,10 @@ class Router(Component):
                     path = path.replace(f"<slug:{key}>", str(value))
                     path = path.replace(f"<uuid:{key}>", str(value))
                     path = path.replace(f"<path:{key}>", str(value))
-                return path
+            # For empty patterns, Django may return "/" but we want ""
+            if path == "/":
+                path = ""
+            return path
         except Exception:
             return ""
 
