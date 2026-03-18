@@ -182,8 +182,8 @@ def make_template(cls) -> Template | None:
                 origin=origin,
             )
         except TemplateSyntaxError as e:
-            # By default, we want to compile templates during python compile time,
-            # however, the template exceptions are much better when raised at runtime
+            # By default, we want to compile templates during python compile time.
+            # However, the template exceptions are much better when raised at runtime
             # as it shows a nice stack trace in the browser. We therefore create a
             # "Lazy" template after a compile error that will run in the browser when
             # testing.
@@ -255,8 +255,9 @@ def make_template(cls) -> Template | None:
                     except FileNotFoundError:
                         # If the file is not found, continue with the next source
                         continue
-            except (TemplateDoesNotExist, Exception) as e:
-                pass  # External template not found, try inherited template
+            except TemplateDoesNotExist:
+                # External template was not found, try inherited template in next step
+                pass
 
         # 3. Fall back to inherited template from parent class
         if not external_template_found:

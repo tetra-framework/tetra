@@ -315,8 +315,8 @@ def test_link_with_slot_content():
         link_tag.get("href") == "/about/"
     ), f"Expected href='/about/', got {link_tag.get('href')}"
 
-    # Verify the Link has the necessary attributes for Tetra components
-    assert link_tag.get("tetra-component") == "tetra__default__link"
+    # Verify the Link has the necessary attributes
+    # Note: Link is a BasicComponent, so it doesn't have tetra-component attribute
     assert link_tag.get("@click.prevent") is not None or "@click.prevent" in str(
         link_tag
     )

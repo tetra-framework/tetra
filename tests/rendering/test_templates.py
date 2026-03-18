@@ -1,4 +1,5 @@
 import pytest
+from django.template import TemplateSyntaxError
 
 from tetra import BasicComponent
 from tetra.exceptions import ComponentError
@@ -90,3 +91,17 @@ def test_component_with_template_syntax_error():
     assert (
         "Template compilation failed for component 'ComponentWithTemplateSyntaxError'"
     ) in str(exc_info.value)
+
+
+def test_component_with_invalid_if_comparison():
+    """Verify that template syntax errors with invalid if tag comparison (= instead of ==) are caught."""
+    with pytest.raises(ComponentError) as exc_info:
+
+        class ComponentWithInvalidIfComparison(BasicComponent):
+            # language=html
+            template = """
+                <div>{% if foo='bar' %}Invalid{% endif %}</div>
+            """
+
+    assert "Could not parse the remainder" in str(exc_info.value)
+    assert "'='bar''" in str(exc_info.value)
