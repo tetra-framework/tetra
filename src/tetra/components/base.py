@@ -2040,7 +2040,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
                 )
 
     @public
-    def validate(self, field_names: str | list = None) -> dict | None:
+    def validate(self, field_names: str | list | None = None) -> dict:
         """Validates the data using the form defined in `form_class`, and re-renders
         the component, without saving the form."""
 
@@ -2072,6 +2072,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
                 )
             else:
                 self.form_errors.update(form_errors)
+        return self.form_errors
 
     def form_valid(self, form: BaseForm) -> None:
         """This method is called when the form data is valid.
