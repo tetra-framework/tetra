@@ -2261,12 +2261,6 @@ class ModelFormComponent(FormComponent, metaclass=ModelFormComponentMetaClass):
     #         self.model = self.get_form_class().Meta.model
     #     super().__init__(*args, **kwargs)
 
-    def get_model(self):
-        """Returns the model to use in this component."""
-        if not self.model:
-            self.model = self.get_form_class()._meta.model
-        return self.model
-
     def get_form_class(self) -> type[forms.ModelForm]:
         """Returns the form class to use in this component."""
 
@@ -2278,6 +2272,23 @@ class ModelFormComponent(FormComponent, metaclass=ModelFormComponentMetaClass):
                 f"'{self.__class__.__name__}' must either define 'form_class' "
                 "or both 'model' and 'fields', or override 'get_form_class()'"
             )
+
+    def get_model(self):
+        """Returns the model class reliably."""
+        if self.model:
+            return self.model
+
+        form_class = self.get_form_class()
+        model = getattr(getattr(form_class, "_meta", None), "model", None)
+        if model:
+            self.model = model
+            return self.model
+
+        raise ImproperlyConfigured(
+            f"{self.__class__.__name__} could not resolve model. "
+            "Ensure 'form_class' defines a proper ModelForm with Meta.model, "
+            "or set 'self.model' manually."
+        )
 
     def _pre_load(self, object: models.Model = None, *args, **kwargs) -> None:
         """
