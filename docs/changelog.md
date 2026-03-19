@@ -14,7 +14,7 @@ title: Changelog
 
 ## [0.9.2] – 2026-03-18
 ### Added
-- **Client-side Routing**: Implement full client-side routing that informs the server of new routes.
+- **Client-side Routing**: Implement full client-side routing that informs the server of new routes. (Note: This feature is highly experimental and not meant for production).
 - **Nested Routes**: Improved `Router` to be nestable and delegate routes to sub-routers.
 - **Router Registry**: Introduced a global router registry with `reverse` and `reverse_lazy` support for components.
 - Allow `BasicComponent` to include simple JavaScript (without Alpine/state access).
@@ -131,7 +131,7 @@ Fixed: improve file handling security and add tests for file upload vulnerabilit
 
 ## [0.7.0] - 2026-01-13
 ### Added
-- `AppRouter` and `Link` component for dynamic routing/navigation within a container.
+- `AppRouter` and `Link` component for dynamic routing/navigation within a container. (Note: Highly experimental).
 - Support for trailing slashes in routes when Django's `APPEND_SLASH` is enabled.
 - Support for optional arguments in Router `load` method.
 - New routing documentation and comprehensive tests.

@@ -4,6 +4,9 @@ title: Routing
 
 # Routing
 
+!!! warning
+    SPA routing is currently **highly experimental** and not meant to be used in a production environment. It is subject to significant changes and potential removal in future versions.
+
 Tetra includes a built-in routing system that allows you to create a "Single Page Application (SPA)" experience within Django. It enables dynamic component switching and URL updates without full page reloads, while keeping the routing server side.
 
 The routing system consists of three main components: `Router`, `Link`, and `Redirect`.
