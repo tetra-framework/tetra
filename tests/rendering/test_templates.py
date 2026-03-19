@@ -63,7 +63,7 @@ def test_component_with_empty_template():
         class ComponentWithEmptyTemplate(BasicComponent):
             template = ""
 
-    assert ("ComponentWithEmptyTemplate' is not a valid component.") in str(
+    assert ("Component 'ComponentWithEmptyTemplate' has an empty template.") in str(
         exc_info.value
     )
 
