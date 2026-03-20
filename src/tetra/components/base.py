@@ -1657,6 +1657,20 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         data = {}
         for key in self._public_properties:
             value = getattr(self, key)
+
+            # Normalize empty strings to None for enum types
+            # This handles Django's convention where optional ChoiceFields submit ""
+            if value == "" and key in self.__annotations__:
+                annotation = self.__annotations__[key]
+                # Check if the field is an Optional[Enum]
+                origin = get_origin(annotation)
+                if origin is Union:
+                    args = get_args(annotation)
+                    for arg in args:
+                        if arg is not NoneType and isinstance(arg, type) and issubclass(arg, Enum):
+                            value = None
+                            break
+
             # Convert non-serializable types to strings
             if value is not None and not isinstance(value, SERIALIZABLE_TYPES):
                 value = str(value)

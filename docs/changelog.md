@@ -14,6 +14,7 @@ title: Changelog
 
 ## [0.9.3] – 2026-03-20
 ### Fixed
+- Normalize empty strings to `None` for optional enum fields in `Component._data()`, resolving Django form validation errors.
 - fix smaller errors in forms and form validation, improve error messages
 - avoid unnecessary call to update() in @public decorator, which was triggering recursive form re-initialization.
 
