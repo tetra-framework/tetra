@@ -961,6 +961,11 @@ class Public(metaclass=PublicMeta):
 
             @wraps(obj)
             def fn(instance: "Component", *args, **kwargs):
+                if not args and not kwargs and not inspect.signature(obj).parameters:
+                    # if the object is a zero-argument callable, call it without instance
+                    # this is needed for form field initial values that are callables
+                    return obj()
+
                 ret: JsonResponse | FileResponse = obj(instance, *args, **kwargs)
                 if self._update:
                     instance.update()

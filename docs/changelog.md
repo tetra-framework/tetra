@@ -15,6 +15,7 @@ title: Changelog
 ## [0.9.3] – 2026-03-20
 ### Fixed
 - fix smaller errors in forms and form validation, improve error messages
+- avoid unnecessary call to update() in @public decorator, which was triggering recursive form re-initialization.
 
 ## [0.9.2] – 2026-03-18
 ### Added
