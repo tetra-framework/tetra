@@ -17,6 +17,7 @@ title: Changelog
 - Normalize empty strings to `None` for optional enum fields in `Component._data()`, resolving Django form validation errors.
 - fix smaller errors in forms and form validation, improve error messages
 - avoid unnecessary call to update() in @public decorator, which was triggering recursive form re-initialization.
+- Automatically convert Django Model primary key values (strings/ints) to Model instances before serialization and validation.
 
 ## [0.9.2] – 2026-03-18
 ### Added

@@ -1667,7 +1667,11 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
                 if origin is Union:
                     args = get_args(annotation)
                     for arg in args:
-                        if arg is not NoneType and isinstance(arg, type) and issubclass(arg, Enum):
+                        if (
+                            arg is not NoneType
+                            and isinstance(arg, type)
+                            and issubclass(arg, Enum)
+                        ):
                             value = None
                             break
 
@@ -1687,13 +1691,76 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         )
         return extra_tags
 
+    def _convert_model_pks_to_instances(self) -> None:
+        """
+        Convert pk values (strings/ints) to Model instances for public properties.
+
+        This is called before serialization and validation to ensure that Model fields
+        annotated as Django Models receive actual instances instead of pk values.
+        The conversion happens in-place, updating the component's attributes.
+
+        Design Note:
+        This conversion is done at the component level (not in the pickler) because:
+        1. Only the component has access to type annotations needed for conversion
+        2. The conversion happens once and updates the component in-place
+        3. The Model pickler can then handle instances normally without type metadata
+        4. Database queries only occur when actually needed (serialization/validation)
+        """
+        # Get annotations from the class hierarchy
+        annotations = {}
+        for cls in type(self).__mro__:
+            if hasattr(cls, "__annotations__"):
+                annotations.update(cls.__annotations__)
+
+        if not annotations:
+            return  # No annotations, nothing to convert
+
+        for key in getattr(self, "_public_properties", []):
+            value = getattr(self, key, None)
+            if value is None or isinstance(value, models.Model):
+                continue  # Already a Model instance or None
+
+            annotation = annotations.get(key, NoneType)
+            if annotation is NoneType:
+                continue
+
+            # Check if the annotation indicates a Model type
+            if is_subclass_of(annotation, models.Model):
+                # Try to convert pk to Model instance
+                model_class: Optional[type[Model]] = None
+                if isinstance(annotation, type) and issubclass(
+                    annotation, models.Model
+                ):
+                    model_class = annotation
+                else:
+                    # If it's a Union/Optional, find the Model class
+                    for arg in get_args(annotation):
+                        if isinstance(arg, type) and issubclass(arg, models.Model):
+                            model_class = arg
+                            break
+
+                if model_class:
+                    try:
+                        instance = model_class.objects.get(pk=value)
+                        setattr(self, key, instance)
+                    except (model_class.DoesNotExist, ValueError, TypeError):
+                        # If we can't fetch it, leave as-is
+                        # This will cause validation to fail with appropriate error
+                        pass
+
     def _encoded_state(self) -> str:
         # Validates and serializes the current __dict__ values
+        # Convert pk values to Model instances before validation
+        self._convert_model_pks_to_instances()
         data = self._data()
         self._get_state_adapter().validate_python(data)
         return encode_component(self)
 
     def __getstate__(self) -> dict[str, Any]:
+        # Convert pk values to Model instances before pickling
+        # This ensures the Model pickler receives proper instances
+        self._convert_model_pks_to_instances()
+
         state = self.__dict__.copy()
         if "renderer" in state:
             del state["renderer"]
