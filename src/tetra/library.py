@@ -11,7 +11,7 @@ from django.apps import AppConfig, apps
 from django.templatetags.static import static
 
 from .conf import get_setting, get_esbuild_path
-from .components.base import ComponentMetaClass, BasicComponent, Component
+from .components.base import BasicComponent, Component
 from .exceptions import LibraryError
 from .utils import camel_case_to_underscore
 
@@ -46,7 +46,7 @@ class Library:
 
         # Initialize only if this is a new instance
         if not hasattr(self, "components"):
-            self.components: dict[str, type[BasicComponent] | ComponentMetaClass] = {}
+            self.components: dict[str, type[BasicComponent] | type[Component]] = {}
             self.name = name
             self.path = path
             self.app: AppConfig = app
