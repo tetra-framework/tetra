@@ -912,7 +912,7 @@ class Public:
         self._throttle_leading = None
         self._event_subscriptions: list[str] = []
         self._store_name = None
-        self.obj = None
+        self.obj: Optional[Any] = None
         self.__call__(obj)
 
     def __call__(self, obj: Any) -> Self:
