@@ -875,17 +875,7 @@ class BasicComponent:
 empty = object()
 
 
-class PublicMeta(type):
-    def __getattr__(self, name):
-        do_name = f"do_{name}"
-        if do_name in self.__dict__:
-            inst = self()
-            return getattr(inst, do_name)
-        else:
-            raise AttributeError(f"Public decorator has no method {name}.")
-
-
-class Public(metaclass=PublicMeta):
+class Public:
     def __init__(self, obj: Any = None, update: bool = True) -> None:
         """
         Decorate a method or attribute with a public decorator.
@@ -961,6 +951,11 @@ class Public(metaclass=PublicMeta):
 
             @wraps(obj)
             def fn(instance: "Component", *args, **kwargs):
+                if not args and not kwargs and not inspect.signature(obj).parameters:
+                    # if the object is a zero-argument callable, call it without instance
+                    # this is needed for form field initial values that are callables
+                    return obj()
+
                 ret: JsonResponse | FileResponse = obj(instance, *args, **kwargs)
                 if self._update:
                     instance.update()
@@ -1014,7 +1009,36 @@ class Public(metaclass=PublicMeta):
         return self
 
 
-public = Public
+class _PublicFactory:
+    """Internal entry point for the ``public`` decorator.
+
+    Using a factory instance (rather than the ``Public`` class directly) avoids
+    the need for a metaclass while still allowing the ``public.watch(...)``,
+    ``public.debounce(...)``, etc. decorator patterns.
+    """
+
+    def __call__(self, obj: Any = None, update: bool = True) -> "Public":
+        return Public(obj, update)
+
+    def watch(self, *args) -> "Public":
+        return Public().do_watch(*args)
+
+    def debounce(self, timeout, immediate: bool = False) -> "Public":
+        return Public().do_debounce(timeout, immediate)
+
+    def throttle(
+        self, timeout, trailing: bool = False, leading: bool = True
+    ) -> "Public":
+        return Public().do_throttle(timeout, trailing, leading)
+
+    def listen(self, event) -> "Public":
+        return Public().do_listen(event)
+
+    def store(self, store_name: str) -> "Public":
+        return Public().do_store(store_name)
+
+
+public = _PublicFactory()
 
 
 tracing_component_load = WeakKeyDictionary()
@@ -1030,184 +1054,163 @@ def is_subclass_of(hint, target_class) -> bool:
     return False
 
 
-class ComponentMetaClass(type):
-    def __new__(mcls, name, bases, attrs):
-        public_methods: list[dict[str, Any]] = list(
-            itertools.chain.from_iterable(
-                base._public_methods
-                for base in bases
-                if hasattr(base, "_public_methods")
-            )
+def _init_component_class(cls) -> None:
+    """Process ``@public`` decorated attrs and set component metadata on *cls*.
+
+    This is the ``__init_subclass__``-based replacement for
+    ``ComponentMetaClass.__new__``.  It is called from
+    ``Component.__init_subclass__`` for every subclass and once explicitly
+    for ``Component`` itself right after its class body is evaluated.
+    """
+    public_methods: list[dict[str, Any]] = list(
+        itertools.chain.from_iterable(
+            base._public_methods
+            for base in cls.__bases__
+            if hasattr(base, "_public_methods")
         )
-        public_properties: list[str] = list(
-            itertools.chain.from_iterable(
-                base._public_properties
-                for base in bases
-                if hasattr(base, "_public_properties")
-            )
+    )
+    public_properties: list[str] = list(
+        itertools.chain.from_iterable(
+            base._public_properties
+            for base in cls.__bases__
+            if hasattr(base, "_public_properties")
         )
-        public_stores: dict[str, str] = {}
-        for base in bases:
-            if hasattr(base, "_public_stores"):
-                public_stores.update(base._public_stores)
+    )
+    public_stores: dict[str, str] = {}
+    for base in cls.__bases__:
+        if hasattr(base, "_public_stores"):
+            public_stores.update(base._public_stores)
 
-        for attr_name, attr_value in attrs.items():
+    for attr_name in list(cls.__dict__.keys()):
+        attr_value = cls.__dict__[attr_name]
 
-            if isinstance(attr_value, Public):
-                # if there is public decorated attribute/method, replace it with the
-                # attribute/method itself, as we don't need the decorator anymore.
+        if isinstance(attr_value, Public):
+            # Replace the Public wrapper with the underlying object so that
+            # ordinary attribute / method access works as expected.
+            setattr(cls, attr_name, attr_value.obj)
 
-                attrs[attr_name] = attr_value.obj
+            if isinstance(attr_value.obj, FunctionType):
+                # the decorated object is a method
+                fn = attr_value.obj
+                pub_met = {"name": attr_name}
+                if attr_value._watch:
+                    if not param_names_exist(fn, "value", "old_value", "attr"):
+                        raise ValueError(
+                            f"The .watch method `{attr_name}` must have 'value', "
+                            f"'old_value' and 'attr' as arguments."
+                        )
+                    pub_met["watch"] = attr_value._watch
+                if attr_value._debounce:
+                    pub_met["debounce"] = attr_value._debounce
+                    pub_met["debounce_immediate"] = attr_value._debounce_immediate
+                if attr_value._throttle:
+                    pub_met["throttle"] = attr_value._throttle
+                    pub_met["throttle_trailing"] = attr_value._throttle_trailing
+                    pub_met["throttle_leading"] = attr_value._throttle_leading
+                if attr_value._event_subscriptions:
+                    pcount = param_count(fn)
+                    if pcount != 1:
+                        raise ValueError(
+                            f"Event listener method '{attr_name}' has wrong "
+                            f"number of arguments. Expected 2 (self, "
+                            f"event_detail), but got {pcount}."
+                        )
+                    pub_met["event_subscriptions"] = attr_value._event_subscriptions
+                public_methods.append(pub_met)
+            else:
+                public_properties.append(attr_name)
+                if attr_value._store_name:
+                    store_path = attr_value._store_name
+                    # If store path doesn't include property path, append attribute name
+                    if "." not in store_path:
+                        store_path = f"{store_path}.{attr_name}"
+                    public_stores[attr_name] = store_path
 
-                if isinstance(attrs[attr_name], FunctionType):
-                    # the decorated object is a method
-                    fn = attrs[attr_name]
-                    pub_met = {"name": attr_name}
-                    if attr_value._watch:
-                        if not param_names_exist(fn, "value", "old_value", "attr"):
-                            raise ValueError(
-                                f"The .watch method `{attr_name}` must have 'value', "
-                                f"'old_value' and 'attr' as arguments."
+    cls._public_methods = public_methods
+    cls._public_properties = public_properties
+    cls._public_stores = public_stores
+
+    # Handle Pydantic model creation here, AFTER cls is created and fully populated.
+    # This ensures that dynamic attributes from e.g., FormComponent.__init_subclass__
+    # are available in cls._public_properties and cls.__annotations__.
+    if not cls.__dict__.get("__abstract__", False):
+        from pydantic import create_model, ConfigDict
+
+        public_fields = {}
+        for prop in cls._public_properties:
+            # Get type hint if available
+            hint = Any
+            # Check cls.__annotations__ which includes all hints for this class
+            if hasattr(cls, "__annotations__") and prop in cls.__annotations__:
+                hint = cls.__annotations__[prop]
+            else:
+                # Fallback to MRO
+                for base in cls.__mro__:
+                    if (
+                        hasattr(base, "__annotations__")
+                        and prop in base.__annotations__
+                    ):
+                        hint = base.__annotations__[prop]
+                        break
+
+            # Normalize the hint
+            if hint is not Any:
+                try:
+                    inner_hint = hint
+                    if get_origin(hint) is Union:
+                        args = get_args(hint)
+                        if NoneType in args:
+                            inner_hint = next(
+                                (a for a in args if a is not NoneType), Any
                             )
-                        pub_met["watch"] = attr_value._watch
-                    if attr_value._debounce:
-                        pub_met["debounce"] = attr_value._debounce
-                        pub_met["debounce_immediate"] = attr_value._debounce_immediate
-                    if attr_value._throttle:
-                        pub_met["throttle"] = attr_value._throttle
-                        pub_met["throttle_trailing"] = attr_value._throttle_trailing
-                        pub_met["throttle_leading"] = attr_value._throttle_leading
-                    if attr_value._event_subscriptions:
-                        pcount = param_count(fn)
-                        if pcount != 1:
-                            raise ValueError(
-                                f"Event listener method '{attr_name}' has wrong "
-                                f"number of arguments. Expected 2 (self, "
-                                f"event_detail), but got {pcount}."
-                            )
-                        pub_met["event_subscriptions"] = attr_value._event_subscriptions
-                    public_methods.append(pub_met)
-                else:
-                    public_properties.append(attr_name)
-                    if attr_value._store_name:
-                        store_path = attr_value._store_name
-                        # If store path doesn't include property path, append attribute name
-                        if "." not in store_path:
-                            store_path = f"{store_path}.{attr_name}"
-                        # else:
-                        #     # If explicit dotted path is provided, validate that the property name matches
-                        #     parts = store_path.split('.')
-                        #     property_name = parts[-1]
-                        #     if property_name != attr_name:
-                        #         raise AttributeError(
-                        #             f"Store property name '{property_name}' in .store('{store_path}') "
-                        #             f"does not match attribute name '{attr_name}'. "
-                        #             f"Either use .store('{'.'.join(parts[:-1])}') to auto-infer the property name, "
-                        #             f"or use .store('{'.'.join(parts[:-1])}.{attr_name}') to match the attribute name."
-                        #         )
-                        public_stores[attr_name] = store_path
 
-        newcls = super().__new__(mcls, name, bases, attrs)
-        newcls._public_methods = public_methods
-        newcls._public_properties = public_properties
-        newcls._public_stores = public_stores
-        # Reset registration info inherited from base classes
-        if "_library" in attrs:
-            newcls._library = attrs["_library"]
-        else:
-            newcls._library = None
+                    if inner_hint is NoneType:
+                        # If it's just NoneType, it means we don't know the type,
+                        # so treat as Any.
+                        hint = Any
+                    elif isinstance(inner_hint, type) and issubclass(
+                        inner_hint, UploadedFile
+                    ):
+                        # In ModelForm, FileFields might contain FieldFile (e.g. from instance)
+                        # which are not UploadedFile. So we allow Any here if it's not a new upload.
+                        hint = Any
+                    elif inner_hint is Any or (
+                        isinstance(inner_hint, type)
+                        and inner_hint.__module__ != "builtins"
+                        and not issubclass(inner_hint, (Enum, models.Model))
+                    ):
+                        hint = Any
+                except TypeError:
+                    pass
 
-        if "_name" in attrs:
-            newcls._name = attrs["_name"]
-        else:
-            newcls._name = None
+            # Use default value from cls.
+            # If the property is in the current class's dict, it's the default.
+            # If it's inherited, we use Ellipsis (...) to indicate it's required
+            # if it has no default in the hierarchy.
+            if prop in cls.__dict__:
+                default_value = cls.__dict__[prop]
+                if isinstance(default_value, Public):
+                    default_value = default_value.obj
+            else:
+                # Check if any base has a default value
+                default_value = ...
+                for base in cls.__mro__:
+                    if prop in base.__dict__:
+                        default_value = base.__dict__[prop]
+                        if isinstance(default_value, Public):
+                            default_value = default_value.obj
+                        break
 
-        # Handle Pydantic model creation here, AFTER newcls is created and fully populated.
-        # This ensures that dynamic attributes from e.g., FormComponentMetaClass are
-        # available in newcls._public_properties and newcls.__annotations__.
-        if not attrs.get("__abstract__", False):
-            from pydantic import create_model, ConfigDict
+            public_fields[prop] = (hint, default_value)
 
-            public_fields = {}
-            for prop in newcls._public_properties:
-                # Get type hint if available
-                hint = Any
-                # Check newcls.__annotations__ which includes all hints resolved for this class
-                if (
-                    hasattr(newcls, "__annotations__")
-                    and prop in newcls.__annotations__
-                ):
-                    hint = newcls.__annotations__[prop]
-                else:
-                    # Fallback to MRO
-                    for base in newcls.__mro__:
-                        if (
-                            hasattr(base, "__annotations__")
-                            and prop in base.__annotations__
-                        ):
-                            hint = base.__annotations__[prop]
-                            break
-
-                # Normalize the hint
-                if hint is not Any:
-                    try:
-                        inner_hint = hint
-                        if get_origin(hint) is Union:
-                            args = get_args(hint)
-                            if NoneType in args:
-                                inner_hint = next(
-                                    (a for a in args if a is not NoneType), Any
-                                )
-
-                        if inner_hint is NoneType:
-                            # If it's just NoneType, it means we don't know the type,
-                            # so treat as Any.
-                            hint = Any
-                        elif isinstance(inner_hint, type) and issubclass(
-                            inner_hint, UploadedFile
-                        ):
-                            # In ModelForm, FileFields might contain FieldFile (e.g. from instance)
-                            # which are not UploadedFile. So we allow Any here if it's not a new upload.
-                            hint = Any
-                        elif inner_hint is Any or (
-                            isinstance(inner_hint, type)
-                            and inner_hint.__module__ != "builtins"
-                            and not issubclass(inner_hint, (Enum, models.Model))
-                        ):
-                            hint = Any
-                    except TypeError:
-                        pass
-
-                # Use default value from newcls.
-                # If the property is in the current class's attrs, it's the default.
-                # If it's inherited, we use Ellipsis (...) to indicate it's required
-                # if it has no default in the hierarchy.
-                if prop in attrs:
-                    default_value = attrs[prop]
-                    if isinstance(default_value, Public):
-                        default_value = default_value.obj
-                else:
-                    # Check if any base has a default value
-                    default_value = ...
-                    for base in newcls.__mro__:
-                        if prop in base.__dict__:
-                            default_value = base.__dict__[prop]
-                            if isinstance(default_value, Public):
-                                default_value = default_value.obj
-                            break
-
-                public_fields[prop] = (hint, default_value)
-
-            newcls._StateModel = create_model(
-                f"{name}State",
-                **public_fields,
-                __config__=ConfigDict(arbitrary_types_allowed=True),
-            )
-
-        return newcls
+        cls._StateModel = create_model(
+            f"{cls.__name__}State",
+            **public_fields,
+            __config__=ConfigDict(arbitrary_types_allowed=True),
+        )
 
 
-class Component(BasicComponent, metaclass=ComponentMetaClass):
+class Component(BasicComponent):
     __abstract__ = True
     script: Optional[str] = None
     _callback_queue = None
@@ -1232,6 +1235,22 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
     # _temp_files is an internal dict to track which data attributes are files.
     _temp_files: dict[str, UploadedFile] = {}
     key = public(None)
+
+    def __init_subclass__(cls, **kwargs):
+        # Capture whether _name/_library were set *explicitly* in this class body
+        # before super() may modify them (BasicComponent sets _name in its hook).
+        body_had_name = "_name" in cls.__dict__
+        body_had_library = "_library" in cls.__dict__
+        # Compile template and set underscore _name via BasicComponent
+        super().__init_subclass__(**kwargs)
+        # Process @public decorated attrs and (if concrete) create StateModel
+        _init_component_class(cls)
+        # Reset _library and _name so each class starts fresh; the library
+        # registration system will set _name to the registered name later.
+        if not body_had_name:
+            cls._name = None
+        if not body_had_library:
+            cls._library = None
 
     def __init__(
         self,
@@ -1652,6 +1671,24 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         data = {}
         for key in self._public_properties:
             value = getattr(self, key)
+
+            # Normalize empty strings to None for enum types
+            # This handles Django's convention where optional ChoiceFields submit ""
+            if value == "" and key in self.__annotations__:
+                annotation = self.__annotations__[key]
+                # Check if the field is an Optional[Enum]
+                origin = get_origin(annotation)
+                if origin is Union:
+                    args = get_args(annotation)
+                    for arg in args:
+                        if (
+                            arg is not NoneType
+                            and isinstance(arg, type)
+                            and issubclass(arg, Enum)
+                        ):
+                            value = None
+                            break
+
             # Convert non-serializable types to strings
             if value is not None and not isinstance(value, SERIALIZABLE_TYPES):
                 value = str(value)
@@ -1668,13 +1705,76 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         )
         return extra_tags
 
+    def _convert_model_pks_to_instances(self) -> None:
+        """
+        Convert pk values (strings/ints) to Model instances for public properties.
+
+        This is called before serialization and validation to ensure that Model fields
+        annotated as Django Models receive actual instances instead of pk values.
+        The conversion happens in-place, updating the component's attributes.
+
+        Design Note:
+        This conversion is done at the component level (not in the pickler) because:
+        1. Only the component has access to type annotations needed for conversion
+        2. The conversion happens once and updates the component in-place
+        3. The Model pickler can then handle instances normally without type metadata
+        4. Database queries only occur when actually needed (serialization/validation)
+        """
+        # Get annotations from the class hierarchy
+        annotations = {}
+        for cls in type(self).__mro__:
+            if hasattr(cls, "__annotations__"):
+                annotations.update(cls.__annotations__)
+
+        if not annotations:
+            return  # No annotations, nothing to convert
+
+        for key in getattr(self, "_public_properties", []):
+            value = getattr(self, key, None)
+            if value is None or isinstance(value, models.Model):
+                continue  # Already a Model instance or None
+
+            annotation = annotations.get(key, NoneType)
+            if annotation is NoneType:
+                continue
+
+            # Check if the annotation indicates a Model type
+            if is_subclass_of(annotation, models.Model):
+                # Try to convert pk to Model instance
+                model_class: Optional[type[Model]] = None
+                if isinstance(annotation, type) and issubclass(
+                    annotation, models.Model
+                ):
+                    model_class = annotation
+                else:
+                    # If it's a Union/Optional, find the Model class
+                    for arg in get_args(annotation):
+                        if isinstance(arg, type) and issubclass(arg, models.Model):
+                            model_class = arg
+                            break
+
+                if model_class:
+                    try:
+                        instance = model_class.objects.get(pk=value)
+                        setattr(self, key, instance)
+                    except (model_class.DoesNotExist, ValueError, TypeError):
+                        # If we can't fetch it, leave as-is
+                        # This will cause validation to fail with appropriate error
+                        pass
+
     def _encoded_state(self) -> str:
         # Validates and serializes the current __dict__ values
+        # Convert pk values to Model instances before validation
+        self._convert_model_pks_to_instances()
         data = self._data()
         self._get_state_adapter().validate_python(data)
         return encode_component(self)
 
     def __getstate__(self) -> dict[str, Any]:
+        # Convert pk values to Model instances before pickling
+        # This ensures the Model pickler receives proper instances
+        self._convert_model_pks_to_instances()
+
         state = self.__dict__.copy()
         if "renderer" in state:
             del state["renderer"]
@@ -1855,6 +1955,13 @@ class Component(BasicComponent, metaclass=ComponentMetaClass):
         """
 
 
+# Bootstrap Component itself: __init_subclass__ only fires for subclasses, so we
+# must manually run the same initialisation for the Component base class.
+_init_component_class(Component)
+Component._name = None
+Component._library = None
+
+
 def get_python_type_from_form_field(field, initial) -> type:
     """
     Derives the Python type from a Django form field.
@@ -1910,29 +2017,7 @@ def get_python_type_from_form_field(field, initial) -> type:
     return Any
 
 
-class FormComponentMetaClass(ComponentMetaClass):
-    def __new__(cls, name, bases, dct):
-        # iter through form fields if there is a static form_class, and set a public
-        # attribute to the component for each field
-
-        form_class = dct.get("form_class", None)
-        dct.setdefault("__annotations__", {})
-
-        if form_class:
-            for field_name, field in form_class.base_fields.items():
-                initial = field.initial
-                # try to read the type of the component attribute from the form field
-                python_type = get_python_type_from_form_field(field, initial)
-                # Form fields should always be Optional because they can be None
-                # or empty initially, and Django's form validation handles the
-                # "required" check, not the component state.
-                python_type = Optional[python_type]
-                dct[field_name] = public(initial)
-                dct["__annotations__"][field_name] = python_type
-        return super().__new__(cls, name, bases, dct)
-
-
-class FormComponent(Component, metaclass=FormComponentMetaClass):
+class FormComponent(Component):
     """
     Component that can render a form, validate and submit it.
 
@@ -1959,6 +2044,25 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         "_validate_called",
         "form_errors",
     ]
+
+    def __init_subclass__(cls, **kwargs):
+        """Add a public component attribute for every field in ``form_class``."""
+        form_class = cls.__dict__.get("form_class", None)
+        # Ensure the class has its own __annotations__ dict (not inherited).
+        if "__annotations__" not in cls.__dict__:
+            cls.__annotations__ = {}
+        if form_class:
+            for field_name, field in form_class.base_fields.items():
+                initial = field.initial
+                # Try to read the type of the component attribute from the form field.
+                python_type = get_python_type_from_form_field(field, initial)
+                # Form fields should always be Optional because they can be None
+                # or empty initially, and Django's form validation handles the
+                # "required" check, not the component state.
+                python_type = Optional[python_type]
+                setattr(cls, field_name, public(initial))
+                cls.__annotations__[field_name] = python_type
+        super().__init_subclass__(**kwargs)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -2182,53 +2286,7 @@ class FormComponent(Component, metaclass=FormComponentMetaClass):
         self._reset()
 
 
-class ModelFormComponentMetaClass(FormComponentMetaClass):
-    def __new__(cls, name, bases, dct):
-        """additionally to FormComponentMetaClass.__new__(), add the object's pk to
-        the component's attributes"""
-        dct.setdefault("__annotations__", {})
-        if "__abstract__" not in dct:
-            model = dct.get("model", None)
-            abstract = dct.get("__abstract__", False)
-            # if no form_class nor model/fields is defined in the new class -> Error
-            if (
-                not dct.get("form_class", None)
-                and (not model or not dct.get("fields", None))
-                and not abstract
-            ):
-                raise AttributeError(
-                    f"{name} class requires either a 'form_class' or 'model' and "
-                    "'fields' attributes"
-                )
-
-            # if form_class is not provided, but model/fields, create a form_class on
-            # the fly.
-            if "form_class" in dct:
-                form_class = dct["form_class"]
-                if not issubclass(form_class, forms.ModelForm):
-                    raise TypeError(
-                        f"'{name}.form_class' must be a "
-                        f"subclass of 'ModelForm', not '{form_class.__name__}'"
-                    )
-                # form_class' model must match the model's class
-                elif model and model != form_class.Meta.model:
-                    raise TypeError(
-                        f"'{name}.form_class.model' must match "
-                        f"'{name}.model' class, if provided. "
-                        f"({form_class.Meta.model.__name__} != {model.__name__})"
-                    )
-            else:
-                # logger.debug(
-                #     f"Creating component attributes from model/fields for class {name}"
-                # )
-                form_class = modelform_factory(model=dct["model"], fields=dct["fields"])
-                dct["form_class"] = form_class
-
-            # So the new class *in any case* has a form_class
-        return super().__new__(cls, name, bases, dct)
-
-
-class ModelFormComponent(FormComponent, metaclass=ModelFormComponentMetaClass):
+class ModelFormComponent(FormComponent):
     """
     Component that can render a Model object using a ModelForm, load and
     save the given object, and validate it. This is basically the equivalent of the
@@ -2256,6 +2314,49 @@ class ModelFormComponent(FormComponent, metaclass=ModelFormComponentMetaClass):
         FormComponent._excluded_props_from_saved_state
         + ["_context_object_name", "model", "fields"]
     )
+
+    def __init_subclass__(cls, **kwargs):
+        """Validate or auto-create ``form_class`` from ``model``/``fields``."""
+        # Ensure the class has its own __annotations__ dict (not inherited).
+        if "__annotations__" not in cls.__dict__:
+            cls.__annotations__ = {}
+        if "__abstract__" not in cls.__dict__:
+            model = cls.__dict__.get("model", None)
+            abstract = cls.__dict__.get("__abstract__", False)
+            # if no form_class nor model/fields is defined in the new class -> Error
+            if (
+                not cls.__dict__.get("form_class", None)
+                and (not model or not cls.__dict__.get("fields", None))
+                and not abstract
+            ):
+                raise AttributeError(
+                    f"{cls.__name__} class requires either a 'form_class' or 'model' and "
+                    "'fields' attributes"
+                )
+
+            # if form_class is not provided, but model/fields, create a form_class on
+            # the fly.
+            if "form_class" in cls.__dict__:
+                form_class = cls.__dict__["form_class"]
+                if not issubclass(form_class, forms.ModelForm):
+                    raise TypeError(
+                        f"'{cls.__name__}.form_class' must be a "
+                        f"subclass of 'ModelForm', not '{form_class.__name__}'"
+                    )
+                # form_class' model must match the model's class
+                elif model and model != form_class.Meta.model:
+                    raise TypeError(
+                        f"'{cls.__name__}.form_class.model' must match "
+                        f"'{cls.__name__}.model' class, if provided. "
+                        f"({form_class.Meta.model.__name__} != {model.__name__})"
+                    )
+            else:
+                form_class = modelform_factory(
+                    model=cls.__dict__["model"], fields=cls.__dict__["fields"]
+                )
+                cls.form_class = form_class
+            # So the new class *in any case* has a form_class
+        super().__init_subclass__(**kwargs)
 
     # def __init__(self, *args, **kwargs):
     #     if not self.model:

@@ -143,3 +143,28 @@ def test_notexistent_public_method():
             @public.skjghkjlh()  # wrong method name
             def foo_method(self):
                 pass
+
+
+def test_chained_public_decorators_possible():
+    """Test that multiple public decorators can be applied to a method"""
+
+    @default.register
+    class Component2DeclaredDecoratorMethods(ComponentWatchBase):
+        @public.watch("foo").debounce(100)
+        def foo_method(self, value, old_value, attr):
+            pass
+
+
+def test_chained_public_decorators_working():
+    """Test that chained public decorators actually invoke watch() and debounce()."""
+    from unittest.mock import patch, MagicMock
+    from tetra.components.base import Public
+
+    mock_public_instance = MagicMock(spec=Public)
+    mock_public_instance.debounce = MagicMock(return_value=mock_public_instance)
+
+    with patch.object(Public, "do_watch", return_value=mock_public_instance) as mock_watch:
+        result = public.watch("foo").debounce(100)
+
+        mock_watch.assert_called_once_with("foo")
+        mock_public_instance.debounce.assert_called_once_with(100)
