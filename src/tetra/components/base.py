@@ -892,8 +892,7 @@ class Public:
             def my_method(self):
                 ...
 
-            @public
-            @watch("my_attribute")
+            @public.watch("my_attribute")
             def my_attribute_changed(self, new_value, old_value, attr):
                 print(f"My attribute changed from {old_value} to {new_value}")
 
