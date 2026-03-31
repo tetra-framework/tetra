@@ -1131,7 +1131,7 @@ def _init_component_class(cls) -> None:
 
     # Handle Pydantic model creation here, AFTER cls is created and fully populated.
     # This ensures that dynamic attributes from e.g., FormComponent.__init_subclass__
-    # are available in cls._public_properties and cls.__annotations__.
+    # are available in cls._public_properties and type(cls).__annotations__.
     if not cls.__dict__.get("__abstract__", False):
         from pydantic import create_model, ConfigDict
 
@@ -1139,18 +1139,12 @@ def _init_component_class(cls) -> None:
         for prop in cls._public_properties:
             # Get type hint if available
             hint = Any
-            # Check cls.__annotations__ which includes all hints for this class
-            if hasattr(cls, "__annotations__") and prop in cls.__annotations__:
-                hint = cls.__annotations__[prop]
-            else:
-                # Fallback to MRO
-                for base in cls.__mro__:
-                    if (
-                        hasattr(base, "__annotations__")
-                        and prop in base.__annotations__
-                    ):
-                        hint = base.__annotations__[prop]
-                        break
+            # Search the class hierarchy (MRO) for the type hint.
+            # cls itself is first in cls.__mro__, so no separate initial check needed.
+            for base in cls.__mro__:
+                if hasattr(base, "__annotations__") and prop in base.__annotations__:
+                    hint = base.__annotations__[prop]
+                    break
 
             # Normalize the hint
             if hint is not Any:
@@ -1236,6 +1230,11 @@ class Component(BasicComponent):
     key = public(None)
 
     def __init_subclass__(cls, **kwargs):
+        # Ensure every subclass has its own __annotations__ dict so that direct
+        # access to cls.__annotations__ returns only that class's own annotations
+        # rather than inheriting a parent's dict through the MRO.
+        if "__annotations__" not in cls.__dict__:
+            cls.__annotations__ = {}
         # Capture whether _name/_library were set *explicitly* in this class body
         # before super() may modify them (BasicComponent sets _name in its hook).
         body_had_name = "_name" in cls.__dict__
@@ -1404,8 +1403,13 @@ class Component(BasicComponent):
         # get data from client and populate component attributes with it
         for key, state_value in component_state["data"].items():
             # try to get attribute type (from the class annotations created when the
-            # component was declared)
-            AttributeType = component.__annotations__.get(key, NoneType)
+            # component was declared); search the full MRO so inherited annotations
+            # from parent component classes are found too.
+            AttributeType = NoneType
+            for _klass in type(component).__mro__:
+                if hasattr(_klass, "__annotations__") and key in _klass.__annotations__:
+                    AttributeType = _klass.__annotations__[key]
+                    break
 
             # if client data type is a model, try to see the value in the
             # recovered data as Model.pk and get the model again.
@@ -1673,8 +1677,12 @@ class Component(BasicComponent):
 
             # Normalize empty strings to None for enum types
             # This handles Django's convention where optional ChoiceFields submit ""
-            if value == "" and key in self.__annotations__:
-                annotation = self.__annotations__[key]
+            annotation = NoneType
+            for _klass in type(self).__mro__:
+                if hasattr(_klass, "__annotations__") and key in _klass.__annotations__:
+                    annotation = _klass.__annotations__[key]
+                    break
+            if value == "" and annotation is not NoneType:
                 # Check if the field is an Optional[Enum]
                 origin = get_origin(annotation)
                 if origin is Union:
@@ -1719,9 +1727,10 @@ class Component(BasicComponent):
         3. The Model pickler can then handle instances normally without type metadata
         4. Database queries only occur when actually needed (serialization/validation)
         """
-        # Get annotations from the class hierarchy
+        # Get annotations from the class hierarchy; iterate base-first so that
+        # more-derived annotations overwrite base ones when types conflict.
         annotations = {}
-        for cls in type(self).__mro__:
+        for cls in reversed(type(self).__mro__):
             if hasattr(cls, "__annotations__"):
                 annotations.update(cls.__annotations__)
 

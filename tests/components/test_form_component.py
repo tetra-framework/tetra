@@ -108,6 +108,60 @@ def test_form_knows_type_annotations(tetra_request):
     assert c.__annotations__["lucky"] == Optional[bool]
 
 
+def test_component_subclass_has_own_annotations_dict():
+    """Every Component subclass must have its own __annotations__ dict (not inherited).
+
+    Without this guarantee, cls.__annotations__ on a class with no annotated
+    attributes would silently return a parent class's dict, causing annotation
+    lookups to find wrong or missing entries.
+    """
+
+    class MyBareComponent(FormComponent):
+        form_class = PersonForm
+        template = "<div></div>"
+
+    # The class must own its annotations dict, not inherit it.
+    assert "__annotations__" in MyBareComponent.__dict__
+    # And it must not be the same object as any parent's dict.
+    for parent in MyBareComponent.__mro__[1:]:
+        assert MyBareComponent.__dict__["__annotations__"] is not parent.__dict__.get(
+            "__annotations__"
+        )
+
+
+def test_form_subclass_annotations_found_via_mro(tetra_request):
+    """Annotations from a parent FormComponent are accessible through the MRO in
+    subclasses that do not re-declare form_class.
+
+    This tests fixes for:
+    - _init_component_class using type(cls).__annotations__ (metaclass level)
+    - _resume_component_state and _get_validation_data only checking the direct
+      class's own __annotations__ instead of searching the full MRO.
+    """
+
+    @ui.register
+    class SubPersonComponent(PersonComponent):
+        template = "<div></div>"
+
+    sub = SubPersonComponent(tetra_request)
+
+    # SubPersonComponent has no form_class of its own, so its own __annotations__
+    # should not contain the form fields.
+    assert "name" not in sub.__class__.__dict__["__annotations__"]
+
+    # Merging the MRO (the pattern used by the fixed methods) must find them.
+    merged = {}
+    for klass in type(sub).__mro__:
+        if hasattr(klass, "__annotations__"):
+            for k, v in klass.__annotations__.items():
+                if k not in merged:  # most-derived wins
+                    merged[k] = v
+
+    assert merged.get("name") == Optional[str]
+    assert merged.get("age") == Optional[int]
+    assert merged.get("dob") == Optional[date]
+
+
 class FormWithInitialData(forms.Form):
     name = forms.CharField(initial="John Doe")
     age = forms.IntegerField(initial=23)
