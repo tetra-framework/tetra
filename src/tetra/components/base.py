@@ -962,7 +962,7 @@ class Public:
 
             self.obj = fn
         else:
-            # `public` is wrapping a variable (str, int, etc)
+            # `public` is wrapping a variable (str, int, etc.)
             self.obj = obj
         return self
 
