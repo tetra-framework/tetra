@@ -1,23 +1,28 @@
 export default {
     init() {
-        // Watch global route store for path changes
-        // This makes Router components reactive to Tetra.navigate() calls
-        this.$watch('$store.route.path', (newPath) => {
-            // Only update if the path actually changed
-        Tetra.debug('Router path changed:', newPath)
-            if (this.current_path !== newPath) {
-                this.handleRouteChange(newPath)
-            }
-        })
-
+        // Only root routers actively watch the route store and handle navigation.
+        // Nested (child) routers are passive — they get re-rendered by the parent
+        // router via {% router_view %} and receive _remaining_path through context.
+        if (this.is_root_router) {
+            this.$watch('$store.route.path', (newPath) => {
+                Tetra.debug('Router path changed:', newPath)
+                if (this.current_path !== newPath) {
+                    this.handleRouteChange(newPath)
+                }
+            })
+        }
     },
     async handleRouteChange(newPath) {
+        // Guard: only root routers handle route changes
+        if (!this.is_root_router) return;
+
         // Update current path immediately (optimistic)
         this.current_path = newPath
 
-        // Trigger component refresh from server
-        // The server will re-run navigate() in load() and match the new route
-        // Then {% router_view %} will render the newly matched component
+        // Trigger component refresh from server.
+        // The server re-runs navigate() in load() and matches the new route,
+        // then {% router_view %} renders the matched component (including any
+        // nested child routers that handle sub-routes).
         await this._updateHtml()
     },
     __rootBind: {

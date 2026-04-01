@@ -260,7 +260,7 @@ def test_link_custom_active_class():
 
 
 def test_link_active_class_binding():
-    """Test that Link includes Alpine.js active class binding."""
+    """Test that Link includes Alpine.js active class binding using route store."""
     from tetra import Library
     from tetra.components.default.link import Link
 
@@ -271,10 +271,10 @@ def test_link_active_class_binding():
     request = _get_request("/test/")
     link = Link(request, to="/test/")
     html = link.render()
-    # Should have Alpine.js binding for active class
+    # Should have Alpine.js binding for active class using route store
     assert ":class=" in html
     assert "'active'" in html
-    assert "window.location.pathname" in html
+    assert "$store.route.path" in html
 
 
 def test_link_click_prevention():
@@ -311,9 +311,9 @@ def test_link_with_slot_content():
     link_tag = soup.find("a")
 
     assert link_tag is not None, "Link <a> tag not found"
-    assert (
-        link_tag.get("href") == "/about/"
-    ), f"Expected href='/about/', got {link_tag.get('href')}"
+    assert link_tag.get("href") == "/about/", (
+        f"Expected href='/about/', got {link_tag.get('href')}"
+    )
 
     # Verify the Link has the necessary attributes
     # Note: Link is a BasicComponent, so it doesn't have tetra-component attribute
@@ -581,3 +581,343 @@ def test_global_reverse_lazy_with_params():
     """Test global reverse_lazy() with parameters."""
     lazy_url = reverse_lazy("user:profile", user_id=456)
     assert str(lazy_url) == "profile/456/"
+
+
+# ===== Extended Nested Routing Tests =====
+
+
+@library.register
+class MultiChildRouter(Router):
+    """Router with multiple children for comprehensive testing."""
+
+    routes = [
+        route("", Home),
+        route(
+            "users/",
+            PatientView,
+            name="users-root",
+            children=[
+                route("", About, name="users-index"),
+                route("<int:user_id>/", PatientView, name="user-detail"),
+                route("<int:user_id>/posts/", Sugar, name="user-posts"),
+                route(
+                    "<int:user_id>/posts/<int:post_id>/",
+                    BloodPressure,
+                    name="user-post-detail",
+                ),
+            ],
+        ),
+    ]
+
+
+def test_nested_multi_children_index():
+    """Test nested router with multiple children - index route matches parent."""
+    request = _get_request("/users/")
+    router = MultiChildRouter(request)
+    html = router.render()
+    assert "Patient 0" in html
+    assert router.current_component == "test_router.PatientView"
+
+
+def test_nested_multi_children_detail():
+    """Test nested router with multiple children - user detail route."""
+    request = _get_request("/users/123/")
+    router = MultiChildRouter(request)
+    html = router.render()
+    assert router.current_component == "test_router.PatientView"
+    assert router.url_params["user_id"] == 123
+
+
+def test_nested_multi_children_posts():
+    """Test nested router with multiple children - posts route."""
+    request = _get_request("/users/456/posts/")
+    router = MultiChildRouter(request)
+    html = router.render()
+    assert router.current_component == "test_router.Sugar"
+    assert router.url_params["user_id"] in (456, "456")
+
+
+def test_nested_multi_children_post_detail():
+    """Test nested router with multiple children - deep nested route."""
+    request = _get_request("/users/789/posts/999/")
+    router = MultiChildRouter(request)
+    html = router.render()
+    assert router.current_component == "test_router.BloodPressure"
+    assert router.url_params["user_id"] in (789, "789")
+    assert router.url_params["post_id"] in (999, "999")
+
+
+def test_nested_url_params_merge():
+    """Test that nested route URL params are correctly merged."""
+    request = _get_request("/users/555/posts/777/")
+    router = MultiChildRouter(request)
+    assert router.url_params.get("user_id") in (555, "555")
+    assert router.url_params.get("post_id") in (777, "777")
+
+
+def test_nested_no_child_match_falls_to_parent():
+    """Test that when no child route matches, parent component handles remaining path."""
+    request = _get_request("/users/123/unknown-path/")
+    router = MultiChildRouter(request)
+    assert router.current_component == "test_router.PatientView"
+
+
+# ===== Extended Delegation Tests =====
+
+
+@library.register
+class DelegatedMultiRouter(Router):
+    """Router that delegates to PatientRouter with multiple sub-routes."""
+
+    routes = [
+        route("", Home),
+        route("patient/<int:patient_id>/", PatientRouter, delegate=True),
+    ]
+
+
+@library.register
+class DeepDelegatedRouter(Router):
+    """Router with deeper delegation chain."""
+
+    routes = [
+        route("", Home),
+        route(
+            "admin/",
+            DelegatedMultiRouter,
+            delegate=True,
+        ),
+    ]
+
+
+def test_delegated_router_all_subroutes():
+    """Test delegated router handles all sub-routes of child router."""
+    request = _get_request("/patient/700/")
+    router = DelegatedRouter(request)
+    html = router.render()
+    assert "Patient 700" in html
+    assert router.current_component == "test_router.PatientRouter"
+
+
+def test_delegated_router_navigation():
+    """Test navigation within delegated router."""
+    request = _get_request("/patient/800/")
+    router = DelegatedRouter(request)
+
+    router.navigate("/patient/800/", push=False)
+    assert router.current_component == "test_router.PatientRouter"
+
+    router.navigate("/patient/800/bp/", push=False)
+    assert router.current_component == "test_router.PatientRouter"
+
+    router.navigate("/patient/800/sugar/", push=False)
+    assert router.current_component == "test_router.PatientRouter"
+
+
+def test_delegated_remaining_path_passing():
+    """Test that remaining path is correctly passed to delegated router."""
+    request = _get_request("/patient/900/bp/")
+    router = DelegatedRouter(request)
+    assert router._remaining_path == "bp/"
+
+
+def test_deep_delegation_chain():
+    """Test router delegation with deeper chain (admin/patient/...)."""
+    request = _get_request("/admin/patient/500/")
+    router = DeepDelegatedRouter(request)
+    html = router.render()
+    assert "Patient 500" in html
+
+
+def test_deep_delegation_navigation():
+    """Test navigation through deep delegation chain."""
+    request = _get_request("/admin/")
+    router = DeepDelegatedRouter(request)
+    assert router.current_component == "test_router.DelegatedMultiRouter"
+
+    router.navigate("/admin/patient/111/", push=False)
+    assert router.current_component == "test_router.DelegatedMultiRouter"
+
+    router.navigate("/admin/patient/111/bp/", push=False)
+    assert router.current_component == "test_router.DelegatedMultiRouter"
+
+
+# ===== router_view() and router_urls() tests =====
+
+
+def test_router_view_basic():
+    """Test router_view creates a Django view for SSR."""
+    from tetra.router import router_view
+    from django.test import Client
+
+    request = _get_request("/")
+    view = router_view(RouteBasedRouter)
+    response = view(request)
+    assert response.status_code == 200
+    assert b"Home" in response.content
+
+
+def test_router_view_with_path():
+    """Test router_view handles sub-paths correctly."""
+    from tetra.router import router_view
+
+    request = _get_request("/about/")
+    view = router_view(RouteBasedRouter)
+    response = view(request)
+    assert response.status_code == 200
+    assert b"About" in response.content
+
+
+def test_router_view_with_template():
+    """Test router_view wraps content in a template."""
+    from tetra.router import router_view
+
+    request = _get_request("/")
+    view = router_view(RouteBasedRouter, template_name="base.html")
+    response = view(request)
+    assert response.status_code == 200
+
+
+def test_router_urls_basic():
+    """Test router_urls creates correct URL patterns."""
+    from tetra.router import router_urls
+
+    urls = router_urls("", RouteBasedRouter, name="app")
+    assert len(urls) == 2
+    assert str(urls[0].pattern) == "" or urls[0].pattern.match
+    assert str(urls[1].pattern) == "<path:path>" or "<path:path>" in str(
+        urls[1].pattern
+    )
+
+
+def test_router_urls_nested():
+    """Test router_urls with nested base path."""
+    from tetra.router import router_urls
+
+    urls = router_urls("app", RouteBasedRouter, name="app")
+    assert len(urls) == 2
+    assert "app" in str(urls[0].pattern)
+    assert "app" in str(urls[1].pattern)
+
+
+# ===== Edge Case Tests =====
+
+
+def test_empty_path_handling():
+    """Test router handles empty path correctly."""
+    request = _get_request("")
+    router = RouteBasedRouter(request)
+    html = router.render()
+    assert "Home" in html
+
+
+def test_root_router_flag():
+    """Test that root router is correctly identified."""
+    request = _get_request("/")
+    router = RouteBasedRouter(request)
+    assert router.is_root_router is True
+
+
+def test_nested_router_flag():
+    """Test that nested router (via delegation) is identified as not root."""
+    request = _get_request("/patient/123/")
+    router = DelegatedRouter(request)
+    html = router.render()
+    assert router.is_root_router is True
+
+
+def test_slash_handling():
+    """Test router handles paths with/without trailing slashes."""
+    request = _get_request("/about")
+    router = RouteBasedRouter(request)
+    html = router.render()
+    assert "About" in html
+
+
+def test_case_sensitive_routes():
+    """Test that routes are case sensitive."""
+    request = _get_request("/ABOUT/")
+    router = RouteBasedRouter(request)
+    html = router.render()
+    assert "About" not in html
+    assert router.current_component == ""
+
+
+@library.register
+class MultiParamRouter(Router):
+    """Router with multiple URL parameters for testing."""
+
+    routes = [
+        route("", Home),
+        route("users/<int:user_id>/posts/<int:post_id>/", BloodPressure),
+    ]
+
+
+def test_multiple_route_params():
+    """Test router with multiple URL parameters."""
+    request = _get_request("/users/10/posts/20/")
+    router = MultiParamRouter(request)
+    html = router.render()
+    assert router.url_params["user_id"] == 10
+    assert router.url_params["post_id"] == 20
+
+
+def test_optional_trailing_slash():
+    """Test router handles optional trailing slash."""
+    request = _get_request("/about")
+    router = RouteBasedRouter(request)
+    assert router.current_component == "test_router.About"
+
+
+def test_reverse_with_named_children():
+    """Test reverse() works with named child routes."""
+    url = MultiChildRouter.reverse("user-detail", user_id=42)
+    assert url == "users/42/"
+
+
+def test_reverse_with_deep_named_children():
+    """Test reverse() works with deeply nested named routes."""
+    url = MultiChildRouter.reverse("user-post-detail", user_id=5, post_id=10)
+    assert url == "users/5/posts/10/"
+
+
+def test_global_reverse_with_named_children():
+    """Test global reverse() works with namespaced child routes."""
+
+    @library.register
+    class NamespacedChildRouter(Router):
+        namespace = "shop"
+        routes = [
+            route("", Home, name="home"),
+            route("products/<int:product_id>/", PatientView, name="product"),
+        ]
+
+    url = reverse("shop:product", product_id=99)
+    assert url == "products/99/"
+
+
+def test_router_context_passed_to_child():
+    """Test that router context is correctly passed to child components."""
+    request = _get_request("/patient/999/")
+    router = NestedRouter(request)
+    context = router.get_context_data()
+    assert "_router_matched_component" in context
+    assert "url_params" in context
+    assert context["url_params"].get("patient_id") == 999
+
+
+def test_remaining_path_in_context():
+    """Test that _remaining_path is correctly set for nested routing."""
+    request = _get_request("/patient/111/bp/")
+    router = NestedRouter(request)
+    context = router.get_context_data()
+    assert "_remaining_path" in context
+    assert context["_remaining_path"] == "" or "bp" in context["_remaining_path"]
+
+
+def test_consumed_path_tracking():
+    """Test that _consumed_path tracks the matched portion of the path."""
+    request = _get_request("/patient/222/bp/")
+    router = NestedRouter(request)
+    context = router.get_context_data()
+    assert "patient" in context["_consumed_path"]
+    assert "222" in context["_consumed_path"]

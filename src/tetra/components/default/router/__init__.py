@@ -11,13 +11,41 @@ logger = logging.getLogger(__name__)
 
 class Router(Component):
     """
-    A component that manages navigation and dynamic component switching.
+    A component that manages client-side routing and dynamic component switching.
 
-    Routing format:
-    routes = [route('/', Home), route('about/', About)]
+    Works similar to Vue Router: define routes that map URL patterns to components,
+    and use ``{% router_view %}`` in the template to render the matched component.
 
-    Router subclasses should define their own template and use {% router_view %}
-    to mark where the matched child component should be rendered.
+    Supports nested routing via the delegation pattern: a route can point to another
+    Router subclass that handles sub-routes independently.
+
+    Example::
+
+        @library.register
+        class AppRouter(Router):
+            routes = [
+                route('', Home),
+                route('about/', About),
+                route('users/', UserRouter, delegate=True),
+            ]
+
+            template = '''
+            <div>
+                <nav>
+                    {% Link to="/" %}Home{% /Link %}
+                    {% Link to="/about/" %}About{% /Link %}
+                </nav>
+                <main>{% router_view %}</main>
+            </div>
+            '''
+
+    Django integration::
+
+        # urls.py
+        from tetra.router import router_urls
+        urlpatterns = [
+            *router_urls('', AppRouter, 'base.html'),
+        ]
     """
 
     routes: list[Route] = []
@@ -28,9 +56,14 @@ class Router(Component):
     _consumed_path: str = ""
     _remaining_path: str = ""
 
-    # Public state for templates
+    # Public state for templates and JS
     current_path: str = public("")
     url_params: dict[str, Any] = public({})
+
+    # Root vs nested router flag. Root routers actively watch $store.route.path
+    # and trigger re-renders on navigation. Nested routers are passive — they are
+    # re-rendered as children by their parent router.
+    is_root_router: bool = public(True)
 
     @property
     def current_component(self) -> str:
@@ -185,32 +218,34 @@ class Router(Component):
     _extra_context = []
 
     def load(self, *args, **kwargs):
-        # Ensure url_params is initialized even if passed from parent context
-        if "url_params" not in kwargs and not hasattr(self, "url_params"):
+        # Ensure url_params is initialized
+        if not hasattr(self, "url_params") or self.url_params is None:
             self.url_params = {}
 
-        # Merge parent url_params if passed via context
-        if hasattr(self, "_context") and self._context:
+        # Detect if this is a nested (child) router
+        is_nested = (
+            hasattr(self, "_context")
+            and self._context
+            and "_remaining_path" in self._context
+        )
+
+        if is_nested:
+            # Nested routers are passive — they don't watch the route store in JS.
+            self.is_root_router = False
+            path_to_match = self._context["_remaining_path"]
+
+            # Merge parent url_params
             parent_params = self._context.get("url_params", {})
             if parent_params and isinstance(parent_params, dict):
-                # Merge parent params with current params (current takes precedence)
                 self.url_params = {**parent_params, **self.url_params}
+        else:
+            # Root router: use browser URL as source of truth
+            self.is_root_router = True
+            path_to_match = self.request.tetra.current_url_path or self.request.path
 
-        # Initialize routing state
-        if not self._matched_component:
-            # Use browser URL from request.tetra as source of truth, not request.path
-            path = self.request.tetra.current_url_path or self.request.path
-
-            # If this is a nested router, use the remaining path from parent
-            if (
-                hasattr(self, "_context")
-                and self._context
-                and "_remaining_path" in self._context
-            ):
-                path_to_match = self._context["_remaining_path"]
-                self.navigate(path_to_match, push=False)
-            else:
-                self.navigate(path, push=False)
+        # Always re-match routes. The path may have changed since the last render
+        # (e.g. client-side navigation triggered _updateHtml on the root router).
+        self.navigate(path_to_match, push=False)
 
     def get_context_data(self, **kwargs):
         """
