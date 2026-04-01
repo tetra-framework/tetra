@@ -20,7 +20,7 @@ from django.http import HttpRequest
 from django.template import RequestContext, engines
 from django.template.base import Origin
 from django.template.loader_tags import BlockNode
-from django.utils.functional import SimpleLazyObject, LazyObject
+from django.utils.functional import Promise, SimpleLazyObject, LazyObject
 from functools import lru_cache
 
 from .exceptions import ComponentError
@@ -316,6 +316,15 @@ class StatePickler(pickle.Pickler):
                 return b":".join([pickler.prefix, pickled])
 
         return None
+
+    def reducer_override(self, obj):
+        """Resolve Django lazy objects (e.g. gettext_lazy) to their actual
+        values so the unpickler never encounters _lazy_proxy_unpickle."""
+        if isinstance(obj, Promise):
+            # Force-evaluate the lazy object by calling str() on it.
+            # This covers gettext_lazy and other lazy string wrappers.
+            return str, (str(obj),)
+        return NotImplemented
 
 
 class StateUnpickler(pickle.Unpickler):
