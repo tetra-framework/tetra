@@ -1187,7 +1187,7 @@ const Tetra = {
                 let old_data = Tetra.jsonDecode(toEl.getAttribute('x-data-update-old'));
                 let comp = window.Alpine.$data(el);
                 for (const key in data) {
-                  if (old_data.hasOwnProperty(key) && (old_data[key] !== comp[key])) {
+                  if (old_data.hasOwnProperty(key) && (JSON.stringify(old_data[key]) !== JSON.stringify(comp[key]))) {
                     // If the data that was submitted to the server has since changed we don't overwrite it
                     continue
                   }
@@ -1208,6 +1208,8 @@ const Tetra = {
         }
 
         this._handleAutofocus();
+        // After server re-render, push bound values to parent
+        this.__syncBindingsToParent();
         this.$dispatch('tetra:component-updated', { component: this });
       },
       _updateData(data) {
@@ -1234,6 +1236,7 @@ const Tetra = {
           this[key] = data[key];
         }
         // this._handleAutofocus(); // TODO: evaluate if this would make sense too
+        this.__syncBindingsToParent();
         this.$dispatch('tetra:component-data-updated', { component: this });
       },
       _setValueByName(name, value){
@@ -1505,18 +1508,60 @@ const Tetra = {
         const parentComp = this._parent;
         if (!parentComp) return;
 
+        if (!parentComp.__watchedBindings) {
+          parentComp.__watchedBindings = new Map();
+        }
+
         Object.entries(this.__bindings).forEach(([childAttr, parentAttr]) => {
-          this.$watch(childAttr, (newVal) => {
-            if (parentComp[parentAttr] !== newVal) {
-              parentComp[parentAttr] = newVal;
+          this.$watch(childAttr, () => {
+            if (this.__syncingBindings) return;
+            const currentChildVal = this[childAttr];
+            const currentParentVal = parentComp[parentAttr];
+            if (currentParentVal === currentChildVal) return;
+            if (JSON.stringify(currentParentVal) !== JSON.stringify(currentChildVal)) {
+              this.__syncingBindings = true;
+              parentComp[parentAttr] = currentChildVal;
+              Alpine.nextTick(() => {
+                this.__syncingBindings = false;
+              });
             }
           });
 
-          parentComp.$watch(parentAttr, (newVal) => {
-            if (this[childAttr] !== newVal) {
-              this[childAttr] = newVal;
-            }
+          const bindingKey = `${parentAttr}`;
+          if (parentComp.__watchedBindings.has(bindingKey)) return;
+          parentComp.__watchedBindings.set(bindingKey, true);
+
+          parentComp.$watch(parentAttr, () => {
+            if (this.__isUpdating) return;
+            if (parentComp.__isUpdating) return;
+            if (this.__syncingBindings) return;
+            const currentParentVal = parentComp[parentAttr];
+            if (this[childAttr] === currentParentVal) return;
+            this.__syncingBindings = true;
+            this[childAttr] = currentParentVal;
+            Alpine.nextTick(() => {
+              this.__syncingBindings = false;
+            });
           });
+        });
+
+        this.__syncingBindings = true;
+        this.__syncBindingsToParent();
+        this.__syncingBindings = false;
+      },
+      __syncBindingsToParent() {
+        if (!this.__bindings || !this._parent) return;
+        if (this.__isUpdating) return;
+        const parentComp = this._parent;
+        if (parentComp.__isUpdating) return;
+        Object.entries(this.__bindings).forEach(([childAttr, parentAttr]) => {
+          const parentVal = parentComp[parentAttr];
+          const childVal = this[childAttr];
+          // Skip if same reference (prevent triggering the watcher)
+          if (parentVal === childVal) return;
+          if (JSON.stringify(parentVal) !== JSON.stringify(childVal)) {
+            parentComp[parentAttr] = childVal;
+          }
         });
       },
       __childComponents: {},
