@@ -54,7 +54,8 @@ dev = [
     "channels",
     "channels-redis",
     "mypy>=1.19.0",
-    "daphne"
+    "daphne",
+    "ruff>=0.15.8",
 ]
 docs = [
     "mkdocs~=1.6",

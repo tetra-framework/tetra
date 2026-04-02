@@ -16,7 +16,7 @@ test:
 #	coverage run -m pytest
 
 check:
-	uvx ruff check
+	uv run ruff check
 
 doc:
 	uv sync --group docs
