@@ -134,4 +134,66 @@ When context is passed using the [_extra_context](components.md#extra-context) c
 {{ var }} {# this is "5" #}
 {% MyComponent context: var=3 / %} {# overrides global var with "3" #}
 ```
+
+## Two-Way Bindings
+
+You can create two-way bindings between a child component's public attribute and a parent component's public attribute using the `bind:` prefix (or shorthand `:`). Changes in either component are immediately reflected in the other - this happens purely on the client side via Alpine.js.
+
+### Syntax
+
+``` django
+{# Explicit: child "result" binds to parent's "selected_name" (two-way) #}
+{% SearchComponent :result=selected_name search_fields="username" / %}
+
+{# Shorthand: both components use the same attribute name "name" #}
+{% SearchComponent :name / %}
+
+{# With explicit "bind:" prefix (same as above) #}
+{% SearchComponent bind:result=selected_name / %}
+{% SearchComponent bind:name / %}
+
+{# Multiple bindings #}
+{% SearchComponent :result=selected_name :query=search / %}
+```
+
+### How It Works
+
+- The child component must have the specified public attribute (e.g., `result`)
+- The parent component must have the specified public attribute (e.g., `selected_name`)
+- Changes are synced client-side via Alpine.js watchers
+- Works across nested component levels (child → parent → grandparent)
+- If the parent component re-renders, the binding is re-established
+
+### Example
+
+``` python
+# Parent component
+class UserSearch(Component):
+    selected_name = public("")
+    query = public("")
+    
+    template = """
+    <div>
+        <p>Selected: <span x-text="selected_name"></span></p>
+        <p>Query: <span x-text="query"></span></p>
+        {% SearchComponent :result=selected_name :search=query / %}
+    </div>
+    """
+
+# Child component
+class SearchComponent(Component):
+    result = public("")
+    search = public("")
+    
+    def perform_search(self):
+        # When search updates result, parent's selected_name is also updated
+        self.result = self._search_users(self.search)
+```
+
+### Validation
+
+The template tag validates that the parent component has the specified public attribute. If not, a `ComponentError` is raised at render time.
+
+!!! note
+    Bindings work client-side only. Server-side method calls will still trigger their normal `@public.watch` handlers or re-renders as expected.
  

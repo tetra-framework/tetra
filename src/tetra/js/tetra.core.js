@@ -990,6 +990,7 @@ const Tetra = {
         // Set component ID attribute on DOM element for targeting
         this.__initServerWatchers();
         this.__initStores();
+        this.__initBindings();
 
         // Auto-subscribe if component is reactive
         if (window.__tetra_useWebsockets && this.$el.hasAttribute('tetra-reactive')) {
@@ -1496,6 +1497,26 @@ const Tetra = {
             setStoreValue(this[propName]);
             prevStoreVal = this[propName];
           }
+        });
+      },
+      __initBindings() {
+        if (!this.__bindings) return;
+
+        const parentComp = this._parent;
+        if (!parentComp) return;
+
+        Object.entries(this.__bindings).forEach(([childAttr, parentAttr]) => {
+          this.$watch(childAttr, (newVal) => {
+            if (parentComp[parentAttr] !== newVal) {
+              parentComp[parentAttr] = newVal;
+            }
+          });
+
+          parentComp.$watch(parentAttr, (newVal) => {
+            if (this[childAttr] !== newVal) {
+              this[childAttr] = newVal;
+            }
+          });
         });
       },
       __childComponents: {},

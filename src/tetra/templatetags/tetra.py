@@ -85,17 +85,32 @@ def do_component(parser, token):
         bits = bits[:-1]
 
     # bits can be split into sections stating with one of:
-    # 'args:', 'attrs:' or 'context:'
+    # 'args:', 'attrs:', 'context:', 'bind:' or ':'
     # The fist section defaults to 'args:' if it  is unprefixed.
     bits_grouped = {
         "args:": [],
         "attrs:": [],
         "context:": [],
+        "bind:": [],
+        ":": [],
     }
+    binding_prefixes = ("bind:", ":")
     current_prefix = "args:"
     for bit in bits:
         if bit in bits_grouped:
             current_prefix = bit
+        elif (
+            bit.startswith("attrs:")
+            or bit.startswith("context:")
+            or bit.startswith("args:")
+        ):
+            # Handle full prefix matches first (attrs:, context:, args:)
+            current_prefix = bit[: bit.index(":") + 1]
+            bits_grouped[current_prefix].append(bit)
+        elif bit.startswith(binding_prefixes):
+            current_prefix = bit[: bit.index(":") + 1]
+            bits_grouped[current_prefix].append(bit)
+            current_prefix = "args:"
         else:
             bits_grouped[current_prefix].append(bit)
 
@@ -138,6 +153,28 @@ def do_component(parser, token):
             raise TemplateSyntaxError(
                 f"Component '{component_name}' attrs must be prefixed by a attr name."
             )
+
+    # Binding bits (bind: and : prefixes):
+    bindings = {}
+    for prefix_key in ["bind:", ":"]:
+        prefix_bits = bits_grouped.get(prefix_key, [])
+        for bit in prefix_bits:
+            bit = bit.strip()
+            if "=" in bit:
+                # Remove the prefix and split on =
+                for p in ["bind:", ":"]:
+                    if bit.startswith(p):
+                        bit = bit[len(p) :]
+                        break
+                child_attr, parent_attr = bit.split("=", 1)
+                bindings[child_attr.strip()] = parent_attr.strip()
+            else:
+                # Shorthand: :name means bind name to same name
+                for p in ["bind:", ":"]:
+                    if bit.startswith(p):
+                        bit = bit[len(p) :]
+                        break
+                bindings[bit.strip()] = bit.strip()
 
     # Context bits:
     if "__all__" in bits_grouped["context:"]:
@@ -201,6 +238,7 @@ def do_component(parser, token):
         kwargs,
         attrs=attrs,
         context_args=context_args,
+        bindings=bindings,
         nodelist=nodelist,
         origin=parser.origin,
     )
@@ -214,6 +252,7 @@ class ComponentNode(template.Node):
         kwargs,
         attrs=None,
         context_args=None,
+        bindings=None,
         nodelist=None,
         origin=None,
     ):
@@ -222,6 +261,7 @@ class ComponentNode(template.Node):
         self.kwargs = kwargs
         self.attrs = attrs
         self.context_args = context_args
+        self.bindings = bindings
         self.nodelist = nodelist
         self.slots = None
         self.prepare_slots(origin=origin)
@@ -359,6 +399,16 @@ class ComponentNode(template.Node):
             for slot in self.slots:
                 resolved_context["slots"][slot] = True
 
+        # Resolve bindings
+        resolved_bindings = {
+            k: v.resolve(context) if isinstance(v, template.Variable) else v
+            for k, v in self.bindings.items()
+        }
+
+        # Note: Binding validation is done client-side.
+        # If a binding references a non-existent attribute, it will simply
+        # not sync (the watcher will find undefined values).
+
         slots = copy.copy(self.slots)
         if slots and BLOCK_CONTEXT_KEY in context.render_context:
             old_slot_context = context.render_context[BLOCK_CONTEXT_KEY]
@@ -384,6 +434,7 @@ class ComponentNode(template.Node):
                 *resolved_args,
                 **resolved_kwargs,
                 _attrs=resolved_attrs,
+                _bindings=resolved_bindings,
                 _context=resolved_context,
                 _slots=slots,
             )
@@ -396,6 +447,7 @@ class ComponentNode(template.Node):
                 *resolved_args,
                 **resolved_kwargs,
                 _attrs=resolved_attrs,
+                _bindings=resolved_bindings,
                 _context=resolved_context,
                 _slots=slots,
             )

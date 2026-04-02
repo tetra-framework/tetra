@@ -148,43 +148,43 @@ class Library:
             component_cls._library = self
             component_cls._name = underscore_name
             self.components[underscore_name] = component_cls
+            self._register_component_tag(component_cls, name, underscore_name)
             return cls
 
+        if component_cls:
+            return dec(component_cls)
+        else:
+            return dec
+
+    def _register_component_tag(
+        self,
+        component_cls: type[BasicComponent],
+        name: str,
+        underscore_name: str,
+    ):
+        """Register component as a template tag."""
+
         def component_tag_compile_function(parser, token):
-            # Modify token to include the "component" prefix
             tag = token.contents.split()[0]
             if tag == "@":
                 warnings.warn(
                     "Use 'component' instead of '@' for component tags.",
                     DeprecationWarning,
                 )
-            # TODO: check if component with this name exists!
             if tag != "component":
                 token.contents = (
                     f"component {tag} {' '.join(token.contents.split()[1:])}"
                 )
             return do_component(parser, token)
 
-        if component_cls:
-            # Dynamically register a template tag with ComponentName and
-            # library.ComponentName
+        component_tag_compile_function.__name__ = name
+        from .templatetags.tetra import do_component, register as tetra_register
 
-            # Set the name and other attributes
-            component_tag_compile_function.__name__ = name
-            from .templatetags.tetra import do_component, register as tetra_register
-
-            # Register the tag with Django's template system
-            tetra_register.tag(
-                name=name, compile_function=component_tag_compile_function
-            )
-            tetra_register.tag(
-                name=f"{self.name}.{name}",
-                compile_function=component_tag_compile_function,
-            )
-
-            return dec(component_cls)
-        else:
-            return dec
+        tetra_register.tag(name=name, compile_function=component_tag_compile_function)
+        tetra_register.tag(
+            name=f"{self.name}.{name}",
+            compile_function=component_tag_compile_function,
+        )
 
     def __contains__(self, component_name: str) -> bool:
         """Check if the library contains the given component name."""
@@ -299,7 +299,9 @@ class Library:
                     py_dir = os.path.dirname(py_filename)
 
                     # Check if this component has its own external JS file
-                    own_js_file = component_cls._get_component_file_path_with_extension("js")
+                    own_js_file = component_cls._get_component_file_path_with_extension(
+                        "js"
+                    )
                     has_own_external_js = own_js_file and os.path.exists(own_js_file)
 
                     if component_cls._is_script_inline() or not has_own_external_js:

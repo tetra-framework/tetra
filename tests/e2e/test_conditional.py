@@ -1,7 +1,5 @@
 import pytest
 from django import forms
-from django.urls import reverse
-from playwright.sync_api import Page
 
 from tetra import Library, public
 from tetra.components import FormComponent, DynamicFormMixin

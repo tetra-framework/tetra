@@ -431,11 +431,11 @@ class ComponentRenderer(BaseRenderer):
             if "event_subscriptions" in method_data:
                 for event in method_data["event_subscriptions"]:
                     extra_tags.update(
-                        {f"@{event}": f'{method_data["name"]}($event.detail)'}
+                        {f"@{event}": f"{method_data['name']}($event.detail)"}
                     )
 
-        tags_strings = [f"{key}=\"{value or ''}\"" for key, value in extra_tags.items()]
-        html = f'{html[:tag_name_end]} {" ".join(tags_strings)} {html[tag_name_end:]}'
+        tags_strings = [f'{key}="{value or ""}"' for key, value in extra_tags.items()]
+        html = f"{html[:tag_name_end]} {' '.join(tags_strings)} {html[tag_name_end:]}"
         return mark_safe(html)
 
 
@@ -475,6 +475,7 @@ class BasicComponent:
         _attrs: dict[str, Any] | None = None,
         _context: dict[str, Any] | RequestContext | None = None,
         _slots=None,
+        _bindings: dict[str, str] | None = None,
         key: str | None = None,
         *args,
         **kwargs,
@@ -494,6 +495,7 @@ class BasicComponent:
 
         self._context = _context or {}
         self._slots = _slots
+        self._bindings = _bindings or {}
         self.renderer = BaseRenderer(self)
         # FIXME: it could lead to mismatching component ids if it is recreated after
         #  page reloading - test this for channels/long-lasting websocket connections
@@ -1256,6 +1258,7 @@ class Component(BasicComponent):
         _attrs: dict[str, Any] | None = None,
         _context: dict[str, Any] | RequestContext | None = None,
         _slots=None,
+        _bindings: dict[str, str] | None = None,
         key: str | None = None,
         *args,
         **kwargs,
@@ -1269,6 +1272,7 @@ class Component(BasicComponent):
             _attrs,
             _context,
             _slots,
+            _bindings,
             key,
             *args,
             **kwargs,
@@ -1291,6 +1295,7 @@ class Component(BasicComponent):
         _attrs=None,
         _context=None,
         _slots=None,
+        _bindings=None,
         *args,
         **kwargs,
     ) -> Any:
@@ -1314,6 +1319,7 @@ class Component(BasicComponent):
             _attrs: Optional attributes to set on the component
             _context: Optional template context to use
             _slots: Optional template slots to use
+            _bindings: Optional binding mappings {child_attr: parent_attr}
             *args: Positional arguments to pass to load()
             **kwargs: Keyword arguments to pass to load()
 
@@ -1357,6 +1363,7 @@ class Component(BasicComponent):
             ("attrs", {}),
             ("_temp_files", {}),
             ("_slots", None),
+            ("_bindings", {}),
         ]:
             if not hasattr(component, attr):
                 setattr(component, attr, default)
@@ -1370,6 +1377,8 @@ class Component(BasicComponent):
             component._context = _context
         if _slots:
             component._slots = _slots
+        if _bindings:
+            component._bindings = _bindings
         if args:
             component._load_args = args
         if kwargs:
@@ -1822,6 +1831,8 @@ class Component(BasicComponent):
         data["__state"] = self._encoded_state()
         if hasattr(self, "_public_stores") and self._public_stores:
             data["__serverStores"] = self._public_stores
+        if self._bindings:
+            data["__bindings"] = self._bindings
         return data
 
     def _add_self_attrs_to_context(self, context) -> None:
@@ -2528,7 +2539,6 @@ class DynamicFormMixin:
         form = super().get_form(*args, **kwargs)
         # parents = self.field_dependencies.values()
         for field_name, field in form.fields.items():
-
             if update_method := getattr(self, f"get_{field_name}_disabled", None):
                 form.fields[field_name].disabled = update_method()
 
